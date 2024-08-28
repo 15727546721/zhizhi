@@ -2,9 +2,11 @@ package cn.xu.types.exception;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
+@ToString
 public class AppException extends RuntimeException {
 
     private static final long serialVersionUID = 5317680961212299217L;
@@ -13,7 +15,7 @@ public class AppException extends RuntimeException {
     private String code;
 
     /** 异常信息 */
-    private String info;
+    private String message;
 
     public AppException(String code) {
         this.code = code;
@@ -26,21 +28,14 @@ public class AppException extends RuntimeException {
 
     public AppException(String code, String message) {
         this.code = code;
-        this.info = message;
+        this.message = message;
     }
 
     public AppException(String code, String message, Throwable cause) {
         this.code = code;
-        this.info = message;
+        this.message = message;
         super.initCause(cause);
     }
 
-    @Override
-    public String toString() {
-        return "cn.xu.x.api.types.exception.XApiException{" +
-                "code='" + code + '\'' +
-                ", info='" + info + '\'' +
-                '}';
-    }
 
 }

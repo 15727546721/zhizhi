@@ -1,6 +1,6 @@
-package cn.xu.xfg.frame.trigger.http;
-
+package cn.xu.trigger.http;
 import cn.xu.types.common.Constants;
+import cn.xu.types.exception.AppException;
 import cn.xu.types.model.Response;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.RequestMapping;
