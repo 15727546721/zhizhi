@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.xu.infrastructure.persistent.dao.IUser">
+
+    <resultMap id="BaseResultMap" type="cn.xu.infrastructure.persistent.po.UserPO">
+        <id property="id" column="id" jdbcType="BIGINT"/>
+        <result property="username" column="username" jdbcType="VARCHAR"/>
+        <result property="password" column="password" jdbcType="VARCHAR"/>
+        <result property="email" column="email" jdbcType="VARCHAR"/>
+        <result property="nickname" column="nickname" jdbcType="VARCHAR"/>
+        <result property="avatar" column="avatar" jdbcType="VARCHAR"/>
+        <result property="role" column="role" jdbcType="CHAR"/>
+        <result property="status" column="status" jdbcType="CHAR"/>
+        <result property="createdTime" column="created_time" jdbcType="TIMESTAMP"/>
+        <result property="updatedTime" column="updated_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,username,password,
+        email,nickname,avatar,
+        role,status,created_time,
+        updated_time
+    </sql>
+    <insert id="insert">
+        insert into user values
+                                (#{userPO.id},#{userPO.username},#{userPO.password},#{userPO.email},#{userPO.nickname},#{userPO.avatar},#{userPO.role},#{userPO.status},#{userPO.createdTime},#{userPO.updatedTime})
+    </insert>
+</mapper>
