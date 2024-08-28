@@ -1,0 +1,5 @@
+spring:
+  config:
+    name: zhizhi-app
+  profiles:
+    active: dev
