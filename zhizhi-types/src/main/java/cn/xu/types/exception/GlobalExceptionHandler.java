@@ -2,6 +2,7 @@ package cn.xu.types.exception;
 
 import cn.xu.types.common.Constants;
 import cn.xu.types.model.ResponseEntity;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.util.HashMap;
 import java.util.Map;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -21,6 +23,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(AppException.class)
     public ResponseEntity<String> handleAppExceptions(AppException ex) {
+        log.error("业务异常:{}", ex);
         return ResponseEntity.<String>builder()
                 .code(ex.getCode())
                 .info(ex.getMessage())
@@ -34,6 +37,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, String>> handleValidationExceptions(MethodArgumentNotValidException ex) {
+        log.error("参数校验异常:{}", ex);
         Map<String, String> errors = new HashMap<>();
         ex.getBindingResult().getAllErrors().forEach((error) -> {
             String fieldName = ((FieldError) error).getField();
@@ -56,6 +60,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<String> handleExceptions(Exception ex) {
+        log.error("全局异常:{}", ex);
         return ResponseEntity.<String>builder()
                 .code(Constants.ResponseCode.UN_ERROR.getCode())
                 .info(Constants.ResponseCode.UN_ERROR.getInfo())
