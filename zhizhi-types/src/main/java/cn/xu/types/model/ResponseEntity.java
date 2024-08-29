@@ -11,7 +11,7 @@ import java.io.Serializable;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Response<T> implements Serializable {
+public class ResponseEntity<T> implements Serializable {
 
     private static final long serialVersionUID = 5130392244064623509L;
 

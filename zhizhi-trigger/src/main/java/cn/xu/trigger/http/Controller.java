@@ -1,7 +1,6 @@
 package cn.xu.trigger.http;
 import cn.xu.types.common.Constants;
-import cn.xu.types.exception.AppException;
-import cn.xu.types.model.Response;
+import cn.xu.types.model.ResponseEntity;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -21,7 +20,7 @@ public class Controller {
      * http://localhost:8090/success
      */
     @RequestMapping("/success")
-    public Response<String> success() {
+    public ResponseEntity<String> success() {
         log.info("测试调用");
         try {
             // 随机休眠
@@ -34,7 +33,7 @@ public class Controller {
             throw new RuntimeException(e);
         }
         if (new Random().nextInt(100) == 1) throw new RuntimeException("异常");
-        return Response.<String>builder()
+        return ResponseEntity.<String>builder()
                 .code(Constants.ResponseCode.SUCCESS.getCode())
                 .info(Constants.ResponseCode.SUCCESS.getInfo())
                 .data("查询用户信息，小傅哥")

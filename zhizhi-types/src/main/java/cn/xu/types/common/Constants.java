@@ -13,9 +13,9 @@ public class Constants {
     @Getter
     public enum ResponseCode {
 
-        SUCCESS("0000", "成功"),
-        UN_ERROR("0001", "未知失败"),
-        ILLEGAL_PARAMETER("0002", "非法参数"),
+        SUCCESS("20000", "成功"),
+        UN_ERROR("20001", "未知失败"),
+        ILLEGAL_PARAMETER("20002", "非法参数"),
         ;
 
         private String code;
