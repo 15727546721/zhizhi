@@ -4,13 +4,13 @@ import cn.xu.types.common.Constants;
 import cn.xu.types.model.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.util.HashMap;
 import java.util.Map;
 
-@ControllerAdvice
+@RestControllerAdvice
 public class GlobalExceptionHandler {
 
     /**
@@ -19,7 +19,7 @@ public class GlobalExceptionHandler {
      * @param ex
      * @return
      */
-    @ExceptionHandler(Exception.class)
+    @ExceptionHandler(AppException.class)
     public ResponseEntity<String> handleAppExceptions(AppException ex) {
         return ResponseEntity.<String>builder()
                 .code(ex.getCode())
