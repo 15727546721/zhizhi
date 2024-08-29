@@ -1,5 +1,6 @@
 package cn.xu.domain.user.service;
 
+import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.model.valobj.LoginFormVO;
 
 public interface IUserLoginService {
@@ -11,4 +12,9 @@ public interface IUserLoginService {
      * @return
      */
     String loginByAdmin(LoginFormVO loginFormVO);
+
+    /**
+     * 根据token获取用户信息
+     */
+    UserEntity getInfoByToken(String token);
 }

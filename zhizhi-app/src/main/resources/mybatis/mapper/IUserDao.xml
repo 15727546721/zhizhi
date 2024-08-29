@@ -25,4 +25,10 @@
         insert into user values
                                 (#{userPO.id},#{userPO.username},#{userPO.password},#{userPO.email},#{userPO.nickname},#{userPO.avatar},#{userPO.role},#{userPO.status},#{userPO.createdTime},#{userPO.updatedTime})
     </insert>
+    <select id="selectUserByUserName" resultType="cn.xu.domain.user.model.valobj.LoginFormVO">
+        select id,username,password,role from user where username=#{username}
+    </select>
+    <select id="selectUserById" resultType="cn.xu.domain.user.model.entity.UserEntity">
+        select id,username,password,email,nickname,avatar,role,status,created_time,updated_time from user where id=#{userId}
+    </select>
 </mapper>
