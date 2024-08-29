@@ -13,14 +13,14 @@ public class Constants {
     @Getter
     public enum ResponseCode {
 
-        SUCCESS("20000", "成功"),
-        UN_ERROR("20001", "未知失败"),
-        ILLEGAL_PARAMETER("20002", "非法参数"),
-        NULL_PARAMETER("20003", "请求参数为空"),
-        NULL_RESPONSE("20004", "响应参数为空"),
+        SUCCESS(20000, "成功"),
+        UN_ERROR(20001, "未知失败"),
+        ILLEGAL_PARAMETER(20002, "非法参数"),
+        NULL_PARAMETER(20003, "请求参数为空"),
+        NULL_RESPONSE(20004, "响应参数为空"),
         ;
 
-        private String code;
+        private Integer code;
         private String info;
 
     }
