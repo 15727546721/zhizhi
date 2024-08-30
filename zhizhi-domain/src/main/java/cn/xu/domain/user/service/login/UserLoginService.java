@@ -2,7 +2,7 @@ package cn.xu.domain.user.service.login;
 
 import cn.dev33.satoken.secure.SaSecureUtil;
 import cn.dev33.satoken.stp.StpUtil;
-import cn.xu.domain.user.model.entity.UserEntity;
+import cn.xu.domain.user.model.entity.UserInfoEntity;
 import cn.xu.domain.user.model.valobj.LoginFormVO;
 import cn.xu.domain.user.repository.IUserRepository;
 import cn.xu.domain.user.service.IUserLoginService;
@@ -34,9 +34,9 @@ public class UserLoginService implements IUserLoginService {
         if (!userByUsername.getPassword().equals(password)) {
             throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "密码错误");
         }
-        if (!userByUsername.getRole().equals("admin")) {
-            throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "权限不足");
-        }
+//        if (!userByUsername.getRole().equals("admin")) {
+//            throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "权限不足");
+//        }
         // 登录
         StpUtil.login(userByUsername.getId());
         // 返回token
@@ -44,14 +44,14 @@ public class UserLoginService implements IUserLoginService {
     }
 
     @Override
-    public UserEntity getInfoByToken(String token) {
+    public UserInfoEntity getInfoByToken(String token) {
         Object userId = StpUtil.getLoginIdByToken(token);
         if (ObjectUtils.isEmpty(userId)) {
             throw new AppException(Constants.ResponseCode.ILLEGAL_PARAMETER.getCode(), "token无效");
         }
-        UserEntity userEntity = userRepository.findUserById(Long.valueOf(userId.toString()));
-        log.info("用户信息:{}", userEntity);
-        return userEntity;
+        UserInfoEntity userInfo = userRepository.findUserInfoById(Long.valueOf(userId.toString()));
+        log.info("用户信息:{}", userInfo);
+        return userInfo;
     }
 
 }

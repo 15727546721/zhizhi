@@ -40,11 +40,6 @@ public class UserPO {
     private String avatar;
 
     /**
-     * 用户角色（'user','admin'）
-     */
-    private String role;
-
-    /**
      * 用户状态（0：正常，1：封禁）
      */
     private String status;
