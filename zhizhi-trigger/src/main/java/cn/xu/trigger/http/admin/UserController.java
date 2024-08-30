@@ -2,14 +2,13 @@ package cn.xu.trigger.http.admin;
 
 import cn.xu.api.IUserServiceController;
 import cn.xu.api.model.user.LoginFormDTO;
-import cn.xu.domain.user.model.entity.UserEntity;
+import cn.xu.domain.user.model.entity.UserInfoEntity;
 import cn.xu.domain.user.model.valobj.LoginFormVO;
 import cn.xu.domain.user.service.IUserLoginService;
 import cn.xu.types.common.Constants;
 import cn.xu.types.exception.AppException;
 import cn.xu.types.model.ResponseEntity;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.catalina.User;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
@@ -41,14 +40,14 @@ public class UserController implements IUserServiceController{
 
     @GetMapping("/info")
     @Override
-    public ResponseEntity getInfoByToken(String token) {
+    public ResponseEntity<UserInfoEntity> getInfoByToken(String token) {
         log.info("管理员获取信息: {}", token);
         if (StringUtils.isEmpty(token)) {
             throw new AppException(Constants.ResponseCode.NULL_PARAMETER.getCode(), "管理员token为空");
         }
-        UserEntity UserEntity = userLoginService.getInfoByToken(token);
-        return ResponseEntity.<UserEntity>builder()
-                .data(UserEntity)
+        UserInfoEntity userInfo = userLoginService.getInfoByToken(token);
+        return ResponseEntity.<UserInfoEntity>builder()
+                .data(userInfo)
                 .code(Constants.ResponseCode.SUCCESS.getCode())
                 .info("管理员获取信息成功")
                 .build();

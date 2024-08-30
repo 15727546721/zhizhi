@@ -1,6 +1,7 @@
 package cn.xu.domain.user.repository;
 
 import cn.xu.domain.user.model.entity.UserEntity;
+import cn.xu.domain.user.model.entity.UserInfoEntity;
 import cn.xu.domain.user.model.valobj.LoginFormVO;
 
 public interface IUserRepository {
@@ -19,4 +20,11 @@ public interface IUserRepository {
      * @return
      */
     UserEntity findUserById(Long userId);
+
+    /**
+     * 根据用户id查询用户信息
+     * @param userId
+     * @return
+     */
+    UserInfoEntity findUserInfoById(Long userId);
 }

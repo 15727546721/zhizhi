@@ -1,6 +1,7 @@
 package cn.xu.infrastructure.persistent.repository;
 
 import cn.xu.domain.user.model.entity.UserEntity;
+import cn.xu.domain.user.model.entity.UserInfoEntity;
 import cn.xu.domain.user.model.valobj.LoginFormVO;
 import cn.xu.domain.user.repository.IUserRepository;
 import cn.xu.infrastructure.persistent.dao.IUserDao;
@@ -38,5 +39,12 @@ public class UserRepository implements IUserRepository {
 
         UserEntity userEntity = userDao.selectUserById(userId);
         return userEntity;
+    }
+
+    @Override
+    public UserInfoEntity findUserInfoById(Long userId) {
+        UserInfoEntity userInfo= userDao.selectUserInfoById(userId);
+
+        return userInfo;
     }
 }

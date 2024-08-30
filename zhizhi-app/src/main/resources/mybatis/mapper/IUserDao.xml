@@ -9,11 +9,11 @@
         <result property="email" column="email" jdbcType="VARCHAR"/>
         <result property="nickname" column="nickname" jdbcType="VARCHAR"/>
         <result property="avatar" column="avatar" jdbcType="VARCHAR"/>
-        <result property="role" column="role" jdbcType="CHAR"/>
         <result property="status" column="status" jdbcType="CHAR"/>
         <result property="createdTime" column="created_time" jdbcType="TIMESTAMP"/>
         <result property="updatedTime" column="updated_time" jdbcType="TIMESTAMP"/>
     </resultMap>
+
 
     <sql id="Base_Column_List">
         id,username,password,
@@ -26,9 +26,45 @@
                                 (#{userPO.id},#{userPO.username},#{userPO.password},#{userPO.email},#{userPO.nickname},#{userPO.avatar},#{userPO.role},#{userPO.status},#{userPO.createdTime},#{userPO.updatedTime})
     </insert>
     <select id="selectUserByUserName" resultType="cn.xu.domain.user.model.valobj.LoginFormVO">
-        select id,username,password,role from user where username=#{username}
+        select id,username,password from user where username=#{username}
     </select>
     <select id="selectUserById" resultType="cn.xu.domain.user.model.entity.UserEntity">
-        select id,username,password,email,nickname,avatar,role,status,created_time,updated_time from user where id=#{userId}
+        select id,username,password,email,nickname,avatar,status,created_time,updated_time from user where id=#{userId}
+    </select>
+
+
+    <!-- 定义resultMap来映射用户信息及其角色 -->
+    <resultMap id="userInfoWithRolesMap" type="cn.xu.domain.user.model.entity.UserInfoEntity">
+        <id property="id" column="id"/>
+        <result property="username" column="username"/>
+        <result property="password" column="password"/>
+        <result property="nickname" column="nickname"/>
+        <result property="email" column="email"/>
+        <result property="avatar" column="avatar"/>
+        <result property="status" column="status"/>
+        <!-- 使用collection标签的子标签collection来处理角色集合 -->
+        <collection property="roles" ofType="string">
+            <constructor>
+                <arg column="role_name"/>
+            </constructor>
+        </collection>
+    </resultMap>
+
+    <!-- SQL查询，使用JOIN来联接user表和role表 -->
+    <select id="selectUserInfoById" resultMap="userInfoWithRolesMap">
+        SELECT
+            u.id,
+            u.username,
+            u.password,
+            u.nickname,
+            u.email,
+            u.avatar,
+            u.status,
+            r.role_name
+        FROM
+            user u
+                LEFT JOIN user_role ur ON u.id = ur.user_id
+                LEFT JOIN role r ON ur.role_id = r.id
+        where u.id = #{userId}
     </select>
 </mapper>
