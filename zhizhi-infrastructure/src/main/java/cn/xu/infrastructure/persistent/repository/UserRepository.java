@@ -47,4 +47,16 @@ public class UserRepository implements IUserRepository {
 
         return userInfo;
     }
+
+    @Override
+    public UserEntity findUserByPage(int page, int size) {
+        UserEntity userEntity = userDao.selectUserByPage(page, size);
+        return userEntity;
+    }
+
+    @Override
+    public UserEntity findAdminByPage(int page, int size) {
+        UserEntity userEntity = userDao.selectAdminByPage(page, size);
+        return userEntity;
+    }
 }

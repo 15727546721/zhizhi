@@ -15,4 +15,8 @@ public interface IUserDao {
     UserEntity selectUserById(@Param("userId") Long userId);
 
     UserInfoEntity selectUserInfoById(@Param("userId") Long userId);
+
+    UserEntity selectUserByPage(@Param("page") int page, @Param("size") int size);
+
+    UserEntity selectAdminByPage(@Param("page") int page, @Param("size") int size);
 }

@@ -27,4 +27,20 @@ public interface IUserRepository {
      * @return
      */
     UserInfoEntity findUserInfoById(Long userId);
+
+    /**
+     * 根据页码和每页大小查询用户
+     * @param page
+     * @param size
+     * @return
+     */
+    UserEntity findUserByPage(int page, int size);
+
+    /**
+     * 根据页码和每页大小查询管理员
+     * @param page
+     * @param size
+     * @return
+     */
+    UserEntity findAdminByPage(int page, int size);
 }

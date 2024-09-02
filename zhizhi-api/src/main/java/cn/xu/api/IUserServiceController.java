@@ -1,5 +1,6 @@
 package cn.xu.api;
 
+import cn.xu.api.model.common.PageDTO;
 import cn.xu.api.model.user.LoginFormDTO;
 import cn.xu.types.model.ResponseEntity;
 
@@ -9,11 +10,8 @@ public interface IUserServiceController {
 
     ResponseEntity getInfoByToken(String token);
 
-    String queryUserInfo(String req);
+    ResponseEntity queryUserList(PageDTO pageDTO);
 
-    String updateUserInfo(String req);
+    ResponseEntity queryAdminList(PageDTO pageDTO);
 
-    String deleteUserInfo(String req);
-
-    String creatUserInfo(String req);
 }

@@ -1,10 +1,13 @@
 package cn.xu.trigger.http.admin;
 
 import cn.xu.api.IUserServiceController;
+import cn.xu.api.model.common.PageDTO;
 import cn.xu.api.model.user.LoginFormDTO;
+import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.model.entity.UserInfoEntity;
 import cn.xu.domain.user.model.valobj.LoginFormVO;
 import cn.xu.domain.user.service.IUserLoginService;
+import cn.xu.domain.user.service.IUserService;
 import cn.xu.types.common.Constants;
 import cn.xu.types.exception.AppException;
 import cn.xu.types.model.ResponseEntity;
@@ -21,6 +24,8 @@ public class UserController implements IUserServiceController{
 
     @Resource
     private IUserLoginService userLoginService;
+    @Resource
+    private IUserService userService;
 
     @PostMapping("/login")
     @Override
@@ -58,28 +63,36 @@ public class UserController implements IUserServiceController{
         return "logout success";
     }
 
-    @PostMapping("/info")
-    public String info() {
-        return "info success";
+
+    @GetMapping("/user/list")
+    @Override
+    public ResponseEntity queryUserList(@RequestParam PageDTO pageDTO) {
+        int page = pageDTO.getPage();
+        int size = pageDTO.getSize();
+        log.info("查询用户列表: page={}, size={}", page, size);
+        page = page < 1 ? 1 : page;
+        size = size < 1 ? 10 : size;
+        UserEntity userEntity = userService.queryUserList(page, size);
+        return ResponseEntity.<UserEntity>builder()
+                .data(userEntity)
+                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .info("查询用户列表成功")
+                .build();
     }
 
+    @GetMapping("/admin/list")
     @Override
-    public String queryUserInfo(String req) {
-        return null;
-    }
-
-    @Override
-    public String updateUserInfo(String req) {
-        return null;
-    }
-
-    @Override
-    public String deleteUserInfo(String req) {
-        return null;
-    }
-
-    @Override
-    public String creatUserInfo(String req) {
-        return null;
+    public ResponseEntity queryAdminList(@RequestParam PageDTO pageDTO) {
+        int page = pageDTO.getPage();
+        int size = pageDTO.getSize();
+        log.info("查询管理员列表: page={}, size={}", page, size);
+        page = page < 1 ? 1 : page;
+        size = size < 1 ? 10 : size;
+        UserEntity userEntity = userService.queryAdminList(page, size);
+        return ResponseEntity.<UserEntity>builder()
+                .data(userEntity)
+                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .info("查询管理员列表成功")
+                .build();
     }
 }
