@@ -12,6 +12,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Repository;
 
 import javax.annotation.Resource;
+import java.util.List;
 
 
 /**
@@ -49,14 +50,14 @@ public class UserRepository implements IUserRepository {
     }
 
     @Override
-    public UserEntity findUserByPage(int page, int size) {
-        UserEntity userEntity = userDao.selectUserByPage(page, size);
-        return userEntity;
+    public List<UserEntity> findUserByPage(int page, int size) {
+        List<UserEntity> userEntityList = userDao.selectUserByPage(page, size);
+        return userEntityList;
     }
 
     @Override
-    public UserEntity findAdminByPage(int page, int size) {
-        UserEntity userEntity = userDao.selectAdminByPage(page, size);
-        return userEntity;
+    public List<UserEntity> findAdminByPage(int page, int size) {
+        List<UserEntity> userEntityList = userDao.selectAdminByPage(page, size);
+        return userEntityList;
     }
 }

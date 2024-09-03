@@ -70,14 +70,8 @@
 
     <select id="selectUserByPage" resultType="cn.xu.domain.user.model.entity.UserEntity">
         SELECT
-            u.id, u.username, u.password, u.email, u.nickname, u.avatar, u.status, u.created_time, u.updated_time
-        FROM
-            user u
-                LEFT JOIN user_role ur ON u.id = ur.user_id
-                LEFT JOIN role r ON ur.role_id = r.id
-        WHERE
-            u.id = #{userId} AND r.role_name = 'user'
-            LIMIT #{page}, #{size}
+            u.id, u.username, u.email, u.nickname, u.avatar, u.status, u.created_time, u.updated_time
+        FROM user u LIMIT #{page}, #{size}
     </select>
 
     <select id="selectAdminByPage" resultType="cn.xu.domain.user.model.entity.UserEntity">

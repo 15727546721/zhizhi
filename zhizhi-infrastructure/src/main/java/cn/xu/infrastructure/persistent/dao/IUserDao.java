@@ -7,6 +7,8 @@ import cn.xu.infrastructure.persistent.po.UserPO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import java.util.List;
+
 @Mapper
 public interface IUserDao {
 
@@ -16,7 +18,7 @@ public interface IUserDao {
 
     UserInfoEntity selectUserInfoById(@Param("userId") Long userId);
 
-    UserEntity selectUserByPage(@Param("page") int page, @Param("size") int size);
+    List<UserEntity> selectUserByPage(@Param("page") int page, @Param("size") int size);
 
-    UserEntity selectAdminByPage(@Param("page") int page, @Param("size") int size);
+    List<UserEntity> selectAdminByPage(@Param("page") int page, @Param("size") int size);
 }

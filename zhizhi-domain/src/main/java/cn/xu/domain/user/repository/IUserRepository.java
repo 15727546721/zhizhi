@@ -4,6 +4,8 @@ import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.model.entity.UserInfoEntity;
 import cn.xu.domain.user.model.valobj.LoginFormVO;
 
+import java.util.List;
+
 public interface IUserRepository {
 
 
@@ -34,7 +36,7 @@ public interface IUserRepository {
      * @param size
      * @return
      */
-    UserEntity findUserByPage(int page, int size);
+    List<UserEntity> findUserByPage(int page, int size);
 
     /**
      * 根据页码和每页大小查询管理员
@@ -42,5 +44,5 @@ public interface IUserRepository {
      * @param size
      * @return
      */
-    UserEntity findAdminByPage(int page, int size);
+    List<UserEntity> findAdminByPage(int page, int size);
 }

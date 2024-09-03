@@ -17,6 +17,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import java.util.List;
 
 @Slf4j
 @RequestMapping("/admin")
@@ -80,15 +81,15 @@ public class UserController implements IUserServiceController{
 
     @GetMapping("/user/list")
     @Override
-    public ResponseEntity queryUserList(@RequestParam PageDTO pageDTO) {
+    public ResponseEntity queryUserList(@ModelAttribute PageDTO pageDTO) {
         int page = pageDTO.getPage();
         int size = pageDTO.getSize();
         log.info("查询用户列表: page={}, size={}", page, size);
         page = page < 1 ? 1 : page;
         size = size < 1 ? 10 : size;
-        UserEntity userEntity = userService.queryUserList(page, size);
-        return ResponseEntity.<UserEntity>builder()
-                .data(userEntity)
+        List<UserEntity> userEntityList = userService.queryUserList(page, size);
+        return ResponseEntity.<List<UserEntity>>builder()
+                .data(userEntityList)
                 .code(Constants.ResponseCode.SUCCESS.getCode())
                 .info("查询用户列表成功")
                 .build();
@@ -96,15 +97,15 @@ public class UserController implements IUserServiceController{
 
     @GetMapping("/admin/list")
     @Override
-    public ResponseEntity queryAdminList(@RequestParam PageDTO pageDTO) {
+    public ResponseEntity queryAdminList(@ModelAttribute PageDTO pageDTO) {
         int page = pageDTO.getPage();
         int size = pageDTO.getSize();
         log.info("查询管理员列表: page={}, size={}", page, size);
         page = page < 1 ? 1 : page;
         size = size < 1 ? 10 : size;
-        UserEntity userEntity = userService.queryAdminList(page, size);
-        return ResponseEntity.<UserEntity>builder()
-                .data(userEntity)
+        List<UserEntity> userEntityList = userService.queryAdminList(page, size);
+        return ResponseEntity.<List<UserEntity>>builder()
+                .data(userEntityList)
                 .code(Constants.ResponseCode.SUCCESS.getCode())
                 .info("查询管理员列表成功")
                 .build();

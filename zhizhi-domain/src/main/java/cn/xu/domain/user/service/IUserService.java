@@ -2,8 +2,10 @@ package cn.xu.domain.user.service;
 
 import cn.xu.domain.user.model.entity.UserEntity;
 
-public interface IUserService {
-    UserEntity queryUserList(int page, int size);
+import java.util.List;
 
-    UserEntity queryAdminList(int page, int size);
+public interface IUserService {
+    List<UserEntity> queryUserList(int page, int size);
+
+    List<UserEntity> queryAdminList(int page, int size);
 }
