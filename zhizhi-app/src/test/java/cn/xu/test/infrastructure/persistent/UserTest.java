@@ -1,7 +1,7 @@
 package cn.xu.test.infrastructure.persistent;
 
 import cn.xu.infrastructure.persistent.dao.IUserDao;
-import cn.xu.infrastructure.persistent.po.UserPO;
+import cn.xu.infrastructure.persistent.po.User;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -24,7 +24,7 @@ public class UserTest {
 
     @Test
     public void test() {
-        iUserserDao.insert(new UserPO(10001L, "小傅哥", "fustack", "123456", "13800138000", "fustack@qq.com", "1", "1", new Date(), new Date()));
+        iUserserDao.insert(new User(10001L, "小傅哥", "fustack", "123456", "13800138000", "fustack@qq.com", "1", "1", new Date(), new Date()));
     }
 
 

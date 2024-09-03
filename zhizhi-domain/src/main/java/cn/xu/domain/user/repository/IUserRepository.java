@@ -45,4 +45,25 @@ public interface IUserRepository {
      * @return
      */
     List<UserEntity> findAdminByPage(int page, int size);
+
+    /**
+     * 保存用户
+     * @param userEntity
+     * @return
+     */
+    int saveUser(UserEntity userEntity);
+
+    /**
+     * 更新用户
+     * @param userEntity
+     * @return
+     */
+    int updateUser(UserEntity userEntity);
+
+    /**
+     * 删除用户
+     * @param userId
+     * @return
+     */
+    int deleteUser(Long userId);
 }

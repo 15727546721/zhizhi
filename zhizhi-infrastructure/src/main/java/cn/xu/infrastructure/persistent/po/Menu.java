@@ -3,7 +3,7 @@ package cn.xu.infrastructure.persistent.po;
 import lombok.Data;
 
 @Data
-public class MenuPO {
+public class Menu {
     private Long id;                // 菜单唯一标识符
     private Long parentId;          // 父级菜单的 ID, 根菜单为 NULL
     private String path;            // 菜单路径

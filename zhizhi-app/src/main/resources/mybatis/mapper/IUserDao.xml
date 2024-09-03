@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
 <mapper namespace="cn.xu.infrastructure.persistent.dao.IUserDao">
 
-    <resultMap id="BaseResultMap" type="cn.xu.infrastructure.persistent.po.UserPO">
+    <resultMap id="BaseResultMap" type="cn.xu.infrastructure.persistent.po.User">
         <id property="id" column="id" jdbcType="BIGINT"/>
         <result property="username" column="username" jdbcType="VARCHAR"/>
         <result property="password" column="password" jdbcType="VARCHAR"/>
@@ -21,10 +21,18 @@
         role,status,created_time,
         updated_time
     </sql>
-    <insert id="insert">
-        insert into user values
-                                (#{userPO.id},#{userPO.username},#{userPO.password},#{userPO.email},#{userPO.nickname},#{userPO.avatar},#{userPO.role},#{userPO.status},#{userPO.createdTime},#{userPO.updatedTime})
+
+    <insert id="insertUser">
+        insert into user (id, username, password, email, nickname, avatar, role, status, created_time, updated_time)
+        values (#{user.id}, #{user.username}, #{user.password}, #{user.email}, #{user.nickname}, #{user.avatar}, #{role}, #{user.status}, #{user.createdTime}, #{user.updatedTime})
     </insert>
+    <update id="updateUser">
+        update user set username=#{user.username}, password=#{user.password}, email=#{user.email}, nickname=#{user.nickname}, avatar=#{user.avatar}, role=#{role}, status=#{user.status}, updated_time=#{user.updatedTime} where id=#{user.id}
+    </update>
+    <delete id="deleteUser">
+        delete from user where id=#{userId}
+    </delete>
+
     <select id="selectUserByUserName" resultType="cn.xu.domain.user.model.valobj.LoginFormVO">
         select id,username,password from user where username=#{username}
     </select>

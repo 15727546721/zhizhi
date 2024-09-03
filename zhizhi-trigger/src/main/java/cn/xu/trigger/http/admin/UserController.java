@@ -4,6 +4,7 @@ import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.api.IUserServiceController;
 import cn.xu.api.model.common.PageDTO;
 import cn.xu.api.model.user.LoginFormDTO;
+import cn.xu.api.model.user.UserDTO;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.model.entity.UserInfoEntity;
 import cn.xu.domain.user.model.valobj.LoginFormVO;
@@ -110,4 +111,71 @@ public class UserController implements IUserServiceController{
                 .info("查询管理员列表成功")
                 .build();
     }
+
+    @Override
+    public ResponseEntity addUser(UserDTO userDTO) {
+        log.info("添加用户: {}", userDTO);
+        UserEntity userEntity = UserEntity.builder()
+                .username(userDTO.getUsername())
+                .password(userDTO.getPassword())
+                .email(userDTO.getEmail())
+                .status(userDTO.getStatus())
+                .nickname(userDTO.getNickname())
+                .build();
+
+        int result = userService.addUser(userEntity);
+        if (result > 0) {
+            return ResponseEntity.<String>builder()
+                    .code(Constants.ResponseCode.SUCCESS.getCode())
+                    .info("添加用户成功")
+                    .build();
+        } else {
+            return ResponseEntity.<String>builder()
+                    .code(Constants.ResponseCode.UN_ERROR.getCode())
+                    .info("添加用户失败")
+                    .build();
+        }
+    }
+
+    @Override
+    public ResponseEntity updateUser(UserDTO userDTO) {
+        log.info("更新用户: {}", userDTO);
+        UserEntity userEntity = new UserEntity();
+        userEntity.setUsername(userDTO.getUsername());
+        userEntity.setPassword(userDTO.getPassword());
+        userEntity.setEmail(userDTO.getEmail());
+        userEntity.setNickname(userDTO.getNickname());
+        userEntity.setStatus(userDTO.getStatus());
+
+        int result = userService.updateUser(userEntity);
+        if (result > 0) {
+            return ResponseEntity.<String>builder()
+                    .code(Constants.ResponseCode.SUCCESS.getCode())
+                    .info("更新用户成功")
+                    .build();
+        } else {
+            return ResponseEntity.<String>builder()
+                    .code(Constants.ResponseCode.UN_ERROR.getCode())
+                    .info("更新用户失败")
+                    .build();
+        }
+    }
+
+    @Override
+    public ResponseEntity deleteUser(Long userId) {
+        log.info("删除用户: {}", userId);
+        int result = userService.deleteUser(userId);
+        if (result > 0) {
+            return ResponseEntity.<String>builder()
+                    .code(Constants.ResponseCode.SUCCESS.getCode())
+                    .info("删除用户成功")
+                    .build();
+        } else {
+            return ResponseEntity.<String>builder()
+                    .code(Constants.ResponseCode.UN_ERROR.getCode())
+                    .info("删除用户失败")
+                    .build();
+        }
+    }
+
 }

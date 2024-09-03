@@ -8,4 +8,10 @@ public interface IUserService {
     List<UserEntity> queryUserList(int page, int size);
 
     List<UserEntity> queryAdminList(int page, int size);
+
+    int addUser(UserEntity userEntity);
+
+    int updateUser(UserEntity userEntity);
+
+    int deleteUser(Long id);
 }

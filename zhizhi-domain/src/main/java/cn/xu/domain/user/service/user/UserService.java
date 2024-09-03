@@ -26,4 +26,22 @@ public class UserService implements IUserService {
         List<UserEntity> userEntityList = userRepository.findAdminByPage(page, size);
         return userEntityList;
     }
+
+    @Override
+    public int addUser(UserEntity userEntity) {
+        int result = userRepository.saveUser(userEntity);
+        return result;
+    }
+
+    @Override
+    public int updateUser(UserEntity userEntity) {
+        int result = userRepository.updateUser(userEntity);
+        return result;
+    }
+
+    @Override
+    public int deleteUser(Long id) {
+        int result = userRepository.deleteUser(id);
+        return result;
+    }
 }
