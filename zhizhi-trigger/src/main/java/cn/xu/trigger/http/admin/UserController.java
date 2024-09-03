@@ -1,5 +1,6 @@
 package cn.xu.trigger.http.admin;
 
+import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.api.IUserServiceController;
 import cn.xu.api.model.common.PageDTO;
 import cn.xu.api.model.user.LoginFormDTO;
@@ -59,8 +60,21 @@ public class UserController implements IUserServiceController{
     }
 
     @PostMapping("/logout")
-    public String logout() {
-        return "logout success";
+    public ResponseEntity<String> logout(String token) {
+        log.info("管理员退出: {}", token);
+        if (StringUtils.isEmpty(token)) {
+            throw new AppException(Constants.ResponseCode.NULL_PARAMETER.getCode(), "管理员token为空");
+        }
+        Object userId = StpUtil.getLoginIdByToken(token);
+        if (userId == null) {
+            throw new AppException(Constants.UserErrorCode.ILLEGAL_TOKEN.getCode(),
+                    Constants.UserErrorCode.ILLEGAL_TOKEN.getInfo());
+        }
+        StpUtil.logout(userId);
+        return ResponseEntity.<String>builder()
+                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .info("管理员退出成功")
+                .build();
     }
 
 

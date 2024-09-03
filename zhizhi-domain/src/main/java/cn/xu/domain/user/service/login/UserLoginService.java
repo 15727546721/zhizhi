@@ -47,7 +47,8 @@ public class UserLoginService implements IUserLoginService {
     public UserInfoEntity getInfoByToken(String token) {
         Object userId = StpUtil.getLoginIdByToken(token);
         if (ObjectUtils.isEmpty(userId)) {
-            throw new AppException(Constants.ResponseCode.ILLEGAL_PARAMETER.getCode(), "token无效");
+            throw new AppException(Constants.UserErrorCode.ILLEGAL_TOKEN.getCode(),
+                    Constants.UserErrorCode.ILLEGAL_TOKEN.getInfo());
         }
         UserInfoEntity userInfo = userRepository.findUserInfoById(Long.valueOf(userId.toString()));
         log.info("用户信息:{}", userInfo);
