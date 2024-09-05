@@ -16,7 +16,8 @@
 
 
     <sql id="Base_Column_List">
-        id,username,password,
+        id
+        ,username,password,
         email,nickname,avatar,
         role,status,created_time,
         updated_time
@@ -24,20 +25,44 @@
 
     <insert id="insertUser">
         insert into user (id, username, password, email, nickname, avatar, role, status, created_time, updated_time)
-        values (#{user.id}, #{user.username}, #{user.password}, #{user.email}, #{user.nickname}, #{user.avatar}, #{role}, #{user.status}, #{user.createdTime}, #{user.updatedTime})
+        values (#{user.id}, #{user.username}, #{user.password}, #{user.email}, #{user.nickname}, #{user.avatar},
+                #{role}, #{user.status}, #{user.createdTime}, #{user.updatedTime})
     </insert>
     <update id="updateUser">
-        update user set username=#{user.username}, password=#{user.password}, email=#{user.email}, nickname=#{user.nickname}, avatar=#{user.avatar}, role=#{role}, status=#{user.status}, updated_time=#{user.updatedTime} where id=#{user.id}
+        update user
+        set username=#{user.username},
+            password=#{user.password},
+            email=#{user.email},
+            nickname=#{user.nickname},
+            avatar=#{user.avatar},
+            role=#{role},
+            status=#{user.status},
+            updated_time=#{user.updatedTime}
+        where id = #{user.id}
     </update>
     <delete id="deleteUser">
-        delete from user where id=#{userId}
+        delete
+        from user
+        where id = #{userId}
     </delete>
 
     <select id="selectUserByUserName" resultType="cn.xu.domain.user.model.valobj.LoginFormVO">
-        select id,username,password from user where username=#{username}
+        select id, username, password
+        from user
+        where username = #{username}
     </select>
     <select id="selectUserById" resultType="cn.xu.domain.user.model.entity.UserEntity">
-        select id,username,password,email,nickname,avatar,status,created_time,updated_time from user where id=#{userId}
+        select id,
+               username,
+               password,
+               email,
+               nickname,
+               avatar,
+               status,
+               created_time,
+               updated_time
+        from user
+        where id = #{userId}
     </select>
 
 
@@ -60,37 +85,46 @@
 
     <!-- SQL查询，使用JOIN来联接user表和role表 -->
     <select id="selectUserInfoById" resultMap="userInfoWithRolesMap">
-        SELECT
-            u.id,
-            u.username,
-            u.password,
-            u.nickname,
-            u.email,
-            u.avatar,
-            u.status,
-            r.role_name
-        FROM
-            user u
-                LEFT JOIN user_role ur ON u.id = ur.user_id
-                LEFT JOIN role r ON ur.role_id = r.id
+        SELECT u.id,
+               u.username,
+               u.password,
+               u.nickname,
+               u.email,
+               u.avatar,
+               u.status,
+               r.role_name
+        FROM user u
+                 LEFT JOIN user_role ur ON u.id = ur.user_id
+                 LEFT JOIN role r ON ur.role_id = r.id
         where u.id = #{userId}
     </select>
 
     <select id="selectUserByPage" resultType="cn.xu.infrastructure.persistent.po.User">
-        SELECT
-            u.id, u.username, u.email, u.nickname, u.avatar, u.status, u.created_time as createdTime, u.updated_time as updatedTime
+        SELECT u.id,
+               u.username,
+               u.email,
+               u.nickname,
+               u.avatar,
+               u.status,
+               u.created_time as createdTime,
+               u.updated_time as updatedTime
         FROM user u LIMIT #{page}, #{size}
     </select>
 
     <select id="selectAdminByPage" resultType="cn.xu.infrastructure.persistent.po.User">
-        SELECT
-            u.id, u.username, u.email, u.nickname, u.avatar, u.status, u.created_time as createdTime, u.updated_time as updatedTime
-        FROM
-            user u
-                LEFT JOIN user_role ur ON u.id = ur.user_id
-                LEFT JOIN role r ON ur.role_id = r.id
-        WHERE
-            r.role_name = 'admin'
-            LIMIT #{page}, #{size}
+        SELECT u.id,
+               u.username,
+               u.email,
+               u.nickname,
+               u.avatar,
+               u.status,
+               u.created_time as createdTime,
+               u.updated_time as updatedTime
+        FROM user u
+                 LEFT JOIN user_role ur ON u.id = ur.user_id
+                 LEFT JOIN role r ON ur.role_id = r.id
+        WHERE r.role_name = 'admin'
+            LIMIT #{page}
+            , #{size}
     </select>
 </mapper>
