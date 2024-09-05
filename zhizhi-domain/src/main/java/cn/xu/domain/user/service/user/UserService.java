@@ -18,12 +18,14 @@ public class UserService implements IUserService {
     @Override
     public List<UserEntity> queryUserList(int page, int size) {
         List<UserEntity> userEntityList = userRepository.findUserByPage(page, size);
+        log.info("query user list, page:{}, size:{}, result size:{}", page, size, userEntityList.size());
         return userEntityList;
     }
 
     @Override
     public List<UserEntity> queryAdminList(int page, int size) {
         List<UserEntity> userEntityList = userRepository.findAdminByPage(page, size);
+        log.info("query admin list, page:{}, size:{}, result size:{}", page, size, userEntityList.size());
         return userEntityList;
     }
 

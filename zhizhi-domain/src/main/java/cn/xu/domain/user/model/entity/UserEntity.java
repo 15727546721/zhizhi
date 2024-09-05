@@ -1,6 +1,5 @@
 package cn.xu.domain.user.model.entity;
 
-import cn.xu.types.model.PageResponse;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,7 +11,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Builder
 @Data
-public class UserEntity extends PageResponse {
+public class UserEntity {
     private Long id;
     private String username;
     private String password;
@@ -21,5 +20,5 @@ public class UserEntity extends PageResponse {
     private String avatar;
     private String status;
     private LocalDateTime createTime;
-    private LocalDateTime  updateTime;
+    private LocalDateTime updateTime;
 }

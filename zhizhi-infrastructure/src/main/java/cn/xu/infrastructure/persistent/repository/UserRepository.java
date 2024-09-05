@@ -1,7 +1,6 @@
 package cn.xu.infrastructure.persistent.repository;
 
 import cn.dev33.satoken.secure.SaSecureUtil;
-import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.model.entity.UserInfoEntity;
 import cn.xu.domain.user.model.valobj.LoginFormVO;
@@ -15,8 +14,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Repository;
 
 import javax.annotation.Resource;
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 
 /**
@@ -48,23 +48,29 @@ public class UserRepository implements IUserRepository {
 
     @Override
     public UserInfoEntity findUserInfoById(Long userId) {
-        UserInfoEntity userInfo= userDao.selectUserInfoById(userId);
+        UserInfoEntity userInfo = userDao.selectUserInfoById(userId);
 
         return userInfo;
     }
 
     @Override
     public List<UserEntity> findUserByPage(int page, int size) {
-        List<UserEntity> userEntityList = userDao.selectUserByPage(page, size);
-        log.info("findUserByPage: " + userEntityList);
-        return userEntityList;
+        List<User> userList = userDao.selectUserByPage(page - 1, size);
+        log.info("findUserByPage: " + userList);
+
+        return userList.stream()
+                .map(this::convertToUserEntity)
+                .collect(Collectors.toList());
     }
 
     @Override
     public List<UserEntity> findAdminByPage(int page, int size) {
-        List<UserEntity> userEntityList = userDao.selectAdminByPage(page, size);
-        log.info("findAdminByPage: " + userEntityList);
-        return userEntityList;
+        List<User> userList = userDao.selectAdminByPage(page - 1, size);
+        log.info("findAdminByPage: " + userList);
+
+        return userList.stream()
+                .map(this::convertToUserEntity)
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -76,8 +82,8 @@ public class UserRepository implements IUserRepository {
                 .status(userEntity.getStatus())
                 .nickname(userEntity.getNickname())
                 .avatar(null)
-                .createdTime(new Date())
-                .updatedTime(new Date())
+                .createdTime(LocalDateTime.now())
+                .updatedTime(LocalDateTime.now())
                 .build();
         int result = userDao.insertUser(user);
         return result;
@@ -92,7 +98,7 @@ public class UserRepository implements IUserRepository {
                 .status(userEntity.getStatus())
                 .nickname(userEntity.getNickname())
                 .avatar(userEntity.getAvatar()) // 如果有新的头像，设置它
-                .updatedTime(new Date()) // 更新更新时间
+                .updatedTime(LocalDateTime.now()) // 更新更新时间
                 .build();
         int result = userDao.updateUser(user);
         return result;
@@ -102,5 +108,19 @@ public class UserRepository implements IUserRepository {
     public int deleteUser(Long userId) {
         int result = userDao.deleteUser(userId);
         return result;
+    }
+
+    private UserEntity convertToUserEntity(User user) {
+        return UserEntity.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .password(user.getPassword())
+                .nickname(user.getNickname())
+                .email(user.getEmail())
+                .avatar(user.getAvatar())
+                .status(user.getStatus())
+                .createTime(user.getCreatedTime())
+                .updateTime(user.getUpdatedTime())
+                .build();
     }
 }

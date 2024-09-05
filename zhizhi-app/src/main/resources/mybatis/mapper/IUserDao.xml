@@ -76,15 +76,15 @@
         where u.id = #{userId}
     </select>
 
-    <select id="selectUserByPage" resultType="cn.xu.domain.user.model.entity.UserEntity">
+    <select id="selectUserByPage" resultType="cn.xu.infrastructure.persistent.po.User">
         SELECT
-            u.id, u.username, u.email, u.nickname, u.avatar, u.status, u.created_time, u.updated_time
+            u.id, u.username, u.email, u.nickname, u.avatar, u.status, u.created_time as createdTime, u.updated_time as updatedTime
         FROM user u LIMIT #{page}, #{size}
     </select>
 
-    <select id="selectAdminByPage" resultType="cn.xu.domain.user.model.entity.UserEntity">
+    <select id="selectAdminByPage" resultType="cn.xu.infrastructure.persistent.po.User">
         SELECT
-            u.id, u.username, u.password, u.email, u.nickname, u.avatar, u.status, u.created_time, u.updated_time
+            u.id, u.username, u.email, u.nickname, u.avatar, u.status, u.created_time as createdTime, u.updated_time as updatedTime
         FROM
             user u
                 LEFT JOIN user_role ur ON u.id = ur.user_id
