@@ -1,7 +1,9 @@
 package cn.xu.infrastructure.persistent.po;
 
+import lombok.Builder;
 import lombok.Data;
 
+@Builder
 @Data
 public class UserRole {
     private Long id;                // 关系唯一标识符

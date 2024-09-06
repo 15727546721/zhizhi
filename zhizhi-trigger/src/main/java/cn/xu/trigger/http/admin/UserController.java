@@ -112,12 +112,12 @@ public class UserController implements IUserServiceController{
                 .build();
     }
 
+    @PostMapping("/user/add")
     @Override
-    public ResponseEntity addUser(UserDTO userDTO) {
+    public ResponseEntity addUser(@RequestBody UserDTO userDTO) {
         log.info("添加用户: {}", userDTO);
         UserEntity userEntity = UserEntity.builder()
                 .username(userDTO.getUsername())
-                .password(userDTO.getPassword())
                 .email(userDTO.getEmail())
                 .status(userDTO.getStatus())
                 .nickname(userDTO.getNickname())
@@ -137,8 +137,9 @@ public class UserController implements IUserServiceController{
         }
     }
 
+    @PostMapping("/user/update")
     @Override
-    public ResponseEntity updateUser(UserDTO userDTO) {
+    public ResponseEntity updateUser(@RequestBody UserDTO userDTO) {
         log.info("更新用户: {}", userDTO);
         UserEntity userEntity = new UserEntity();
         userEntity.setUsername(userDTO.getUsername());
@@ -161,8 +162,9 @@ public class UserController implements IUserServiceController{
         }
     }
 
+    @DeleteMapping("/user/delete")
     @Override
-    public ResponseEntity deleteUser(Long userId) {
+    public ResponseEntity deleteUser(@RequestParam Long userId) {
         log.info("删除用户: {}", userId);
         int result = userService.deleteUser(userId);
         if (result > 0) {

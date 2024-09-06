@@ -21,7 +21,7 @@ public class Article implements Serializable {
     /**
      * 文章的唯一标识符
      */
-    private Integer id;
+    private Long id;
 
     /**
      * 文章的标题
@@ -56,12 +56,12 @@ public class Article implements Serializable {
     /**
      * 逻辑删除标志，0表示未删除，1表示已删除
      */
-    private Integer deleted;
+    private Long deleted;
 
     /**
-     * 文章的状态：草稿、发布、下架
+     * 文章的状态：0草稿、1发布、2下架、3待审核、4审核不通过
      */
-    private Object status;
+    private Integer status;
 
     /**
      * 是否允许评论，0表示不允许，1表示允许
@@ -76,12 +76,12 @@ public class Article implements Serializable {
     /**
      * 文章分类的ID
      */
-    private Integer categoryId;
+    private Long categoryId;
 
     /**
      * 文章的阅读次数
      */
-    private Integer viewCount;
+    private Long viewCount;
 
     private static final long serialVersionUID = 1L;
 

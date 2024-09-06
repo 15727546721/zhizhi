@@ -14,33 +14,22 @@
         <result property="updatedTime" column="updated_time" jdbcType="TIMESTAMP"/>
     </resultMap>
 
-
-    <sql id="Base_Column_List">
-        id
-        ,username,password,
-        email,nickname,avatar,
-        role,status,created_time,
-        updated_time
-    </sql>
-
-    <insert id="insertUser">
-        insert into user (id, username, password, email, nickname, avatar, role, status, created_time, updated_time)
+    <insert id="insertUser" parameterType="cn.xu.domain.user.model.entity.UserEntity">
+        insert into user (id, username, password, email, nickname, avatar, status, created_time, updated_time)
         values (#{user.id}, #{user.username}, #{user.password}, #{user.email}, #{user.nickname}, #{user.avatar},
-                #{role}, #{user.status}, #{user.createdTime}, #{user.updatedTime})
+                #{user.status}, now(), now())
     </insert>
-    <update id="updateUser">
-        update user
-        set username=#{user.username},
-            password=#{user.password},
-            email=#{user.email},
-            nickname=#{user.nickname},
-            avatar=#{user.avatar},
-            role=#{role},
-            status=#{user.status},
-            updated_time=#{user.updatedTime}
-        where id = #{user.id}
+    <update id="updateUser" parameterType="cn.xu.domain.user.model.entity.UserEntity">
+        update user set
+                        username=username,
+            email=email,
+            nickname=nickname,
+            avatar=avatar,
+            status=status,
+            updated_time=now()
+        where id = id
     </update>
-    <delete id="deleteUser">
+    <delete id="deleteUser" parameterType="java.lang.Long">
         delete
         from user
         where id = #{userId}
@@ -51,7 +40,7 @@
         from user
         where username = #{username}
     </select>
-    <select id="selectUserById" resultType="cn.xu.domain.user.model.entity.UserEntity">
+    <select id="selectUserById" resultMap="BaseResultMap">
         select id,
                username,
                password,
@@ -99,27 +88,27 @@
         where u.id = #{userId}
     </select>
 
-    <select id="selectUserByPage" resultType="cn.xu.infrastructure.persistent.po.User">
+    <select id="selectUserByPage" resultMap="BaseResultMap">
         SELECT u.id,
                u.username,
                u.email,
                u.nickname,
                u.avatar,
                u.status,
-               u.created_time as createdTime,
-               u.updated_time as updatedTime
+               u.created_time,
+               u.updated_time
         FROM user u LIMIT #{page}, #{size}
     </select>
 
-    <select id="selectAdminByPage" resultType="cn.xu.infrastructure.persistent.po.User">
+    <select id="selectAdminByPage" resultMap="BaseResultMap">
         SELECT u.id,
                u.username,
                u.email,
                u.nickname,
                u.avatar,
                u.status,
-               u.created_time as createdTime,
-               u.updated_time as updatedTime
+               u.created_time,
+               u.updated_time
         FROM user u
                  LEFT JOIN user_role ur ON u.id = ur.user_id
                  LEFT JOIN role r ON ur.role_id = r.id
