@@ -119,9 +119,29 @@ public class UserRepository implements IUserRepository {
     }
 
     @Override
-    public int deleteUser(Long userId) {
-        int result = userDao.deleteUser(userId);
-        return result;
+    public void deleteUser(Long userId) {
+        try {
+            transactionTemplate.execute(status -> {
+                try {
+                    // 删除用户角色关联记录
+                    userRoleDao.deleteUserRoleByUserId(userId);
+                    // 删除用户记录
+                    userDao.deleteUser(userId);
+                    return null; // 没有异常则返回 null
+                } catch (Exception e) {
+                    // 记录错误日志
+                    log.error("删除用户失败, 用户ID: " + userId, e);
+                    // 标记事务为回滚
+                    status.setRollbackOnly();
+                    // 抛出异常以确保事务回滚
+                    throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "删除用户失败");
+                }
+            });
+        } catch (RuntimeException e) {
+            // 处理事务外层的异常（可选）
+            log.error("删除用户过程中发生异常", e);
+            throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "出现未知异常，删除用户失败");
+        }
     }
 
     private UserEntity convertToUserEntity(User user) {

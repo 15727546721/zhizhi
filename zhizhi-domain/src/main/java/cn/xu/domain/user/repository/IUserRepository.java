@@ -65,5 +65,5 @@ public interface IUserRepository {
      * @param userId
      * @return
      */
-    int deleteUser(Long userId);
+    void deleteUser(Long userId);
 }

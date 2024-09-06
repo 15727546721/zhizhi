@@ -6,4 +6,6 @@ import org.apache.ibatis.annotations.Mapper;
 @Mapper
 public interface IUserRoleDao {
     int insert(UserRole userRole);
+
+    int deleteUserRoleByUserId(Long userId);
 }

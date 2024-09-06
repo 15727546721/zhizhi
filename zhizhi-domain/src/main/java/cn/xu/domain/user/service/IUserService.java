@@ -13,5 +13,5 @@ public interface IUserService {
 
     int updateUser(UserEntity userEntity);
 
-    int deleteUser(Long id);
+    void deleteUser(Long id);
 }

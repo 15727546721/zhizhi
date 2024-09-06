@@ -166,18 +166,11 @@ public class UserController implements IUserServiceController{
     @Override
     public ResponseEntity deleteUser(@RequestParam Long userId) {
         log.info("删除用户: {}", userId);
-        int result = userService.deleteUser(userId);
-        if (result > 0) {
-            return ResponseEntity.<String>builder()
-                    .code(Constants.ResponseCode.SUCCESS.getCode())
-                    .info("删除用户成功")
-                    .build();
-        } else {
-            return ResponseEntity.<String>builder()
-                    .code(Constants.ResponseCode.UN_ERROR.getCode())
-                    .info("删除用户失败")
-                    .build();
-        }
+        userService.deleteUser(userId);
+        return ResponseEntity.<String>builder()
+                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .info("删除用户成功")
+                .build();
     }
 
 }
