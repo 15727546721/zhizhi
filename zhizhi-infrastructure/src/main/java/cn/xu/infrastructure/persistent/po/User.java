@@ -47,11 +47,11 @@ public class User {
     /**
      * 创建时间
      */
-    private LocalDateTime createdTime;
+    private LocalDateTime createTime;
 
     /**
      * 更新时间
      */
-    private LocalDateTime updatedTime;
+    private LocalDateTime updateTime;
 
 }

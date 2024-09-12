@@ -17,8 +17,6 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.annotation.Resource;
-import java.sql.SQLIntegrityConstraintViolationException;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -65,7 +63,7 @@ public class UserRepository implements IUserRepository {
 
     @Override
     public List<UserEntity> findUserByPage(int page, int size) {
-        List<User> userList = userDao.selectUserByPage(page - 1, size);
+        List<User> userList = userDao.selectUserByPage((page - 1) * size, size);
         log.info("findUserByPage: " + userList);
 
         return userList.stream()
@@ -153,8 +151,8 @@ public class UserRepository implements IUserRepository {
                 .email(user.getEmail())
                 .avatar(user.getAvatar())
                 .status(user.getStatus())
-                .createTime(user.getCreatedTime())
-                .updateTime(user.getUpdatedTime())
+                .createTime(user.getCreateTime())
+                .updateTime(user.getUpdateTime())
                 .build();
     }
 }

@@ -10,12 +10,12 @@
         <result property="nickname" column="nickname" jdbcType="VARCHAR"/>
         <result property="avatar" column="avatar" jdbcType="VARCHAR"/>
         <result property="status" column="status" jdbcType="CHAR"/>
-        <result property="createdTime" column="created_time" jdbcType="TIMESTAMP"/>
-        <result property="updatedTime" column="updated_time" jdbcType="TIMESTAMP"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
     </resultMap>
 
     <insert id="insertUser" parameterType="cn.xu.domain.user.model.entity.UserEntity">
-        insert into user (id, username, password, email, nickname, avatar, status, created_time, updated_time)
+        insert into user (id, username, password, email, nickname, avatar, status, create_time, update_time)
         values (#{user.id}, #{user.username}, #{user.password}, #{user.email}, #{user.nickname}, #{user.avatar},
                 #{user.status}, now(), now())
     </insert>
@@ -26,7 +26,7 @@
             nickname=nickname,
             avatar=avatar,
             status=status,
-            updated_time=now()
+            update_time=now()
         where id = id
     </update>
     <delete id="deleteUser" parameterType="java.lang.Long">
@@ -95,8 +95,8 @@
                u.nickname,
                u.avatar,
                u.status,
-               u.created_time,
-               u.updated_time
+               u.create_time,
+               u.update_time
         FROM user u LIMIT #{page}, #{size}
     </select>
 
