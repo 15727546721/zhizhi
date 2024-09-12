@@ -1,11 +1,17 @@
 package cn.xu.trigger.listener;
 
 import cn.dev33.satoken.stp.StpInterface;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
 
+
+/**
+ * 用户权限验证接口实现
+ */
+@Slf4j
 @Component
 public class UserPermission implements StpInterface {
 
@@ -23,7 +29,7 @@ public class UserPermission implements StpInterface {
         list.add("user-update");
         list.add("user-get");
         list.add("article-get");
-        System.out.println("用户权限列表：" + list);
+        log.info("用户权限列表：{}", list);
         return list;
     }
 
@@ -37,7 +43,7 @@ public class UserPermission implements StpInterface {
         list.add("user");
         list.add("admin");
         list.add("super-admin");
-        System.out.println("用户角色列表：" + list);
+        log.info("用户角色列表：{}", list);
         return list;
     }
 

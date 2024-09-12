@@ -1,7 +1,7 @@
 package cn.xu.trigger.http.admin;
 
 import cn.dev33.satoken.stp.StpUtil;
-import cn.xu.api.IUserServiceController;
+import cn.xu.api.IAdminServiceController;
 import cn.xu.api.model.common.PageDTO;
 import cn.xu.api.model.user.LoginFormDTO;
 import cn.xu.api.model.user.UserDTO;
@@ -23,7 +23,7 @@ import java.util.List;
 @Slf4j
 @RequestMapping("/admin")
 @RestController
-public class UserController implements IUserServiceController{
+public class AdminController implements IAdminServiceController {
 
     @Resource
     private IUserLoginService userLoginService;
