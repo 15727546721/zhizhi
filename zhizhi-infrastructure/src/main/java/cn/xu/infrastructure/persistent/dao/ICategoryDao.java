@@ -11,4 +11,8 @@ public interface ICategoryDao {
     void insert(Category category);
 
     List<Category> selectListByPage(@Param("page") int page, @Param("size") int size);
+
+    void update(Category category);
+
+    void delete(@Param("list") List<Long> idList);
 }

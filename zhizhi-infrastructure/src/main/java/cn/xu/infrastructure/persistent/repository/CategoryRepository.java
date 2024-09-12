@@ -27,6 +27,7 @@ public class CategoryRepository implements ICategoryRepository {
             categoryDao.insert(Category.builder()
                     .id(category.getId())
                     .name(category.getName())
+                    .description(category.getDescription())
                     .build());
         } catch (Exception e) {
             log.error("保存分类失败", e);
@@ -43,6 +44,30 @@ public class CategoryRepository implements ICategoryRepository {
                 .collect(Collectors.toList());
 
         return categoryEntityList;
+    }
+
+    @Override
+    public void update(CategoryEntity categoryEntity) {
+        try {
+            categoryDao.update(Category.builder()
+                    .id(categoryEntity.getId())
+                    .name(categoryEntity.getName())
+                    .description(categoryEntity.getDescription())
+                    .build());
+        } catch (Exception e) {
+            log.error("更新分类失败", e);
+            throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "更新分类失败");
+        }
+    }
+
+    @Override
+    public void delete(List<Long> idList) {
+        try {
+            categoryDao.delete(idList);
+        } catch (Exception e) {
+            log.error("删除分类失败", e);
+            throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "删除分类失败");
+        }
     }
 
     private CategoryEntity convertToCategoryEntity(Category category) {

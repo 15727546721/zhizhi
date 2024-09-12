@@ -22,6 +22,18 @@
         insert into category (name, description, create_time, update_time)
         values (#{name}, #{description}, now(), now())
     </insert>
+    <update id="update" parameterType="cn.xu.infrastructure.persistent.po.Category">
+        update category set name = #{name}, description = #{description}, update_time = now()
+        where id = #{id}
+    </update>
+
+    <delete id="delete" parameterType="java.util.List">
+        DELETE FROM category
+        WHERE id IN
+        <foreach item="id" collection="list" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </delete>
 
     <select id="selectListByPage" resultMap="BaseResultMap">
         select id, name, description, create_time, update_time from category limit #{page}, #{size}

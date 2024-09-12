@@ -56,4 +56,41 @@ public class CategoryController implements ICategoryServiceController {
                 .data(categoryEntity)
                 .build();
     }
+
+    @PostMapping("/update")
+    @Override
+    public ResponseEntity updateCategory(@RequestBody CategoryDTO categoryDTO) {
+        if (ObjectUtils.isEmpty(categoryDTO)) {
+            return ResponseEntity.builder()
+                    .code(Constants.ResponseCode.NULL_PARAMETER.getCode())
+                    .info(Constants.ResponseCode.NULL_PARAMETER.getInfo())
+                    .build();
+        }
+        CategoryEntity categoryEntity = CategoryEntity.builder()
+                .id(categoryDTO.getId())
+                .name(categoryDTO.getName())
+                .description(categoryDTO.getDescription())
+                .build();
+        categoryRepository.update(categoryEntity);
+        return ResponseEntity.builder()
+                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .info("更新分类成功")
+                .build();
+    }
+
+    @PostMapping("/delete")
+    @Override
+    public ResponseEntity deleteCategory(@RequestBody List<Long> idList) {
+        if (idList.isEmpty()) {
+            return ResponseEntity.builder()
+                    .code(Constants.ResponseCode.NULL_PARAMETER.getCode())
+                    .info(Constants.ResponseCode.NULL_PARAMETER.getInfo())
+                    .build();
+        }
+        categoryRepository.delete(idList);
+        return ResponseEntity.builder()
+                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .info("删除分类成功")
+                .build();
+    }
 }

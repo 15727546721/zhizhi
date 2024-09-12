@@ -8,4 +8,8 @@ public interface ICategoryRepository {
     void save(CategoryEntity category);
 
     List<CategoryEntity> queryCategoryList(int page, int size);
+
+    void update(CategoryEntity categoryEntity);
+
+    void delete(List<Long> idList);
 }
