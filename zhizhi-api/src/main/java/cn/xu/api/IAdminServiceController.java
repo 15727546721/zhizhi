@@ -2,7 +2,6 @@ package cn.xu.api;
 
 import cn.xu.api.model.common.PageDTO;
 import cn.xu.api.model.user.LoginFormDTO;
-import cn.xu.api.model.user.LoginOrRegisterDTO;
 import cn.xu.api.model.user.UserDTO;
 import cn.xu.types.model.ResponseEntity;
 

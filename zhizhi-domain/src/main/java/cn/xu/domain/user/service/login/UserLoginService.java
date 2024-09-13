@@ -1,6 +1,5 @@
 package cn.xu.domain.user.service.login;
 
-import cn.dev33.satoken.context.model.SaStorage;
 import cn.dev33.satoken.secure.SaSecureUtil;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.domain.user.model.entity.UserInfoEntity;

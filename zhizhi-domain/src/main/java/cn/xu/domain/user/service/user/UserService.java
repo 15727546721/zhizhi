@@ -1,6 +1,5 @@
 package cn.xu.domain.user.service.user;
 
-import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.repository.IUserRepository;
 import cn.xu.domain.user.service.IUserService;
