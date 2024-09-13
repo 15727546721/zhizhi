@@ -61,6 +61,12 @@
             <artifactId>junit</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/io.minio/minio -->
+        <dependency>
+            <groupId>io.minio</groupId>
+            <artifactId>minio</artifactId>
+            <version>8.5.12</version>
+        </dependency>
         <!--权限框架-->
         <!-- Sa-Token 权限认证，在线文档：https://sa-token.cc -->
         <dependency>
