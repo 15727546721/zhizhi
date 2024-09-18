@@ -93,7 +93,7 @@ redis:
       keep-alive: true
 
 minio:
-  url: http://localhost:9000
+  url: http://localhost:5000
   accessKey: admin
   secretKey: superadmin
   bucketName: your-bucket-name

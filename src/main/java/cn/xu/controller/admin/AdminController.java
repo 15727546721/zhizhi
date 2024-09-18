@@ -1,6 +1,5 @@
 package cn.xu.controller.admin;
 
-import cn.dev33.satoken.annotation.SaCheckRole;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.common.Constants;
 import cn.xu.common.ResponseEntity;
