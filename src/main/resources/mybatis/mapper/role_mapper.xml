@@ -11,4 +11,13 @@
         <result property="desc" column="desc" jdbcType="VARCHAR"/>
     </resultMap>
 
+    <select id="selectRolesByUserid" resultType="java.lang.String">
+        SELECT role_name
+        FROM user
+                 JOIN user_role ON user.id = user_role.user_id
+                 JOIN role ON user_role.role_id = role.id
+        WHERE user.id = #{userid}
+    </select>
+
+
 </mapper>

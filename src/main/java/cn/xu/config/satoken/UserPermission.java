@@ -1,9 +1,14 @@
 package cn.xu.config.satoken;
 
+import cn.dev33.satoken.session.SaSession;
 import cn.dev33.satoken.stp.StpInterface;
+import cn.dev33.satoken.stp.StpUtil;
+import cn.xu.infrastructure.persistent.repository.PermissionRepository;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,7 +18,11 @@ import java.util.List;
  */
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class UserPermission implements StpInterface {
+
+    @Resource
+    private PermissionRepository permissionRepository;
 
     /**
      * 返回一个账号所拥有的权限码集合
@@ -38,13 +47,13 @@ public class UserPermission implements StpInterface {
      */
     @Override
     public List<String> getRoleList(Object loginId, String loginType) {
-        // 本list仅做模拟，实际项目中要根据具体业务逻辑来查询角色
-        List<String> list = new ArrayList<>();
-        list.add("user");
-        list.add("admin");
-        list.add("super-admin");
-        log.info("用户角色列表：{}", list);
-        return list;
+        SaSession session = StpUtil.getSessionByLoginId(loginId);
+        List<String> roleList = session.get("Role_List", () -> {
+            // 从数据库查询这个账号id拥有的角色列表
+            return permissionRepository.findRolesByUserid(Long.valueOf((String) loginId));
+        });
+        log.info("用户id：{} 用户角色列表：{}", loginId, roleList);
+        return  roleList;
     }
 
 }
