@@ -2,9 +2,9 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="cn.xu.infrastructure.persistent.dao.ICategoryDao">
+<mapper namespace="cn.xu.infrastructure.persistent.dao.ITagDao">
 
-    <resultMap id="BaseResultMap" type="cn.xu.infrastructure.persistent.po.Category">
+    <resultMap id="BaseResultMap" type="cn.xu.infrastructure.persistent.po.Tag">
         <id property="id" column="id" jdbcType="BIGINT"/>
         <result property="name" column="name" jdbcType="VARCHAR"/>
         <result property="description" column="description" jdbcType="VARCHAR"/>
@@ -13,22 +13,24 @@
     </resultMap>
 
     <sql id="Base_Column_List">
-        id
-        ,name,description,
-        parent_id,created_time,updated_time
+        id,name,description,
+        create_time,update_time
     </sql>
 
-    <insert id="insert" parameterType="cn.xu.infrastructure.persistent.po.Category">
-        insert into category (name, description, create_time, update_time)
-        values (#{name}, #{description}, now(), now())
+    <insert id="insert" parameterType="cn.xu.infrastructure.persistent.po.Tag">
+        INSERT INTO tag (name, description)
+        VALUES (#{name}, #{description})
     </insert>
-    <update id="update" parameterType="cn.xu.infrastructure.persistent.po.Category">
-        update category set name = #{name}, description = #{description}, update_time = now()
+
+    <update id="update" parameterType="cn.xu.infrastructure.persistent.po.Tag">
+        update tag
+        set name = #{name},
+            description = #{description}
         where id = #{id}
     </update>
 
     <delete id="delete" parameterType="java.util.List">
-        DELETE FROM category
+        DELETE FROM tag
         WHERE id IN
         <foreach item="id" collection="list" open="(" close=")" separator=",">
             #{id}
@@ -36,7 +38,8 @@
     </delete>
 
     <select id="selectListByPage" resultMap="BaseResultMap">
-        select id, name, description, create_time, update_time
-        from category limit #{page}, #{size}
+        SELECT id, name, description, create_time, update_time
+        FROM tag LIMIT #{page}, #{size}
     </select>
+
 </mapper>
