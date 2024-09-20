@@ -15,4 +15,6 @@ public interface ITagDao {
     void update(Tag tag);
 
     void delete(List<Long> idList);
+
+    Tag selectById(@Param("id") Long tagId);
 }

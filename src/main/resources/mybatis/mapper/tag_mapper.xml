@@ -18,8 +18,8 @@
     </sql>
 
     <insert id="insert" parameterType="cn.xu.infrastructure.persistent.po.Tag">
-        INSERT INTO tag (name, description)
-        VALUES (#{name}, #{description})
+        INSERT INTO tag (name, description, create_time, update_time)
+        VALUES (#{name}, #{description}, NOW(), NOW())
     </insert>
 
     <update id="update" parameterType="cn.xu.infrastructure.persistent.po.Tag">
@@ -40,6 +40,12 @@
     <select id="selectListByPage" resultMap="BaseResultMap">
         SELECT id, name, description, create_time, update_time
         FROM tag LIMIT #{page}, #{size}
+    </select>
+
+    <select id="selectById" resultType="cn.xu.infrastructure.persistent.po.Tag">
+        SELECT id, name, description, create_time, update_time
+        FROM tag
+        WHERE id = #{id}
     </select>
 
 </mapper>

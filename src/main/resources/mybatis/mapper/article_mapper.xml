@@ -10,22 +10,32 @@
         <result property="content" column="content" jdbcType="VARCHAR"/>
         <result property="coverUrl" column="cover_url" jdbcType="VARCHAR"/>
         <result property="authorId" column="author_id" jdbcType="BIGINT"/>
-        <result property="createdTime" column="created_time" jdbcType="TIMESTAMP"/>
-        <result property="updatedTime" column="updated_time" jdbcType="TIMESTAMP"/>
-        <result property="deleted" column="deleted" jdbcType="TINYINT"/>
-        <result property="status" column="status" jdbcType="TINYINT"/>
-        <result property="commentsEnabled" column="comments_enabled" jdbcType="TINYINT"/>
-        <result property="isTop" column="is_top" jdbcType="TINYINT"/>
         <result property="categoryId" column="category_id" jdbcType="BIGINT"/>
+        <result property="deleted" column="deleted" jdbcType="CHAR"/>
+        <result property="status" column="status" jdbcType="CHAR"/>
+        <result property="commentsEnabled" column="comments_enabled" jdbcType="CHAR"/>
+        <result property="isTop" column="is_top" jdbcType="CHAR"/>
         <result property="viewCount" column="view_count" jdbcType="BIGINT"/>
+        <result property="favoritesCount" column="favorites_count" jdbcType="BIGINT"/>
+        <result property="likeCount" column="like_count" jdbcType="BIGINT"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
     </resultMap>
 
     <sql id="Base_Column_List">
         id
         ,title,content,
-        cover_url,author_id,created_time,
-        updated_time,deleted,status,
-        comments_enabled,is_top,category_id,
-        view_count
+        cover_url,author_id,category_id,
+        deleted,status,comments_enabled,
+        is_top,view_count,favorites_count,
+        like_count,create_time,update_time
     </sql>
+
+    <insert id="insert" parameterType="cn.xu.domain.article.model.entity.ArticleEntity">
+        INSERT INTO articles (title, content, cover_url, author_id, category_id, deleted, status, comments_enabled,
+                              is_top, view_count, favorites_count, like_count, create_time, update_time)
+        VALUES (#{title}, #{content}, #{coverUrl}, #{authorId}, #{categoryId}, #{deleted}, #{status},
+                #{commentsEnabled}, #{isTop}, #{viewCount}, #{favoritesCount}, #{likeCount}, #{createTime},
+                #{updateTime})
+    </insert>
 </mapper>

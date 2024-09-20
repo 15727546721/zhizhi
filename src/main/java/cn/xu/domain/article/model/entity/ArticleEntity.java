@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -14,15 +16,24 @@ public class ArticleEntity {
     private Long id;
     private String title;
     private String content;
-    private String author;
-
+    private Long authorId;
     private Long categoryId;
     private String categoryName;
-
-    private Long tagId;
     private String tagName;
+    private LocalDateTime createTime;
+    private LocalDateTime updateTime;
 
-    private String createTime;
-    private String updateTime;
-
+    // 业务逻辑方法
+    public void validate() {
+        if (title == null || title.trim().isEmpty()) {
+            throw new IllegalArgumentException("Title cannot be null or empty");
+        }
+        if (content == null || content.trim().isEmpty()) {
+            throw new IllegalArgumentException("Content cannot be null or empty");
+        }
+        if (title.length() > 100) { // 假设标题不能超过100字符
+            throw new IllegalArgumentException("Title cannot exceed 100 characters");
+        }
+        // 其他验证规则可以在这里添加
+    }
 }

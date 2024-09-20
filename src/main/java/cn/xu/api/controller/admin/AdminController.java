@@ -1,6 +1,9 @@
-package cn.xu.controller.admin;
+package cn.xu.api.controller.admin;
 
 import cn.dev33.satoken.stp.StpUtil;
+import cn.xu.api.dto.request.common.PageDTO;
+import cn.xu.api.dto.request.user.LoginFormDTO;
+import cn.xu.api.dto.request.user.UserDTO;
 import cn.xu.common.Constants;
 import cn.xu.common.ResponseEntity;
 import cn.xu.domain.user.model.entity.UserEntity;
@@ -8,9 +11,6 @@ import cn.xu.domain.user.model.entity.UserInfoEntity;
 import cn.xu.domain.user.model.valobj.LoginFormVO;
 import cn.xu.domain.user.service.IUserLoginService;
 import cn.xu.domain.user.service.IUserService;
-import cn.xu.dto.common.PageDTO;
-import cn.xu.dto.user.LoginFormDTO;
-import cn.xu.dto.user.UserDTO;
 import cn.xu.exception.AppException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;

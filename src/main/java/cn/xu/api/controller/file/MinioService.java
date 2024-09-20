@@ -1,4 +1,4 @@
-package cn.xu.controller.file;
+package cn.xu.api.controller.file;
 
 import io.minio.*;
 import io.minio.errors.MinioException;

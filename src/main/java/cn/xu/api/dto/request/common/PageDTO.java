@@ -1,4 +1,4 @@
-package cn.xu.dto.common;
+package cn.xu.api.dto.request.common;
 
 public class PageDTO {
 

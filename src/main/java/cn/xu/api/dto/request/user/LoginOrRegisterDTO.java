@@ -1,4 +1,4 @@
-package cn.xu.dto.user;
+package cn.xu.api.dto.request.user;
 
 public class LoginOrRegisterDTO {
     private String username;

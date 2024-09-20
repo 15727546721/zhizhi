@@ -77,6 +77,22 @@ public class TagRepository implements ITagRepository {
         }
     }
 
+    @Override
+    public Tag findById(Long tagId) {
+        if (tagId == null){
+            throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "标签ID不能为空");
+        }
+        log.info("查询标签ID: {}", tagId);
+        try {
+            Tag tag = tagDao.selectById(tagId);
+            log.info("查询标签结果: {}", tag);
+            return tag;
+        } catch (Exception e) {
+            log.error("查询标签失败: {}", e.getMessage());
+            throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "查询标签失败");
+        }
+    }
+
     private TagEntity convertToTagEntity(Tag tag) {
         if (tag == null) {
             return null;

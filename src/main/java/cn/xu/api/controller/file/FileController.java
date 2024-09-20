@@ -1,4 +1,4 @@
-package cn.xu.controller.file;
+package cn.xu.api.controller.file;
 
 import cn.xu.common.Constants;
 import cn.xu.exception.AppException;
