@@ -1,6 +1,7 @@
 package cn.xu.api.controller.file;
 
 import cn.xu.common.Constants;
+import cn.xu.common.ResponseEntity;
 import cn.xu.domain.file.service.MinioService;
 import cn.xu.exception.AppException;
 import lombok.extern.slf4j.Slf4j;
@@ -24,13 +25,17 @@ public class FileController {
     }
 
     @PostMapping("/upload")
-    public String uploadFile(@RequestParam("file") MultipartFile file, @RequestParam(required = false) String fileName) {
+    public ResponseEntity uploadFile(@RequestParam("file") MultipartFile file, @RequestParam(required = false) String fileName) {
         try {
             if (StringUtils.isEmpty(fileName)) {
                 fileName = file.getOriginalFilename();
             }
             String uploadFileUrl = minioService.uploadFile(file, fileName);
-            return uploadFileUrl;
+            return ResponseEntity.<String>builder()
+                    .data(uploadFileUrl)
+                    .code(Constants.ResponseCode.SUCCESS.getCode())
+                    .info("上传成功")
+                    .build();
         } catch (Exception e) {
             log.error("上传文件失败: " + e.getMessage());
             throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "上传文件失败");

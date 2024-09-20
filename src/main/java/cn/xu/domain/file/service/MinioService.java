@@ -65,7 +65,10 @@ public class MinioService implements IFileStorageService {
 //                            .build()
 //            );
 //            // 返回永久的可访问URL
-            return minioUrl + "/" + bucketName + "/" + uniqueFileName;
+            String sharedUrl = minioUrl + "/" + bucketName + "/" + uniqueFileName;
+
+            log.info("文件上传成功，可访问URL为：{}", sharedUrl);
+            return sharedUrl;
         } catch (MinioException e) {
             log.error("上传文件到MinIO失败", e);
             throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "上传文件失败");
