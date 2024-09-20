@@ -75,6 +75,27 @@ public class MinioService implements IFileStorageService {
         }
     }
 
+    @Override
+    public void deleteFile(String fileUrl) throws Exception {
+        try {
+            String objectName = fileUrl.substring(fileUrl.indexOf(bucketName) + bucketName.length() + 1);
+
+            // 构造 RemoveObjectArgs
+            RemoveObjectArgs removeObjectArgs = RemoveObjectArgs.builder()
+                    .bucket(bucketName)
+                    .object(objectName)
+                    .build();
+
+            // 调用 removeObject 方法删除文件
+            minioClient.removeObject(removeObjectArgs);
+            log.info("文件删除成功: {}", objectName);
+        } catch (MinioException e) {
+            log.error("删除文件失败: {}", e.getMessage());
+            throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "删除文件失败");
+        }
+    }
+
+
     public void downloadFile(String objectName, String localFilePath) throws Exception {
         try {
             // 构造 GetObjectArgs

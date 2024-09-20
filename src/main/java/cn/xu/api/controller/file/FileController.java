@@ -42,6 +42,21 @@ public class FileController {
         }
     }
 
+    @PostMapping("/delete")
+    public ResponseEntity deleteFile(@RequestParam String fileUrl) {
+        try {
+            // 解析 URL 获取桶名和对象名
+            minioService.deleteFile(fileUrl);
+            return ResponseEntity.builder()
+                    .code(Constants.ResponseCode.SUCCESS.getCode())
+                    .info("删除成功")
+                    .build();
+        } catch (Exception e) {
+            log.error("删除文件失败: " + e.getMessage());
+            throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "删除文件失败");
+        }
+    }
+
     @GetMapping("/download/{fileName}")
     public void downloadFile(@PathVariable String fileName, HttpServletResponse response) {
         try {
