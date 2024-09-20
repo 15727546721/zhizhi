@@ -1,8 +1,10 @@
 package cn.xu.api.controller.file;
 
 import cn.xu.common.Constants;
+import cn.xu.domain.file.service.MinioService;
 import cn.xu.exception.AppException;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -22,12 +24,16 @@ public class FileController {
     }
 
     @PostMapping("/upload")
-    public String uploadFile(@RequestParam("file") MultipartFile file) {
+    public String uploadFile(@RequestParam("file") MultipartFile file, @RequestParam(required = false) String fileName) {
         try {
-            minioService.uploadFile(file.getOriginalFilename(), file);
-            return "File uploaded successfully!";
+            if (StringUtils.isEmpty(fileName)) {
+                fileName = file.getOriginalFilename();
+            }
+            String uploadFileUrl = minioService.uploadFile(file, fileName);
+            return uploadFileUrl;
         } catch (Exception e) {
-            return "Error uploading file: " + e.getMessage();
+            log.error("上传文件失败: " + e.getMessage());
+            throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "上传文件失败");
         }
     }
 
