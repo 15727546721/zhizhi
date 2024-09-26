@@ -43,7 +43,7 @@ public class FileController {
     }
 
     @PostMapping("/delete")
-    public ResponseEntity deleteFile(@RequestParam String fileUrl) {
+    public ResponseEntity deleteFile(@RequestBody String fileUrl) {
         try {
             // 解析 URL 获取桶名和对象名
             minioService.deleteFile(fileUrl);

@@ -2,10 +2,12 @@ package cn.xu.domain.file.service;
 
 import cn.xu.common.Constants;
 import cn.xu.exception.AppException;
+import com.alibaba.fastjson2.JSONObject;
 import io.minio.*;
 import io.minio.errors.MinioException;
 import io.minio.messages.Item;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -77,6 +79,12 @@ public class MinioService implements IFileStorageService {
 
     @Override
     public void deleteFile(String fileUrl) throws Exception {
+        JSONObject jsonObject = JSONObject.parseObject(fileUrl);
+        fileUrl = jsonObject.getString("fileUrl");
+        if (StringUtils.isEmpty(fileUrl)) {
+            log.error("文件URL为空，无法删除");
+            throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "文件URL为空，无法删除");
+        }
         try {
             String objectName = fileUrl.substring(fileUrl.indexOf(bucketName) + bucketName.length() + 1);
 
