@@ -9,11 +9,13 @@ import cn.xu.domain.article.repository.IArticleRepository;
 import cn.xu.domain.article.repository.IArticleTagRepository;
 import cn.xu.domain.article.repository.ITagRepository;
 import cn.xu.domain.article.service.IArticleService;
+import cn.xu.domain.file.service.MinioService;
 import cn.xu.exception.AppException;
 import cn.xu.infrastructure.persistent.po.ArticleTag;
 import cn.xu.infrastructure.persistent.po.Tag;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
@@ -28,6 +30,9 @@ public class ArticleService implements IArticleService {
 
     @Resource
     private ITagRepository tagRepository; // 标签仓储
+
+    @Resource
+    private MinioService minioService; // minio客户端
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -63,6 +68,20 @@ public class ArticleService implements IArticleService {
             articleTag.setArticleId(articleEntity.getId());
             articleTagRepository.save(articleTag);
         }
+    }
+
+    @Override
+    public String uploadCover(MultipartFile imageFile) {
+        String uploadFileUrl = null;
+        try {
+            uploadFileUrl = minioService.uploadFile(imageFile, null);
+        } catch (Exception e) {
+            throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "上传封面失败");
+        }
+        if (uploadFileUrl == null) {
+            throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "上传封面失败");
+        }
+        return uploadFileUrl;
     }
 
     public TagVO fetchTagById(Long tagId) {
