@@ -30,7 +30,7 @@ public class ArticleService implements IArticleService {
     private ITagRepository tagRepository; // 标签仓储
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void createArticle(ArticleCreateDTO articleCreateDTO) {
         ArticleAggregate aggregate = new ArticleAggregate();
 
@@ -38,6 +38,7 @@ public class ArticleService implements IArticleService {
         ArticleEntity articleEntity = new ArticleEntity();
         articleEntity.setTitle(articleCreateDTO.getTitle());
         articleEntity.setContent(articleCreateDTO.getContent());
+        articleEntity.setCoverUrl(articleCreateDTO.getCoverUrl());
         articleEntity.setAuthorId(articleCreateDTO.getAuthorId());
         articleEntity.setCategoryId(articleCreateDTO.getCategoryId());
         articleEntity.setCreateTime(LocalDateTime.now());

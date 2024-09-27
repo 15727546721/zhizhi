@@ -16,13 +16,28 @@ public class ArticleEntity {
     private Long id;
     private String title;
     private String content;
+    private String coverUrl;
+    private String status;
     private Long authorId;
     private Long categoryId;
-    private String categoryName;
-    private String tagName;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 
+    class CategoryEntity {
+        private Long id;
+        private String name;
+        private String description;
+        private LocalDateTime createTime;
+        private LocalDateTime updateTime;
+    }
+
+    class TagEntity {
+        private Long id;
+        private String name;
+        private String description;
+        private LocalDateTime createTime;
+        private LocalDateTime updateTime;
+    }
     // 业务逻辑方法
     public void validate() {
         if (title == null || title.trim().isEmpty()) {
