@@ -1,9 +1,9 @@
 package cn.xu.api.controller.admin;
 
 import cn.dev33.satoken.stp.StpUtil;
-import cn.xu.api.dto.request.common.PageDTO;
-import cn.xu.api.dto.request.user.LoginFormDTO;
-import cn.xu.api.dto.request.user.UserDTO;
+import cn.xu.api.dto.common.PageRequest;
+import cn.xu.api.dto.user.LoginFormRequest;
+import cn.xu.api.dto.user.UserRequest;
 import cn.xu.common.Constants;
 import cn.xu.common.ResponseEntity;
 import cn.xu.domain.user.model.entity.UserEntity;
@@ -30,13 +30,13 @@ public class AdminController{
     private IUserService userService;
 
     @PostMapping("/login")
-    public ResponseEntity<String> loginByAdmin(@RequestBody LoginFormDTO loginFormDTO) {
-        log.info("管理员登录: {}", loginFormDTO);
-        if (StringUtils.isEmpty(loginFormDTO.getUsername()) || StringUtils.isEmpty(loginFormDTO.getPassword())) {
+    public ResponseEntity<String> loginByAdmin(@RequestBody LoginFormRequest loginFormRequest) {
+        log.info("管理员登录: {}", loginFormRequest);
+        if (StringUtils.isEmpty(loginFormRequest.getUsername()) || StringUtils.isEmpty(loginFormRequest.getPassword())) {
             throw new AppException(Constants.ResponseCode.NULL_PARAMETER.getCode(), "管理员登录参数为空");
         }
-        String token = userLoginService.loginByAdmin(new LoginFormVO(loginFormDTO.getUsername()
-                , loginFormDTO.getPassword()));
+        String token = userLoginService.loginByAdmin(new LoginFormVO(loginFormRequest.getUsername()
+                , loginFormRequest.getPassword()));
         return ResponseEntity.<String>builder()
                 .data(token)
                 .code(Constants.ResponseCode.SUCCESS.getCode())
@@ -78,9 +78,9 @@ public class AdminController{
 
 
     @GetMapping("/user/list")
-    public ResponseEntity queryUserList(@ModelAttribute PageDTO pageDTO) {
-        int page = pageDTO.getPage();
-        int size = pageDTO.getSize();
+    public ResponseEntity queryUserList(@ModelAttribute PageRequest pageRequest) {
+        int page = pageRequest.getPage();
+        int size = pageRequest.getSize();
         log.info("查询用户列表: page={}, size={}", page, size);
         page = page < 1 ? 1 : page;
         size = size < 1 ? 10 : size;
@@ -93,9 +93,9 @@ public class AdminController{
     }
 
     @GetMapping("/admin/list")
-    public ResponseEntity queryAdminList(@ModelAttribute PageDTO pageDTO) {
-        int page = pageDTO.getPage();
-        int size = pageDTO.getSize();
+    public ResponseEntity queryAdminList(@ModelAttribute PageRequest pageRequest) {
+        int page = pageRequest.getPage();
+        int size = pageRequest.getSize();
         log.info("查询管理员列表: page={}, size={}", page, size);
         page = page < 1 ? 1 : page;
         size = size < 1 ? 10 : size;
@@ -108,13 +108,13 @@ public class AdminController{
     }
 
     @PostMapping("/user/add")
-    public ResponseEntity addUser(@RequestBody UserDTO userDTO) {
-        log.info("添加用户: {}", userDTO);
+    public ResponseEntity addUser(@RequestBody UserRequest userRequest) {
+        log.info("添加用户: {}", userRequest);
         UserEntity userEntity = UserEntity.builder()
-                .username(userDTO.getUsername())
-                .email(userDTO.getEmail())
-                .status(userDTO.getStatus())
-                .nickname(userDTO.getNickname())
+                .username(userRequest.getUsername())
+                .email(userRequest.getEmail())
+                .status(userRequest.getStatus())
+                .nickname(userRequest.getNickname())
                 .build();
 
         int result = userService.addUser(userEntity);
@@ -132,14 +132,14 @@ public class AdminController{
     }
 
     @PostMapping("/user/update")
-    public ResponseEntity updateUser(@RequestBody UserDTO userDTO) {
-        log.info("更新用户: {}", userDTO);
+    public ResponseEntity updateUser(@RequestBody UserRequest userRequest) {
+        log.info("更新用户: {}", userRequest);
         UserEntity userEntity = new UserEntity();
-        userEntity.setUsername(userDTO.getUsername());
-        userEntity.setPassword(userDTO.getPassword());
-        userEntity.setEmail(userDTO.getEmail());
-        userEntity.setNickname(userDTO.getNickname());
-        userEntity.setStatus(userDTO.getStatus());
+        userEntity.setUsername(userRequest.getUsername());
+        userEntity.setPassword(userRequest.getPassword());
+        userEntity.setEmail(userRequest.getEmail());
+        userEntity.setNickname(userRequest.getNickname());
+        userEntity.setStatus(userRequest.getStatus());
 
         int result = userService.updateUser(userEntity);
         if (result > 0) {

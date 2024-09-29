@@ -1,6 +1,7 @@
 package cn.xu.domain.article.service.article;
 
-import cn.xu.api.dto.request.article.ArticleCreateDTO;
+import cn.xu.api.dto.article.CreateArticleRequest;
+import cn.xu.api.dto.article.ArticleListResponse;
 import cn.xu.common.Constants;
 import cn.xu.domain.article.model.aggregate.ArticleAggregate;
 import cn.xu.domain.article.model.entity.ArticleEntity;
@@ -36,16 +37,16 @@ public class ArticleService implements IArticleService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void createArticle(ArticleCreateDTO articleCreateDTO) {
+    public void createArticle(CreateArticleRequest createArticleRequest) {
         ArticleAggregate aggregate = new ArticleAggregate();
 
         // 创建文章实体
         ArticleEntity articleEntity = new ArticleEntity();
-        articleEntity.setTitle(articleCreateDTO.getTitle());
-        articleEntity.setContent(articleCreateDTO.getContent());
-        articleEntity.setCoverUrl(articleCreateDTO.getCoverUrl());
-        articleEntity.setAuthorId(articleCreateDTO.getAuthorId());
-        articleEntity.setCategoryId(articleCreateDTO.getCategoryId());
+        articleEntity.setTitle(createArticleRequest.getTitle());
+        articleEntity.setContent(createArticleRequest.getContent());
+        articleEntity.setCoverUrl(createArticleRequest.getCoverUrl());
+        articleEntity.setAuthorId(createArticleRequest.getAuthorId());
+        articleEntity.setCategoryId(createArticleRequest.getCategoryId());
         articleEntity.setCreateTime(LocalDateTime.now());
         articleEntity.setUpdateTime(LocalDateTime.now());
 
@@ -55,8 +56,8 @@ public class ArticleService implements IArticleService {
         aggregate.setArticleEntity(articleEntity);
 
         // 添加标签
-        for (Long tagId : articleCreateDTO.getTagIds()) {
-            TagVO tag = fetchTagById(tagId); // 根据ID查询Tag信息
+        for (TagVO tagVO : createArticleRequest.getTags()) {
+            TagVO tag = fetchTagById(tagVO.getId()); // 根据ID查询Tag信息
             aggregate.addTag(tag); // 使用聚合的方法添加标签
         }
 
@@ -84,6 +85,11 @@ public class ArticleService implements IArticleService {
         return uploadFileUrl;
     }
 
+    @Override
+    public ArticleListResponse listArticle(int page, int size) {
+        return null;
+    }
+
     public TagVO fetchTagById(Long tagId) {
         Tag tagPO = tagRepository.findById(tagId); // 从仓储中查询PO
         if (tagPO == null) {
@@ -92,7 +98,6 @@ public class ArticleService implements IArticleService {
         // 转换为值对象
         TagVO tag = new TagVO();
         tag.setName(tagPO.getName());
-        tag.setDescription(tagPO.getDescription());
         return tag;
     }
 

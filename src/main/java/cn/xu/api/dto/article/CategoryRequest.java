@@ -1,9 +1,9 @@
-package cn.xu.api.dto.request.article;
+package cn.xu.api.dto.article;
 
 import lombok.Data;
 
 @Data
-public class TagDTO {
+public class CategoryRequest {
     private Long id;
     private String name;
     private String description;

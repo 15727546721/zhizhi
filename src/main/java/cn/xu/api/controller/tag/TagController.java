@@ -1,7 +1,7 @@
 package cn.xu.api.controller.tag;
 
-import cn.xu.api.dto.request.article.TagDTO;
-import cn.xu.api.dto.request.common.PageDTO;
+import cn.xu.api.dto.article.TagRequest;
+import cn.xu.api.dto.common.PageRequest;
 import cn.xu.common.Constants;
 import cn.xu.common.ResponseEntity;
 import cn.xu.domain.article.model.entity.TagEntity;
@@ -22,16 +22,16 @@ public class TagController {
     private ITagRepository tagRepository;
 
     @PostMapping("/add")
-    public ResponseEntity addTag(@RequestBody TagDTO tagDTO) {
-        if (ObjectUtils.isEmpty(tagDTO)) {
+    public ResponseEntity addTag(@RequestBody TagRequest tagRequest) {
+        if (ObjectUtils.isEmpty(tagRequest)) {
             return ResponseEntity.builder()
                     .code(Constants.ResponseCode.NULL_PARAMETER.getCode())
                     .info(Constants.ResponseCode.NULL_PARAMETER.getInfo())
                     .build();
         }
         TagEntity tagEntity = TagEntity.builder()
-                .name(tagDTO.getName())
-                .description(tagDTO.getDescription())
+                .name(tagRequest.getName())
+                .description(tagRequest.getDescription())
                 .build();
         tagRepository.save(tagEntity);
         return ResponseEntity.builder()
@@ -41,9 +41,9 @@ public class TagController {
     }
 
     @GetMapping("/list")
-    public ResponseEntity getTagList(@ModelAttribute PageDTO pageDTO) {
-        int page = pageDTO.getPage();
-        int size = pageDTO.getSize();
+    public ResponseEntity getTagList(@ModelAttribute PageRequest pageRequest) {
+        int page = pageRequest.getPage();
+        int size = pageRequest.getSize();
         log.info("查询标签列表: page={}, size={}", page, size);
         List<TagEntity> tagEntityList = tagRepository.queryTagList(page, size);
         return ResponseEntity.<List<TagEntity>>builder()
@@ -54,17 +54,17 @@ public class TagController {
     }
 
     @PostMapping("/update")
-    public ResponseEntity updateTag(@RequestBody TagDTO tagDTO) {
-        if (ObjectUtils.isEmpty(tagDTO)) {
+    public ResponseEntity updateTag(@RequestBody TagRequest tagRequest) {
+        if (ObjectUtils.isEmpty(tagRequest)) {
             return ResponseEntity.builder()
                     .code(Constants.ResponseCode.NULL_PARAMETER.getCode())
                     .info(Constants.ResponseCode.NULL_PARAMETER.getInfo())
                     .build();
         }
         TagEntity tagEntity = TagEntity.builder()
-                .id(tagDTO.getId())
-                .name(tagDTO.getName())
-                .description(tagDTO.getDescription())
+                .id(tagRequest.getId())
+                .name(tagRequest.getName())
+                .description(tagRequest.getDescription())
                 .build();
         tagRepository.update(tagEntity);
         return ResponseEntity.builder()

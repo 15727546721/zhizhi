@@ -1,6 +1,6 @@
-package cn.xu.api.dto.request.common;
+package cn.xu.api.dto.common;
 
-public class PageDTO {
+public class PageRequest {
 
     private int page; // 当前页码，从1开始
     private int size; // 每页记录数
@@ -10,7 +10,7 @@ public class PageDTO {
     private String order; // 排序方向（asc 或 desc）
 
     // 构造函数
-    public PageDTO() {
+    public PageRequest() {
         // 默认值
         this.page = 1;
         this.size = 10;

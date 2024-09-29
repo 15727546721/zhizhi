@@ -1,7 +1,7 @@
 package cn.xu.api.controller.category;
 
-import cn.xu.api.dto.request.article.CategoryDTO;
-import cn.xu.api.dto.request.common.PageDTO;
+import cn.xu.api.dto.article.CategoryRequest;
+import cn.xu.api.dto.common.PageRequest;
 import cn.xu.common.Constants;
 import cn.xu.common.ResponseEntity;
 import cn.xu.domain.article.model.entity.CategoryEntity;
@@ -22,17 +22,17 @@ public class CategoryController {
     private ICategoryRepository categoryRepository;
 
     @PostMapping("/add")
-    public ResponseEntity addCategory(@RequestBody CategoryDTO categoryDTO) {
+    public ResponseEntity addCategory(@RequestBody CategoryRequest categoryRequest) {
 
-        if (ObjectUtils.isEmpty(categoryDTO)) {
+        if (ObjectUtils.isEmpty(categoryRequest)) {
             return ResponseEntity.builder()
                     .code(Constants.ResponseCode.NULL_PARAMETER.getCode())
                     .info(Constants.ResponseCode.NULL_PARAMETER.getInfo())
                     .build();
         }
         CategoryEntity categoryEntity = CategoryEntity.builder()
-                .name(categoryDTO.getName())
-                .description(categoryDTO.getDescription())
+                .name(categoryRequest.getName())
+                .description(categoryRequest.getDescription())
                 .build();
         categoryRepository.save(categoryEntity);
         return ResponseEntity.builder()
@@ -42,9 +42,9 @@ public class CategoryController {
     }
 
     @GetMapping("/list")
-    public ResponseEntity getCategoryList(@ModelAttribute PageDTO pageDTO) {
-        int page = pageDTO.getPage();
-        int size = pageDTO.getSize();
+    public ResponseEntity getCategoryList(@ModelAttribute PageRequest pageRequest) {
+        int page = pageRequest.getPage();
+        int size = pageRequest.getSize();
         log.info("查询分类列表: page={}, size={}", page, size);
         List<CategoryEntity> categoryEntity = categoryRepository.queryCategoryList(page, size);
         return ResponseEntity.<List<CategoryEntity>>builder()
@@ -55,17 +55,17 @@ public class CategoryController {
     }
 
     @PostMapping("/update")
-    public ResponseEntity updateCategory(@RequestBody CategoryDTO categoryDTO) {
-        if (ObjectUtils.isEmpty(categoryDTO)) {
+    public ResponseEntity updateCategory(@RequestBody CategoryRequest categoryRequest) {
+        if (ObjectUtils.isEmpty(categoryRequest)) {
             return ResponseEntity.builder()
                     .code(Constants.ResponseCode.NULL_PARAMETER.getCode())
                     .info(Constants.ResponseCode.NULL_PARAMETER.getInfo())
                     .build();
         }
         CategoryEntity categoryEntity = CategoryEntity.builder()
-                .id(categoryDTO.getId())
-                .name(categoryDTO.getName())
-                .description(categoryDTO.getDescription())
+                .id(categoryRequest.getId())
+                .name(categoryRequest.getName())
+                .description(categoryRequest.getDescription())
                 .build();
         categoryRepository.update(categoryEntity);
         return ResponseEntity.builder()
