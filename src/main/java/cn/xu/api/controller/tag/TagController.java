@@ -5,7 +5,7 @@ import cn.xu.api.dto.common.PageRequest;
 import cn.xu.common.Constants;
 import cn.xu.common.ResponseEntity;
 import cn.xu.domain.article.model.entity.TagEntity;
-import cn.xu.domain.article.repository.ITagRepository;
+import cn.xu.domain.article.service.ITagService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.bind.annotation.*;
@@ -19,7 +19,7 @@ import java.util.List;
 public class TagController {
 
     @Resource
-    private ITagRepository tagRepository;
+    private ITagService tagService;
 
     @PostMapping("/add")
     public ResponseEntity addTag(@RequestBody TagRequest tagRequest) {
@@ -33,7 +33,7 @@ public class TagController {
                 .name(tagRequest.getName())
                 .description(tagRequest.getDescription())
                 .build();
-        tagRepository.save(tagEntity);
+        tagService.save(tagEntity);
         return ResponseEntity.builder()
                 .code(Constants.ResponseCode.SUCCESS.getCode())
                 .info("保存标签成功")
@@ -45,7 +45,7 @@ public class TagController {
         int page = pageRequest.getPage();
         int size = pageRequest.getSize();
         log.info("查询标签列表: page={}, size={}", page, size);
-        List<TagEntity> tagEntityList = tagRepository.queryTagList(page, size);
+        List<TagEntity> tagEntityList = tagService.queryTagList(page, size);
         return ResponseEntity.<List<TagEntity>>builder()
                 .code(Constants.ResponseCode.SUCCESS.getCode())
                 .info("查询标签列表成功")
@@ -66,7 +66,7 @@ public class TagController {
                 .name(tagRequest.getName())
                 .description(tagRequest.getDescription())
                 .build();
-        tagRepository.update(tagEntity);
+        tagService.update(tagEntity);
         return ResponseEntity.builder()
                 .code(Constants.ResponseCode.SUCCESS.getCode())
                 .info("更新标签成功")
@@ -81,7 +81,7 @@ public class TagController {
                     .info(Constants.ResponseCode.NULL_PARAMETER.getInfo())
                     .build();
         }
-        tagRepository.delete(idList);
+        tagService.delete(idList);
         return ResponseEntity.builder()
                 .code(Constants.ResponseCode.SUCCESS.getCode())
                 .info("删除标签成功")
