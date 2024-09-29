@@ -7,6 +7,7 @@
     <resultMap id="BaseResultMap" type="cn.xu.infrastructure.persistent.po.Article">
         <id property="id" column="id" jdbcType="BIGINT"/>
         <result property="title" column="title" jdbcType="VARCHAR"/>
+        <result property="description" column="description" jdbcType="VARCHAR"/>
         <result property="content" column="content" jdbcType="VARCHAR"/>
         <result property="coverUrl" column="cover_url" jdbcType="VARCHAR"/>
         <result property="authorId" column="author_id" jdbcType="BIGINT"/>
@@ -38,4 +39,11 @@
                 #{commentsEnabled}, #{isTop}, #{viewCount}, #{favoritesCount}, #{likeCount}, #{createTime},
                 #{updateTime})
     </insert>
+    <select id="queryByPage" resultType="cn.xu.domain.article.model.entity.ArticleEntity">
+        SELECT id, title, description, content, cover_url
+        FROM article
+        WHERE deleted = '0'
+        ORDER BY id DESC
+        LIMIT #{page}, #{size}
+    </select>
 </mapper>

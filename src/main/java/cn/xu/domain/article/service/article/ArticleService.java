@@ -1,7 +1,6 @@
 package cn.xu.domain.article.service.article;
 
 import cn.xu.api.dto.article.CreateArticleRequest;
-import cn.xu.api.dto.article.ArticleListResponse;
 import cn.xu.common.Constants;
 import cn.xu.domain.article.model.aggregate.ArticleAggregate;
 import cn.xu.domain.article.model.entity.ArticleEntity;
@@ -20,6 +19,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class ArticleService implements IArticleService {
@@ -86,8 +86,10 @@ public class ArticleService implements IArticleService {
     }
 
     @Override
-    public ArticleListResponse listArticle(int page, int size) {
-        return null;
+    public List<ArticleEntity> listArticle(int page, int size) {
+        List<ArticleEntity> articles = articleRepository.queryArticle(page, size);
+
+        return articles;
     }
 
     public TagVO fetchTagById(Long tagId) {

@@ -12,7 +12,6 @@ import lombok.NoArgsConstructor;
 public class ArticleListResponse {
     private Long id;
     private String title;
-    private String content;
-    private String author;
-    private String createTime;
+    private String description;
+    private String coverUrl;
 }
