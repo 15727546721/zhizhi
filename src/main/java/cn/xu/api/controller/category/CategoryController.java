@@ -5,7 +5,7 @@ import cn.xu.api.dto.common.PageRequest;
 import cn.xu.common.Constants;
 import cn.xu.common.ResponseEntity;
 import cn.xu.domain.article.model.entity.CategoryEntity;
-import cn.xu.domain.article.repository.ICategoryRepository;
+import cn.xu.domain.article.service.ICategoryService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.bind.annotation.*;
@@ -19,7 +19,7 @@ import java.util.List;
 public class CategoryController {
 
     @Resource
-    private ICategoryRepository categoryRepository;
+    private ICategoryService categoryService;
 
     @PostMapping("/add")
     public ResponseEntity addCategory(@RequestBody CategoryRequest categoryRequest) {
@@ -34,7 +34,7 @@ public class CategoryController {
                 .name(categoryRequest.getName())
                 .description(categoryRequest.getDescription())
                 .build();
-        categoryRepository.save(categoryEntity);
+        categoryService.save(categoryEntity);
         return ResponseEntity.builder()
                 .code(Constants.ResponseCode.SUCCESS.getCode())
                 .info("保存分类成功")
@@ -46,7 +46,7 @@ public class CategoryController {
         int page = pageRequest.getPage();
         int size = pageRequest.getSize();
         log.info("查询分类列表: page={}, size={}", page, size);
-        List<CategoryEntity> categoryEntity = categoryRepository.queryCategoryList(page, size);
+        List<CategoryEntity> categoryEntity = categoryService.queryCategoryList(page, size);
         return ResponseEntity.<List<CategoryEntity>>builder()
                 .code(Constants.ResponseCode.SUCCESS.getCode())
                 .info("查询分类列表成功")
@@ -67,7 +67,7 @@ public class CategoryController {
                 .name(categoryRequest.getName())
                 .description(categoryRequest.getDescription())
                 .build();
-        categoryRepository.update(categoryEntity);
+        categoryService.update(categoryEntity);
         return ResponseEntity.builder()
                 .code(Constants.ResponseCode.SUCCESS.getCode())
                 .info("更新分类成功")
@@ -82,7 +82,7 @@ public class CategoryController {
                     .info(Constants.ResponseCode.NULL_PARAMETER.getInfo())
                     .build();
         }
-        categoryRepository.delete(idList);
+        categoryService.delete(idList);
         return ResponseEntity.builder()
                 .code(Constants.ResponseCode.SUCCESS.getCode())
                 .info("删除分类成功")
