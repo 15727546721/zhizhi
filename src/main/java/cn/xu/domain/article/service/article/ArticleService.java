@@ -5,6 +5,7 @@ import cn.xu.api.dto.article.CreateArticleRequest;
 import cn.xu.common.Constants;
 import cn.xu.domain.article.model.aggregate.ArticleAggregate;
 import cn.xu.domain.article.model.entity.ArticleEntity;
+import cn.xu.domain.article.model.entity.ArticleTagEntity;
 import cn.xu.domain.article.model.valobj.TagVO;
 import cn.xu.domain.article.repository.IArticleRepository;
 import cn.xu.domain.article.repository.IArticleTagRepository;
@@ -12,7 +13,6 @@ import cn.xu.domain.article.repository.ITagRepository;
 import cn.xu.domain.article.service.IArticleService;
 import cn.xu.domain.file.service.MinioService;
 import cn.xu.exception.AppException;
-import cn.xu.infrastructure.persistent.po.ArticleTag;
 import cn.xu.infrastructure.persistent.po.Tag;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
+import java.util.LinkedList;
 import java.util.List;
 
 @Service
@@ -40,7 +41,6 @@ public class ArticleService implements IArticleService {
     @Transactional(rollbackFor = Exception.class)
     public void createArticle(CreateArticleRequest createArticleRequest) {
         long authorId = StpUtil.getLoginIdAsLong();// 获取当前登录用户ID
-        ArticleAggregate aggregate = new ArticleAggregate();
 
         // 创建文章实体
         ArticleEntity articleEntity = new ArticleEntity();
@@ -55,22 +55,18 @@ public class ArticleService implements IArticleService {
         // 调用验证方法
         articleEntity.validate();
 
-        aggregate.setArticleEntity(articleEntity);
-
         // 添加标签
+        List<ArticleTagEntity> tags = new LinkedList<>();
         for (Long tagId : createArticleRequest.getTagIds()) {
-            TagVO tag = fetchTagById(tagId); // 根据ID查询Tag信息
-            aggregate.addTag(tag); // 使用聚合的方法添加标签
+            tags.add(ArticleTagEntity.builder().articleId(articleEntity.getId()).tagId(tagId).build());
         }
 
+        ArticleAggregate articleAggregate = ArticleAggregate.builder()
+                .articleEntity(articleEntity)
+                .tags(tags)
+                .build();
         // 保存逻辑
-        articleRepository.save(articleEntity);
-        for (TagVO tag : aggregate.getTags()) {
-            // 保存标签关系
-            ArticleTag articleTag = new ArticleTag();
-            articleTag.setArticleId(articleEntity.getId());
-            articleTagRepository.save(articleTag);
-        }
+        articleRepository.save(articleAggregate);
     }
 
     @Override

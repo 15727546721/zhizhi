@@ -1,10 +1,7 @@
 package cn.xu.infrastructure.persistent.po;
 
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.*;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -13,6 +10,7 @@ import java.util.Date;
  * 存储文章信息的表
  * @TableName article
  */
+@Builder
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

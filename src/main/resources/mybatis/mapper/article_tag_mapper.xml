@@ -18,4 +18,13 @@
         INSERT INTO article_tag (article_id, tag_id)
         VALUES (#{articleId}, #{tagId})
     </insert>
+
+    <insert id="insertTags" parameterType="java.util.List">
+        INSERT INTO article_tag (article_id, tag_id)
+        VALUES
+        <foreach collection="list" item="tag" separator=",">
+            (#{tag.articleId}, #{tag.tagId})
+        </foreach>
+    </insert>
+
 </mapper>

@@ -38,7 +38,7 @@ public class ArticleController {
     }
 
     @PostMapping("/add")
-    public ResponseEntity saveArticle(CreateArticleRequest createArticleRequest) {
+    public ResponseEntity saveArticle(@RequestBody CreateArticleRequest createArticleRequest) {
         articleService.createArticle(createArticleRequest);
         return ResponseEntity.builder()
                 .code(Constants.ResponseCode.SUCCESS.getCode())

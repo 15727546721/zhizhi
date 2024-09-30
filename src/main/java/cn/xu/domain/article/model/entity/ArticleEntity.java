@@ -23,8 +23,8 @@ public class ArticleEntity {
     private String deleted; // 0:未删除, 1:已删除
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
-    private boolean commentsEnabled;
-    private boolean isTop;
+    private String commentsEnabled;
+    private String isTop;
     private Long viewCount;
     private Long favoritesCount;
     private Long likeCount;

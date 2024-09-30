@@ -1,22 +1,15 @@
-package cn.xu.infrastructure.persistent.po;
+package cn.xu.domain.article.model.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.io.Serializable;
-
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class ArticleTag implements Serializable {
-    /**
-     * 文章标签关联的唯一标识符
-     */
-    private Long id;
-
+public class ArticleTagEntity {
     /**
      * 文章的唯一标识符
      */
