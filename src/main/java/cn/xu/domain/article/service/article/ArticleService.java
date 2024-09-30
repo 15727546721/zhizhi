@@ -1,5 +1,6 @@
 package cn.xu.domain.article.service.article;
 
+import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.api.dto.article.CreateArticleRequest;
 import cn.xu.common.Constants;
 import cn.xu.domain.article.model.aggregate.ArticleAggregate;
@@ -38,6 +39,7 @@ public class ArticleService implements IArticleService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void createArticle(CreateArticleRequest createArticleRequest) {
+        long authorId = StpUtil.getLoginIdAsLong();// 获取当前登录用户ID
         ArticleAggregate aggregate = new ArticleAggregate();
 
         // 创建文章实体
@@ -45,7 +47,7 @@ public class ArticleService implements IArticleService {
         articleEntity.setTitle(createArticleRequest.getTitle());
         articleEntity.setContent(createArticleRequest.getContent());
         articleEntity.setCoverUrl(createArticleRequest.getCoverUrl());
-        articleEntity.setAuthorId(createArticleRequest.getAuthorId());
+        articleEntity.setAuthorId(authorId);
         articleEntity.setCategoryId(createArticleRequest.getCategoryId());
         articleEntity.setCreateTime(LocalDateTime.now());
         articleEntity.setUpdateTime(LocalDateTime.now());
@@ -56,8 +58,8 @@ public class ArticleService implements IArticleService {
         aggregate.setArticleEntity(articleEntity);
 
         // 添加标签
-        for (TagVO tagVO : createArticleRequest.getTags()) {
-            TagVO tag = fetchTagById(tagVO.getId()); // 根据ID查询Tag信息
+        for (Long tagId : createArticleRequest.getTagIds()) {
+            TagVO tag = fetchTagById(tagId); // 根据ID查询Tag信息
             aggregate.addTag(tag); // 使用聚合的方法添加标签
         }
 

@@ -79,6 +79,7 @@ public class MinioService implements IFileStorageService {
 
     @Override
     public void deleteFile(String fileUrl) throws Exception {
+        log.info("开始删除文件: {}", fileUrl);
         JSONObject jsonObject = JSONObject.parseObject(fileUrl);
         fileUrl = jsonObject.getString("fileUrl");
         if (StringUtils.isEmpty(fileUrl)) {
