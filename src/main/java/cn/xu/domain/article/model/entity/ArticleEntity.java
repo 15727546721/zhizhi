@@ -19,15 +19,15 @@ public class ArticleEntity {
     private String coverUrl;
     private Long authorId;
     private Long categoryId;
-    private String status; // 0:草稿, 1:发布等
+    private String status; // 0:草稿、1:发布、2:下架、3:待审核、4:审核不通过
     private String deleted; // 0:未删除, 1:已删除
-    private LocalDateTime createTime;
-    private LocalDateTime updateTime;
     private String commentsEnabled;
     private String isTop;
     private Long viewCount;
     private Long favoritesCount;
     private Long likeCount;
+    private LocalDateTime createTime;
+    private LocalDateTime updateTime;
 
     // 业务逻辑方法
     public void validate() {

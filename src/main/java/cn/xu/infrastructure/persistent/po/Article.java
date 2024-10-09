@@ -57,7 +57,7 @@ public class Article implements Serializable {
     private String deleted;
 
     /**
-     * 文章的状态：0草稿、1发布、2下架、3待审核、4审核不通过
+     * 文章的状态：0:草稿、1:发布、2:下架、3:待审核、4:审核不通过
      */
     private String status;
 

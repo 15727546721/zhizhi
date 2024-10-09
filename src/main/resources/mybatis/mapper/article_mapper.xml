@@ -32,14 +32,14 @@
         like_count,create_time,update_time
     </sql>
 
-    <insert id="insert" parameterType="cn.xu.domain.article.model.entity.Article">
-        INSERT INTO articles (title, content, cover_url, author_id, category_id, deleted, status, comments_enabled,
+    <insert id="insert" parameterType="cn.xu.infrastructure.persistent.po.Article">
+        INSERT INTO article (title, description, content, cover_url, author_id, category_id, deleted, status, comments_enabled,
                               is_top, view_count, favorites_count, like_count, create_time, update_time)
-        VALUES (#{title}, #{content}, #{coverUrl}, #{authorId}, #{categoryId}, #{deleted}, #{status},
-                #{commentsEnabled}, #{isTop}, #{viewCount}, #{favoritesCount}, #{likeCount}, #{createTime},
-                #{updateTime})
+        VALUES (#{title}, #{description}, #{content}, #{coverUrl}, #{authorId}, #{categoryId}, #{deleted}, #{status},
+                #{commentsEnabled}, #{isTop}, #{viewCount}, #{favoritesCount}, #{likeCount}, now(),
+                now())
     </insert>
-    <select id="queryByPage" resultType="cn.xu.domain.article.model.entity.ArticleEntity">
+    <select id="queryByPage" resultType="cn.xu.infrastructure.persistent.po.Article">
         SELECT id, title, description, content, cover_url
         FROM article
         WHERE deleted = '0'

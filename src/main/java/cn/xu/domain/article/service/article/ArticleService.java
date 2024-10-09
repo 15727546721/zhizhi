@@ -47,6 +47,7 @@ public class ArticleService implements IArticleService {
         articleEntity.setTitle(createArticleRequest.getTitle());
         articleEntity.setContent(createArticleRequest.getContent());
         articleEntity.setCoverUrl(createArticleRequest.getCoverUrl());
+        articleEntity.setDescription(createArticleRequest.getDescription());
         articleEntity.setAuthorId(authorId);
         articleEntity.setCategoryId(createArticleRequest.getCategoryId());
         articleEntity.setCreateTime(LocalDateTime.now());

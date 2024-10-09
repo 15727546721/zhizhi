@@ -1,5 +1,6 @@
 package cn.xu.infrastructure.persistent.repository;
 
+import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.domain.article.model.aggregate.ArticleAggregate;
 import cn.xu.domain.article.model.entity.ArticleEntity;
 import cn.xu.domain.article.model.entity.ArticleTagEntity;
@@ -30,6 +31,7 @@ public class ArticleRepository implements IArticleRepository {
         Article article = Article.builder()
                 .id(articleAggregate.getArticleEntity().getId())
                 .title(articleAggregate.getArticleEntity().getTitle())
+                .authorId(articleAggregate.getArticleEntity().getAuthorId())
                 .description(articleAggregate.getArticleEntity().getDescription())
                 .content(articleAggregate.getArticleEntity().getContent())
                 .coverUrl(articleAggregate.getArticleEntity().getCoverUrl())
@@ -52,6 +54,22 @@ public class ArticleRepository implements IArticleRepository {
     @Override
     public List<ArticleEntity> queryArticle(int page, int size) {
         log.info("query article page: " + page + " size: " + size);
-        return articleDao.queryByPage(page - 1, size);
+        List<Article> articles = articleDao.queryByPage(page - 1, size);
+        List<ArticleEntity> articleEntities = new LinkedList<>();
+        for (Article article : articles) {
+            ArticleEntity articleEntity = ArticleEntity.builder()
+                   .id(article.getId())
+                   .title(article.getTitle())
+                   .description(article.getDescription())
+                   .content(article.getContent())
+                   .coverUrl(article.getCoverUrl())
+                   .categoryId(article.getCategoryId())
+                   .commentsEnabled(article.getCommentsEnabled())
+                   .status(article.getStatus())
+                   .isTop(article.getIsTop())
+                   .build();
+            articleEntities.add(articleEntity);
+        }
+        return articleEntities;
     }
 }
