@@ -6,7 +6,7 @@ import cn.xu.domain.article.model.entity.ArticleEntity;
 import java.util.List;
 
 public interface IArticleRepository {
-    void save(ArticleAggregate articleAggregate);
+    void save(ArticleEntity articleAggregate);
 
     List<ArticleEntity> queryArticle(int page, int size);
 }

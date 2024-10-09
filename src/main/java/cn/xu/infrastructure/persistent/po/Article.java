@@ -52,6 +52,11 @@ public class Article implements Serializable {
     private Long categoryId;
 
     /**
+     * 文章标签集合
+     */
+    private String tagIds;
+
+    /**
      * 逻辑删除标志，0表示未删除，1表示已删除
      */
     private String deleted;

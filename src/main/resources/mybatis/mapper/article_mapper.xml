@@ -12,6 +12,7 @@
         <result property="coverUrl" column="cover_url" jdbcType="VARCHAR"/>
         <result property="authorId" column="author_id" jdbcType="BIGINT"/>
         <result property="categoryId" column="category_id" jdbcType="BIGINT"/>
+        <result property="tagIds" column="tagIds" jdbcType="VARCHAR"/>
         <result property="deleted" column="deleted" jdbcType="CHAR"/>
         <result property="status" column="status" jdbcType="CHAR"/>
         <result property="commentsEnabled" column="comments_enabled" jdbcType="CHAR"/>
@@ -33,9 +34,9 @@
     </sql>
 
     <insert id="insert" parameterType="cn.xu.infrastructure.persistent.po.Article">
-        INSERT INTO article (title, description, content, cover_url, author_id, category_id, deleted, status, comments_enabled,
+        INSERT INTO article (title, description, content, cover_url, author_id, category_id, tagIds, deleted, status, comments_enabled,
                               is_top, view_count, favorites_count, like_count, create_time, update_time)
-        VALUES (#{title}, #{description}, #{content}, #{coverUrl}, #{authorId}, #{categoryId}, #{deleted}, #{status},
+        VALUES (#{title}, #{description}, #{content}, #{coverUrl}, #{authorId}, #{categoryId}, #{tagIds}, #{deleted}, #{status},
                 #{commentsEnabled}, #{isTop}, #{viewCount}, #{favoritesCount}, #{likeCount}, now(),
                 now())
     </insert>

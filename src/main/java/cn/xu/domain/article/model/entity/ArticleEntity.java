@@ -19,6 +19,7 @@ public class ArticleEntity {
     private String coverUrl;
     private Long authorId;
     private Long categoryId;
+    private String tagIds;
     private String status; // 0:草稿、1:发布、2:下架、3:待审核、4:审核不通过
     private String deleted; // 0:未删除, 1:已删除
     private String commentsEnabled;

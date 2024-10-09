@@ -26,29 +26,31 @@ public class ArticleRepository implements IArticleRepository {
     private IArticleTagDao articleTagDao;
 
     @Override
-    public void save(ArticleAggregate articleAggregate) {
-        log.info("save articleAggregate: " + articleAggregate);
+    public void save(ArticleEntity articleEntity) {
+        log.info("save articleEntity: " + articleEntity);
         Article article = Article.builder()
-                .id(articleAggregate.getArticleEntity().getId())
-                .title(articleAggregate.getArticleEntity().getTitle())
-                .authorId(articleAggregate.getArticleEntity().getAuthorId())
-                .description(articleAggregate.getArticleEntity().getDescription())
-                .content(articleAggregate.getArticleEntity().getContent())
-                .coverUrl(articleAggregate.getArticleEntity().getCoverUrl())
-                .categoryId(articleAggregate.getArticleEntity().getCategoryId())
-                .commentsEnabled(articleAggregate.getArticleEntity().getCommentsEnabled())
-                .status(articleAggregate.getArticleEntity().getStatus())
-                .isTop(articleAggregate.getArticleEntity().getIsTop())
+                .id(articleEntity.getId())
+                .title(articleEntity.getTitle())
+                .authorId(StpUtil.getLoginIdAsLong())
+                .description(articleEntity.getDescription())
+                .content(articleEntity.getContent())
+                .coverUrl(articleEntity.getCoverUrl())
+                .categoryId(articleEntity.getCategoryId())
+                .tagIds(articleEntity.getTagIds())
+                .commentsEnabled(articleEntity.getCommentsEnabled())
+                .status(articleEntity.getStatus())
+                .isTop(articleEntity.getIsTop())
+                .deleted("0")
                 .build();
         articleDao.insert(article);
-        List<ArticleTag> tags = new LinkedList<>();
-        for (ArticleTagEntity tag : articleAggregate.getTags()) {
-            tags.add(ArticleTag.builder()
-                    .articleId(tag.getArticleId())
-                    .tagId(tag.getTagId())
-                    .build());
-        }
-        articleTagDao.insertTags(tags);
+//        List<ArticleTag> tags = new LinkedList<>();
+//        for (ArticleTagEntity tag : articleAggregate.getTags()) {
+//            tags.add(ArticleTag.builder()
+//                    .articleId(tag.getArticleId())
+//                    .tagId(tag.getTagId())
+//                    .build());
+//        }
+//        articleTagDao.insertTags(tags);
     }
 
     @Override

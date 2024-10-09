@@ -57,17 +57,14 @@ public class ArticleService implements IArticleService {
         articleEntity.validate();
 
         // 添加标签
-        List<ArticleTagEntity> tags = new LinkedList<>();
+        String tagIds = "";
         for (Long tagId : createArticleRequest.getTagIds()) {
-            tags.add(ArticleTagEntity.builder().articleId(articleEntity.getId()).tagId(tagId).build());
+            tagIds += tagId + ",";
         }
+        articleEntity.setTagIds(tagIds);
 
-        ArticleAggregate articleAggregate = ArticleAggregate.builder()
-                .articleEntity(articleEntity)
-                .tags(tags)
-                .build();
         // 保存逻辑
-        articleRepository.save(articleAggregate);
+        articleRepository.save(articleEntity);
     }
 
     @Override
