@@ -11,6 +11,7 @@ import cn.xu.infrastructure.persistent.po.Article;
 import cn.xu.infrastructure.persistent.po.ArticleTag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.annotation.Resource;
 import java.util.LinkedList;
@@ -24,6 +25,9 @@ public class ArticleRepository implements IArticleRepository {
     private IArticleDao articleDao;
     @Resource
     private IArticleTagDao articleTagDao;
+
+    @Resource
+    private TransactionTemplate transactionTemplate;
 
     @Override
     public void save(ArticleEntity articleEntity) {
@@ -60,18 +64,38 @@ public class ArticleRepository implements IArticleRepository {
         List<ArticleEntity> articleEntities = new LinkedList<>();
         for (Article article : articles) {
             ArticleEntity articleEntity = ArticleEntity.builder()
-                   .id(article.getId())
-                   .title(article.getTitle())
-                   .description(article.getDescription())
-                   .content(article.getContent())
-                   .coverUrl(article.getCoverUrl())
-                   .categoryId(article.getCategoryId())
-                   .commentsEnabled(article.getCommentsEnabled())
-                   .status(article.getStatus())
-                   .isTop(article.getIsTop())
-                   .build();
+                    .id(article.getId())
+                    .title(article.getTitle())
+                    .description(article.getDescription())
+                    .content(article.getContent())
+                    .coverUrl(article.getCoverUrl())
+                    .categoryId(article.getCategoryId())
+                    .commentsEnabled(article.getCommentsEnabled())
+                    .status(article.getStatus())
+                    .isTop(article.getIsTop())
+                    .build();
             articleEntities.add(articleEntity);
         }
         return articleEntities;
+    }
+
+    @Override
+    public void deleteByIds(List<Long> articleIds) {
+        log.info("Deleting articles by IDs: {}", articleIds);
+
+        // 编程式事务
+        transactionTemplate.execute(status -> {
+            try {
+                // 批量删除文章标签
+                articleTagDao.deleteByArticleIds(articleIds);
+                // 批量删除文章
+                articleDao.deleteByIds(articleIds);
+                return 1; // 返回成功
+            } catch (Exception e) {
+                log.error("Error deleting articles: {}", e.getMessage(), e);
+                status.setRollbackOnly(); // 设置事务回滚
+                return 0; // 返回失败
+            }
+        });
     }
 }

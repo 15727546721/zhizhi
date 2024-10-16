@@ -9,4 +9,6 @@ public interface IArticleRepository {
     void save(ArticleEntity articleAggregate);
 
     List<ArticleEntity> queryArticle(int page, int size);
+
+    void deleteByIds(List<Long> articleIds);
 }

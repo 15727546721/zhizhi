@@ -40,6 +40,14 @@
                 #{commentsEnabled}, #{isTop}, #{viewCount}, #{favoritesCount}, #{likeCount}, now(),
                 now())
     </insert>
+
+    <delete id="deleteByIds">
+        DELETE FROM article WHERE id IN
+        <foreach collection="articleIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
     <select id="queryByPage" resultType="cn.xu.infrastructure.persistent.po.Article">
         SELECT id, title, description, content, cover_url
         FROM article

@@ -13,4 +13,6 @@ public interface IArticleService {
     String uploadCover(MultipartFile imageFile);
 
     List<ArticleEntity> listArticle(int page, int size);
+
+    void deleteArticles(List<Long> articleIds);
 }

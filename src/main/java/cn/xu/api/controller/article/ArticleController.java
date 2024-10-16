@@ -46,7 +46,7 @@ public class ArticleController {
                 .build();
     }
 
-//    @PostMapping("/update")
+    //    @PostMapping("/update")
 //    public ResponseEntity updateArticle(ArticleCreateDTO articleCreateDTO) {
 //        articleService.updateArticle(articleCreateDTO);
 //        return ResponseEntity.builder()
@@ -55,14 +55,14 @@ public class ArticleController {
 //                .build();
 //    }
 //
-//    @PostMapping("/delete")
-//    public ResponseEntity deleteArticle(Long articleId) {
-//        articleService.deleteArticle(articleId);
-//        return ResponseEntity.builder()
-//                .code(Constants.ResponseCode.SUCCESS.getCode())
-//                .info("文章删除成功")
-//                .build();
-//    }
+    @PostMapping("/delete")
+    public ResponseEntity deleteArticles(@RequestBody List<Long> articleIds) {
+        articleService.deleteArticles(articleIds);
+        return ResponseEntity.builder()
+                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .info("文章批量删除成功")
+                .build();
+    }
 
     @PostMapping("/list")
     public ResponseEntity<List<ArticleListResponse>> listArticle(@ModelAttribute PageRequest pageRequest) {
@@ -73,7 +73,7 @@ public class ArticleController {
 
         // 将 ArticleEntity 转换为 ArticleResponse
         List<ArticleListResponse> response = articles.stream()
-                .map(article ->  ArticleListResponse.builder()
+                .map(article -> ArticleListResponse.builder()
                         .id(article.getId())
                         .title(article.getTitle())
                         .coverUrl(article.getCoverUrl())
