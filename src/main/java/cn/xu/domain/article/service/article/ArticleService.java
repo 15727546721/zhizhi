@@ -93,6 +93,11 @@ public class ArticleService implements IArticleService {
         articleRepository.deleteByIds(articleIds);
     }
 
+    @Override
+    public void updateArticle(CreateArticleRequest createArticleRequest) {
+
+    }
+
     public TagVO fetchTagById(Long tagId) {
         Tag tagPO = tagRepository.findById(tagId); // 从仓储中查询PO
         if (tagPO == null) {

@@ -46,15 +46,15 @@ public class ArticleController {
                 .build();
     }
 
-    //    @PostMapping("/update")
-//    public ResponseEntity updateArticle(ArticleCreateDTO articleCreateDTO) {
-//        articleService.updateArticle(articleCreateDTO);
-//        return ResponseEntity.builder()
-//                .code(Constants.ResponseCode.SUCCESS.getCode())
-//                .info("文章更新成功")
-//                .build();
-//    }
-//
+    @PostMapping("/update")
+    public ResponseEntity updateArticle(@RequestBody CreateArticleRequest createArticleRequest) {
+        articleService.updateArticle(createArticleRequest);
+        return ResponseEntity.builder()
+                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .info("文章更新成功")
+                .build();
+    }
+
     @PostMapping("/delete")
     public ResponseEntity deleteArticles(@RequestBody List<Long> articleIds) {
         articleService.deleteArticles(articleIds);

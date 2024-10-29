@@ -15,4 +15,6 @@ public interface IArticleService {
     List<ArticleEntity> listArticle(int page, int size);
 
     void deleteArticles(List<Long> articleIds);
+
+    void updateArticle(CreateArticleRequest createArticleRequest);
 }
