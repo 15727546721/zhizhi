@@ -1,5 +1,6 @@
 package cn.xu.api.controller.admin.article;
 
+import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.api.dto.article.ArticleListResponse;
 import cn.xu.api.dto.article.ArticleResponse;
 import cn.xu.api.dto.article.CreateArticleRequest;
@@ -7,9 +8,12 @@ import cn.xu.api.dto.common.PageRequest;
 import cn.xu.common.Constants;
 import cn.xu.common.ResponseEntity;
 import cn.xu.domain.article.model.entity.ArticleEntity;
+import cn.xu.domain.article.service.IArticleCategoryService;
 import cn.xu.domain.article.service.IArticleService;
-import cn.xu.domain.article.service.ICategoryService;
+import cn.xu.domain.article.service.IArticleTagService;
+import cn.xu.exception.AppException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -24,9 +28,12 @@ public class ArticleController {
 
     @Resource
     private IArticleService articleService;
-
     @Resource
-    private ICategoryService categoryService;
+    private IArticleCategoryService articleCategoryService;
+    @Resource
+    private IArticleTagService articleTagService;
+    @Resource
+    private TransactionTemplate transactionTemplate;
 
     @PostMapping("/uploadCover")
     public ResponseEntity<String> uploadCover(@RequestPart("file") MultipartFile file) {
@@ -40,7 +47,39 @@ public class ArticleController {
 
     @PostMapping("/add")
     public ResponseEntity saveArticle(@RequestBody CreateArticleRequest createArticleRequest) {
-        articleService.createArticle(createArticleRequest);
+        log.info("文章创建参数: {}", createArticleRequest);
+        transactionTemplate.execute(status -> {
+            // 事务开始
+            try {
+                //1. 保存文章
+                Long articleId = articleService.createArticle(ArticleEntity.builder()
+                        .title(createArticleRequest.getTitle())
+                        .coverUrl(createArticleRequest.getCoverUrl())
+                        .content(createArticleRequest.getContent())
+                        .description(createArticleRequest.getDescription())
+                        .commentEnabled(createArticleRequest.getCommentEnabled())
+                        .isTop(createArticleRequest.getIsTop())
+                        .authorId(StpUtil.getLoginIdAsLong())
+                        .build());
+                //2. 保存文章分类
+                articleCategoryService.saveArticleCategory(articleId, createArticleRequest.getCategoryId());
+                //3. 保存文章标签
+                if (createArticleRequest.getTagIds() == null || createArticleRequest.getTagIds().isEmpty()) {
+                    throw new AppException(Constants.ResponseCode.NULL_PARAMETER.getCode(), "标签不能为空");
+                }
+                if (createArticleRequest.getTagIds().size() > 3) {
+                    throw new AppException(Constants.ResponseCode.ILLEGAL_PARAMETER.getCode(), "标签不能超过3个");
+                }
+                articleTagService.saveArticleTag(articleId, createArticleRequest.getTagIds());
+                // 事务提交
+                return 1;
+            } catch (Exception e) {
+                // 事务回滚
+                status.setRollbackOnly();
+                log.error("文章创建失败", e);
+                throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "文章创建失败");
+            }
+        });
         return ResponseEntity.builder()
                 .code(Constants.ResponseCode.SUCCESS.getCode())
                 .info("文章创建成功")
@@ -49,7 +88,16 @@ public class ArticleController {
 
     @PostMapping("/update")
     public ResponseEntity updateArticle(@RequestBody CreateArticleRequest createArticleRequest) {
-        articleService.updateArticle(createArticleRequest);
+        log.info("文章更新参数: {}", createArticleRequest);
+        articleService.updateArticle(ArticleEntity.builder()
+                .title(createArticleRequest.getTitle())
+                .coverUrl(createArticleRequest.getCoverUrl())
+                .content(createArticleRequest.getContent())
+                .description(createArticleRequest.getDescription())
+                .commentEnabled(createArticleRequest.getCommentEnabled())
+                .isTop(createArticleRequest.getIsTop())
+                .authorId(StpUtil.getLoginIdAsLong())
+                .build());
         return ResponseEntity.builder()
                 .code(Constants.ResponseCode.SUCCESS.getCode())
                 .info("文章更新成功")

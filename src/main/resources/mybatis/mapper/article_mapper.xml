@@ -30,7 +30,7 @@
         like_count,create_time,update_time
     </sql>
 
-    <insert id="insert" parameterType="cn.xu.infrastructure.persistent.po.Article">
+    <insert id="insert" parameterType="cn.xu.infrastructure.persistent.po.Article" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO article (title, description, content, cover_url, author_id, status,
                              comment_enabled,
                              is_top, view_count, favorites_count, like_count, create_time, update_time)

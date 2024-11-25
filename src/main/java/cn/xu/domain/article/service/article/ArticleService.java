@@ -1,7 +1,6 @@
 package cn.xu.domain.article.service.article;
 
 import cn.dev33.satoken.stp.StpUtil;
-import cn.xu.api.dto.article.CreateArticleRequest;
 import cn.xu.common.Constants;
 import cn.xu.domain.article.model.entity.ArticleEntity;
 import cn.xu.domain.article.model.valobj.TagVO;
@@ -18,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -37,32 +35,11 @@ public class ArticleService implements IArticleService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void createArticle(CreateArticleRequest createArticleRequest) {
+    public Long createArticle(ArticleEntity articleEntity) {
         long authorId = StpUtil.getLoginIdAsLong();// 获取当前登录用户ID
 
-        // 创建文章实体
-        ArticleEntity articleEntity = new ArticleEntity();
-        articleEntity.setTitle(createArticleRequest.getTitle());
-        articleEntity.setContent(createArticleRequest.getContent());
-        articleEntity.setCoverUrl(createArticleRequest.getCoverUrl());
-        articleEntity.setDescription(createArticleRequest.getDescription());
-        articleEntity.setAuthorId(authorId);
-        articleEntity.setCategoryId(createArticleRequest.getCategoryId());
-        articleEntity.setCreateTime(LocalDateTime.now());
-        articleEntity.setUpdateTime(LocalDateTime.now());
-
-        // 调用验证方法
-        articleEntity.validate();
-
-        // 添加标签
-        String tagIds = "";
-        for (Long tagId : createArticleRequest.getTagIds()) {
-            tagIds += tagId + ",";
-        }
-        articleEntity.setTagIds(tagIds);
-
         // 保存逻辑
-        articleRepository.save(articleEntity);
+        return articleRepository.save(articleEntity);
     }
 
     @Override
@@ -92,7 +69,7 @@ public class ArticleService implements IArticleService {
     }
 
     @Override
-    public void updateArticle(CreateArticleRequest createArticleRequest) {
+    public void updateArticle(ArticleEntity articleEntity) {
 
     }
 

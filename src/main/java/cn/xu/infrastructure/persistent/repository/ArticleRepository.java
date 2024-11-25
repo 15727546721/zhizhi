@@ -27,7 +27,7 @@ public class ArticleRepository implements IArticleRepository {
     private TransactionTemplate transactionTemplate;
 
     @Override
-    public void save(ArticleEntity articleEntity) {
+    public Long save(ArticleEntity articleEntity) {
         log.info("save articleEntity: " + articleEntity);
         Article article = Article.builder()
                 .id(articleEntity.getId())
@@ -40,15 +40,7 @@ public class ArticleRepository implements IArticleRepository {
                 .status(articleEntity.getStatus())
                 .isTop(articleEntity.getIsTop())
                 .build();
-        articleDao.insert(article);
-//        List<ArticleTag> tags = new LinkedList<>();
-//        for (ArticleTagEntity tag : articleAggregate.getTags()) {
-//            tags.add(ArticleTag.builder()
-//                    .articleId(tag.getArticleId())
-//                    .tagId(tag.getTagId())
-//                    .build());
-//        }
-//        articleTagDao.insertTags(tags);
+        return articleDao.insert(article);
     }
 
     @Override

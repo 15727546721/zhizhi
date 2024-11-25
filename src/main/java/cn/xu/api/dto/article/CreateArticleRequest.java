@@ -13,7 +13,7 @@ public class CreateArticleRequest {
     private String content;
     private String coverUrl;
     private String status;
-    private String commentsEnabled;
+    private String commentEnabled;
     private String isTop;
     private Long categoryId;
     private List<Long> tagIds; // 标签ID列表

@@ -13,4 +13,6 @@ public interface IArticleTagDao {
     void insertTags(List<ArticleTag> articleTag);
 
     void deleteByArticleIds(@Param("articleIds") List<Long> articleIds);
+
+    void insertBatchByList(List<ArticleTag> articleTags);
 }

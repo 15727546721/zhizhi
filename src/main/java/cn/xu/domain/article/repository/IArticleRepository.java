@@ -6,7 +6,7 @@ import cn.xu.infrastructure.persistent.po.Article;
 import java.util.List;
 
 public interface IArticleRepository {
-    void save(ArticleEntity articleAggregate);
+    Long save(ArticleEntity articleAggregate);
 
     List<ArticleEntity> queryArticle(int page, int size);
 

@@ -27,6 +27,13 @@
             (#{tag.articleId}, #{tag.tagId})
         </foreach>
     </insert>
+    <insert id="insertBatchByList" parameterType="java.util.List">
+        INSERT INTO article_tag (article_id, tag_id)
+        VALUES
+        <foreach collection="list" item="tag" separator=",">
+            (#{tag.articleId}, #{tag.tagId})
+        </foreach>
+    </insert>
 
     <delete id="deleteByArticleIds">
         DELETE FROM article_tag WHERE article_id IN

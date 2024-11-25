@@ -8,7 +8,7 @@ import java.util.List;
 
 @Mapper
 public interface IArticleDao {
-    void insert(Article article);
+    Long insert(Article article);
 
     List<Article> queryByPage(@Param("page") int page, @Param("size") int size);
 
