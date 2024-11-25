@@ -9,7 +9,6 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * 
  * @TableName tag
  */
 @AllArgsConstructor

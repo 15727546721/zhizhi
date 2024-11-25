@@ -13,7 +13,8 @@
     </resultMap>
 
     <sql id="Base_Column_List">
-        id,name,description,
+        id
+        ,name,description,
         create_time,update_time
     </sql>
 
@@ -24,7 +25,7 @@
 
     <update id="update" parameterType="cn.xu.infrastructure.persistent.po.Tag">
         update tag
-        set name = #{name},
+        set name        = #{name},
             description = #{description}
         where id = #{id}
     </update>

@@ -1,6 +1,7 @@
 package cn.xu.api.controller.admin.article;
 
 import cn.xu.api.dto.article.ArticleListResponse;
+import cn.xu.api.dto.article.ArticleResponse;
 import cn.xu.api.dto.article.CreateArticleRequest;
 import cn.xu.api.dto.common.PageRequest;
 import cn.xu.common.Constants;
@@ -89,23 +90,25 @@ public class ArticleController {
 
     /**
      * 获取文章详情
+     *
      * @param id
      * @return
      */
-//    @GetMapping("/{id}")
-//    public ResponseEntity<ArticleResponse> getArticle(@PathVariable("id") Long id) {
-//        ArticleEntity article = articleService.getArticleById(id);
-//        ArticleResponse response = new ArticleResponse();
-//        response.setId(article.getId());
-//        response.setTitle(article.getTitle());
-//        response.setContent(article.getContent());
-//        response.setCoverUrl(article.getCoverUrl());
-//        response.setCategory(article.getCategoryId());
-//        response.setTags(article.getTags());
-//        return ResponseEntity.<ArticleResponse>builder()
-//                .data(response)
-//                .code(Constants.ResponseCode.SUCCESS.getCode())
-//                .info("文章获取成功")
-//                .build();
-//    }
+    @GetMapping("/{id}")
+    public ResponseEntity<ArticleResponse> getArticle(@PathVariable("id") Long id) {
+        ArticleEntity article = articleService.getArticleById(id);
+        ArticleResponse response = new ArticleResponse();
+        response.setId(article.getId());
+        response.setTitle(article.getTitle());
+        response.setContent(article.getContent());
+        response.setCoverUrl(article.getCoverUrl());
+        response.setDescription(article.getDescription());
+        response.setStatus(article.getStatus());
+        response.setCommentEnabled(article.getCommentEnabled());
+        return ResponseEntity.<ArticleResponse>builder()
+                .data(response)
+                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .info("文章获取成功")
+                .build();
+    }
 }

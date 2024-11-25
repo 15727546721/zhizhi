@@ -13,6 +13,7 @@ import javax.annotation.Resource;
 public class ArticleTagRepository implements IArticleTagRepository {
     @Resource
     private IArticleTagDao articleTagDao;
+
     @Override
     public void save(ArticleTag articleTag) {
         log.info("Saving articleTag: {}", articleTag);

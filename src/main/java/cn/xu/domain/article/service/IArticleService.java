@@ -17,4 +17,6 @@ public interface IArticleService {
     void deleteArticles(List<Long> articleIds);
 
     void updateArticle(CreateArticleRequest createArticleRequest);
+
+    ArticleEntity getArticleById(Long id);
 }

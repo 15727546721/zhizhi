@@ -54,7 +54,7 @@ public interface IRedisService {
      * 延迟队列
      *
      * @param rBlockingQueue 加锁队列
-     * @param <T> 泛型
+     * @param <T>            泛型
      * @return 队列
      */
     <T> RDelayedQueue<T> getDelayedQueue(RBlockingQueue<T> rBlockingQueue);

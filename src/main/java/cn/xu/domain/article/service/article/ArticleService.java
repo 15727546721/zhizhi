@@ -3,9 +3,7 @@ package cn.xu.domain.article.service.article;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.api.dto.article.CreateArticleRequest;
 import cn.xu.common.Constants;
-import cn.xu.domain.article.model.aggregate.ArticleAggregate;
 import cn.xu.domain.article.model.entity.ArticleEntity;
-import cn.xu.domain.article.model.entity.ArticleTagEntity;
 import cn.xu.domain.article.model.valobj.TagVO;
 import cn.xu.domain.article.repository.IArticleRepository;
 import cn.xu.domain.article.repository.IArticleTagRepository;
@@ -13,6 +11,7 @@ import cn.xu.domain.article.repository.ITagRepository;
 import cn.xu.domain.article.service.IArticleService;
 import cn.xu.domain.file.service.MinioService;
 import cn.xu.exception.AppException;
+import cn.xu.infrastructure.persistent.po.Article;
 import cn.xu.infrastructure.persistent.po.Tag;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,7 +19,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
-import java.util.LinkedList;
 import java.util.List;
 
 @Service
@@ -96,6 +94,24 @@ public class ArticleService implements IArticleService {
     @Override
     public void updateArticle(CreateArticleRequest createArticleRequest) {
 
+    }
+
+    @Override
+    public ArticleEntity getArticleById(Long id) {
+
+        Article article = articleRepository.findById(id);
+        if (article == null) {
+            throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "未查询到文章");
+        }
+        // 转换为实体
+        ArticleEntity articleEntity = new ArticleEntity();
+        articleEntity.setId(article.getId());
+        articleEntity.setTitle(article.getTitle());
+        articleEntity.setContent(article.getContent());
+        articleEntity.setCoverUrl(article.getCoverUrl());
+        articleEntity.setDescription(article.getDescription());
+
+        return articleEntity;
     }
 
     public TagVO fetchTagById(Long tagId) {

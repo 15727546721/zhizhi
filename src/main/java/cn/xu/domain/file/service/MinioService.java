@@ -38,6 +38,7 @@ public class MinioService implements IFileStorageService {
         this.minioClient = minioClient;
         this.bucketName = bucketName;
     }
+
     @Override
     public String uploadFile(MultipartFile file, String fileName) throws Exception {
         try (InputStream inputStream = file.getInputStream()) {

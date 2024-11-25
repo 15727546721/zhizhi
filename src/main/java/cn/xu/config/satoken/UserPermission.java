@@ -53,7 +53,7 @@ public class UserPermission implements StpInterface {
             return permissionRepository.findRolesByUserid(Long.valueOf((String) loginId));
         });
         log.info("用户id：{} 用户角色列表：{}", loginId, roleList);
-        return  roleList;
+        return roleList;
     }
 
 }

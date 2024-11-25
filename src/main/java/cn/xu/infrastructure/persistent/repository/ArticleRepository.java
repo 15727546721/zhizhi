@@ -1,14 +1,11 @@
 package cn.xu.infrastructure.persistent.repository;
 
 import cn.dev33.satoken.stp.StpUtil;
-import cn.xu.domain.article.model.aggregate.ArticleAggregate;
 import cn.xu.domain.article.model.entity.ArticleEntity;
-import cn.xu.domain.article.model.entity.ArticleTagEntity;
 import cn.xu.domain.article.repository.IArticleRepository;
 import cn.xu.infrastructure.persistent.dao.IArticleDao;
 import cn.xu.infrastructure.persistent.dao.IArticleTagDao;
 import cn.xu.infrastructure.persistent.po.Article;
-import cn.xu.infrastructure.persistent.po.ArticleTag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -39,12 +36,9 @@ public class ArticleRepository implements IArticleRepository {
                 .description(articleEntity.getDescription())
                 .content(articleEntity.getContent())
                 .coverUrl(articleEntity.getCoverUrl())
-                .categoryId(articleEntity.getCategoryId())
-                .tagIds(articleEntity.getTagIds())
-                .commentsEnabled(articleEntity.getCommentsEnabled())
+                .commentEnabled(articleEntity.getCommentEnabled())
                 .status(articleEntity.getStatus())
                 .isTop(articleEntity.getIsTop())
-                .deleted("0")
                 .build();
         articleDao.insert(article);
 //        List<ArticleTag> tags = new LinkedList<>();
@@ -69,8 +63,7 @@ public class ArticleRepository implements IArticleRepository {
                     .description(article.getDescription())
                     .content(article.getContent())
                     .coverUrl(article.getCoverUrl())
-                    .categoryId(article.getCategoryId())
-                    .commentsEnabled(article.getCommentsEnabled())
+                    .commentEnabled(article.getCommentEnabled())
                     .status(article.getStatus())
                     .isTop(article.getIsTop())
                     .build();
@@ -97,5 +90,10 @@ public class ArticleRepository implements IArticleRepository {
                 return 0; // 返回失败
             }
         });
+    }
+
+    @Override
+    public Article findById(Long id) {
+        return articleDao.findById(id);
     }
 }

@@ -13,4 +13,6 @@ public interface IArticleDao {
     List<Article> queryByPage(@Param("page") int page, @Param("size") int size);
 
     void deleteByIds(@Param("articleIds") List<Long> articleIds);
+
+    Article findById(@Param("id") Long id);
 }

@@ -4,10 +4,11 @@ package cn.xu.infrastructure.persistent.po;
 import lombok.*;
 
 import java.io.Serializable;
-import java.util.Date;
+import java.time.LocalDateTime;
 
 /**
  * 存储文章信息的表
+ *
  * @TableName article
  */
 @Builder
@@ -47,21 +48,6 @@ public class Article implements Serializable {
     private Long authorId;
 
     /**
-     * 文章分类的ID
-     */
-    private Long categoryId;
-
-    /**
-     * 文章标签集合
-     */
-    private String tagIds;
-
-    /**
-     * 逻辑删除标志，0表示未删除，1表示已删除
-     */
-    private String deleted;
-
-    /**
      * 文章的状态：0:草稿、1:发布、2:下架、3:待审核、4:审核不通过
      */
     private String status;
@@ -69,7 +55,7 @@ public class Article implements Serializable {
     /**
      * 是否允许评论，0表示不允许，1表示允许
      */
-    private String commentsEnabled;
+    private String commentEnabled;
 
     /**
      * 是否置顶，0表示未置顶，1表示已置顶
@@ -94,12 +80,12 @@ public class Article implements Serializable {
     /**
      * 文章的创建时间
      */
-    private Date createTime;
+    private LocalDateTime createTime;
 
     /**
      * 文章的最后更新时间
      */
-    private Date updateTime;
+    private LocalDateTime updateTime;
 
     private static final long serialVersionUID = 1L;
 

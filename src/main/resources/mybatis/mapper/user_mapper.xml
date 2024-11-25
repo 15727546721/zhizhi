@@ -20,8 +20,8 @@
                 #{user.status}, now(), now())
     </insert>
     <update id="updateUser" parameterType="cn.xu.domain.user.model.entity.UserEntity">
-        update user set
-                        username=username,
+        update user
+        set username=username,
             email=email,
             nickname=nickname,
             avatar=avatar,

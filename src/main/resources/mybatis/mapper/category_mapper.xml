@@ -23,7 +23,10 @@
         values (#{name}, #{description}, now(), now())
     </insert>
     <update id="update" parameterType="cn.xu.infrastructure.persistent.po.Category">
-        update category set name = #{name}, description = #{description}, update_time = now()
+        update category
+        set name        = #{name},
+            description = #{description},
+            update_time = now()
         where id = #{id}
     </update>
 

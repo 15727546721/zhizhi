@@ -22,7 +22,7 @@ import java.util.List;
 @Slf4j
 @RequestMapping("/admin")
 @RestController
-public class AdminController{
+public class AdminController {
 
     @Resource
     private IUserLoginService userLoginService;

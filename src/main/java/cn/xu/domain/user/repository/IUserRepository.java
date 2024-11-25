@@ -11,6 +11,7 @@ public interface IUserRepository {
 
     /**
      * 根据用户名查询用户
+     *
      * @param username
      * @return
      */
@@ -18,6 +19,7 @@ public interface IUserRepository {
 
     /**
      * 根据用户id查询用户
+     *
      * @param userId
      * @return
      */
@@ -25,6 +27,7 @@ public interface IUserRepository {
 
     /**
      * 根据用户id查询用户信息
+     *
      * @param userId
      * @return
      */
@@ -32,6 +35,7 @@ public interface IUserRepository {
 
     /**
      * 根据页码和每页大小查询用户
+     *
      * @param page
      * @param size
      * @return
@@ -40,6 +44,7 @@ public interface IUserRepository {
 
     /**
      * 根据页码和每页大小查询管理员
+     *
      * @param page
      * @param size
      * @return
@@ -48,6 +53,7 @@ public interface IUserRepository {
 
     /**
      * 保存用户
+     *
      * @param userEntity
      * @return
      */
@@ -55,6 +61,7 @@ public interface IUserRepository {
 
     /**
      * 更新用户
+     *
      * @param userEntity
      * @return
      */
@@ -62,6 +69,7 @@ public interface IUserRepository {
 
     /**
      * 删除用户
+     *
      * @param userId
      * @return
      */

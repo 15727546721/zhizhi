@@ -11,11 +11,8 @@
         <result property="content" column="content" jdbcType="VARCHAR"/>
         <result property="coverUrl" column="cover_url" jdbcType="VARCHAR"/>
         <result property="authorId" column="author_id" jdbcType="BIGINT"/>
-        <result property="categoryId" column="category_id" jdbcType="BIGINT"/>
-        <result property="tagIds" column="tagIds" jdbcType="VARCHAR"/>
-        <result property="deleted" column="deleted" jdbcType="CHAR"/>
         <result property="status" column="status" jdbcType="CHAR"/>
-        <result property="commentsEnabled" column="comments_enabled" jdbcType="CHAR"/>
+        <result property="commentEnabled" column="comments_enabled" jdbcType="CHAR"/>
         <result property="isTop" column="is_top" jdbcType="CHAR"/>
         <result property="viewCount" column="view_count" jdbcType="BIGINT"/>
         <result property="favoritesCount" column="favorites_count" jdbcType="BIGINT"/>
@@ -27,16 +24,17 @@
     <sql id="Base_Column_List">
         id
         ,title,content,
-        cover_url,author_id,category_id,
-        deleted,status,comments_enabled,
-        is_top,view_count,favorites_count,
+        cover_url,author_id,
+        status,comment_enabled,is_top,
+        view_count,favorites_count,
         like_count,create_time,update_time
     </sql>
 
     <insert id="insert" parameterType="cn.xu.infrastructure.persistent.po.Article">
-        INSERT INTO article (title, description, content, cover_url, author_id, category_id, tagIds, deleted, status, comments_enabled,
-                              is_top, view_count, favorites_count, like_count, create_time, update_time)
-        VALUES (#{title}, #{description}, #{content}, #{coverUrl}, #{authorId}, #{categoryId}, #{tagIds}, #{deleted}, #{status},
+        INSERT INTO article (title, description, content, cover_url, author_id, status,
+                             comments_enabled,
+                             is_top, view_count, favorites_count, like_count, create_time, update_time)
+        VALUES (#{title}, #{description}, #{content}, #{coverUrl}, #{authorId}, #{categoryId}, #{status},
                 #{commentsEnabled}, #{isTop}, #{viewCount}, #{favoritesCount}, #{likeCount}, now(),
                 now())
     </insert>
@@ -51,8 +49,25 @@
     <select id="queryByPage" resultType="cn.xu.infrastructure.persistent.po.Article">
         SELECT id, title, description, content, cover_url
         FROM article
-        WHERE deleted = '0'
         ORDER BY id DESC
-        LIMIT #{page}, #{size}
+            LIMIT #{page}, #{size}
+    </select>
+    <select id="findById" resultType="cn.xu.infrastructure.persistent.po.Article">
+        SELECT id,
+               title,
+               description,
+               content,
+               cover_url,
+               author_id,
+               status,
+               comments_enabled,
+               is_top,
+               view_count,
+               favorites_count,
+               like_count,
+               create_time,
+               update_time
+        FROM article
+        WHERE id = #{id}
     </select>
 </mapper>

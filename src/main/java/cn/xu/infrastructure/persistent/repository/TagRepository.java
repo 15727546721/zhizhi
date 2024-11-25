@@ -79,7 +79,7 @@ public class TagRepository implements ITagRepository {
 
     @Override
     public Tag findById(Long tagId) {
-        if (tagId == null){
+        if (tagId == null) {
             throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "标签ID不能为空");
         }
         log.info("查询标签ID: {}", tagId);

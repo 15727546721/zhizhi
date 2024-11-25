@@ -13,6 +13,7 @@ public class CategoryService implements ICategoryService {
 
     @Resource
     private ICategoryRepository categoryRepository;
+
     @Override
     public List<CategoryEntity> queryCategoryList(int page, int size) {
         List<CategoryEntity> categoryEntity = categoryRepository.queryCategoryList(page, size);
