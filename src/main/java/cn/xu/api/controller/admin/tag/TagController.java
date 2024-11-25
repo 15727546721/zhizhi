@@ -1,11 +1,11 @@
-package cn.xu.api.controller.category;
+package cn.xu.api.controller.admin.tag;
 
-import cn.xu.api.dto.article.CategoryRequest;
+import cn.xu.api.dto.article.TagRequest;
 import cn.xu.api.dto.common.PageRequest;
 import cn.xu.common.Constants;
 import cn.xu.common.ResponseEntity;
-import cn.xu.domain.article.model.entity.CategoryEntity;
-import cn.xu.domain.article.service.ICategoryService;
+import cn.xu.domain.article.model.entity.TagEntity;
+import cn.xu.domain.article.service.ITagService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.bind.annotation.*;
@@ -14,78 +14,78 @@ import javax.annotation.Resource;
 import java.util.List;
 
 @Slf4j
-@RequestMapping("/category")
+@RequestMapping("admin/tag")
 @RestController
-public class CategoryController {
+public class TagController {
 
     @Resource
-    private ICategoryService categoryService;
+    private ITagService tagService;
 
     @PostMapping("/add")
-    public ResponseEntity addCategory(@RequestBody CategoryRequest categoryRequest) {
-
-        if (ObjectUtils.isEmpty(categoryRequest)) {
+    public ResponseEntity addTag(@RequestBody TagRequest tagRequest) {
+        if (ObjectUtils.isEmpty(tagRequest)) {
             return ResponseEntity.builder()
                     .code(Constants.ResponseCode.NULL_PARAMETER.getCode())
                     .info(Constants.ResponseCode.NULL_PARAMETER.getInfo())
                     .build();
         }
-        CategoryEntity categoryEntity = CategoryEntity.builder()
-                .name(categoryRequest.getName())
-                .description(categoryRequest.getDescription())
+        TagEntity tagEntity = TagEntity.builder()
+                .name(tagRequest.getName())
+                .description(tagRequest.getDescription())
                 .build();
-        categoryService.save(categoryEntity);
+        tagService.save(tagEntity);
         return ResponseEntity.builder()
                 .code(Constants.ResponseCode.SUCCESS.getCode())
-                .info("保存分类成功")
+                .info("保存标签成功")
                 .build();
     }
 
     @GetMapping("/list")
-    public ResponseEntity getCategoryList(@ModelAttribute PageRequest pageRequest) {
+    public ResponseEntity getTagList(@ModelAttribute PageRequest pageRequest) {
         int page = pageRequest.getPage();
         int size = pageRequest.getSize();
-        log.info("查询分类列表: page={}, size={}", page, size);
-        List<CategoryEntity> categoryEntity = categoryService.queryCategoryList(page, size);
-        return ResponseEntity.<List<CategoryEntity>>builder()
+        log.info("查询标签列表: page={}, size={}", page, size);
+        List<TagEntity> tagEntityList = tagService.queryTagList(page, size);
+        return ResponseEntity.<List<TagEntity>>builder()
                 .code(Constants.ResponseCode.SUCCESS.getCode())
-                .info("查询分类列表成功")
-                .data(categoryEntity)
+                .info("查询标签列表成功")
+                .data(tagEntityList)
                 .build();
     }
 
     @PostMapping("/update")
-    public ResponseEntity updateCategory(@RequestBody CategoryRequest categoryRequest) {
-        if (ObjectUtils.isEmpty(categoryRequest)) {
+    public ResponseEntity updateTag(@RequestBody TagRequest tagRequest) {
+        if (ObjectUtils.isEmpty(tagRequest)) {
             return ResponseEntity.builder()
                     .code(Constants.ResponseCode.NULL_PARAMETER.getCode())
                     .info(Constants.ResponseCode.NULL_PARAMETER.getInfo())
                     .build();
         }
-        CategoryEntity categoryEntity = CategoryEntity.builder()
-                .id(categoryRequest.getId())
-                .name(categoryRequest.getName())
-                .description(categoryRequest.getDescription())
+        TagEntity tagEntity = TagEntity.builder()
+                .id(tagRequest.getId())
+                .name(tagRequest.getName())
+                .description(tagRequest.getDescription())
                 .build();
-        categoryService.update(categoryEntity);
+        tagService.update(tagEntity);
         return ResponseEntity.builder()
                 .code(Constants.ResponseCode.SUCCESS.getCode())
-                .info("更新分类成功")
+                .info("更新标签成功")
                 .build();
     }
 
     @PostMapping("/delete")
-    public ResponseEntity deleteCategory(@RequestBody List<Long> idList) {
+    public ResponseEntity deleteTag(@RequestBody List<Long> idList) {
         if (idList.isEmpty()) {
             return ResponseEntity.builder()
                     .code(Constants.ResponseCode.NULL_PARAMETER.getCode())
                     .info(Constants.ResponseCode.NULL_PARAMETER.getInfo())
                     .build();
         }
-        categoryService.delete(idList);
+        tagService.delete(idList);
         return ResponseEntity.builder()
                 .code(Constants.ResponseCode.SUCCESS.getCode())
-                .info("删除分类成功")
+                .info("删除标签成功")
                 .build();
     }
 }
+

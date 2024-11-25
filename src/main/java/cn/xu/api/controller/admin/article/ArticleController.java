@@ -1,4 +1,4 @@
-package cn.xu.api.controller.article;
+package cn.xu.api.controller.admin.article;
 
 import cn.xu.api.dto.article.ArticleListResponse;
 import cn.xu.api.dto.article.CreateArticleRequest;
@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Slf4j
-@RequestMapping("/article")
+@RequestMapping("admin/article")
 @RestController
 public class ArticleController {
 

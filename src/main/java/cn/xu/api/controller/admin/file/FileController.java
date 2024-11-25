@@ -1,4 +1,4 @@
-package cn.xu.api.controller.file;
+package cn.xu.api.controller.admin.file;
 
 import cn.xu.common.Constants;
 import cn.xu.common.ResponseEntity;
@@ -15,7 +15,7 @@ import java.util.List;
 
 @Slf4j
 @RestController
-@RequestMapping("/file")
+@RequestMapping("admin/file")
 public class FileController {
 
     private final MinioService minioService;
