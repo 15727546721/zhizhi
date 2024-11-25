@@ -93,6 +93,20 @@ public class TagRepository implements ITagRepository {
         }
     }
 
+    @Override
+    public List<TagEntity> getTagSelectList() {
+        // 查询标签列表，使用分页
+        List<Tag> tagList = tagDao.selectList();
+        log.info("查询标签列表，返回结果：{}", tagList);
+
+        // 将 Tag 对象转换为 TagEntity 对象
+        List<TagEntity> tagEntityList = tagList.stream()
+                .map(this::convertToTagEntity)
+                .collect(Collectors.toList());
+
+        return tagEntityList;
+    }
+
     private TagEntity convertToTagEntity(Tag tag) {
         if (tag == null) {
             return null;

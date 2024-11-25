@@ -13,4 +13,6 @@ public interface ICategoryService {
     public void update(CategoryEntity categoryEntity);
 
     public void delete(List<Long> idList);
+
+    List<CategoryEntity> getCategorySelect();
 }

@@ -53,6 +53,16 @@ public class CategoryController {
                 .data(categoryEntity)
                 .build();
     }
+    @GetMapping("/getCategorySelect")
+    public ResponseEntity getCategorySelect() {
+        log.info("获取分类下拉列表");
+        List<CategoryEntity> categoryEntity = categoryService.getCategorySelect();
+        return ResponseEntity.<List<CategoryEntity>>builder()
+                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .info("查询分类列表成功")
+                .data(categoryEntity)
+                .build();
+    }
 
     @PostMapping("/update")
     public ResponseEntity updateCategory(@RequestBody CategoryRequest categoryRequest) {

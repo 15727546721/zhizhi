@@ -53,6 +53,17 @@ public class TagController {
                 .build();
     }
 
+    @GetMapping("/getTagSelectList")
+    public ResponseEntity getTagSelectList() {
+        log.info("查询标签下拉列表");
+        List<TagEntity> tagEntityList = tagService.getTagSelectList();
+        return ResponseEntity.<List<TagEntity>>builder()
+                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .info("查询标签列表成功")
+                .data(tagEntityList)
+                .build();
+    }
+
     @PostMapping("/update")
     public ResponseEntity updateTag(@RequestBody TagRequest tagRequest) {
         if (ObjectUtils.isEmpty(tagRequest)) {

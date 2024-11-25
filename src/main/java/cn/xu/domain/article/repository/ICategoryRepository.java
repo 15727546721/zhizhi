@@ -12,4 +12,6 @@ public interface ICategoryRepository {
     void update(CategoryEntity categoryEntity);
 
     void delete(List<Long> idList);
+
+    List<CategoryEntity> getCategorySelect();
 }

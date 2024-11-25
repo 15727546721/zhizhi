@@ -48,5 +48,9 @@
         FROM tag
         WHERE id = #{id}
     </select>
+    <select id="selectList" resultType="cn.xu.infrastructure.persistent.po.Tag">
+        SELECT id, name
+        FROM tag
+    </select>
 
 </mapper>

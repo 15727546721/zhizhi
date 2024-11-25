@@ -15,4 +15,6 @@ public interface ITagRepository {
     void delete(List<Long> idList);
 
     Tag findById(Long tagId);
+
+    List<TagEntity> getTagSelectList();
 }

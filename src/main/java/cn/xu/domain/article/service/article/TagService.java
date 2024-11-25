@@ -34,4 +34,9 @@ public class TagService implements ITagService {
     public void delete(List<Long> idList) {
         tagRepository.delete(idList);
     }
+
+    @Override
+    public List<TagEntity> getTagSelectList() {
+        return tagRepository.getTagSelectList();
+    }
 }

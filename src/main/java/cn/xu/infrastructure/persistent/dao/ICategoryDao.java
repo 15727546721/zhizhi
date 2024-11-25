@@ -15,4 +15,6 @@ public interface ICategoryDao {
     void update(Category category);
 
     void delete(@Param("list") List<Long> idList);
+
+    List<Category> selectList();
 }

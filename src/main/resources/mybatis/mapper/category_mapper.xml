@@ -42,4 +42,8 @@
         select id, name, description, create_time, update_time
         from category limit #{page}, #{size}
     </select>
+    <select id="selectList" resultType="cn.xu.infrastructure.persistent.po.Category">
+        select id, name
+        from category
+    </select>
 </mapper>

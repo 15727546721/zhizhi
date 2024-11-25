@@ -12,4 +12,6 @@ public interface ITagService {
     public void update(TagEntity tagEntity);
 
     public void delete(List<Long> idList);
+
+    List<TagEntity> getTagSelectList();
 }

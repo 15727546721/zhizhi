@@ -34,4 +34,9 @@ public class CategoryService implements ICategoryService {
     public void delete(List<Long> idList) {
         categoryRepository.delete(idList);
     }
+
+    @Override
+    public List<CategoryEntity> getCategorySelect() {
+        return categoryRepository.getCategorySelect();
+    }
 }

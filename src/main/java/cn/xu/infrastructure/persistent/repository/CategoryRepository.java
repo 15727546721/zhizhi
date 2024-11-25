@@ -70,6 +70,17 @@ public class CategoryRepository implements ICategoryRepository {
         }
     }
 
+    @Override
+    public List<CategoryEntity> getCategorySelect() {
+        List<Category> categoryList = categoryDao.selectList();
+        log.info("查询分类列表，返回结果：{}", categoryList);
+        List<CategoryEntity> categoryEntityList = categoryList.stream()
+                .map(this::convertToCategoryEntity)
+                .collect(Collectors.toList());
+
+        return categoryEntityList;
+    }
+
     private CategoryEntity convertToCategoryEntity(Category category) {
         if (category == null) {
             return null;
