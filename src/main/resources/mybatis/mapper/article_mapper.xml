@@ -32,7 +32,7 @@
 
     <insert id="insert" parameterType="cn.xu.infrastructure.persistent.po.Article">
         INSERT INTO article (title, description, content, cover_url, author_id, status,
-                             comments_enabled,
+                             comment_enabled,
                              is_top, view_count, favorites_count, like_count, create_time, update_time)
         VALUES (#{title}, #{description}, #{content}, #{coverUrl}, #{authorId}, #{categoryId}, #{status},
                 #{commentsEnabled}, #{isTop}, #{viewCount}, #{favoritesCount}, #{likeCount}, now(),
@@ -60,7 +60,7 @@
                cover_url,
                author_id,
                status,
-               comments_enabled,
+               comment_enabled,
                is_top,
                view_count,
                favorites_count,
