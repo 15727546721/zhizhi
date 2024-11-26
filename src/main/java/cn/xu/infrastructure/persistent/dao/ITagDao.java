@@ -21,5 +21,5 @@ public interface ITagDao {
 
     List<Tag> selectList();
 
-    Tag selectByArticleId(Long id);
+    List<Tag> selectByArticleId(@Param("articleId") Long id);
 }

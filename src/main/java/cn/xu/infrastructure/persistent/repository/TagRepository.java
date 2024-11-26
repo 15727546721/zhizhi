@@ -108,10 +108,13 @@ public class TagRepository implements ITagRepository {
     }
 
     @Override
-    public TagEntity getTagsByArticleId(Long id) {
-        Tag tag = tagDao.selectByArticleId(id);
+    public List<TagEntity> getTagsByArticleId(Long id) {
+        List<Tag> tag = tagDao.selectByArticleId(id);
         log.info("查询文章ID: {} 对应的标签: {}", id, tag);
-        return convertToTagEntity(tag);
+        List<TagEntity> tagEntityList = tag.stream()
+               .map(this::convertToTagEntity)
+               .collect(Collectors.toList());
+        return tagEntityList;
     }
 
     private TagEntity convertToTagEntity(Tag tag) {

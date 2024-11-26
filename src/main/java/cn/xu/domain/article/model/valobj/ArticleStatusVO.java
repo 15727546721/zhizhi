@@ -1,6 +1,6 @@
 package cn.xu.domain.article.model.valobj;
 
-public enum ArticleStatus {
+public enum ArticleStatusVO {
     DRAFT(0, "草稿"),
     PUBLISHED(1, "发布"),
     UNPUBLISHED(2, "下架"),
@@ -11,7 +11,7 @@ public enum ArticleStatus {
     private final String description;
 
     // 构造函数
-    ArticleStatus(int code, String description) {
+    ArticleStatusVO(int code, String description) {
         this.code = code;
         this.description = description;
     }
@@ -27,8 +27,8 @@ public enum ArticleStatus {
     }
 
     // 根据状态代码获取枚举实例
-    public static ArticleStatus fromCode(int code) {
-        for (ArticleStatus status : ArticleStatus.values()) {
+    public static ArticleStatusVO fromCode(int code) {
+        for (ArticleStatusVO status : ArticleStatusVO.values()) {
             if (status.getCode() == code) {
                 return status;
             }

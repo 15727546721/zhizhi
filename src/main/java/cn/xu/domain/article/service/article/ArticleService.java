@@ -3,7 +3,6 @@ package cn.xu.domain.article.service.article;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.common.Constants;
 import cn.xu.domain.article.model.entity.ArticleEntity;
-import cn.xu.domain.article.model.valobj.TagVO;
 import cn.xu.domain.article.repository.IArticleRepository;
 import cn.xu.domain.article.repository.IArticleTagRepository;
 import cn.xu.domain.article.repository.ITagRepository;
@@ -89,17 +88,6 @@ public class ArticleService implements IArticleService {
         articleEntity.setDescription(article.getDescription());
 
         return articleEntity;
-    }
-
-    public TagVO fetchTagById(Long tagId) {
-        Tag tagPO = tagRepository.findById(tagId); // 从仓储中查询PO
-        if (tagPO == null) {
-            throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "未查询到标签");
-        }
-        // 转换为值对象
-        TagVO tag = new TagVO();
-        tag.setName(tagPO.getName());
-        return tag;
     }
 
 }

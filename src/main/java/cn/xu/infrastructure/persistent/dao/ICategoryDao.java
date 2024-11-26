@@ -18,5 +18,5 @@ public interface ICategoryDao {
 
     List<Category> selectList();
 
-    Category selectByArticleId(@Param("id") Long id);
+    Category selectByArticleId(@Param("articleId") Long id);
 }

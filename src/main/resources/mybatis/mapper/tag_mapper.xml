@@ -53,7 +53,11 @@
         FROM tag
     </select>
     <select id="selectByArticleId" resultType="cn.xu.infrastructure.persistent.po.Tag">
-        SELECT t.id, t.name, t.description, t.create_time, t.update_time
+        SELECT t.id, t.name
+        FROM tag t
+        INNER JOIN article_tag at ON t.id = at.tag_id
+        WHERE at.article_id = #{articleId}
     </select>
+
 
 </mapper>

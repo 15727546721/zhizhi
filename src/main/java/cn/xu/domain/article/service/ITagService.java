@@ -15,5 +15,5 @@ public interface ITagService {
 
     List<TagEntity> getTagSelectList();
 
-    TagEntity getTagsByArticleId(Long id);
+    List<TagEntity> getTagsByArticleId(Long id);
 }

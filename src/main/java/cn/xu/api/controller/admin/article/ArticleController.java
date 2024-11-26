@@ -172,7 +172,7 @@ public class ArticleController {
     public ResponseEntity<ArticleDetailsResponse> getArticle(@PathVariable("id") Long id) {
         ArticleEntity article = articleService.getArticleById(id);
         CategoryEntity category = categoryService.getCategoryByArticleId(id);
-        TagEntity tag = tagService.getTagsByArticleId(id);
+        List<TagEntity> tag = tagService.getTagsByArticleId(id);
         ArticleDetailsResponse response = new ArticleDetailsResponse();
         response.setId(article.getId());
         response.setTitle(article.getTitle());
@@ -181,6 +181,8 @@ public class ArticleController {
         response.setDescription(article.getDescription());
         response.setStatus(article.getStatus());
         response.setCommentEnabled(article.getCommentEnabled());
+        response.setCategory(category);
+        response.setTags(tag);
         return ResponseEntity.<ArticleDetailsResponse>builder()
                 .data(response)
                 .code(Constants.ResponseCode.SUCCESS.getCode())

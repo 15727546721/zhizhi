@@ -18,5 +18,5 @@ public interface ITagRepository {
 
     List<TagEntity> getTagSelectList();
 
-    TagEntity getTagsByArticleId(Long id);
+    List<TagEntity> getTagsByArticleId(Long id);
 }
