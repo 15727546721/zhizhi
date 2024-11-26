@@ -15,4 +15,6 @@ public interface ICategoryService {
     public void delete(List<Long> idList);
 
     List<CategoryEntity> getCategorySelect();
+
+    CategoryEntity getCategoryByArticleId(Long id);
 }

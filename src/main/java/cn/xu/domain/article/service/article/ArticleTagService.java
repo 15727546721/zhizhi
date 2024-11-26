@@ -16,4 +16,10 @@ public class ArticleTagService implements IArticleTagService {
     public void saveArticleTag(Long articleId, List<Long> tagIds) {
         articleTagRepository.saveArticleTag(articleId, tagIds);
     }
+
+    @Override
+    public void updateArticleTag(Long articleId, List<Long> tagIds) {
+        articleTagRepository.deleteByArticleId(articleId);
+        articleTagRepository.saveArticleTag(articleId, tagIds);
+    }
 }

@@ -81,6 +81,14 @@ public class CategoryRepository implements ICategoryRepository {
         return categoryEntityList;
     }
 
+    @Override
+    public CategoryEntity getCategoryByArticleId(Long id) {
+
+        Category category = categoryDao.selectByArticleId(id);
+        log.info("查询文章分类，返回结果：{}", category);
+        return convertToCategoryEntity(category);
+    }
+
     private CategoryEntity convertToCategoryEntity(Category category) {
         if (category == null) {
             return null;

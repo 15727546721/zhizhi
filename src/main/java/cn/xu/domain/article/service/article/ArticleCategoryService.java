@@ -15,4 +15,10 @@ public class ArticleCategoryService implements IArticleCategoryService {
     public void saveArticleCategory(Long articleId, Long categoryId) {
         articleCategoryRepository.saveArticleCategory(articleId, categoryId);
     }
+
+    @Override
+    public void updateArticleCategory(Long articleId, Long categoryId) {
+        articleCategoryRepository.deleteArticleCategory(articleId);
+        articleCategoryRepository.saveArticleCategory(articleId, categoryId);
+    }
 }

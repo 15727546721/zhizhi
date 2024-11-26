@@ -4,4 +4,6 @@ import java.util.List;
 
 public interface IArticleTagService {
     void saveArticleTag(Long articleId, List<Long> tagIds);
+
+    void updateArticleTag(Long articleId, List<Long> tagIds);
 }

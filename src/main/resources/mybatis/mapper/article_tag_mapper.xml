@@ -41,5 +41,8 @@
             #{id}
         </foreach>
     </delete>
+    <delete id="deleteByArticleId">
+        DELETE FROM article_tag WHERE article_id = #{articleId}
+    </delete>
 
 </mapper>

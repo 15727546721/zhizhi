@@ -39,4 +39,10 @@ public class TagService implements ITagService {
     public List<TagEntity> getTagSelectList() {
         return tagRepository.getTagSelectList();
     }
+
+    @Override
+    public TagEntity getTagsByArticleId(Long id) {
+
+        return tagRepository.getTagsByArticleId(id);
+    }
 }

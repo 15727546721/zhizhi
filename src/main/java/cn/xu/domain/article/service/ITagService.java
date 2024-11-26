@@ -14,4 +14,6 @@ public interface ITagService {
     public void delete(List<Long> idList);
 
     List<TagEntity> getTagSelectList();
+
+    TagEntity getTagsByArticleId(Long id);
 }

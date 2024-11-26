@@ -107,6 +107,13 @@ public class TagRepository implements ITagRepository {
         return tagEntityList;
     }
 
+    @Override
+    public TagEntity getTagsByArticleId(Long id) {
+        Tag tag = tagDao.selectByArticleId(id);
+        log.info("查询文章ID: {} 对应的标签: {}", id, tag);
+        return convertToTagEntity(tag);
+    }
+
     private TagEntity convertToTagEntity(Tag tag) {
         if (tag == null) {
             return null;

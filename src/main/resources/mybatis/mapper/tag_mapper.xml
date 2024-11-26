@@ -52,5 +52,8 @@
         SELECT id, name
         FROM tag
     </select>
+    <select id="selectByArticleId" resultType="cn.xu.infrastructure.persistent.po.Tag">
+        SELECT t.id, t.name, t.description, t.create_time, t.update_time
+    </select>
 
 </mapper>

@@ -1,16 +1,16 @@
 package cn.xu.api.controller.admin.article;
 
 import cn.dev33.satoken.stp.StpUtil;
+import cn.xu.api.dto.article.ArticleDetailsResponse;
 import cn.xu.api.dto.article.ArticleListResponse;
-import cn.xu.api.dto.article.ArticleResponse;
 import cn.xu.api.dto.article.CreateArticleRequest;
 import cn.xu.api.dto.common.PageRequest;
 import cn.xu.common.Constants;
 import cn.xu.common.ResponseEntity;
 import cn.xu.domain.article.model.entity.ArticleEntity;
-import cn.xu.domain.article.service.IArticleCategoryService;
-import cn.xu.domain.article.service.IArticleService;
-import cn.xu.domain.article.service.IArticleTagService;
+import cn.xu.domain.article.model.entity.CategoryEntity;
+import cn.xu.domain.article.model.entity.TagEntity;
+import cn.xu.domain.article.service.*;
 import cn.xu.exception.AppException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -32,6 +32,10 @@ public class ArticleController {
     private IArticleCategoryService articleCategoryService;
     @Resource
     private IArticleTagService articleTagService;
+    @Resource
+    private ITagService tagService;
+    @Resource
+    private ICategoryService categoryService;
     @Resource
     private TransactionTemplate transactionTemplate;
 
@@ -89,15 +93,37 @@ public class ArticleController {
     @PostMapping("/update")
     public ResponseEntity updateArticle(@RequestBody CreateArticleRequest createArticleRequest) {
         log.info("文章更新参数: {}", createArticleRequest);
-        articleService.updateArticle(ArticleEntity.builder()
-                .title(createArticleRequest.getTitle())
-                .coverUrl(createArticleRequest.getCoverUrl())
-                .content(createArticleRequest.getContent())
-                .description(createArticleRequest.getDescription())
-                .commentEnabled(createArticleRequest.getCommentEnabled())
-                .isTop(createArticleRequest.getIsTop())
-                .authorId(StpUtil.getLoginIdAsLong())
-                .build());
+        transactionTemplate.execute(status -> {
+            // 事务开始
+            try {
+                //1. 更新文章
+                articleService.updateArticle(ArticleEntity.builder()
+                        .title(createArticleRequest.getTitle())
+                        .coverUrl(createArticleRequest.getCoverUrl())
+                        .content(createArticleRequest.getContent())
+                        .description(createArticleRequest.getDescription())
+                        .commentEnabled(createArticleRequest.getCommentEnabled())
+                        .isTop(createArticleRequest.getIsTop())
+                        .authorId(StpUtil.getLoginIdAsLong())
+                        .build());
+                //2. 更新文章分类
+                articleCategoryService.updateArticleCategory(createArticleRequest.getId(), createArticleRequest.getCategoryId());
+                //3. 更新文章标签
+                if (createArticleRequest.getTagIds() == null || createArticleRequest.getTagIds().isEmpty()) {
+                    throw new AppException(Constants.ResponseCode.NULL_PARAMETER.getCode(), "标签不能为空");
+                }
+                if (createArticleRequest.getTagIds().size() > 3) {
+                    throw new AppException(Constants.ResponseCode.ILLEGAL_PARAMETER.getCode(), "标签不能超过3个");
+                }
+                articleTagService.updateArticleTag(createArticleRequest.getId(), createArticleRequest.getTagIds());
+                return 1;
+            } catch (Exception e) {
+                // 事务回滚
+                status.setRollbackOnly();
+                log.error("文章更新失败", e);
+                throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "文章更新失败");
+            }
+        });
         return ResponseEntity.builder()
                 .code(Constants.ResponseCode.SUCCESS.getCode())
                 .info("文章更新成功")
@@ -143,9 +169,11 @@ public class ArticleController {
      * @return
      */
     @GetMapping("/{id}")
-    public ResponseEntity<ArticleResponse> getArticle(@PathVariable("id") Long id) {
+    public ResponseEntity<ArticleDetailsResponse> getArticle(@PathVariable("id") Long id) {
         ArticleEntity article = articleService.getArticleById(id);
-        ArticleResponse response = new ArticleResponse();
+        CategoryEntity category = categoryService.getCategoryByArticleId(id);
+        TagEntity tag = tagService.getTagsByArticleId(id);
+        ArticleDetailsResponse response = new ArticleDetailsResponse();
         response.setId(article.getId());
         response.setTitle(article.getTitle());
         response.setContent(article.getContent());
@@ -153,7 +181,7 @@ public class ArticleController {
         response.setDescription(article.getDescription());
         response.setStatus(article.getStatus());
         response.setCommentEnabled(article.getCommentEnabled());
-        return ResponseEntity.<ArticleResponse>builder()
+        return ResponseEntity.<ArticleDetailsResponse>builder()
                 .data(response)
                 .code(Constants.ResponseCode.SUCCESS.getCode())
                 .info("文章获取成功")

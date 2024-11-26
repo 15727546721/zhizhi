@@ -17,4 +17,9 @@ public class ArticleCategoryRepository implements IArticleCategoryRepository {
         ArticleCategory build = ArticleCategory.builder().articleId(articleId).categoryId(categoryId).build();
         articleCategoryDao.insert(build);
     }
+
+    @Override
+    public void deleteArticleCategory(Long articleId) {
+        articleCategoryDao.deleteByArticleId(articleId);
+    }
 }

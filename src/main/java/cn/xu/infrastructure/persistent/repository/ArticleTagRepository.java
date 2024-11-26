@@ -31,4 +31,12 @@ public class ArticleTagRepository implements IArticleTagRepository {
         }
         articleTagDao.insertBatchByList(articleTags);
     }
+
+    @Override
+    public void deleteByArticleId(Long articleId) {
+        log.info("Deleting articleId: {}", articleId);
+        articleTagDao.deleteByArticleId(articleId);
+
+    }
+
 }

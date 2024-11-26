@@ -17,4 +17,7 @@
         INSERT INTO article_category (article_id, category_id)
         VALUES (#{articleId}, #{categoryId})
     </insert>
+    <delete id="deleteByArticleId">
+        DELETE FROM article_category WHERE article_id = #{articleId}
+    </delete>
 </mapper>

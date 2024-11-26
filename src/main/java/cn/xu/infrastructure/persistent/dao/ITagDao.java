@@ -1,5 +1,6 @@
 package cn.xu.infrastructure.persistent.dao;
 
+import cn.xu.domain.article.model.entity.TagEntity;
 import cn.xu.infrastructure.persistent.po.Tag;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -19,4 +20,6 @@ public interface ITagDao {
     Tag selectById(@Param("id") Long tagId);
 
     List<Tag> selectList();
+
+    Tag selectByArticleId(Long id);
 }
