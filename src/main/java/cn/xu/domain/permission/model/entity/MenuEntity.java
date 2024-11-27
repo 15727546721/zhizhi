@@ -1,22 +1,18 @@
-package cn.xu.infrastructure.persistent.po;
+package cn.xu.domain.permission.model.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.io.Serializable;
 import java.util.Date;
+import java.util.List;
 
-/**
- * 系统管理-权限资源表 
- * @TableName menu
- */
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 @Data
-public class Menu implements Serializable {
+public class MenuEntity {
     /**
      * 主键
      */
@@ -87,4 +83,5 @@ public class Menu implements Serializable {
      */
     private String perm;
 
+    private List<MenuEntity> children;
 }
