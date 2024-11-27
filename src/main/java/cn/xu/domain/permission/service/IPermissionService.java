@@ -20,4 +20,7 @@ public interface IPermissionService {
      *
      */
     List<MenuOptionsEntity> getMenuOptionsTree();
+
+    MenuEntity selectMenuById(Long id);
+
 }

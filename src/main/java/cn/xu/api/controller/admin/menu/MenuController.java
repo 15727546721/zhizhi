@@ -8,6 +8,7 @@ import cn.xu.domain.permission.service.IPermissionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -40,6 +41,16 @@ public class MenuController {
         return ResponseEntity.<List<MenuOptionsEntity>>builder()
                 .data(menuOptionsTree)
                 .info("获取下拉菜单树成功")
+                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .build();
+    }
+
+    @GetMapping(value = "/info/{id}")
+    @Operation(summary = "菜单详情")
+    public ResponseEntity<MenuEntity> selectMenuById(@PathVariable Long id) {
+        return ResponseEntity.<MenuEntity>builder()
+                .data(permissionService.selectMenuById(id))
+                .info("获取菜单详情成功")
                 .code(Constants.ResponseCode.SUCCESS.getCode())
                 .build();
     }

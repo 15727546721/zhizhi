@@ -20,13 +20,8 @@ public class PermissionService implements IPermissionService {
     @Override
     public List<MenuEntity> selectMenuTreeList() {
         // 1查询所有菜单
-        List<Menu> menuList = permissionRepository.selectMenuList();
+        List<MenuEntity> menuEntityList = permissionRepository.selectMenuList();
         // 2组装成树形结构
-        // 转成menuEntity
-        List<MenuEntity> menuEntityList = menuList.stream()
-                .map(this::convert)
-                .collect(Collectors.toList());
-
         // 使用Map来优化查找性能，这里应该使用sort作为键
         Map<Integer, List<MenuEntity>> menuMap = menuEntityList.stream()
                 .collect(Collectors.groupingBy(MenuEntity::getSort));
@@ -50,11 +45,8 @@ public class PermissionService implements IPermissionService {
     @Override
     public List<MenuOptionsEntity> getMenuOptionsTree() {
         // 1查询所有菜单
-        List<Menu> menuList = permissionRepository.selectMenuList();
-        // 转成menuEntity
-        List<MenuEntity> menuEntityList = menuList.stream()
-                .map(this::convert)
-                .collect(Collectors.toList());
+        List<MenuEntity> menuEntityList = permissionRepository.selectMenuList();
+
         // 2组装成树形结构
         List<MenuOptionsEntity> resultList = new ArrayList<>();
         for (MenuEntity menu : menuEntityList) {
@@ -70,6 +62,11 @@ public class PermissionService implements IPermissionService {
             menu.setChildren(getOptionsChild(menu.getValue(),menuEntityList));
         }
         return resultList;
+    }
+
+    @Override
+    public MenuEntity selectMenuById(Long id) {
+        return permissionRepository.selectMenuById(id);
     }
 
     /**
