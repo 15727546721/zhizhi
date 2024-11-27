@@ -15,7 +15,7 @@ import java.util.List;
 
 @Slf4j
 @RestController
-@RequestMapping("admin/file")
+@RequestMapping("system/file")
 public class FileController {
 
     private final MinioService minioService;

@@ -14,7 +14,7 @@ import javax.annotation.Resource;
 import java.util.List;
 
 @Slf4j
-@RequestMapping("admin/category")
+@RequestMapping("system/category")
 @RestController
 public class CategoryController {
 

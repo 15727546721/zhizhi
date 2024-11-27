@@ -14,7 +14,7 @@ import javax.annotation.Resource;
 import java.util.List;
 
 @Slf4j
-@RequestMapping("admin/tag")
+@RequestMapping("system/tag")
 @RestController
 public class TagController {
 

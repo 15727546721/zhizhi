@@ -20,7 +20,7 @@ import javax.annotation.Resource;
 import java.util.List;
 
 @Slf4j
-@RequestMapping("/admin")
+@RequestMapping("/system")
 @RestController
 public class AdminController {
 

@@ -1,7 +1,5 @@
 package cn.xu.api.controller.admin.article;
 
-import cn.dev33.satoken.annotation.SaCheckPermission;
-import cn.dev33.satoken.annotation.SaCheckRole;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.api.dto.article.ArticleDetailsResponse;
 import cn.xu.api.dto.article.ArticleListResponse;
@@ -24,7 +22,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Slf4j
-@RequestMapping("admin/article")
+@RequestMapping("system/article")
 @RestController
 public class ArticleController {
 
