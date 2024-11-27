@@ -3,6 +3,7 @@ package cn.xu.api.controller.admin.menu;
 import cn.xu.common.Constants;
 import cn.xu.common.ResponseEntity;
 import cn.xu.domain.permission.model.entity.MenuEntity;
+import cn.xu.domain.permission.model.entity.MenuOptionsEntity;
 import cn.xu.domain.permission.service.IPermissionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -32,4 +33,14 @@ public class MenuController {
                 .build();
     }
 
+    @GetMapping(value = "/getMenuOptionsTree")
+    @Operation(summary = "获取下拉菜单树")
+    public ResponseEntity<List<MenuOptionsEntity>> getMenuOptionsTree() {
+        List<MenuOptionsEntity> menuOptionsTree =  permissionService.getMenuOptionsTree();
+        return ResponseEntity.<List<MenuOptionsEntity>>builder()
+                .data(menuOptionsTree)
+                .info("获取下拉菜单树成功")
+                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .build();
+    }
 }

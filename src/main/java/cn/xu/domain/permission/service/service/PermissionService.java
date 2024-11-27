@@ -1,6 +1,7 @@
 package cn.xu.domain.permission.service.service;
 
 import cn.xu.domain.permission.model.entity.MenuEntity;
+import cn.xu.domain.permission.model.entity.MenuOptionsEntity;
 import cn.xu.domain.permission.repository.IPermissionRepository;
 import cn.xu.domain.permission.service.IPermissionService;
 import cn.xu.infrastructure.persistent.po.Menu;
@@ -46,6 +47,31 @@ public class PermissionService implements IPermissionService {
         return resultList;
     }
 
+    @Override
+    public List<MenuOptionsEntity> getMenuOptionsTree() {
+        // 1查询所有菜单
+        List<Menu> menuList = permissionRepository.selectMenuList();
+        // 转成menuEntity
+        List<MenuEntity> menuEntityList = menuList.stream()
+                .map(this::convert)
+                .collect(Collectors.toList());
+        // 2组装成树形结构
+        List<MenuOptionsEntity> resultList = new ArrayList<>();
+        for (MenuEntity menu : menuEntityList) {
+            Long parentId = menu.getParentId();
+            if ( parentId == null || parentId == 0) {
+                resultList.add(MenuOptionsEntity.builder()
+                        .label(menu.getTitle())
+                        .value(menu.getId())
+                        .build());
+            }
+        }
+        for (MenuOptionsEntity menu : resultList) {
+            menu.setChildren(getOptionsChild(menu.getValue(),menuEntityList));
+        }
+        return resultList;
+    }
+
     /**
      * 递归构建树形结构
      * @return
@@ -71,6 +97,36 @@ public class PermissionService implements IPermissionService {
         return children;
     }
 
+    /**
+     * 分配角色权限-下拉菜单树
+     * @param pid
+     * @param menus
+     * @return
+     */
+    private List<MenuOptionsEntity> getOptionsChild(Long pid , List<MenuEntity> menus){
+        if (menus == null) {
+            return Collections.emptyList();
+        }
+
+        Map<Long, MenuOptionsEntity> optionsMap = new HashMap<>();
+        for (MenuEntity menu : menus) {
+            Long parentId = menu.getParentId();
+            if (parentId != null && parentId.equals(pid)) {
+                optionsMap.put(menu.getId(), MenuOptionsEntity.builder()
+                        .label(menu.getTitle())
+                        .value(menu.getId())
+                        .build());
+            }
+        }
+
+        List<MenuOptionsEntity> children = new ArrayList<>(optionsMap.values());
+
+        for (MenuOptionsEntity e : children) {
+            e.setChildren(getOptionsChild(e.getValue(), menus));
+        }
+
+        return children.isEmpty() ? Collections.emptyList() : children;
+    }
 
 
 
