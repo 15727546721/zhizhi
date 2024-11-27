@@ -1,15 +1,90 @@
 package cn.xu.infrastructure.persistent.po;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
+import java.util.Date;
+
+/**
+ * 系统管理-权限资源表 
+ * @TableName menu
+ */
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
 @Data
-public class Menu {
-    private Long id;                // 菜单唯一标识符
-    private Long parentId;          // 父级菜单的 ID, 根菜单为 NULL
-    private String path;            // 菜单路径
-    private String name;            // 菜单名称
-    private String component;       // 组件名称或路径
-    private String icon;            // 菜单图标
-    private String title;           // 菜单标题
-    private Long order;             // 菜单排序
+public class Menu implements Serializable {
+    /**
+     * 主键
+     */
+    private Integer id;
+
+    /**
+     * 上级资源ID
+     */
+    private String parentId;
+
+    /**
+     * 路由路径
+     */
+    private String path;
+
+    /**
+     * 组件路径
+     */
+    private String component;
+
+    /**
+     * 菜单名称
+     */
+    private String title;
+
+    /**
+     * 排序
+     */
+    private Integer sort;
+
+    /**
+     * 资源图标
+     */
+    private String icon;
+
+    /**
+     * 类型 menu、button
+     */
+    private String type;
+
+    /**
+     * 创建时间
+     */
+    private Date createdTime;
+
+    /**
+     * 更新时间
+     */
+    private Date updateTime;
+
+    /**
+     * 重定向地址
+     */
+    private String redirect;
+
+    /**
+     * 跳转地址
+     */
+    private String name;
+
+    /**
+     * 是否隐藏
+     */
+    private String hidden;
+
+    /**
+     * 权限标识
+     */
+    private String perm;
+
 }
