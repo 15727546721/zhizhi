@@ -1,5 +1,7 @@
 package cn.xu.api.controller.admin.article;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
+import cn.dev33.satoken.annotation.SaCheckRole;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.api.dto.article.ArticleDetailsResponse;
 import cn.xu.api.dto.article.ArticleListResponse;
@@ -145,12 +147,13 @@ public class ArticleController {
         List<ArticleEntity> articles = articleService.listArticle(pageRequest.getPage(), pageRequest.getSize());
         log.info("文章列表获取结果: {}", articles);
 
-
         // 将 ArticleEntity 转换为 ArticleResponse
         List<ArticleListResponse> response = articles.stream()
                 .map(article -> ArticleListResponse.builder()
                         .id(article.getId())
                         .title(article.getTitle())
+                        .description(article.getDescription())
+                        .status(article.getStatus())
                         .coverUrl(article.getCoverUrl())
                         .build())
                 .collect(Collectors.toList());

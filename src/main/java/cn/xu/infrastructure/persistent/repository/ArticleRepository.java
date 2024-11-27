@@ -47,6 +47,7 @@ public class ArticleRepository implements IArticleRepository {
     public List<ArticleEntity> queryArticle(int page, int size) {
         log.info("query article page: " + page + " size: " + size);
         List<Article> articles = articleDao.queryByPage(page - 1, size);
+        log.info("query article result: " + articles);
         List<ArticleEntity> articleEntities = new LinkedList<>();
         for (Article article : articles) {
             ArticleEntity articleEntity = ArticleEntity.builder()

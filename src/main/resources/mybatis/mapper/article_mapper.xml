@@ -47,7 +47,7 @@
     </delete>
 
     <select id="queryByPage" resultType="cn.xu.infrastructure.persistent.po.Article">
-        SELECT id, title, description, content, cover_url
+        SELECT id, title, description, cover_url, status
         FROM article
         ORDER BY id DESC
             LIMIT #{page}, #{size}

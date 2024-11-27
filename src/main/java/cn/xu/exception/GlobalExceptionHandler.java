@@ -58,7 +58,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NotLoginException.class)
     public ResponseEntity<String> handlerNotLoginException(NotLoginException nle)
             throws Exception {
-
+        log.error("未登录异常:{}", nle);
         // 打印堆栈，以供调试
         nle.printStackTrace();
 
@@ -74,10 +74,6 @@ public class GlobalExceptionHandler {
             message = "token 已被顶下线";
         } else if (nle.getType().equals(NotLoginException.KICK_OUT)) {
             message = "token 已被踢下线";
-        } else if (nle.getType().equals(NotLoginException.TOKEN_FREEZE)) {
-            message = "token 已被冻结";
-        } else if (nle.getType().equals(NotLoginException.NO_PREFIX)) {
-            message = "未按照指定前缀提交 token";
         } else {
             message = "当前会话未登录";
         }

@@ -50,8 +50,8 @@ sa-token:
   #  token-prefix: Bearer
   # token 名称 (同时也是cookie名称)
   token-name: X-Token
-  # 不设置前缀会出现检验时未登录的情况
-  #  token-prefix: Bearer
+  # 设置前缀token就需要放入到header里，否则无法读取到token
+#  token-prefix: Bearer
   # token 有效期，单位s 默认30天, -1代表永不过期
   timeout: 2592000
   # token 临时有效期 (指定时间内无操作就视为token过期) 单位: 秒
