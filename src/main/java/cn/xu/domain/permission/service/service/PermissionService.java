@@ -22,23 +22,12 @@ public class PermissionService implements IPermissionService {
         // 1查询所有菜单
         List<MenuEntity> menuEntityList = permissionRepository.selectMenuList();
         // 2组装成树形结构
-        // 使用Map来优化查找性能，这里应该使用sort作为键
-        Map<Integer, List<MenuEntity>> menuMap = menuEntityList.stream()
-                .collect(Collectors.groupingBy(MenuEntity::getSort));
+        List<MenuEntity> resultList = buildMenuTree(menuEntityList);
 
-        // 构建树形结构
-        List<MenuEntity> resultList = new ArrayList<>();
-        for (MenuEntity menu : menuEntityList) {
-            Long parentId = menu.getParentId();
-            if ( parentId == null || parentId == 0)
-                resultList.add(menu);
-        }
-        for (MenuEntity menu : resultList) {
-            menu.setChildren(getMenTreeChild(menu.getId(), menuEntityList));
-        }
+        // 3返回树形结构排序
         resultList.sort(Comparator.comparingInt(MenuEntity::getSort));
 
-        // 3返回树形结构
+        // 4返回树形结构
         return resultList;
     }
 
@@ -70,28 +59,33 @@ public class PermissionService implements IPermissionService {
     }
 
     /**
-     * 递归构建树形结构
+     * 构建树形结构
      * @return
      */
-    private List<MenuEntity> getMenTreeChild(Long pid , List<MenuEntity> menus){
-        List<MenuEntity> children = new ArrayList<>();
-        for (MenuEntity e: menus) {
-            Long parentId = e.getParentId();
-            if(parentId != null && parentId.equals(pid)){
-                // 子菜单的下级菜单
-                children.add( e );
+    public List<MenuEntity> buildMenuTree(List<MenuEntity> menuList) {
+        // 创建一个Map以便快速查找
+        Map<Long, MenuEntity> menuMap = menuList.stream()
+                .collect(Collectors.toMap(MenuEntity::getId, menu -> menu));
+
+        // 创建根节点列表
+        List<MenuEntity> tree = new ArrayList<>();
+
+        for (MenuEntity menu : menuList) {
+            // 如果没有父节点，说明是根节点
+            if (menu.getParentId() == null || menu.getParentId() == 0) {
+                tree.add(menu);
+            } else {
+                // 如果有父节点，将当前节点添加到父节点的children中
+                MenuEntity parent = menuMap.get(menu.getParentId());
+                if (parent != null) {
+                    if (parent.getChildren() == null) {
+                        parent.setChildren(new ArrayList<>());
+                    }
+                    parent.getChildren().add(menu);
+                }
             }
         }
-        // 把子菜单的子菜单再循环一遍
-        for (MenuEntity e: children) {
-            // children
-            e.setChildren(getMenTreeChild(e.getId(),menus));
-        }
-        //停下来的条件，如果 没有子元素了，则停下来
-        if(children.isEmpty()){
-            return null;
-        }
-        return children;
+        return tree;
     }
 
     /**
