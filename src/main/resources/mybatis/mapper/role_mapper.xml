@@ -6,17 +6,58 @@
 
     <resultMap id="BaseResultMap" type="cn.xu.infrastructure.persistent.po.Role">
         <id property="id" column="id" jdbcType="BIGINT"/>
-        <result property="roleName" column="role_name" jdbcType="VARCHAR"/>
+        <result property="name" column="name" jdbcType="VARCHAR"/>
+        <result property="code" column="code" jdbcType="VARCHAR"/>
         <result property="status" column="status" jdbcType="CHAR"/>
         <result property="desc" column="desc" jdbcType="VARCHAR"/>
     </resultMap>
+    <insert id="insertRoleMenu">
+        INSERT INTO role_menu (role_id, menu_id)
+        <foreach collection="menus" item="menuId" index="index" separator=",">
+            (#{roleId}, #{menuId})
+        </foreach>
+    </insert>
+    <delete id="deleteRoleMenuByRoleId">
+        DELETE FROM role_menu
+        WHERE role_id = #{roleId}
+    </delete>
 
     <select id="selectRolesByUserid" resultType="java.lang.String">
         SELECT role_name
         FROM user
                  JOIN user_role ON user.id = user_role.user_id
                  JOIN role ON user_role.role_id = role.id
-        WHERE user.id = #{userid}
+        WHERE user.id = #{userId}
+    </select>
+    <select id="selectRolePage" resultType="cn.xu.infrastructure.persistent.po.Role">
+        SELECT id, role_name, status, desc
+        FROM role
+        <if test="name!= null and name!= ''">
+            AND name LIKE #{name}
+        </if>
+        limit #{page}, #{size}
+    </select>
+    <select id="countRole" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM role
+        <if test="name!= null and name!= ''">
+            AND name LIKE #{name}
+        </if>
+    </select>
+    <select id="selectRoleIdByUserId" resultType="java.lang.Long">
+        SELECT role_id
+        FROM user_role
+        WHERE user_id = #{userId}
+    </select>
+    <select id="selectMenuIdByRoleMenu" resultType="java.lang.Long">
+        SELECT menu_id
+        FROM role_menu
+        WHERE role_id = #{roleId}
+    </select>
+    <select id="selectRoleById" resultType="cn.xu.infrastructure.persistent.po.Role">
+        SELECT id, code, name
+        FROM role
+        WHERE id = #{roleId}
     </select>
 
 

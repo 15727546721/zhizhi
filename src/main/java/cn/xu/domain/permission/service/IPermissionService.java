@@ -1,5 +1,8 @@
 package cn.xu.domain.permission.service;
 
+import cn.xu.api.dto.common.PageResponse;
+import cn.xu.api.dto.permission.RoleMenuRequest;
+import cn.xu.common.ResponseEntity;
 import cn.xu.domain.permission.model.entity.MenuEntity;
 import cn.xu.domain.permission.model.entity.MenuOptionsEntity;
 
@@ -23,4 +26,11 @@ public interface IPermissionService {
 
     MenuEntity selectMenuById(Long id);
 
+    PageResponse selectRolePage(String name, int page, int size);
+
+    List<Long> getCurrentUserRole();
+
+    List<Long> selectRoleMenuById(Long roleId);
+
+    void assignRoleMenus(RoleMenuRequest roleMenuRequest);
 }

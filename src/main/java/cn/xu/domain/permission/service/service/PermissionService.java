@@ -1,11 +1,19 @@
 package cn.xu.domain.permission.service.service;
 
+import cn.dev33.satoken.stp.StpUtil;
+import cn.xu.api.dto.common.PageResponse;
+import cn.xu.api.dto.permission.RoleMenuRequest;
+import cn.xu.common.Constants;
+import cn.xu.common.ResponseEntity;
 import cn.xu.domain.permission.model.entity.MenuEntity;
 import cn.xu.domain.permission.model.entity.MenuOptionsEntity;
+import cn.xu.domain.permission.model.entity.RoleEntity;
 import cn.xu.domain.permission.repository.IPermissionRepository;
 import cn.xu.domain.permission.service.IPermissionService;
+import cn.xu.exception.AppException;
 import cn.xu.infrastructure.persistent.po.Menu;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.annotation.Resource;
 import java.util.*;
@@ -16,6 +24,8 @@ public class PermissionService implements IPermissionService {
 
     @Resource
     private IPermissionRepository permissionRepository;
+    @Resource
+    private TransactionTemplate transactionTemplate;
 
     @Override
     public List<MenuEntity> selectMenuTreeList() {
@@ -56,6 +66,57 @@ public class PermissionService implements IPermissionService {
     @Override
     public MenuEntity selectMenuById(Long id) {
         return permissionRepository.selectMenuById(id);
+    }
+
+    @Override
+    public PageResponse<List<RoleEntity>> selectRolePage(String name, int page, int size) {
+        List<RoleEntity> roleEntities = permissionRepository.selectRolePage(name, page, size);
+        long total = permissionRepository.countRole(name);
+        return PageResponse.<List<RoleEntity>>builder()
+                .data(roleEntities)
+                .total(total)
+                .page(page)
+                .size(size)
+                .build();
+    }
+
+    @Override
+    public List<Long> getCurrentUserRole() {
+        long userId = StpUtil.getLoginIdAsLong();
+        Long roleId = permissionRepository.selectRoleIdByUserId(userId);
+        List<Long> menuIds = permissionRepository.selectMenuIdByRoleMenu(roleId);
+        return menuIds;
+    }
+
+    @Override
+    public List<Long> selectRoleMenuById(Long roleId) {
+        RoleEntity roleEntity = permissionRepository.selectRoleById(roleId);
+        if (roleEntity != null && roleEntity.getCode().equals("admin")) {
+            return permissionRepository.selectAllMenuId();
+        }
+        List<Long> list = permissionRepository.selectMenuIdByRoleMenu(roleId);
+        return list;
+    }
+
+    @Override
+    public void assignRoleMenus(RoleMenuRequest roleMenuRequest) {
+        Long roleId = roleMenuRequest.getRoleId();
+        List<Long> menuIds = roleMenuRequest.getMenuIds();
+        RoleEntity roleEntity = permissionRepository.selectRoleById(roleId);
+        if (roleEntity != null && roleEntity.getCode().equals("admin")) {
+            return;
+        }
+        try {
+            transactionTemplate.execute(status -> {
+                // 先删除原有菜单权限
+                permissionRepository.deleteRoleMenuByRoleId(roleId);
+                // 再插入新菜单权限
+                permissionRepository.insertRoleMenu(roleId, menuIds);
+                return null;
+            });
+        } catch (Exception e) {
+            throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "分配角色权限失败");
+        }
     }
 
     /**

@@ -1,10 +1,12 @@
 package cn.xu.infrastructure.persistent.repository;
 
 import cn.xu.domain.permission.model.entity.MenuEntity;
+import cn.xu.domain.permission.model.entity.RoleEntity;
 import cn.xu.domain.permission.repository.IPermissionRepository;
 import cn.xu.infrastructure.persistent.dao.IMenuDao;
 import cn.xu.infrastructure.persistent.dao.IRoleDao;
 import cn.xu.infrastructure.persistent.po.Menu;
+import cn.xu.infrastructure.persistent.po.Role;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 
@@ -43,6 +45,53 @@ public class PermissionRepository implements IPermissionRepository {
         return convert(menu);
     }
 
+    @Override
+    public List<RoleEntity> selectRolePage(String name, int page, int size) {
+        List<Role> roleList = roleDao.selectRolePage(name, (page -1) * size, size);
+        List<RoleEntity> roleEntityList = roleList.stream()
+                .map(this::convert)
+                .collect(Collectors.toList());
+        return roleEntityList;
+    }
+
+    @Override
+    public long countRole(String name) {
+        long count = roleDao.countRole(name);
+        return count;
+    }
+
+    @Override
+    public Long selectRoleIdByUserId(long userId) {
+        return roleDao.selectRoleIdByUserId(userId);
+    }
+
+    @Override
+    public List<Long> selectMenuIdByRoleMenu(Long roleId) {
+        return roleDao.selectMenuIdByRoleMenu(roleId);
+    }
+
+    @Override
+    public RoleEntity selectRoleById(Long roleId) {
+        Role role = roleDao.selectRoleById(roleId);
+        return convert(role);
+    }
+
+    @Override
+    public List<Long> selectAllMenuId() {
+        return menuDao.selectAllMenuId();
+    }
+
+    @Override
+    public void deleteRoleMenuByRoleId(Long roleId) {
+        roleDao.deleteRoleMenuByRoleId(roleId);
+    }
+
+    @Override
+    public void insertRoleMenu(Long roleId, List<Long> menuIds) {
+        roleDao.insertRoleMenu(roleId, menuIds);
+    }
+
+
     private MenuEntity convert(Menu menu) {
         if (menu == null) {
             return null;
@@ -63,6 +112,15 @@ public class PermissionRepository implements IPermissionRepository {
                 .hidden(menu.getHidden())
                 .perm(menu.getPerm())
                 .children(new ArrayList<>()) // 初始化子菜单列表
+                .build();
+    }
+    private RoleEntity convert(Role role) {
+        if (role == null) {
+            return null;
+        }
+        return RoleEntity.builder()
+                .id(role.getId())
+                .name(role.getName())
                 .build();
     }
 }

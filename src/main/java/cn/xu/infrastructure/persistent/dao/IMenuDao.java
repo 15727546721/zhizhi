@@ -12,6 +12,8 @@ public interface IMenuDao {
     List<Menu> selectMenuList();
 
     Menu selectMenuById(@Param("id") Long id);
+
+    List<Long> selectAllMenuId();
 }
 
 

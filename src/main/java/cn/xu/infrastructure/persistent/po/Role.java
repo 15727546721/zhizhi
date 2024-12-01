@@ -14,9 +14,14 @@ public class Role {
     private Long id;
 
     /**
+     * 角色编码
+     */
+    private String code;
+
+    /**
      * 角色名称
      */
-    private String roleName;
+    private String name;
 
     /**
      * 角色状态
