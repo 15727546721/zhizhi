@@ -23,26 +23,32 @@
     </delete>
 
     <select id="selectRolesByUserid" resultType="java.lang.String">
-        SELECT role_name
+        SELECT name
         FROM user
                  JOIN user_role ON user.id = user_role.user_id
                  JOIN role ON user_role.role_id = role.id
         WHERE user.id = #{userId}
     </select>
+
     <select id="selectRolePage" resultType="cn.xu.infrastructure.persistent.po.Role">
-        SELECT id, role_name, status, desc
+        SELECT id, name, status, `desc`
         FROM role
-        <if test="name!= null and name!= ''">
-            AND name LIKE #{name}
-        </if>
-        limit #{page}, #{size}
+        <where>
+            <if test="name != null and name != ''">
+                AND name LIKE CONCAT('%', #{name}, '%')
+            </if>
+        </where>
+        LIMIT #{page}, #{size}
     </select>
+
     <select id="countRole" resultType="java.lang.Long">
         SELECT COUNT(*)
         FROM role
-        <if test="name!= null and name!= ''">
-            AND name LIKE #{name}
-        </if>
+        <where>
+            <if test="name != null and name != ''">
+                AND name LIKE CONCAT('%', #{name}, '%')
+            </if>
+        </where>
     </select>
     <select id="selectRoleIdByUserId" resultType="java.lang.Long">
         SELECT role_id
