@@ -47,7 +47,7 @@ public class PermissionRepository implements IPermissionRepository {
 
     @Override
     public List<RoleEntity> selectRolePage(String name, int page, int size) {
-        List<Role> roleList = roleDao.selectRolePage(name, (page -1) * size, size);
+        List<Role> roleList = roleDao.selectRolePage(name, (page - 1) * size, size);
         List<RoleEntity> roleEntityList = roleList.stream()
                 .map(this::convert)
                 .collect(Collectors.toList());
@@ -91,6 +91,16 @@ public class PermissionRepository implements IPermissionRepository {
         roleDao.insertRoleMenu(roleId, menuIds);
     }
 
+    @Override
+    public void addRole(RoleEntity roleEntity) {
+        Role role = Role.builder()
+                .name(roleEntity.getName())
+                .code(roleEntity.getCode())
+                .desc(roleEntity.getDesc())
+                .build();
+        roleDao.insertRole(role);
+    }
+
 
     private MenuEntity convert(Menu menu) {
         if (menu == null) {
@@ -114,6 +124,7 @@ public class PermissionRepository implements IPermissionRepository {
                 .children(new ArrayList<>()) // 初始化子菜单列表
                 .build();
     }
+
     private RoleEntity convert(Role role) {
         if (role == null) {
             return null;

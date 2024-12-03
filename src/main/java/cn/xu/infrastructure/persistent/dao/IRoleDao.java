@@ -1,6 +1,5 @@
 package cn.xu.infrastructure.persistent.dao;
 
-import cn.xu.domain.permission.model.entity.RoleEntity;
 import cn.xu.infrastructure.persistent.po.Role;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -24,4 +23,6 @@ public interface IRoleDao {
     void deleteRoleMenuByRoleId(@Param("roleId") Long roleId);
 
     void insertRoleMenu(@Param("roleId") Long roleId, @Param("menuIds") List<Long> menuIds);
+
+    void insertRole(Role role);
 }

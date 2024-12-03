@@ -2,8 +2,6 @@ package cn.xu.domain.permission.repository;
 
 import cn.xu.domain.permission.model.entity.MenuEntity;
 import cn.xu.domain.permission.model.entity.RoleEntity;
-import cn.xu.infrastructure.persistent.po.Menu;
-import cn.xu.infrastructure.persistent.po.Role;
 
 import java.util.List;
 
@@ -30,4 +28,6 @@ public interface IPermissionRepository {
     void deleteRoleMenuByRoleId(Long roleId);
 
     void insertRoleMenu(Long roleId, List<Long> menuIds);
+
+    void addRole(RoleEntity roleEntity);
 }

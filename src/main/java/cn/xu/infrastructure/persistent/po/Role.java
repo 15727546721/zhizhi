@@ -1,10 +1,12 @@
 package cn.xu.infrastructure.persistent.po;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class Role {
@@ -22,11 +24,6 @@ public class Role {
      * 角色名称
      */
     private String name;
-
-    /**
-     * 角色状态
-     */
-    private String status;
 
     /**
      * 角色介绍

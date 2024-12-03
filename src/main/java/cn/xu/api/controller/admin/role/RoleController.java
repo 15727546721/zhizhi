@@ -3,6 +3,7 @@ package cn.xu.api.controller.admin.role;
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.xu.api.dto.common.PageResponse;
 import cn.xu.api.dto.permission.RoleMenuRequest;
+import cn.xu.api.dto.permission.RoleRequest;
 import cn.xu.common.Constants;
 import cn.xu.common.ResponseEntity;
 import cn.xu.domain.permission.model.entity.RoleEntity;
@@ -33,7 +34,7 @@ public class RoleController {
                 .build();
     }
 
-    @RequestMapping(value = "queryUserRole", method = RequestMethod.GET)
+    @GetMapping("queryUserRole")
     @Operation(summary = "获取当前登录用户所拥有的权限")
     public ResponseEntity<List<Long>> getCurrentUserRole() {
         List<Long> currentUserRole = permissionService.getCurrentUserRole();
@@ -44,7 +45,7 @@ public class RoleController {
                 .build();
     }
 
-    @RequestMapping(value = "getRoleMenuIds", method = RequestMethod.GET)
+    @GetMapping("getRoleMenuIds")
     @Operation(summary = "获取当前登录用户所拥有的权限" )
     public ResponseEntity<List<Long>> selectRoleMenuById(Long roleId) {
         List<Long> roleMenuIds = permissionService.selectRoleMenuById(roleId);
@@ -56,7 +57,7 @@ public class RoleController {
     }
 
     @SaCheckPermission("system:role:assign")
-    @RequestMapping(value = "updateRoleMenus", method = RequestMethod.PUT)
+    @PostMapping("updateRoleMenus")
     @Operation(summary = "分配角色权限")
     public ResponseEntity assignRoleMenus(@RequestBody RoleMenuRequest roleMenuRequest) {
         permissionService.assignRoleMenus(roleMenuRequest);
@@ -65,4 +66,32 @@ public class RoleController {
                 .code(Constants.ResponseCode.SUCCESS.getCode())
                 .build();
     }
+
+    @PostMapping(value = "add")
+    @SaCheckPermission("system:role:add")
+    @Operation(summary = "添加角色")
+    public ResponseEntity addRole(@RequestBody RoleRequest role) {
+         permissionService.addRole(role);
+        return ResponseEntity.builder()
+                .info("添加角色成功")
+                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .build();
+    }
+
+//    @PostMapping(value = "update")
+//    @SaCheckPermission("system:role:update")
+//    @Operation(summary = "修改角色")
+//    @OperationLogger(value = "修改角色")
+//    public ResponseResult updateRole(@RequestBody Role role) {
+//        return roleService.updateRole(role);
+//    }
+//
+//    @GetMapping(value = "delete", method = RequestMethod.DELETE)
+//    @SaCheckPermission("system:role:delete")
+//    @ApiOperation(value = "删除角色", httpMethod = "DELETE", response = ResponseResult.class, notes = "删除角色")
+//    @OperationLogger(value = "删除角色")
+//    public ResponseResult deleteRole(@RequestBody List<Integer> ids) {
+//        return roleService.deleteRole(ids);
+//    }
+
 }

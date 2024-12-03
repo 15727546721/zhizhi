@@ -8,7 +8,6 @@
         <id property="id" column="id" jdbcType="BIGINT"/>
         <result property="name" column="name" jdbcType="VARCHAR"/>
         <result property="code" column="code" jdbcType="VARCHAR"/>
-        <result property="status" column="status" jdbcType="CHAR"/>
         <result property="desc" column="desc" jdbcType="VARCHAR"/>
     </resultMap>
     <insert id="insertRoleMenu">
@@ -16,6 +15,10 @@
         <foreach collection="menus" item="menuId" index="index" separator=",">
             (#{roleId}, #{menuId})
         </foreach>
+    </insert>
+    <insert id="insertRole">
+        INSERT INTO role (code, name, `desc`)
+        VALUES (#{code}, #{name}, #{desc})
     </insert>
     <delete id="deleteRoleMenuByRoleId">
         DELETE FROM role_menu
@@ -31,7 +34,7 @@
     </select>
 
     <select id="selectRolePage" resultType="cn.xu.infrastructure.persistent.po.Role">
-        SELECT id, name, status, `desc`
+        SELECT id, name, `desc`
         FROM role
         <where>
             <if test="name != null and name != ''">

@@ -3,8 +3,8 @@ package cn.xu.domain.permission.service.service;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.api.dto.common.PageResponse;
 import cn.xu.api.dto.permission.RoleMenuRequest;
+import cn.xu.api.dto.permission.RoleRequest;
 import cn.xu.common.Constants;
-import cn.xu.common.ResponseEntity;
 import cn.xu.domain.permission.model.entity.MenuEntity;
 import cn.xu.domain.permission.model.entity.MenuOptionsEntity;
 import cn.xu.domain.permission.model.entity.RoleEntity;
@@ -117,6 +117,15 @@ public class PermissionService implements IPermissionService {
         } catch (Exception e) {
             throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "分配角色权限失败");
         }
+    }
+
+    @Override
+    public void addRole(RoleRequest role) {
+         permissionRepository.addRole(RoleEntity.builder()
+                .code(role.getCode())
+                .name(role.getName())
+                .desc(role.getDesc())
+                .build());
     }
 
     /**
