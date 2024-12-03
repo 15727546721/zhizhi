@@ -19,7 +19,6 @@ public class ArticleDetailsResponse {
     private String coverUrl;
     private String description;
     private String content;
-    private String isTop;
     private String status;
     private String commentEnabled;
     private CategoryEntity category;

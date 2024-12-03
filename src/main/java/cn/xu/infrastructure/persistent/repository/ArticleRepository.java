@@ -28,7 +28,7 @@ public class ArticleRepository implements IArticleRepository {
 
     @Override
     public Long save(ArticleEntity articleEntity) {
-        log.info("save articleEntity: " + articleEntity);
+        log.info("保存文章 articleEntity: " + articleEntity);
         Article article = Article.builder()
                 .id(articleEntity.getId())
                 .title(articleEntity.getTitle())
@@ -38,7 +38,6 @@ public class ArticleRepository implements IArticleRepository {
                 .coverUrl(articleEntity.getCoverUrl())
                 .commentEnabled(articleEntity.getCommentEnabled())
                 .status(articleEntity.getStatus())
-                .isTop(articleEntity.getIsTop())
                 .build();
         return articleDao.insert(article);
     }
@@ -58,7 +57,6 @@ public class ArticleRepository implements IArticleRepository {
                     .coverUrl(article.getCoverUrl())
                     .commentEnabled(article.getCommentEnabled())
                     .status(article.getStatus())
-                    .isTop(article.getIsTop())
                     .build();
             articleEntities.add(articleEntity);
         }

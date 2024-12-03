@@ -13,7 +13,6 @@
         <result property="authorId" column="author_id" jdbcType="BIGINT"/>
         <result property="status" column="status" jdbcType="CHAR"/>
         <result property="commentEnabled" column="comments_enabled" jdbcType="CHAR"/>
-        <result property="isTop" column="is_top" jdbcType="CHAR"/>
         <result property="viewCount" column="view_count" jdbcType="BIGINT"/>
         <result property="favoritesCount" column="favorites_count" jdbcType="BIGINT"/>
         <result property="likeCount" column="like_count" jdbcType="BIGINT"/>
@@ -25,18 +24,17 @@
         id
         ,title,content,
         cover_url,author_id,
-        status,comment_enabled,is_top,
+        status,comment_enabled,
         view_count,favorites_count,
         like_count,create_time,update_time
     </sql>
 
-    <insert id="insert" parameterType="cn.xu.infrastructure.persistent.po.Article" useGeneratedKeys="true" keyProperty="id">
+    <insert id="insert" parameterType="cn.xu.infrastructure.persistent.po.Article" useGeneratedKeys="true"
+            keyProperty="id">
         INSERT INTO article (title, description, content, cover_url, author_id, status,
-                             comment_enabled,
-                             is_top, view_count, favorites_count, like_count, create_time, update_time)
-        VALUES (#{title}, #{description}, #{content}, #{coverUrl}, #{authorId}, #{categoryId}, #{status},
-                #{commentsEnabled}, #{isTop}, #{viewCount}, #{favoritesCount}, #{likeCount}, now(),
-                now())
+                             comment_enabled, view_count, favorites_count, like_count, create_time, update_time)
+        VALUES (#{title}, #{description}, #{content}, #{coverUrl}, #{authorId}, #{status},
+                #{commentEnabled}, #{viewCount}, #{favoritesCount}, #{likeCount}, now(), now())
     </insert>
 
     <delete id="deleteByIds">
@@ -61,7 +59,6 @@
                author_id,
                status,
                comment_enabled,
-               is_top,
                view_count,
                favorites_count,
                like_count,

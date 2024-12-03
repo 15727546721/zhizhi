@@ -58,11 +58,6 @@ public class Article implements Serializable {
     private String commentEnabled;
 
     /**
-     * 是否置顶，0表示未置顶，1表示已置顶
-     */
-    private String isTop;
-
-    /**
      * 文章的阅读次数
      */
     private Long viewCount;

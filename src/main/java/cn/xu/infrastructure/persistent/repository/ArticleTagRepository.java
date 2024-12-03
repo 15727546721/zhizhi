@@ -18,7 +18,7 @@ public class ArticleTagRepository implements IArticleTagRepository {
 
     @Override
     public void save(ArticleTag articleTag) {
-        log.info("Saving articleTag: {}", articleTag);
+        log.info("保存文章标签 articleTag: {}", articleTag);
         articleTagDao.insert(articleTag);
     }
 

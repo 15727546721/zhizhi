@@ -62,7 +62,6 @@ public class ArticleController {
                         .content(createArticleRequest.getContent())
                         .description(createArticleRequest.getDescription())
                         .commentEnabled(createArticleRequest.getCommentEnabled())
-                        .isTop(createArticleRequest.getIsTop())
                         .authorId(StpUtil.getLoginIdAsLong())
                         .build());
                 //2. 保存文章分类
@@ -103,7 +102,6 @@ public class ArticleController {
                         .content(createArticleRequest.getContent())
                         .description(createArticleRequest.getDescription())
                         .commentEnabled(createArticleRequest.getCommentEnabled())
-                        .isTop(createArticleRequest.getIsTop())
                         .authorId(StpUtil.getLoginIdAsLong())
                         .build());
                 //2. 更新文章分类
@@ -171,6 +169,7 @@ public class ArticleController {
      */
     @GetMapping("/{id}")
     public ResponseEntity<ArticleDetailsResponse> getArticle(@PathVariable("id") Long id) {
+        log.info("文章详情获取参数: id={}", id);
         ArticleEntity article = articleService.getArticleById(id);
         CategoryEntity category = categoryService.getCategoryByArticleId(id);
         List<TagEntity> tag = tagService.getTagsByArticleId(id);
@@ -184,6 +183,7 @@ public class ArticleController {
         response.setCommentEnabled(article.getCommentEnabled());
         response.setCategory(category);
         response.setTags(tag);
+        log.info("文章详情获取结果: {}", response);
         return ResponseEntity.<ArticleDetailsResponse>builder()
                 .data(response)
                 .code(Constants.ResponseCode.SUCCESS.getCode())
