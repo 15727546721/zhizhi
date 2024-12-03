@@ -24,7 +24,7 @@ public class ArticleTagRepository implements IArticleTagRepository {
 
     @Override
     public void saveArticleTag(Long articleId, List<Long> tagIds) {
-        log.info("Saving articleId: {}, tagIds: {}", articleId, tagIds);
+        log.info("保存文章标签 articleId: {}, tagIds: {}", articleId, tagIds);
         List<ArticleTag> articleTags = new LinkedList<>();
         for (Long tagId : tagIds) {
             articleTags.add(ArticleTag.builder().articleId(articleId).tagId(tagId).build());
@@ -34,7 +34,7 @@ public class ArticleTagRepository implements IArticleTagRepository {
 
     @Override
     public void deleteByArticleId(Long articleId) {
-        log.info("Deleting articleId: {}", articleId);
+        log.info("删除文章标签 articleId: {}", articleId);
         articleTagDao.deleteByArticleId(articleId);
 
     }
