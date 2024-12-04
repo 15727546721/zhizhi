@@ -128,6 +128,21 @@ public class PermissionService implements IPermissionService {
                 .build());
     }
 
+    @Override
+    public void updateRole(RoleRequest role) {
+        permissionRepository.updateRole(RoleEntity.builder()
+                .id(role.getId())
+                .code(role.getCode())
+                .name(role.getName())
+                .desc(role.getDesc())
+                .build());
+    }
+
+    @Override
+    public void deleteRoleByIds(List<Long> ids) {
+        permissionRepository.deleteRoleByIds(ids);
+    }
+
     /**
      * 构建树形结构
      * @return

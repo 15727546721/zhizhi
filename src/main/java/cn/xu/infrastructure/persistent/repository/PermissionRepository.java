@@ -1,8 +1,10 @@
 package cn.xu.infrastructure.persistent.repository;
 
+import cn.xu.common.Constants;
 import cn.xu.domain.permission.model.entity.MenuEntity;
 import cn.xu.domain.permission.model.entity.RoleEntity;
 import cn.xu.domain.permission.repository.IPermissionRepository;
+import cn.xu.exception.AppException;
 import cn.xu.infrastructure.persistent.dao.IMenuDao;
 import cn.xu.infrastructure.persistent.dao.IRoleDao;
 import cn.xu.infrastructure.persistent.po.Menu;
@@ -98,7 +100,37 @@ public class PermissionRepository implements IPermissionRepository {
                 .code(roleEntity.getCode())
                 .desc(roleEntity.getDesc())
                 .build();
-        roleDao.insertRole(role);
+        try {
+            roleDao.insertRole(role);
+        } catch (Exception e) {
+            log.error("新增角色失败", e);
+            throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "新增角色失败");
+        }
+    }
+
+    @Override
+    public void updateRole(RoleEntity roleEntity) {
+        try {
+            roleDao.updateRole(Role.builder()
+                    .id(roleEntity.getId())
+                    .name(roleEntity.getName())
+                    .code(roleEntity.getCode())
+                    .desc(roleEntity.getDesc())
+                    .build());
+        } catch (Exception e) {
+            log.error("更新角色失败", e);
+            throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "更新角色失败");
+        }
+    }
+
+    @Override
+    public void deleteRoleByIds(List<Long> ids) {
+        try {
+            roleDao.deleteRoleByIds(ids);
+        } catch (Exception e) {
+            log.error("删除角色失败", e);
+            throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "删除角色失败");
+        }
     }
 
 

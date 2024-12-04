@@ -71,27 +71,33 @@ public class RoleController {
     @SaCheckPermission("system:role:add")
     @Operation(summary = "添加角色")
     public ResponseEntity addRole(@RequestBody RoleRequest role) {
-         permissionService.addRole(role);
+        permissionService.addRole(role);
         return ResponseEntity.builder()
                 .info("添加角色成功")
                 .code(Constants.ResponseCode.SUCCESS.getCode())
                 .build();
     }
 
-//    @PostMapping(value = "update")
-//    @SaCheckPermission("system:role:update")
-//    @Operation(summary = "修改角色")
-//    @OperationLogger(value = "修改角色")
-//    public ResponseResult updateRole(@RequestBody Role role) {
-//        return roleService.updateRole(role);
-//    }
-//
-//    @GetMapping(value = "delete", method = RequestMethod.DELETE)
-//    @SaCheckPermission("system:role:delete")
-//    @ApiOperation(value = "删除角色", httpMethod = "DELETE", response = ResponseResult.class, notes = "删除角色")
-//    @OperationLogger(value = "删除角色")
-//    public ResponseResult deleteRole(@RequestBody List<Integer> ids) {
-//        return roleService.deleteRole(ids);
-//    }
+    @PostMapping("/update")
+    @SaCheckPermission("system:role:update")
+    @Operation(summary = "修改角色")
+    public ResponseEntity updateRole(@RequestBody RoleRequest role) {
+        permissionService.updateRole(role);
+        return ResponseEntity.builder()
+                .info("修改角色成功")
+                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .build();
+    }
+
+    @PostMapping("/delete")
+    @SaCheckPermission("system:role:delete")
+    @Operation(summary = "删除角色")
+    public ResponseEntity deleteRole(@RequestBody List<Long> ids) {
+        permissionService.deleteRoleByIds(ids);
+        return ResponseEntity.builder()
+                .info("删除角色成功")
+                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .build();
+    }
 
 }

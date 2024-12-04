@@ -25,4 +25,8 @@ public interface IRoleDao {
     void insertRoleMenu(@Param("roleId") Long roleId, @Param("menuIds") List<Long> menuIds);
 
     void insertRole(Role role);
+
+    void updateRole(Role build);
+
+    void deleteRoleByIds(List<Long> ids);
 }

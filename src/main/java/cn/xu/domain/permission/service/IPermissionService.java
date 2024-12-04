@@ -35,4 +35,8 @@ public interface IPermissionService {
     void assignRoleMenus(RoleMenuRequest roleMenuRequest);
 
     void addRole(RoleRequest role);
+
+    void updateRole(RoleRequest role);
+
+    void deleteRoleByIds(List<Long> ids);
 }

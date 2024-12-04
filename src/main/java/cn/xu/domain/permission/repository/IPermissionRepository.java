@@ -30,4 +30,8 @@ public interface IPermissionRepository {
     void insertRoleMenu(Long roleId, List<Long> menuIds);
 
     void addRole(RoleEntity roleEntity);
+
+    void updateRole(RoleEntity roleEntity);
+
+    void deleteRoleByIds(List<Long> ids);
 }

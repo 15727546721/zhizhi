@@ -20,9 +20,21 @@
         INSERT INTO role (code, name, `desc`)
         VALUES (#{code}, #{name}, #{desc})
     </insert>
+    <update id="updateRole">
+        UPDATE role
+        SET code = #{code}, name = #{name}, `desc` = #{desc}
+        WHERE id = #{id}
+    </update>
     <delete id="deleteRoleMenuByRoleId">
         DELETE FROM role_menu
         WHERE role_id = #{roleId}
+    </delete>
+    <delete id="deleteRoleByIds" parameterType="java.util.List">
+        DELETE FROM role
+        WHERE id IN
+        <foreach collection="ids" item="id" index="index" separator=",">
+            #{id}
+        </foreach>
     </delete>
 
     <select id="selectRolesByUserid" resultType="java.lang.String">
