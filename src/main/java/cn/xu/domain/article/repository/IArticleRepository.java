@@ -12,5 +12,7 @@ public interface IArticleRepository {
 
     void deleteByIds(List<Long> articleIds);
 
-    Article findById(Long id);
+    ArticleEntity findById(Long id);
+
+    void update(ArticleEntity articleEntity);
 }

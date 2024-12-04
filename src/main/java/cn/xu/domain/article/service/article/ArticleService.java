@@ -68,25 +68,18 @@ public class ArticleService implements IArticleService {
 
     @Override
     public void updateArticle(ArticleEntity articleEntity) {
-
+        articleRepository.update(articleEntity);
     }
 
     @Override
     public ArticleEntity getArticleById(Long id) {
 
-        Article article = articleRepository.findById(id);
+        ArticleEntity article = articleRepository.findById(id);
         if (article == null) {
             throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "未查询到文章");
         }
-        // 转换为实体
-        ArticleEntity articleEntity = new ArticleEntity();
-        articleEntity.setId(article.getId());
-        articleEntity.setTitle(article.getTitle());
-        articleEntity.setContent(article.getContent());
-        articleEntity.setCoverUrl(article.getCoverUrl());
-        articleEntity.setDescription(article.getDescription());
 
-        return articleEntity;
+        return article;
     }
 
 }

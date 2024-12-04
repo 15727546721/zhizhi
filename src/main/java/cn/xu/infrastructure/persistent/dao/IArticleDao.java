@@ -15,4 +15,6 @@ public interface IArticleDao {
     void deleteByIds(@Param("articleIds") List<Long> articleIds);
 
     Article findById(@Param("id") Long id);
+
+    void update(Article article);
 }

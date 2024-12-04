@@ -84,7 +84,35 @@ public class ArticleRepository implements IArticleRepository {
     }
 
     @Override
-    public Article findById(Long id) {
-        return articleDao.findById(id);
+    public ArticleEntity findById(Long id) {
+        return convert(articleDao.findById(id));
+    }
+
+    @Override
+    public void update(ArticleEntity articleEntity) {
+        log.info("更新文章 articleEntity: " + articleEntity);
+        Article article = Article.builder()
+                .id(articleEntity.getId())
+                .title(articleEntity.getTitle())
+                .authorId(articleEntity.getAuthorId())
+                .description(articleEntity.getDescription())
+                .content(articleEntity.getContent())
+                .coverUrl(articleEntity.getCoverUrl())
+                .commentEnabled(articleEntity.getCommentEnabled())
+                .status(articleEntity.getStatus())
+                .build();
+        articleDao.update(article);
+    }
+
+    private ArticleEntity convert(Article article) {
+        return ArticleEntity.builder()
+               .id(article.getId())
+               .title(article.getTitle())
+               .description(article.getDescription())
+               .content(article.getContent())
+               .coverUrl(article.getCoverUrl())
+               .commentEnabled(article.getCommentEnabled())
+               .status(article.getStatus())
+               .build();
     }
 }

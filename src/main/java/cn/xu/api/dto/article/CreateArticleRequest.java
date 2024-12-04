@@ -18,7 +18,7 @@ public class CreateArticleRequest {
     private String content;
     private String coverUrl;
     private String status;
-    private String commentEnabled;
+    private Boolean commentEnabled;
     private Long categoryId;
     private List<Long> tagIds; // 标签ID列表
 }

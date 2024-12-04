@@ -61,7 +61,7 @@ public class ArticleController {
                         .coverUrl(createArticleRequest.getCoverUrl())
                         .content(createArticleRequest.getContent())
                         .description(createArticleRequest.getDescription())
-                        .commentEnabled(createArticleRequest.getCommentEnabled())
+                        .commentEnabled(createArticleRequest.getCommentEnabled() ? "1" : "0")
                         .authorId(StpUtil.getLoginIdAsLong())
                         .build());
                 //2. 保存文章分类
@@ -97,12 +97,14 @@ public class ArticleController {
             try {
                 //1. 更新文章
                 articleService.updateArticle(ArticleEntity.builder()
+                        .id(createArticleRequest.getId())
                         .title(createArticleRequest.getTitle())
                         .coverUrl(createArticleRequest.getCoverUrl())
                         .content(createArticleRequest.getContent())
                         .description(createArticleRequest.getDescription())
-                        .commentEnabled(createArticleRequest.getCommentEnabled())
+                        .commentEnabled(createArticleRequest.getCommentEnabled() ? "1" : "0")
                         .authorId(StpUtil.getLoginIdAsLong())
+                        .status(createArticleRequest.getStatus())
                         .build());
                 //2. 更新文章分类
                 articleCategoryService.updateArticleCategory(createArticleRequest.getId(), createArticleRequest.getCategoryId());
@@ -180,9 +182,9 @@ public class ArticleController {
         response.setCoverUrl(article.getCoverUrl());
         response.setDescription(article.getDescription());
         response.setStatus(article.getStatus());
-        response.setCommentEnabled(article.getCommentEnabled());
-        response.setCategory(category);
-        response.setTags(tag);
+        response.setCommentEnabled(article.getCommentEnabled().equals("1"));
+        response.setCategoryId(category.getId());
+        response.setTagIds(tag.stream().map(TagEntity::getId).collect(Collectors.toList()));
         log.info("文章详情获取结果: {}", response);
         return ResponseEntity.<ArticleDetailsResponse>builder()
                 .data(response)

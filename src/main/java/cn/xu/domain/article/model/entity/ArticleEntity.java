@@ -25,17 +25,4 @@ public class ArticleEntity {
     private Long likeCount;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
-
-    // 业务逻辑方法
-    public void validate() {
-        if (title == null || title.trim().isEmpty()) {
-            throw new IllegalArgumentException("Title cannot be null or empty");
-        }
-        if (content == null || content.trim().isEmpty()) {
-            throw new IllegalArgumentException("Content cannot be null or empty");
-        }
-        if (title.length() > 255) {
-            throw new IllegalArgumentException("Title cannot exceed 255 characters");
-        }
-    }
 }

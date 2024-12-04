@@ -20,7 +20,7 @@ public class ArticleDetailsResponse {
     private String description;
     private String content;
     private String status;
-    private String commentEnabled;
-    private CategoryEntity category;
-    private List<TagEntity> tags;
+    private Boolean commentEnabled;
+    private Long categoryId;
+    private List<Long> tagIds;
 }
