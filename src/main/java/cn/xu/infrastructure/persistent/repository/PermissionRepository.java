@@ -163,7 +163,9 @@ public class PermissionRepository implements IPermissionRepository {
         }
         return RoleEntity.builder()
                 .id(role.getId())
+                .code(role.getCode())
                 .name(role.getName())
+                .desc(role.getDesc())
                 .build();
     }
 }

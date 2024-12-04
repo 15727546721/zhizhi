@@ -45,8 +45,8 @@
         WHERE user.id = #{userId}
     </select>
 
-    <select id="selectRolePage" resultType="cn.xu.infrastructure.persistent.po.Role">
-        SELECT id, name, `desc`
+    <select id="selectRolePage" resultMap="BaseResultMap">
+        SELECT id, name, code, `desc`
         FROM role
         <where>
             <if test="name != null and name != ''">
