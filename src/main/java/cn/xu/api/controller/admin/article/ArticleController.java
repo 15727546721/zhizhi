@@ -183,8 +183,8 @@ public class ArticleController {
         response.setDescription(article.getDescription());
         response.setStatus(article.getStatus());
         response.setCommentEnabled(article.getCommentEnabled().equals("1"));
-        response.setCategoryId(category.getId());
-        response.setTagIds(tag.stream().map(TagEntity::getId).collect(Collectors.toList()));
+        response.setCategoryId(category == null ? null : category.getId());
+        response.setTagIds(tag.isEmpty() ? null : tag.stream().map(TagEntity::getId).collect(Collectors.toList()));
         log.info("文章详情获取结果: {}", response);
         return ResponseEntity.<ArticleDetailsResponse>builder()
                 .data(response)
