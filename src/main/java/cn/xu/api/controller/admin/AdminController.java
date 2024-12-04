@@ -1,5 +1,6 @@
 package cn.xu.api.controller.admin;
 
+import cn.dev33.satoken.secure.SaSecureUtil;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.api.dto.common.PageRequest;
 import cn.xu.api.dto.user.LoginFormRequest;
@@ -8,6 +9,7 @@ import cn.xu.common.Constants;
 import cn.xu.common.ResponseEntity;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.model.entity.UserInfoEntity;
+import cn.xu.domain.user.model.entity.UserRoleEntity;
 import cn.xu.domain.user.model.valobj.LoginFormVO;
 import cn.xu.domain.user.service.IUserLoginService;
 import cn.xu.domain.user.service.IUserService;
@@ -110,25 +112,27 @@ public class AdminController {
     @PostMapping("/user/add")
     public ResponseEntity addUser(@RequestBody UserRequest userRequest) {
         log.info("添加用户: {}", userRequest);
-        UserEntity userEntity = UserEntity.builder()
+        if (StringUtils.isEmpty(userRequest.getUsername()) || StringUtils.isEmpty(userRequest.getPassword())
+                || StringUtils.isEmpty(userRequest.getEmail())) {
+            throw new AppException(Constants.ResponseCode.NULL_PARAMETER.getCode(), "添加用户参数为空");
+            }
+        if (userRequest.getRoleId() == null) {
+            throw new AppException(Constants.ResponseCode.NULL_PARAMETER.getCode(), "角色不能为空");
+        }
+        userService.addUser(UserRoleEntity.builder()
                 .username(userRequest.getUsername())
+                .password(SaSecureUtil.sha256(userRequest.getPassword()))
                 .email(userRequest.getEmail())
                 .status(userRequest.getStatus())
                 .nickname(userRequest.getNickname())
-                .build();
+                .avatar(userRequest.getAvatar())
+                .roleId(userRequest.getRoleId())
+                .build());
 
-        int result = userService.addUser(userEntity);
-        if (result > 0) {
-            return ResponseEntity.<String>builder()
-                    .code(Constants.ResponseCode.SUCCESS.getCode())
-                    .info("添加用户成功")
-                    .build();
-        } else {
-            return ResponseEntity.<String>builder()
-                    .code(Constants.ResponseCode.UN_ERROR.getCode())
-                    .info("添加用户失败")
-                    .build();
-        }
+        return ResponseEntity.<String>builder()
+                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .info("添加用户成功")
+                .build();
     }
 
     @PostMapping("/user/update")

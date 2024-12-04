@@ -2,6 +2,7 @@ package cn.xu.domain.user.repository;
 
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.model.entity.UserInfoEntity;
+import cn.xu.domain.user.model.entity.UserRoleEntity;
 import cn.xu.domain.user.model.valobj.LoginFormVO;
 
 import java.util.List;
@@ -57,7 +58,7 @@ public interface IUserRepository {
      * @param userEntity
      * @return
      */
-    int saveUser(UserEntity userEntity);
+    void saveUser(UserRoleEntity userRoleEntity);
 
     /**
      * 更新用户

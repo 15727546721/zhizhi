@@ -1,6 +1,7 @@
 package cn.xu.domain.user.service.user;
 
 import cn.xu.domain.user.model.entity.UserEntity;
+import cn.xu.domain.user.model.entity.UserRoleEntity;
 import cn.xu.domain.user.repository.IUserRepository;
 import cn.xu.domain.user.service.IUserService;
 import lombok.extern.slf4j.Slf4j;
@@ -30,9 +31,8 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public int addUser(UserEntity userEntity) {
-        int result = userRepository.saveUser(userEntity);
-        return result;
+    public void addUser(UserRoleEntity userRole) {
+        userRepository.saveUser(userRole);
     }
 
     @Override

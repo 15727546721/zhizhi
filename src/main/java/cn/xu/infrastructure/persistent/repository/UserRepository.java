@@ -4,12 +4,14 @@ import cn.dev33.satoken.secure.SaSecureUtil;
 import cn.xu.common.Constants;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.model.entity.UserInfoEntity;
+import cn.xu.domain.user.model.entity.UserRoleEntity;
 import cn.xu.domain.user.model.valobj.LoginFormVO;
 import cn.xu.domain.user.repository.IUserRepository;
 import cn.xu.exception.AppException;
 import cn.xu.infrastructure.persistent.dao.IUserDao;
 import cn.xu.infrastructure.persistent.dao.IUserRoleDao;
 import cn.xu.infrastructure.persistent.po.User;
+import cn.xu.infrastructure.persistent.po.UserRole;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.dao.DuplicateKeyException;
@@ -82,24 +84,38 @@ public class UserRepository implements IUserRepository {
     }
 
     @Override
-    public int saveUser(UserEntity userEntity) {
+    public void saveUser(UserRoleEntity userRoleEntity) {
         User user = User.builder()
-                .username(userEntity.getUsername())
-                .password(SaSecureUtil.sha256(userEntity.getPassword()))
-                .email(userEntity.getEmail())
-                .status(userEntity.getStatus())
-                .nickname(userEntity.getNickname())
-                .avatar(null) // 头像暂时不用设置
+                .username(userRoleEntity.getUsername())
+                .password(userRoleEntity.getPassword())
+                .email(userRoleEntity.getEmail())
+                .status(userRoleEntity.getStatus())
+                .nickname(userRoleEntity.getNickname())
+                .avatar(userRoleEntity.getAvatar())
                 .build();
-        int result;
         try {
-            result = userDao.insertUser(user);
-        } catch (DuplicateKeyException e) {
-            log.error("saveUser: " + e.getMessage());
-            throw new AppException(Constants.ResponseCode.DUPLICATE_KEY.getCode(),
-                    Constants.ResponseCode.DUPLICATE_KEY.getInfo());
+            transactionTemplate.execute(status -> {
+                try {
+                    Long userId = userDao.insertUser(user);
+                    userRoleDao.insert(UserRole.builder()
+                            .userId(userId)
+                            .roleId(userRoleEntity.getRoleId())
+                            .build());
+                    return null; // 没有异常则返回 null
+                } catch (Exception e) {
+                    // 记录错误日志
+                    log.error("添加用户失败: {}", userRoleEntity, e);
+                    // 标记事务为回滚
+                    status.setRollbackOnly();
+                    // 抛出异常以确保事务回滚
+                    throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "添加用户失败");
+                }
+            });
+        } catch (Exception e) {
+            // 处理事务外层的异常（可选）
+            log.error("添加用户过程中发生异常", e);
+            throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "出现未知异常，添加用户失败");
         }
-        return result;
     }
 
     @Override
@@ -135,7 +151,7 @@ public class UserRepository implements IUserRepository {
                     throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "删除用户失败");
                 }
             });
-        } catch (RuntimeException e) {
+        } catch (Exception e) {
             // 处理事务外层的异常（可选）
             log.error("删除用户过程中发生异常", e);
             throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "出现未知异常，删除用户失败");

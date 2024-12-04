@@ -22,7 +22,7 @@ public interface IUserDao {
 
     List<User> selectAdminByPage(@Param("page") int page, @Param("size") int size);
 
-    int insertUser(@Param("user") User user);
+    Long insertUser(@Param("user") User user);
 
     int updateUser(@Param("user") User user);
 

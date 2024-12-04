@@ -18,6 +18,9 @@
         insert into user (id, username, password, email, nickname, avatar, status, create_time, update_time)
         values (#{user.id}, #{user.username}, #{user.password}, #{user.email}, #{user.nickname}, #{user.avatar},
                 #{user.status}, now(), now())
+        <selectKey resultType="java.lang.Long" keyProperty="id" order="AFTER">
+            select LAST_INSERT_ID()
+        </selectKey>
     </insert>
     <update id="updateUser" parameterType="cn.xu.domain.user.model.entity.UserEntity">
         update user

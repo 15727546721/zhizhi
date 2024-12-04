@@ -1,20 +1,20 @@
-package cn.xu.api.dto.user;
+package cn.xu.domain.user.model.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Data
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
 @Builder
-public class UserRequest {
+@Data
+public class UserRoleEntity {
     private String username;
     private String password;
-    private String email;
     private String nickname;
+    private String email;
     private String avatar;
-    private String status = "0";
+    private String status;
     private Long roleId;
 }

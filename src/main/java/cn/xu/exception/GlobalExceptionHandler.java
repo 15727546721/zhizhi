@@ -4,6 +4,7 @@ import cn.dev33.satoken.exception.NotLoginException;
 import cn.xu.common.Constants;
 import cn.xu.common.ResponseEntity;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -85,6 +86,14 @@ public class GlobalExceptionHandler {
                 .build();
     }
 
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<String> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex) {
+        log.error("参数解析异常: {}", ex);
+        return ResponseEntity.<String>builder()
+                .code(Constants.ResponseCode.ILLEGAL_PARAMETER.getCode())
+                .info(ex.getMessage())
+                .build();
+    }
     /**
      * 处理全局异常
      *
