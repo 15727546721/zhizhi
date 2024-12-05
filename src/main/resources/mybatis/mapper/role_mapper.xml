@@ -22,18 +22,29 @@
     </insert>
     <update id="updateRole">
         UPDATE role
-        SET code = #{code}, name = #{name}, `desc` = #{desc}
+        SET code   = #{code},
+            name   = #{name},
+            `desc` = #{desc}
         WHERE id = #{id}
     </update>
     <delete id="deleteRoleMenuByRoleId">
-        DELETE FROM role_menu
+        DELETE
+        FROM role_menu
         WHERE role_id = #{roleId}
     </delete>
     <delete id="deleteRoleByIds" parameterType="java.util.List">
         DELETE FROM role
         WHERE id IN
-        <foreach collection="ids" item="id" index="index" separator=",">
+        <foreach collection="ids" item="id" index="index" separator="," open="(" close=")">
             #{id}
+        </foreach>
+
+    </delete>
+    <delete id="deleteRoleMenuByRoleIds">
+        DELETE FROM role_menu
+        WHERE role_id IN
+        <foreach collection="roleIds" item="roleId" index="index" separator="," open="(" close=")">
+            #{roleId}
         </foreach>
     </delete>
 

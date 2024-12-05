@@ -29,4 +29,6 @@ public interface IRoleDao {
     void updateRole(Role build);
 
     void deleteRoleByIds(List<Long> ids);
+
+    void deleteRoleMenuByRoleIds(List<Long> roleIds);
 }
