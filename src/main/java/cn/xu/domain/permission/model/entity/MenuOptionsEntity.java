@@ -12,7 +12,7 @@ import java.util.List;
 @Data
 
 public class MenuOptionsEntity {
-    private Long value;
+    private Long id;
 
     private String label;
 

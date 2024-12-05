@@ -5,35 +5,34 @@
 <mapper namespace="cn.xu.infrastructure.persistent.dao.IMenuDao">
 
     <resultMap id="BaseResultMap" type="cn.xu.infrastructure.persistent.po.Menu">
-            <id property="id" column="id" jdbcType="BIGINT"/>
-            <result property="parentId" column="parent_id" jdbcType="BIGINT"/>
-            <result property="path" column="path" jdbcType="VARCHAR"/>
-            <result property="component" column="component" jdbcType="VARCHAR"/>
-            <result property="title" column="title" jdbcType="VARCHAR"/>
-            <result property="sort" column="sort" jdbcType="INTEGER"/>
-            <result property="icon" column="icon" jdbcType="VARCHAR"/>
-            <result property="type" column="type" jdbcType="VARCHAR"/>
-            <result property="createdTime" column="created_time" jdbcType="TIMESTAMP"/>
-            <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
-            <result property="redirect" column="redirect" jdbcType="VARCHAR"/>
-            <result property="name" column="name" jdbcType="VARCHAR"/>
-            <result property="hidden" column="hidden" jdbcType="VARCHAR"/>
-            <result property="perm" column="perm" jdbcType="VARCHAR"/>
+        <id property="id" column="id" jdbcType="BIGINT"/>
+        <result property="parentId" column="parent_id" jdbcType="BIGINT"/>
+        <result property="path" column="path" jdbcType="VARCHAR"/>
+        <result property="component" column="component" jdbcType="VARCHAR"/>
+        <result property="title" column="title" jdbcType="VARCHAR"/>
+        <result property="sort" column="sort" jdbcType="INTEGER"/>
+        <result property="icon" column="icon" jdbcType="VARCHAR"/>
+        <result property="type" column="type" jdbcType="VARCHAR"/>
+        <result property="createdTime" column="created_time" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+        <result property="redirect" column="redirect" jdbcType="VARCHAR"/>
+        <result property="name" column="name" jdbcType="VARCHAR"/>
+        <result property="hidden" column="hidden" jdbcType="VARCHAR"/>
+        <result property="perm" column="perm" jdbcType="VARCHAR"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        id,parent_id,path,
-        component,title,sort,
-        icon,type,created_time,
-        update_time,redirect,name,
-        hidden,perm
+        id
+        , parent_id, path, component, title, sort, icon, type, created_time, update_time, redirect, name, hidden, perm
     </sql>
-    <select id="selectMenuList" resultType="cn.xu.infrastructure.persistent.po.Menu">
-        SELECT <include refid="Base_Column_List"/>
+    <select id="selectMenuList" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
         FROM menu
     </select>
-    <select id="selectMenuById" resultType="cn.xu.infrastructure.persistent.po.Menu">
-        SELECT <include refid="Base_Column_List"/>
+    <select id="selectMenuById" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
         FROM menu
         WHERE id = #{id}
     </select>

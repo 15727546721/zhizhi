@@ -53,12 +53,12 @@ public class PermissionService implements IPermissionService {
             if ( parentId == null || parentId == 0) {
                 resultList.add(MenuOptionsEntity.builder()
                         .label(menu.getTitle())
-                        .value(menu.getId())
+                        .id(menu.getId())
                         .build());
             }
         }
         for (MenuOptionsEntity menu : resultList) {
-            menu.setChildren(getOptionsChild(menu.getValue(),menuEntityList));
+            menu.setChildren(getOptionsChild(menu.getId(),menuEntityList));
         }
         return resultList;
     }
@@ -187,18 +187,18 @@ public class PermissionService implements IPermissionService {
         Map<Long, MenuOptionsEntity> optionsMap = new HashMap<>();
         for (MenuEntity menu : menus) {
             Long parentId = menu.getParentId();
-            if (parentId != null && parentId.equals(pid)) {
+            if (parentId != null && parentId == pid) {
                 optionsMap.put(menu.getId(), MenuOptionsEntity.builder()
                         .label(menu.getTitle())
-                        .value(menu.getId())
+                        .id(menu.getId())
                         .build());
             }
         }
 
         List<MenuOptionsEntity> children = new ArrayList<>(optionsMap.values());
 
-        for (MenuOptionsEntity e : children) {
-            e.setChildren(getOptionsChild(e.getValue(), menus));
+        for (MenuOptionsEntity child : children) {
+            child.setChildren(getOptionsChild(child.getId(), menus));
         }
 
         return children.isEmpty() ? Collections.emptyList() : children;

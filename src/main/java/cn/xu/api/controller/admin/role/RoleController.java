@@ -25,7 +25,7 @@ public class RoleController {
 
     @GetMapping("/list/{page}/{size}")
     @Operation(summary = "角色列表")
-    public ResponseEntity selectRolePage(String name, @PathVariable("page") int page, @PathVariable("size") int size) {
+    public ResponseEntity selectRolePage(@RequestParam(value = "name", required = false) String name, @PathVariable("page") int page, @PathVariable("size") int size) {
         PageResponse<List<RoleEntity>> pageResponse = permissionService.selectRolePage(name, page, size);
         return ResponseEntity.builder()
                 .data(pageResponse)
