@@ -80,7 +80,7 @@ public class AdminController {
 
 
     @GetMapping("/user/list")
-    public ResponseEntity queryUserList(@ModelAttribute PageRequest pageRequest) {
+    public ResponseEntity queryUserList(@RequestParam PageRequest pageRequest) {
         int page = pageRequest.getPage();
         int size = pageRequest.getSize();
         log.info("查询用户列表: page={}, size={}", page, size);
@@ -91,21 +91,6 @@ public class AdminController {
                 .data(userEntityList)
                 .code(Constants.ResponseCode.SUCCESS.getCode())
                 .info("查询用户列表成功")
-                .build();
-    }
-
-    @GetMapping("/admin/list")
-    public ResponseEntity queryAdminList(@ModelAttribute PageRequest pageRequest) {
-        int page = pageRequest.getPage();
-        int size = pageRequest.getSize();
-        log.info("查询管理员列表: page={}, size={}", page, size);
-        page = page < 1 ? 1 : page;
-        size = size < 1 ? 10 : size;
-        List<UserEntity> userEntityList = userService.queryAdminList(page, size);
-        return ResponseEntity.<List<UserEntity>>builder()
-                .data(userEntityList)
-                .code(Constants.ResponseCode.SUCCESS.getCode())
-                .info("查询管理员列表成功")
                 .build();
     }
 

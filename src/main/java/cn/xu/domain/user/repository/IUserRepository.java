@@ -44,18 +44,9 @@ public interface IUserRepository {
     List<UserEntity> findUserByPage(int page, int size);
 
     /**
-     * 根据页码和每页大小查询管理员
-     *
-     * @param page
-     * @param size
-     * @return
-     */
-    List<UserEntity> findAdminByPage(int page, int size);
-
-    /**
      * 保存用户
      *
-     * @param userEntity
+     * @param userRoleEntity
      * @return
      */
     void saveUser(UserRoleEntity userRoleEntity);

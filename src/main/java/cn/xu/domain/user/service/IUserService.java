@@ -8,8 +8,6 @@ import java.util.List;
 public interface IUserService {
     List<UserEntity> queryUserList(int page, int size);
 
-    List<UserEntity> queryAdminList(int page, int size);
-
     void addUser(UserRoleEntity userRole);
 
     int updateUser(UserEntity userEntity);

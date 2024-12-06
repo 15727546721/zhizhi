@@ -74,16 +74,6 @@ public class UserRepository implements IUserRepository {
     }
 
     @Override
-    public List<UserEntity> findAdminByPage(int page, int size) {
-        List<User> userList = userDao.selectAdminByPage(page - 1, size);
-        log.info("findAdminByPage: " + userList);
-
-        return userList.stream()
-                .map(this::convertToUserEntity)
-                .collect(Collectors.toList());
-    }
-
-    @Override
     public void saveUser(UserRoleEntity userRoleEntity) {
         User user = User.builder()
                 .username(userRoleEntity.getUsername())
