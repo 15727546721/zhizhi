@@ -49,7 +49,7 @@ sa-token:
   # 由于Cookie中无法存储空格字符，也就意味配置 Token 前缀后，Cookie 鉴权方式将会失效，此时只能将 Token 提交到header里进行传输
   #  token-prefix: Bearer
   # token 名称 (同时也是cookie名称)
-  token-name: X-Token
+  token-name: Authorization
   # 设置前缀token就需要放入到header里，否则无法读取到token
 #  token-prefix: Bearer
   # token 有效期，单位s 默认30天, -1代表永不过期
