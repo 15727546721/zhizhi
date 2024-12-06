@@ -20,6 +20,10 @@ public interface IMenuDao {
     void updateMenu(Menu build);
 
     void deleteMenu(Long id);
+
+    List<Long> getMenuById(@Param("userId") long userId);
+
+    List<Menu> listByIds(@Param("menuIds") List<Long> menuIds);
 }
 
 

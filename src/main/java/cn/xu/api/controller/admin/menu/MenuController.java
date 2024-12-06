@@ -1,10 +1,12 @@
 package cn.xu.api.controller.admin.menu;
 
+import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.xu.common.Constants;
 import cn.xu.common.ResponseEntity;
 import cn.xu.domain.permission.model.entity.MenuEntity;
 import cn.xu.domain.permission.model.entity.MenuOptionsEntity;
+import cn.xu.domain.permission.model.entity.RouterEntity;
 import cn.xu.domain.permission.service.IPermissionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -43,6 +45,18 @@ public class MenuController {
                 .build();
     }
 
+    @GetMapping(value = "/getUserMenu")
+    @Operation(summary = "获取用户菜单")
+    public ResponseEntity getCurrentUserMenu() {
+        List<RouterEntity> routerList = permissionService.getCurrentUserMenu();
+        return ResponseEntity.<List<RouterEntity>>builder()
+                .data(routerList)
+                .info("获取用户菜单成功")
+                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .build();
+    }
+
+    @SaCheckLogin
     @GetMapping(value = "/info/{id}")
     @Operation(summary = "菜单详情")
     public ResponseEntity<MenuEntity> selectMenuById(@PathVariable Long id) {

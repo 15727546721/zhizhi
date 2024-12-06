@@ -8,6 +8,7 @@ import cn.xu.common.Constants;
 import cn.xu.domain.permission.model.entity.MenuEntity;
 import cn.xu.domain.permission.model.entity.MenuOptionsEntity;
 import cn.xu.domain.permission.model.entity.RoleEntity;
+import cn.xu.domain.permission.model.entity.RouterEntity;
 import cn.xu.domain.permission.model.vo.MenuComponentVO;
 import cn.xu.domain.permission.model.vo.MenuTypeVO;
 import cn.xu.domain.permission.repository.IPermissionRepository;
@@ -168,6 +169,25 @@ public class PermissionService implements IPermissionService {
         permissionRepository.deleteMenu(id);
     }
 
+    @Override
+    public List<RouterEntity> getCurrentUserMenu() {
+        List<MenuEntity> menus;
+        try {
+            if (StpUtil.hasRole("admin")) {
+                menus = permissionRepository.selectMenuList();
+            }else {
+                List<Long> menuIds = permissionRepository.getMenuById(StpUtil.getLoginIdAsLong());
+                menus = permissionRepository.listByIds(menuIds);
+            }
+        } catch (Exception e) {
+            log.error("获取当前用户菜单失败", e);
+            throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "获取当前用户菜单失败");
+        }
+
+        List<RouterEntity> routerList = buildRouterTree(menus);
+        return routerList;
+    }
+
     /**
      * 构建树形结构
      *
@@ -231,27 +251,60 @@ public class PermissionService implements IPermissionService {
         return children.isEmpty() ? Collections.emptyList() : children;
     }
 
-
-    private MenuEntity convert(Menu menu) {
-        if (menu == null) {
-            return null;
+    /**
+     * 构建路由树
+     *
+     * @param menus
+     * @return
+     */
+    private List<RouterEntity> buildRouterTree(List<MenuEntity> menus) {
+        List<RouterEntity> resultList = new ArrayList<>();
+        for (MenuEntity menu : menus) {
+            Long parentId = menu.getParentId();
+            if ( parentId == null || parentId == 0) {
+                RouterEntity.MetaEntity metaVO = new RouterEntity.MetaEntity(menu.getTitle(),menu.getIcon(),menu.getHidden());
+                RouterEntity build = RouterEntity.builder().id(menu.getId()).path(menu.getPath()).redirect(menu.getRedirect()).name(menu.getName()).component(menu.getComponent())
+                        .meta(metaVO).sort(menu.getSort()).build();
+                resultList.add(build);
+            }
         }
-        return MenuEntity.builder()
-                .id(menu.getId())
-                .parentId(menu.getParentId())
-                .path(menu.getPath())
-                .component(menu.getComponent())
-                .title(menu.getTitle())
-                .sort(menu.getSort())
-                .icon(menu.getIcon())
-                .type(menu.getType())
-                .createdTime(menu.getCreatedTime())
-                .updateTime(menu.getUpdateTime())
-                .redirect(menu.getRedirect())
-                .name(menu.getName())
-                .hidden(menu.getHidden())
-                .perm(menu.getPerm())
-                .children(new ArrayList<>()) // 初始化子菜单列表
-                .build();
+        resultList.sort(Comparator.comparingInt(RouterEntity::getSort));
+
+        for (RouterEntity RouterEntity : resultList) {
+            RouterEntity.setChildren(getRouterChild(RouterEntity.getId(),menus));
+        }
+        return resultList;
+    }
+
+    /**
+     * 获取路由菜单树
+     * @param pid
+     * @param menus
+     * @return
+     */
+    private List<RouterEntity> getRouterChild(Long pid , List<MenuEntity> menus){
+        if (menus == null) {
+            return Collections.emptyList();
+        }
+        Map<Long, RouterEntity> routerMap = new HashMap<>();
+        for (MenuEntity e: menus) {
+            Long parentId = e.getParentId();
+            if(parentId != null && parentId.equals(pid)){
+                // 子菜单的下级菜单
+                RouterEntity.MetaEntity metaVO = new RouterEntity.MetaEntity(e.getTitle(),e.getIcon(),e.getHidden());
+                RouterEntity build = RouterEntity.builder().id(e.getId()).path(e.getPath()).redirect(e.getRedirect()).name(e.getName()).component(e.getComponent())
+                        .meta(metaVO).sort(e.getSort()).build();
+                routerMap.put(e.getId(), build);
+            }
+        }
+
+        List<RouterEntity> children = new ArrayList<>(routerMap.values());
+        children.sort(Comparator.comparingInt(RouterEntity::getSort));
+
+        for (RouterEntity e : children) {
+            e.setChildren(getRouterChild(e.getId(), menus));
+        }
+
+        return children.isEmpty() ? Collections.emptyList() : children;
     }
 }

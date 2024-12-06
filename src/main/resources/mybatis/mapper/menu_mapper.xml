@@ -17,7 +17,7 @@
         <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
         <result property="redirect" column="redirect" jdbcType="VARCHAR"/>
         <result property="name" column="name" jdbcType="VARCHAR"/>
-        <result property="hidden" column="hidden" jdbcType="VARCHAR"/>
+        <result property="hidden" column="hidden" jdbcType="TINYINT"/>
         <result property="perm" column="perm" jdbcType="VARCHAR"/>
     </resultMap>
 
@@ -68,5 +68,20 @@
     <select id="selectAllMenuId" resultType="java.lang.Long">
         SELECT id
         FROM menu
+    </select>
+    <select id="getMenuById" resultType="java.lang.Long">
+        select rm.menu_id
+        from user where u.id = #{id}
+        join user_role ur on u.id = ur.user_id
+        join role_menu rm on rm.role_id = ru.id
+    </select>
+    <select id="listByIds" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM menu
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
     </select>
 </mapper>

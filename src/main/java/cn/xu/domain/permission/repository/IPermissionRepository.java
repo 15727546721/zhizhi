@@ -2,6 +2,7 @@ package cn.xu.domain.permission.repository;
 
 import cn.xu.domain.permission.model.entity.MenuEntity;
 import cn.xu.domain.permission.model.entity.RoleEntity;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
@@ -40,4 +41,8 @@ public interface IPermissionRepository {
     void updateMenu(MenuEntity menu);
 
     void deleteMenu(Long id);
+
+    List<Long> getMenuById(long userId);
+
+    List<MenuEntity> listByIds(List<Long> menuIds);
 }

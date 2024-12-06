@@ -5,6 +5,7 @@ import cn.xu.api.dto.permission.RoleMenuRequest;
 import cn.xu.api.dto.permission.RoleRequest;
 import cn.xu.domain.permission.model.entity.MenuEntity;
 import cn.xu.domain.permission.model.entity.MenuOptionsEntity;
+import cn.xu.domain.permission.model.entity.RouterEntity;
 
 import java.util.List;
 
@@ -45,4 +46,6 @@ public interface IPermissionService {
     void updateMenu(MenuEntity menu);
 
     void deleteMenu(Long id);
+
+    List<RouterEntity> getCurrentUserMenu();
 }

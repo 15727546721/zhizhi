@@ -76,7 +76,7 @@ public class MenuEntity {
     /**
      * 是否隐藏
      */
-    private String hidden;
+    private Integer hidden;
 
     /**
      * 权限标识

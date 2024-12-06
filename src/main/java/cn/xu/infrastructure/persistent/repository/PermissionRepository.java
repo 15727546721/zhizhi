@@ -183,6 +183,19 @@ public class PermissionRepository implements IPermissionRepository {
         menuDao.deleteMenu(id);
     }
 
+    @Override
+    public List<Long> getMenuById(long userId) {
+        return menuDao.getMenuById(userId);
+    }
+
+    @Override
+    public List<MenuEntity> listByIds(List<Long> menuIds) {
+        List<Menu> menuList = menuDao.listByIds(menuIds);
+        List<MenuEntity> menuEntityList = menuList.stream()
+                .map(this::convert)
+                .collect(Collectors.toList());
+        return menuEntityList;
+    }
 
     private MenuEntity convert(Menu menu) {
         if (menu == null) {
