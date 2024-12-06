@@ -1,7 +1,6 @@
 package cn.xu.domain.article.repository;
 
 import cn.xu.domain.article.model.entity.ArticleEntity;
-import cn.xu.infrastructure.persistent.po.Article;
 
 import java.util.List;
 

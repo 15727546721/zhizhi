@@ -1,5 +1,6 @@
 package cn.xu.domain.user.service.user;
 
+import cn.xu.domain.permission.repository.IPermissionRepository;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.model.entity.UserRoleEntity;
 import cn.xu.domain.user.repository.IUserRepository;
@@ -15,7 +16,8 @@ import java.util.List;
 public class UserService implements IUserService {
     @Resource
     private IUserRepository userRepository;
-
+    @Resource
+    private IPermissionRepository permissionRepository;
     @Override
     public List<UserEntity> queryUserList(int page, int size) {
         List<UserEntity> userEntityList = userRepository.findUserByPage(page, size);

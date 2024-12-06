@@ -14,7 +14,6 @@ import cn.xu.infrastructure.persistent.po.User;
 import cn.xu.infrastructure.persistent.po.UserRole;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.support.TransactionTemplate;
 

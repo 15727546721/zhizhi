@@ -1,7 +1,5 @@
 package cn.xu.api.dto.article;
 
-import cn.xu.domain.article.model.entity.CategoryEntity;
-import cn.xu.domain.article.model.entity.TagEntity;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

@@ -14,6 +14,8 @@ import cn.xu.domain.user.model.valobj.LoginFormVO;
 import cn.xu.domain.user.service.IUserLoginService;
 import cn.xu.domain.user.service.IUserService;
 import cn.xu.exception.AppException;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
@@ -24,6 +26,7 @@ import java.util.List;
 @Slf4j
 @RequestMapping("/system")
 @RestController
+@Tag(name = "后台用户管理", description = "后台用户相关接口")
 public class AdminController {
 
     @Resource
@@ -32,6 +35,7 @@ public class AdminController {
     private IUserService userService;
 
     @PostMapping("/login")
+    @Operation(summary = "用户登录")
     public ResponseEntity<String> loginByAdmin(@RequestBody LoginFormRequest loginFormRequest) {
         log.info("管理员登录: {}", loginFormRequest);
         if (StringUtils.isEmpty(loginFormRequest.getUsername()) || StringUtils.isEmpty(loginFormRequest.getPassword())) {
@@ -46,7 +50,8 @@ public class AdminController {
                 .build();
     }
 
-    @GetMapping("/info")
+    @GetMapping("user/info")
+    @Operation(summary = "获取用户信息")
     public ResponseEntity<UserInfoEntity> getInfoByToken(String token) {
         log.info("管理员获取信息: {}", token);
         if (StringUtils.isEmpty(token)) {
@@ -61,6 +66,7 @@ public class AdminController {
     }
 
     @PostMapping("/logout")
+    @Operation(summary = "退出登录")
     public ResponseEntity<String> logout(String token) {
         log.info("管理员退出: {}", token);
         if (StringUtils.isEmpty(token)) {
@@ -78,8 +84,20 @@ public class AdminController {
                 .build();
     }
 
+    @GetMapping("/logout")
+    @Operation(summary = "退出登录")
+    public ResponseEntity<String> logout() {
+        log.info("管理员退出 {}", StpUtil.getLoginId());
+        StpUtil.logout();
+        return ResponseEntity.<String>builder()
+                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .info("管理员退出成功")
+                .build();
+    }
+
 
     @GetMapping("/user/list")
+    @Operation(summary = "查询用户列表")
     public ResponseEntity queryUserList(@RequestParam PageRequest pageRequest) {
         int page = pageRequest.getPage();
         int size = pageRequest.getSize();
@@ -95,6 +113,7 @@ public class AdminController {
     }
 
     @PostMapping("/user/add")
+    @Operation(summary = "添加用户")
     public ResponseEntity addUser(@RequestBody UserRequest userRequest) {
         log.info("添加用户: {}", userRequest);
         if (StringUtils.isEmpty(userRequest.getUsername()) || StringUtils.isEmpty(userRequest.getPassword())
@@ -121,6 +140,7 @@ public class AdminController {
     }
 
     @PostMapping("/user/update")
+    @Operation(summary = "更新用户")
     public ResponseEntity updateUser(@RequestBody UserRequest userRequest) {
         log.info("更新用户: {}", userRequest);
         UserEntity userEntity = new UserEntity();
@@ -145,6 +165,7 @@ public class AdminController {
     }
 
     @DeleteMapping("/user/delete")
+    @Operation(summary = "删除用户")
     public ResponseEntity deleteUser(@RequestParam Long userId) {
         log.info("删除用户: {}", userId);
         userService.deleteUser(userId);
