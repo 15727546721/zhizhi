@@ -8,10 +8,13 @@ import cn.xu.common.Constants;
 import cn.xu.domain.permission.model.entity.MenuEntity;
 import cn.xu.domain.permission.model.entity.MenuOptionsEntity;
 import cn.xu.domain.permission.model.entity.RoleEntity;
+import cn.xu.domain.permission.model.vo.MenuComponentVO;
+import cn.xu.domain.permission.model.vo.MenuTypeVO;
 import cn.xu.domain.permission.repository.IPermissionRepository;
 import cn.xu.domain.permission.service.IPermissionService;
 import cn.xu.exception.AppException;
 import cn.xu.infrastructure.persistent.po.Menu;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -19,6 +22,7 @@ import javax.annotation.Resource;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class PermissionService implements IPermissionService {
 
@@ -50,7 +54,7 @@ public class PermissionService implements IPermissionService {
         List<MenuOptionsEntity> resultList = new ArrayList<>();
         for (MenuEntity menu : menuEntityList) {
             Long parentId = menu.getParentId();
-            if ( parentId == null || parentId == 0) {
+            if (parentId == null || parentId == 0) {
                 resultList.add(MenuOptionsEntity.builder()
                         .label(menu.getTitle())
                         .id(menu.getId())
@@ -58,7 +62,7 @@ public class PermissionService implements IPermissionService {
             }
         }
         for (MenuOptionsEntity menu : resultList) {
-            menu.setChildren(getOptionsChild(menu.getId(),menuEntityList));
+            menu.setChildren(getOptionsChild(menu.getId(), menuEntityList));
         }
         return resultList;
     }
@@ -106,22 +110,25 @@ public class PermissionService implements IPermissionService {
         if (roleEntity != null && roleEntity.getCode().equals("admin")) {
             return;
         }
-        try {
-            transactionTemplate.execute(status -> {
+        transactionTemplate.execute(status -> {
+            try {
                 // 先删除原有菜单权限
                 permissionRepository.deleteRoleMenuByRoleId(roleId);
                 // 再插入新菜单权限
                 permissionRepository.insertRoleMenu(roleId, menuIds);
                 return null;
-            });
-        } catch (Exception e) {
-            throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "分配角色权限失败");
-        }
+            } catch (Exception e) {
+                // 回滚事务
+                status.setRollbackOnly();
+                log.error("分配角色权限失败", e);
+                throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "分配角色权限失败");
+            }
+        });
     }
 
     @Override
     public void addRole(RoleRequest role) {
-         permissionRepository.addRole(RoleEntity.builder()
+        permissionRepository.addRole(RoleEntity.builder()
                 .code(role.getCode())
                 .name(role.getName())
                 .desc(role.getDesc())
@@ -143,8 +150,27 @@ public class PermissionService implements IPermissionService {
         permissionRepository.deleteRoleByIds(ids);
     }
 
+    @Override
+    public void addMenu(MenuEntity menu) {
+        if (menu.getType().equals(MenuTypeVO.CATALOG.getCode())) {
+            menu.setComponent(MenuComponentVO.Layout.getName());
+        }
+        permissionRepository.addMenu(menu);
+    }
+
+    @Override
+    public void updateMenu(MenuEntity menu) {
+        permissionRepository.updateMenu(menu);
+    }
+
+    @Override
+    public void deleteMenu(Long id) {
+        permissionRepository.deleteMenu(id);
+    }
+
     /**
      * 构建树形结构
+     *
      * @return
      */
     public List<MenuEntity> buildMenuTree(List<MenuEntity> menuList) {
@@ -175,11 +201,12 @@ public class PermissionService implements IPermissionService {
 
     /**
      * 分配角色权限-下拉菜单树
+     *
      * @param pid
      * @param menus
      * @return
      */
-    private List<MenuOptionsEntity> getOptionsChild(Long pid , List<MenuEntity> menus){
+    private List<MenuOptionsEntity> getOptionsChild(Long pid, List<MenuEntity> menus) {
         if (menus == null) {
             return Collections.emptyList();
         }
@@ -203,7 +230,6 @@ public class PermissionService implements IPermissionService {
 
         return children.isEmpty() ? Collections.emptyList() : children;
     }
-
 
 
     private MenuEntity convert(Menu menu) {

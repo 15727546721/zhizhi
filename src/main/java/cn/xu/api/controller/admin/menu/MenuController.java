@@ -1,5 +1,6 @@
 package cn.xu.api.controller.admin.menu;
 
+import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.xu.common.Constants;
 import cn.xu.common.ResponseEntity;
 import cn.xu.domain.permission.model.entity.MenuEntity;
@@ -7,10 +8,7 @@ import cn.xu.domain.permission.model.entity.MenuOptionsEntity;
 import cn.xu.domain.permission.service.IPermissionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import java.util.List;
@@ -37,7 +35,7 @@ public class MenuController {
     @GetMapping(value = "/getMenuOptionsTree")
     @Operation(summary = "获取下拉菜单树")
     public ResponseEntity<List<MenuOptionsEntity>> getMenuOptionsTree() {
-        List<MenuOptionsEntity> menuOptionsTree =  permissionService.getMenuOptionsTree();
+        List<MenuOptionsEntity> menuOptionsTree = permissionService.getMenuOptionsTree();
         return ResponseEntity.<List<MenuOptionsEntity>>builder()
                 .data(menuOptionsTree)
                 .info("获取下拉菜单树成功")
@@ -51,6 +49,39 @@ public class MenuController {
         return ResponseEntity.<MenuEntity>builder()
                 .data(permissionService.selectMenuById(id))
                 .info("获取菜单详情成功")
+                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .build();
+    }
+
+    @PostMapping(value = "/add")
+    @SaCheckPermission("system:menu:add")
+    @Operation(summary = "添加菜单")
+    public ResponseEntity addMenu(@RequestBody MenuEntity menu) {
+        permissionService.addMenu(menu);
+        return ResponseEntity.builder()
+                .info("添加菜单成功")
+                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .build();
+    }
+
+    @PostMapping(value = "/update")
+    @SaCheckPermission("system:menu:update")
+    @Operation(summary = "修改菜单")
+    public ResponseEntity updateMenu(@RequestBody MenuEntity menu) {
+        permissionService.updateMenu(menu);
+        return ResponseEntity.builder()
+                .info("修改菜单成功")
+                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .build();
+    }
+
+    @GetMapping(value = "/delete/{id}")
+    @SaCheckPermission("system:menu:delete")
+    @Operation(summary = "删除菜单")
+    public ResponseEntity deleteMenu(@PathVariable Long id) {
+        permissionService.deleteMenu(id);
+        return ResponseEntity.builder()
+                .info("删除菜单成功")
                 .code(Constants.ResponseCode.SUCCESS.getCode())
                 .build();
     }

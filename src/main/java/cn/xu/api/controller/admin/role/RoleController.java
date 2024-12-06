@@ -68,7 +68,7 @@ public class RoleController {
     }
 
     @PostMapping(value = "add")
-    @SaCheckPermission("system:role:add")
+//    @SaCheckPermission("system:role:add")
     @Operation(summary = "添加角色")
     public ResponseEntity addRole(@RequestBody RoleRequest role) {
         permissionService.addRole(role);
@@ -79,7 +79,7 @@ public class RoleController {
     }
 
     @PostMapping("/update")
-    @SaCheckPermission("system:role:update")
+//    @SaCheckPermission("system:role:update")
     @Operation(summary = "修改角色")
     public ResponseEntity updateRole(@RequestBody RoleRequest role) {
         permissionService.updateRole(role);
@@ -90,7 +90,7 @@ public class RoleController {
     }
 
     @PostMapping("/delete")
-    @SaCheckPermission("system:role:delete")
+//    @SaCheckPermission("system:role:delete")
     @Operation(summary = "删除角色")
     public ResponseEntity deleteRole(@RequestBody List<Long> ids) {
         permissionService.deleteRoleByIds(ids);

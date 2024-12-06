@@ -11,6 +11,7 @@ import cn.xu.infrastructure.persistent.po.Menu;
 import cn.xu.infrastructure.persistent.po.Role;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
@@ -25,6 +26,8 @@ public class PermissionRepository implements IPermissionRepository {
     private IRoleDao roleDao;
     @Resource
     private IMenuDao menuDao;
+    @Resource
+    private TransactionTemplate transactionTemplate;
 
     @Override
     public List<String> findRolesByUserid(Long userid) {
@@ -125,12 +128,59 @@ public class PermissionRepository implements IPermissionRepository {
 
     @Override
     public void deleteRoleByIds(List<Long> ids) {
-        try {
-            roleDao.deleteRoleByIds(ids);
-        } catch (Exception e) {
-            log.error("删除角色失败", e);
-            throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "删除角色失败");
-        }
+        transactionTemplate.execute(status -> {
+            try {
+                roleDao.deleteRoleByIds(ids);
+                roleDao.deleteRoleMenuByRoleIds(ids);
+                return true;
+            } catch (Exception e) {
+                // 如果出现异常，可以设置事务回滚
+                status.setRollbackOnly();
+                // 处理异常
+                log.error("删除角色失败", e);
+                throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "删除角色失败");
+            }
+        });
+    }
+
+    @Override
+    public void addMenu(MenuEntity build) {
+        menuDao.addMenu(Menu.builder()
+                .parentId(build.getParentId())
+                .path(build.getPath())
+                .component(build.getComponent())
+                .title(build.getTitle())
+                .sort(build.getSort())
+                .icon(build.getIcon())
+                .type(build.getType())
+                .redirect(build.getRedirect())
+                .name(build.getName())
+                .hidden(build.getHidden())
+                .perm(build.getPerm())
+                .build());
+    }
+
+    @Override
+    public void updateMenu(MenuEntity menu) {
+        menuDao.updateMenu(Menu.builder()
+                .id(menu.getId())
+                .parentId(menu.getParentId())
+                .path(menu.getPath())
+                .component(menu.getComponent())
+                .title(menu.getTitle())
+                .sort(menu.getSort())
+                .icon(menu.getIcon())
+                .type(menu.getType())
+                .redirect(menu.getRedirect())
+                .name(menu.getName())
+                .hidden(menu.getHidden())
+                .perm(menu.getPerm())
+                .build());
+    }
+
+    @Override
+    public void deleteMenu(Long id) {
+        menuDao.deleteMenu(id);
     }
 
 

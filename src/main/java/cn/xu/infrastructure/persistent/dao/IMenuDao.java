@@ -14,6 +14,12 @@ public interface IMenuDao {
     Menu selectMenuById(@Param("id") Long id);
 
     List<Long> selectAllMenuId();
+
+    void addMenu(Menu build);
+
+    void updateMenu(Menu build);
+
+    void deleteMenu(Long id);
 }
 
 

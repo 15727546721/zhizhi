@@ -93,29 +93,23 @@ public class UserRepository implements IUserRepository {
                 .nickname(userRoleEntity.getNickname())
                 .avatar(userRoleEntity.getAvatar())
                 .build();
-        try {
-            transactionTemplate.execute(status -> {
-                try {
-                    Long userId = userDao.insertUser(user);
-                    userRoleDao.insert(UserRole.builder()
-                            .userId(userId)
-                            .roleId(userRoleEntity.getRoleId())
-                            .build());
-                    return null; // 没有异常则返回 null
-                } catch (Exception e) {
-                    // 记录错误日志
-                    log.error("添加用户失败: {}", userRoleEntity, e);
-                    // 标记事务为回滚
-                    status.setRollbackOnly();
-                    // 抛出异常以确保事务回滚
-                    throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "添加用户失败");
-                }
-            });
-        } catch (Exception e) {
-            // 处理事务外层的异常（可选）
-            log.error("添加用户过程中发生异常", e);
-            throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "出现未知异常，添加用户失败");
-        }
+        transactionTemplate.execute(status -> {
+            try {
+                Long userId = userDao.insertUser(user);
+                userRoleDao.insert(UserRole.builder()
+                        .userId(userId)
+                        .roleId(userRoleEntity.getRoleId())
+                        .build());
+                return null; // 没有异常则返回 null
+            } catch (Exception e) {
+                // 记录错误日志
+                log.error("添加用户失败: {}", userRoleEntity, e);
+                // 标记事务为回滚
+                status.setRollbackOnly();
+                // 抛出异常以确保事务回滚
+                throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "添加用户失败");
+            }
+        });
     }
 
     @Override
@@ -134,28 +128,22 @@ public class UserRepository implements IUserRepository {
 
     @Override
     public void deleteUser(Long userId) {
-        try {
-            transactionTemplate.execute(status -> {
-                try {
-                    // 删除用户角色关联记录
-                    userRoleDao.deleteUserRoleByUserId(userId);
-                    // 删除用户记录
-                    userDao.deleteUser(userId);
-                    return null; // 没有异常则返回 null
-                } catch (Exception e) {
-                    // 记录错误日志
-                    log.error("删除用户失败, 用户ID: " + userId, e);
-                    // 标记事务为回滚
-                    status.setRollbackOnly();
-                    // 抛出异常以确保事务回滚
-                    throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "删除用户失败");
-                }
-            });
-        } catch (Exception e) {
-            // 处理事务外层的异常（可选）
-            log.error("删除用户过程中发生异常", e);
-            throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "出现未知异常，删除用户失败");
-        }
+        transactionTemplate.execute(status -> {
+            try {
+                // 删除用户角色关联记录
+                userRoleDao.deleteUserRoleByUserId(userId);
+                // 删除用户记录
+                userDao.deleteUser(userId);
+                return null; // 没有异常则返回 null
+            } catch (Exception e) {
+                // 记录错误日志
+                log.error("删除用户失败, 用户ID: " + userId, e);
+                // 标记事务为回滚
+                status.setRollbackOnly();
+                // 抛出异常以确保事务回滚
+                throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "删除用户失败");
+            }
+        });
     }
 
     private UserEntity convertToUserEntity(User user) {

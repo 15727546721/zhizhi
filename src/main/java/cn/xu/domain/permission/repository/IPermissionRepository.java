@@ -34,4 +34,10 @@ public interface IPermissionRepository {
     void updateRole(RoleEntity roleEntity);
 
     void deleteRoleByIds(List<Long> ids);
+
+    void addMenu(MenuEntity build);
+
+    void updateMenu(MenuEntity menu);
+
+    void deleteMenu(Long id);
 }

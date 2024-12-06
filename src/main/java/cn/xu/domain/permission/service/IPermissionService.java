@@ -39,4 +39,10 @@ public interface IPermissionService {
     void updateRole(RoleRequest role);
 
     void deleteRoleByIds(List<Long> ids);
+
+    void addMenu(MenuEntity menu);
+
+    void updateMenu(MenuEntity menu);
+
+    void deleteMenu(Long id);
 }
