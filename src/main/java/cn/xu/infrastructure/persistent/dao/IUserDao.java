@@ -2,6 +2,7 @@ package cn.xu.infrastructure.persistent.dao;
 
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.model.entity.UserInfoEntity;
+import cn.xu.domain.user.model.entity.UserPasswordEntity;
 import cn.xu.domain.user.model.valobj.LoginFormVO;
 import cn.xu.infrastructure.persistent.po.User;
 import org.apache.ibatis.annotations.Mapper;
@@ -27,4 +28,6 @@ public interface IUserDao {
     int updateUser(@Param("user") User user);
 
     int deleteUser(@Param("userId") Long userId);
+
+    void updatePassword(UserPasswordEntity userPasswordEntity);
 }

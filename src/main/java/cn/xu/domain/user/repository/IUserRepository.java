@@ -1,7 +1,9 @@
 package cn.xu.domain.user.repository;
 
+import cn.xu.api.dto.user.UserPasswordRequest;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.model.entity.UserInfoEntity;
+import cn.xu.domain.user.model.entity.UserPasswordEntity;
 import cn.xu.domain.user.model.entity.UserRoleEntity;
 import cn.xu.domain.user.model.valobj.LoginFormVO;
 
@@ -66,4 +68,6 @@ public interface IUserRepository {
      * @return
      */
     void deleteUser(Long userId);
+
+    void updatePassword(UserPasswordEntity userPasswordEntity);
 }

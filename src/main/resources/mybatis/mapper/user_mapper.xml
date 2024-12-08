@@ -32,6 +32,12 @@
             update_time=now()
         where id = id
     </update>
+    <update id="updatePassword" parameterType="cn.xu.domain.user.model.entity.UserEntity">
+        update user
+        set password = #{newPassword},
+            update_time=now()
+        where id = id and password = #{oldPassword}
+    </update>
     <delete id="deleteUser" parameterType="java.lang.Long">
         delete
         from user
@@ -70,7 +76,7 @@
         <!-- 使用collection标签的子标签collection来处理角色集合 -->
         <collection property="roles" ofType="string">
             <constructor>
-                <arg column="name"/>
+                <arg column="code"/>
             </constructor>
         </collection>
     </resultMap>

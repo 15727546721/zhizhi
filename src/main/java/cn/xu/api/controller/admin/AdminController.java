@@ -1,9 +1,12 @@
 package cn.xu.api.controller.admin;
 
+import cn.dev33.satoken.annotation.SaCheckLogin;
+import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.secure.SaSecureUtil;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.api.dto.common.PageRequest;
 import cn.xu.api.dto.user.LoginFormRequest;
+import cn.xu.api.dto.user.UserPasswordRequest;
 import cn.xu.api.dto.user.UserRequest;
 import cn.xu.common.Constants;
 import cn.xu.common.ResponseEntity;
@@ -52,11 +55,14 @@ public class AdminController {
 
     @GetMapping("user/info")
     @Operation(summary = "获取用户信息")
-    public ResponseEntity<UserInfoEntity> getInfoByToken(String token) {
+    @SaCheckLogin
+    public ResponseEntity<UserInfoEntity> getInfoByToken(@RequestParam(required = false) String token) {
         log.info("管理员获取信息: {}", token);
         if (StringUtils.isEmpty(token)) {
-            throw new AppException(Constants.ResponseCode.NULL_PARAMETER.getCode(), "管理员token为空");
+            token = StpUtil.getTokenValue();
+//            throw new AppException(Constants.ResponseCode.NULL_PARAMETER.getCode(), "管理员token为空");
         }
+
         UserInfoEntity userInfo = userLoginService.getInfoByToken(token);
         return ResponseEntity.<UserInfoEntity>builder()
                 .data(userInfo)
@@ -94,7 +100,15 @@ public class AdminController {
                 .info("管理员退出成功")
                 .build();
     }
-
+    @PostMapping(value = "/updatePassword")
+    @Operation(summary = "修改密码")
+    public ResponseEntity updatePassword(@RequestBody UserPasswordRequest userPasswordRequest) {
+        userService.updatePassword(userPasswordRequest);
+        return ResponseEntity.builder()
+                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .info("修改密码成功")
+                .build();
+    }
 
     @GetMapping("/user/list")
     @Operation(summary = "查询用户列表")

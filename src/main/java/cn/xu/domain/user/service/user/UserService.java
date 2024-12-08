@@ -1,7 +1,10 @@
 package cn.xu.domain.user.service.user;
 
+import cn.dev33.satoken.stp.StpUtil;
+import cn.xu.api.dto.user.UserPasswordRequest;
 import cn.xu.domain.permission.repository.IPermissionRepository;
 import cn.xu.domain.user.model.entity.UserEntity;
+import cn.xu.domain.user.model.entity.UserPasswordEntity;
 import cn.xu.domain.user.model.entity.UserRoleEntity;
 import cn.xu.domain.user.repository.IUserRepository;
 import cn.xu.domain.user.service.IUserService;
@@ -39,5 +42,14 @@ public class UserService implements IUserService {
     @Override
     public void deleteUser(Long id) {
         userRepository.deleteUser(id);
+    }
+
+    @Override
+    public void updatePassword(UserPasswordRequest userPasswordRequest) {
+        userRepository.updatePassword(UserPasswordEntity.builder()
+               .userId(StpUtil.getLoginIdAsLong())
+               .oldPassword(userPasswordRequest.getOldPassword())
+                .newPassword(userPasswordRequest.getNewPassword())
+               .build());
     }
 }

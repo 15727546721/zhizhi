@@ -1,9 +1,11 @@
 package cn.xu.infrastructure.persistent.repository;
 
 import cn.dev33.satoken.secure.SaSecureUtil;
+import cn.xu.api.dto.user.UserPasswordRequest;
 import cn.xu.common.Constants;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.model.entity.UserInfoEntity;
+import cn.xu.domain.user.model.entity.UserPasswordEntity;
 import cn.xu.domain.user.model.entity.UserRoleEntity;
 import cn.xu.domain.user.model.valobj.LoginFormVO;
 import cn.xu.domain.user.repository.IUserRepository;
@@ -133,6 +135,11 @@ public class UserRepository implements IUserRepository {
                 throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "删除用户失败");
             }
         });
+    }
+
+    @Override
+    public void updatePassword(UserPasswordEntity userPasswordEntity) {
+        userDao.updatePassword(userPasswordEntity);
     }
 
     private UserEntity convertToUserEntity(User user) {

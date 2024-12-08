@@ -1,5 +1,6 @@
 package cn.xu.domain.user.service;
 
+import cn.xu.api.dto.user.UserPasswordRequest;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.model.entity.UserRoleEntity;
 
@@ -13,4 +14,6 @@ public interface IUserService {
     int updateUser(UserEntity userEntity);
 
     void deleteUser(Long id);
+
+    void updatePassword(UserPasswordRequest userPasswordRequest);
 }
