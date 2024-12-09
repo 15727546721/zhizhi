@@ -72,6 +72,10 @@
         GROUP_CONCAT(t.name SEPARATOR ',') AS tagNames
         FROM
         article AS a
+        JOIN article_category AS ac ON a.id = ac.article_id
+        JOIN category AS c ON ac.category_id = c.id
+        LEFT JOIN article_tag AS at ON a.id = at.article_id
+        LEFT JOIN tag AS t ON at.tag_id = t.id
         <where>
             <if test="title != null and title != ''">
                 AND a.title LIKE CONCAT('%', #{title}, '%')
@@ -79,18 +83,14 @@
             <if test="status != null and status != ''">
                 AND a.status = #{status}
             </if>
-            <if test="categoryId != null and categoryId != ''">
+            <if test="categoryId != null">
                 AND a.category_id = #{categoryId}
             </if>
-            <if test="tagId != null and tagId != ''">
+            <if test="tagId != null">
                 AND EXISTS (SELECT 1 FROM article_tag WHERE article_id = a.id AND tag_id = #{tagId})
             </if>
         </where>
-        JOIN article_category AS ac ON a.id = ac.article_id
-        JOIN category AS c ON ac.category_id = c.id
-        LEFT JOIN article_tag AS at ON a.id = at.article_id
-        LEFT JOIN tag AS t ON at.tag_id = t.id
-        GROUP BY a.id, c.name  <!-- 添加 c.name 到 GROUP BY 子句 -->
+        GROUP BY a.id, c.name
         ORDER BY a.create_time DESC
         LIMIT #{page}, #{size}
     </select>
