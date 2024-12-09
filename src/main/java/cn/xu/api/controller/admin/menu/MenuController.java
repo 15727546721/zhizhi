@@ -68,7 +68,6 @@ public class MenuController {
     }
 
     @PostMapping(value = "/add")
-    @SaCheckPermission("system:menu:add")
     @Operation(summary = "添加菜单")
     public ResponseEntity addMenu(@RequestBody MenuEntity menu) {
         permissionService.addMenu(menu);
@@ -79,7 +78,6 @@ public class MenuController {
     }
 
     @PostMapping(value = "/update")
-    @SaCheckPermission("system:menu:update")
     @Operation(summary = "修改菜单")
     public ResponseEntity updateMenu(@RequestBody MenuEntity menu) {
         permissionService.updateMenu(menu);
@@ -90,7 +88,6 @@ public class MenuController {
     }
 
     @GetMapping(value = "/delete/{id}")
-    @SaCheckPermission("system:menu:delete")
     @Operation(summary = "删除菜单")
     public ResponseEntity deleteMenu(@PathVariable Long id) {
         permissionService.deleteMenu(id);
