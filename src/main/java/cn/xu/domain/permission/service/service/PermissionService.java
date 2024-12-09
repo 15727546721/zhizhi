@@ -3,7 +3,7 @@ package cn.xu.domain.permission.service.service;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.api.dto.common.PageResponse;
 import cn.xu.api.dto.permission.RoleMenuRequest;
-import cn.xu.api.dto.permission.RoleRequest;
+import cn.xu.api.dto.permission.RoleAddOrUpdateRequest;
 import cn.xu.common.Constants;
 import cn.xu.domain.permission.model.entity.MenuEntity;
 import cn.xu.domain.permission.model.entity.MenuOptionsEntity;
@@ -14,7 +14,6 @@ import cn.xu.domain.permission.model.vo.MenuTypeVO;
 import cn.xu.domain.permission.repository.IPermissionRepository;
 import cn.xu.domain.permission.service.IPermissionService;
 import cn.xu.exception.AppException;
-import cn.xu.infrastructure.persistent.po.Menu;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -75,6 +74,12 @@ public class PermissionService implements IPermissionService {
 
     @Override
     public PageResponse<List<RoleEntity>> selectRolePage(String name, int page, int size) {
+        if (page <= 0) {
+            page = 1;
+        }
+        if (size <= 0) {
+            size = 10;
+        }
         List<RoleEntity> roleEntities = permissionRepository.selectRolePage(name, page, size);
         long total = permissionRepository.countRole(name);
         return PageResponse.<List<RoleEntity>>builder()
@@ -128,7 +133,7 @@ public class PermissionService implements IPermissionService {
     }
 
     @Override
-    public void addRole(RoleRequest role) {
+    public void addRole(RoleAddOrUpdateRequest role) {
         permissionRepository.addRole(RoleEntity.builder()
                 .code(role.getCode())
                 .name(role.getName())
@@ -137,7 +142,7 @@ public class PermissionService implements IPermissionService {
     }
 
     @Override
-    public void updateRole(RoleRequest role) {
+    public void updateRole(RoleAddOrUpdateRequest role) {
         permissionRepository.updateRole(RoleEntity.builder()
                 .id(role.getId())
                 .code(role.getCode())

@@ -1,12 +1,9 @@
 package cn.xu.api.dto.permission;
 
-
+import cn.xu.api.dto.common.PageRequest;
 import lombok.Data;
 
 @Data
-public class RoleRequest {
-    private Long id;
+public class RoleRequest extends PageRequest {
     private String name;
-    private String code;
-    private String desc;
 }

@@ -1,8 +1,8 @@
 package cn.xu.api.controller.admin.role;
 
-import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.xu.api.dto.common.PageResponse;
 import cn.xu.api.dto.permission.RoleMenuRequest;
+import cn.xu.api.dto.permission.RoleAddOrUpdateRequest;
 import cn.xu.api.dto.permission.RoleRequest;
 import cn.xu.common.Constants;
 import cn.xu.common.ResponseEntity;
@@ -23,10 +23,11 @@ public class RoleController {
     @Resource
     private PermissionService permissionService;
 
-    @GetMapping("/list/{page}/{size}")
+    @GetMapping("/list")
     @Operation(summary = "角色列表")
-    public ResponseEntity selectRolePage(@RequestParam(value = "name", required = false) String name, @PathVariable("page") int page, @PathVariable("size") int size) {
-        PageResponse<List<RoleEntity>> pageResponse = permissionService.selectRolePage(name, page, size);
+    public ResponseEntity selectRolePage(RoleRequest roleRequest) {
+        PageResponse<List<RoleEntity>> pageResponse =
+                permissionService.selectRolePage(roleRequest.getName(), roleRequest.getPage(), roleRequest.getSize());
         return ResponseEntity.builder()
                 .data(pageResponse)
                 .info("获取角色列表成功")
@@ -56,7 +57,6 @@ public class RoleController {
                 .build();
     }
 
-    @SaCheckPermission("system:role:assign")
     @PostMapping("updateRoleMenus")
     @Operation(summary = "分配角色权限")
     public ResponseEntity assignRoleMenus(@RequestBody RoleMenuRequest roleMenuRequest) {
@@ -68,9 +68,8 @@ public class RoleController {
     }
 
     @PostMapping(value = "add")
-//    @SaCheckPermission("system:role:add")
     @Operation(summary = "添加角色")
-    public ResponseEntity addRole(@RequestBody RoleRequest role) {
+    public ResponseEntity addRole(@RequestBody RoleAddOrUpdateRequest role) {
         permissionService.addRole(role);
         return ResponseEntity.builder()
                 .info("添加角色成功")
@@ -79,9 +78,8 @@ public class RoleController {
     }
 
     @PostMapping("/update")
-//    @SaCheckPermission("system:role:update")
     @Operation(summary = "修改角色")
-    public ResponseEntity updateRole(@RequestBody RoleRequest role) {
+    public ResponseEntity updateRole(@RequestBody RoleAddOrUpdateRequest role) {
         permissionService.updateRole(role);
         return ResponseEntity.builder()
                 .info("修改角色成功")
@@ -90,7 +88,6 @@ public class RoleController {
     }
 
     @PostMapping("/delete")
-//    @SaCheckPermission("system:role:delete")
     @Operation(summary = "删除角色")
     public ResponseEntity deleteRole(@RequestBody List<Long> ids) {
         permissionService.deleteRoleByIds(ids);
