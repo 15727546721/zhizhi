@@ -165,7 +165,7 @@ public class ArticleController {
      * @param id
      * @return
      */
-    @GetMapping("/{id}")
+    @GetMapping("info/{id}")
     public ResponseEntity<ArticleDetailsResponse> getArticle(@PathVariable("id") Long id) {
         log.info("文章详情获取参数: id={}", id);
         ArticleEntity article = articleService.getArticleById(id);

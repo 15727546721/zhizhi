@@ -7,7 +7,7 @@
     <resultMap id="BaseResultMap" type="cn.xu.infrastructure.persistent.po.Article">
         <id property="id" column="id" jdbcType="BIGINT"/>
         <result property="title" column="title" jdbcType="VARCHAR"/>
-        <result property="description" column="description" jdbcType="VARCHAR"/>
+        <result property="introduction" column="introduction" jdbcType="VARCHAR"/>
         <result property="content" column="content" jdbcType="VARCHAR"/>
         <result property="coverUrl" column="cover_url" jdbcType="VARCHAR"/>
         <result property="authorId" column="author_id" jdbcType="BIGINT"/>
@@ -31,15 +31,15 @@
 
     <insert id="insert" parameterType="cn.xu.infrastructure.persistent.po.Article" useGeneratedKeys="true"
             keyProperty="id">
-        INSERT INTO article (title, description, content, cover_url, author_id, status,
+        INSERT INTO article (title, introduction, content, cover_url, author_id, status,
                              comment_enabled, view_count, favorites_count, like_count, create_time, update_time)
-        VALUES (#{title}, #{description}, #{content}, #{coverUrl}, #{authorId}, #{status},
+        VALUES (#{title}, #{introduction}, #{content}, #{coverUrl}, #{authorId}, #{status},
                 #{commentEnabled}, #{viewCount}, #{favoritesCount}, #{likeCount}, now(), now())
     </insert>
     <update id="update">
         UPDATE article
         SET title           = #{title},
-            description     = #{description},
+            introduction     = #{introduction},
             content         = #{content},
             cover_url       = #{coverUrl},
             author_id       = #{authorId},
@@ -64,7 +64,7 @@
         SELECT
         a.id,
         a.title,
-        a.description,
+        a.introduction,
         a.cover_url AS coverUrl,
         a.status,
         a.create_time AS createTime,
@@ -98,7 +98,7 @@
     <select id="findById" resultType="cn.xu.infrastructure.persistent.po.Article" resultMap="BaseResultMap">
         SELECT id,
                title,
-               description,
+               introduction,
                content,
                cover_url,
                author_id,
