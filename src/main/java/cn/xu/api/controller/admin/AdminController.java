@@ -112,7 +112,7 @@ public class AdminController {
 
     @GetMapping("/user/list")
     @Operation(summary = "查询用户列表")
-    public ResponseEntity queryUserList(@RequestParam PageRequest pageRequest) {
+    public ResponseEntity queryUserList(PageRequest pageRequest) {
         int page = pageRequest.getPage();
         int size = pageRequest.getSize();
         log.info("查询用户列表: page={}, size={}", page, size);

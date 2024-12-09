@@ -1,5 +1,8 @@
 package cn.xu.api.dto.common;
 
+import lombok.Data;
+
+@Data
 public class PageRequest {
 
     private int page; // 当前页码，从1开始
