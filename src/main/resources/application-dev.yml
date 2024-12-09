@@ -37,8 +37,8 @@ thread:
 #    url: jdbc:shardingsphere:classpath:sharding/sharding-jdbc-dev.yaml
 
 mybatis:
-  mapper-locations: classpath:/mybatis/mapper/*.xml
-  config-location: classpath:/mybatis/config/mybatis-config.xml
+  mapper-locations: classpath:mybatis/mapper/*.xml
+  config-location: classpath:mybatis/config/mybatis-config.xml
   map-underscore-to-camel-case: true #字段驼峰
 
 # Sa-Token配置
@@ -160,5 +160,5 @@ minio:
 # 日志
 logging:
   level:
-    root: info
+    cn.xu.infrastructure.persistent.repository: debug
   config: classpath:logback-spring.xml
