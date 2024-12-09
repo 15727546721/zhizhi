@@ -1,6 +1,8 @@
 package cn.xu.infrastructure.persistent.repository;
 
 import cn.dev33.satoken.stp.StpUtil;
+import cn.xu.api.dto.article.ArticlePageResponse;
+import cn.xu.api.dto.article.ArticleRequest;
 import cn.xu.domain.article.model.entity.ArticleEntity;
 import cn.xu.domain.article.repository.IArticleRepository;
 import cn.xu.infrastructure.persistent.dao.IArticleDao;
@@ -43,24 +45,12 @@ public class ArticleRepository implements IArticleRepository {
     }
 
     @Override
-    public List<ArticleEntity> queryArticle(int page, int size) {
-        log.info("query article page: " + page + " size: " + size);
-        List<Article> articles = articleDao.queryByPage(page - 1, size);
-        log.info("query article result: " + articles);
-        List<ArticleEntity> articleEntities = new LinkedList<>();
-        for (Article article : articles) {
-            ArticleEntity articleEntity = ArticleEntity.builder()
-                    .id(article.getId())
-                    .title(article.getTitle())
-                    .description(article.getDescription())
-                    .content(article.getContent())
-                    .coverUrl(article.getCoverUrl())
-                    .commentEnabled(article.getCommentEnabled())
-                    .status(article.getStatus())
-                    .build();
-            articleEntities.add(articleEntity);
-        }
-        return articleEntities;
+    public List<ArticlePageResponse> queryArticle(ArticleRequest articleRequest) {
+        articleRequest.setPage(0);
+        List<ArticlePageResponse> articles = articleDao.queryByPage(articleRequest);
+        log.info("查询文章结果: {}", articles);
+
+        return articles;
     }
 
     @Override

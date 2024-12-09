@@ -1,7 +1,6 @@
 package cn.xu.api.controller.admin.menu;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
-import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.xu.common.Constants;
 import cn.xu.common.ResponseEntity;
 import cn.xu.domain.permission.model.entity.MenuEntity;

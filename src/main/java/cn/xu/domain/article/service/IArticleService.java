@@ -1,5 +1,8 @@
 package cn.xu.domain.article.service;
 
+import cn.xu.api.dto.article.ArticlePageResponse;
+import cn.xu.api.dto.article.ArticleRequest;
+import cn.xu.api.dto.common.PageResponse;
 import cn.xu.domain.article.model.entity.ArticleEntity;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -11,7 +14,7 @@ public interface IArticleService {
 
     String uploadCover(MultipartFile imageFile);
 
-    List<ArticleEntity> listArticle(int page, int size);
+    PageResponse<List<ArticlePageResponse>> listArticle(ArticleRequest articleRequest);
 
     void deleteArticles(List<Long> articleIds);
 

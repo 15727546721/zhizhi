@@ -2,9 +2,10 @@ package cn.xu.api.controller.admin.article;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.api.dto.article.ArticleDetailsResponse;
-import cn.xu.api.dto.article.ArticleListResponse;
+import cn.xu.api.dto.article.ArticlePageResponse;
+import cn.xu.api.dto.article.ArticleRequest;
 import cn.xu.api.dto.article.CreateArticleRequest;
-import cn.xu.api.dto.common.PageRequest;
+import cn.xu.api.dto.common.PageResponse;
 import cn.xu.common.Constants;
 import cn.xu.common.ResponseEntity;
 import cn.xu.domain.article.model.entity.ArticleEntity;
@@ -139,25 +140,20 @@ public class ArticleController {
                 .build();
     }
 
-    @PostMapping("/list")
-    public ResponseEntity<List<ArticleListResponse>> listArticle(@ModelAttribute PageRequest pageRequest) {
-        log.info("文章列表获取参数: page={}, size={}", pageRequest.getPage(), pageRequest.getSize());
-        List<ArticleEntity> articles = articleService.listArticle(pageRequest.getPage(), pageRequest.getSize());
+    @GetMapping("/list")
+    public ResponseEntity<PageResponse> listArticle(ArticleRequest articleRequest) {
+        log.info("文章列表获取参数: {}", articleRequest);
+        if (articleRequest.getPage() <= 0) {
+            articleRequest.setPage(1);
+        }
+        if (articleRequest.getSize() <= 0) {
+            articleRequest.setSize(10);
+        }
+        PageResponse<List<ArticlePageResponse>> articles = articleService.listArticle(articleRequest);
         log.info("文章列表获取结果: {}", articles);
 
-        // 将 ArticleEntity 转换为 ArticleResponse
-        List<ArticleListResponse> response = articles.stream()
-                .map(article -> ArticleListResponse.builder()
-                        .id(article.getId())
-                        .title(article.getTitle())
-                        .description(article.getDescription())
-                        .status(article.getStatus())
-                        .coverUrl(article.getCoverUrl())
-                        .build())
-                .collect(Collectors.toList());
-
-        return ResponseEntity.<List<ArticleListResponse>>builder()
-                .data(response)
+        return ResponseEntity.<PageResponse>builder()
+                .data(articles)
                 .code(Constants.ResponseCode.SUCCESS.getCode())
                 .info("文章列表获取成功")
                 .build();

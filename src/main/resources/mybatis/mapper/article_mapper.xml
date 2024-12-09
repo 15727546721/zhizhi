@@ -38,17 +38,17 @@
     </insert>
     <update id="update">
         UPDATE article
-        SET title = #{title},
-            description = #{description},
-            content = #{content},
-            cover_url = #{coverUrl},
-            author_id = #{authorId},
-            status = #{status},
+        SET title           = #{title},
+            description     = #{description},
+            content         = #{content},
+            cover_url       = #{coverUrl},
+            author_id       = #{authorId},
+            status          = #{status},
             comment_enabled = #{commentEnabled},
-            view_count = #{viewCount},
+            view_count      = #{viewCount},
             favorites_count = #{favoritesCount},
-            like_count = #{likeCount},
-            update_time = now()
+            like_count      = #{likeCount},
+            update_time     = now()
         WHERE id = #{id}
     </update>
 
@@ -59,12 +59,42 @@
         </foreach>
     </delete>
 
-    <select id="queryByPage" resultType="cn.xu.infrastructure.persistent.po.Article">
-        SELECT id, title, description, cover_url, status
-        FROM article
-        ORDER BY id DESC
-            LIMIT #{page}, #{size}
+    <select id="queryByPage" parameterType="cn.xu.api.dto.article.ArticleRequest"
+            resultType="cn.xu.api.dto.article.ArticlePageResponse">
+        SELECT
+        a.id,
+        a.title,
+        a.description,
+        a.cover_url AS coverUrl,
+        a.status,
+        a.create_time AS createTime,
+        c.name AS categoryName,
+        GROUP_CONCAT(t.name SEPARATOR ',') AS tagNames
+        FROM
+        article AS a
+        <where>
+            <if test="title != null and title != ''">
+                AND a.title LIKE CONCAT('%', #{title}, '%')
+            </if>
+            <if test="status != null and status != ''">
+                AND a.status = #{status}
+            </if>
+            <if test="categoryId != null and categoryId != ''">
+                AND a.category_id = #{categoryId}
+            </if>
+            <if test="tagId != null and tagId != ''">
+                AND EXISTS (SELECT 1 FROM article_tag WHERE article_id = a.id AND tag_id = #{tagId})
+            </if>
+        </where>
+        JOIN article_category AS ac ON a.id = ac.article_id
+        JOIN category AS c ON ac.category_id = c.id
+        LEFT JOIN article_tag AS at ON a.id = at.article_id
+        LEFT JOIN tag AS t ON at.tag_id = t.id
+        GROUP BY a.id, c.name  <!-- 添加 c.name 到 GROUP BY 子句 -->
+        ORDER BY a.create_time DESC
+        LIMIT #{page}, #{size}
     </select>
+
     <select id="findById" resultType="cn.xu.infrastructure.persistent.po.Article" resultMap="BaseResultMap">
         SELECT id,
                title,

@@ -1,6 +1,9 @@
 package cn.xu.domain.article.service.article;
 
 import cn.dev33.satoken.stp.StpUtil;
+import cn.xu.api.dto.article.ArticlePageResponse;
+import cn.xu.api.dto.article.ArticleRequest;
+import cn.xu.api.dto.common.PageResponse;
 import cn.xu.common.Constants;
 import cn.xu.domain.article.model.entity.ArticleEntity;
 import cn.xu.domain.article.repository.IArticleRepository;
@@ -54,10 +57,14 @@ public class ArticleService implements IArticleService {
     }
 
     @Override
-    public List<ArticleEntity> listArticle(int page, int size) {
-        List<ArticleEntity> articles = articleRepository.queryArticle(page, size);
-
-        return articles;
+    public PageResponse<List<ArticlePageResponse>> listArticle(ArticleRequest articleRequest) {
+        List<ArticlePageResponse> articles = articleRepository.queryArticle(articleRequest);
+        return PageResponse.<List<ArticlePageResponse>>builder()
+                .data(articles)
+                .total(articles.size())
+                .page(articleRequest.getPage())
+                .size(articleRequest.getSize())
+                .build();
     }
 
     @Override

@@ -1,7 +1,6 @@
 package cn.xu.infrastructure.persistent.repository;
 
 import cn.dev33.satoken.secure.SaSecureUtil;
-import cn.xu.api.dto.user.UserPasswordRequest;
 import cn.xu.common.Constants;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.model.entity.UserInfoEntity;
