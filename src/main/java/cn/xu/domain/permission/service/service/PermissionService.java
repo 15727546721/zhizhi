@@ -112,6 +112,14 @@ public class PermissionService implements IPermissionService {
     public void assignRoleMenus(RoleMenuRequest roleMenuRequest) {
         Long roleId = roleMenuRequest.getRoleId();
         List<Long> menuIds = roleMenuRequest.getMenuIds();
+        if (roleId != null && menuIds.isEmpty()) {
+            // 将角色绑定的权限菜单清空
+            permissionRepository.deleteRoleMenuByRoleId(roleId);
+            return;
+        }
+        if (roleId == null || menuIds.isEmpty()) {
+            throw new AppException(Constants.ResponseCode.NULL_PARAMETER.getCode(), "参数不能为空");
+        }
         RoleEntity roleEntity = permissionRepository.selectRoleById(roleId);
         if (roleEntity != null && roleEntity.getCode().equals("admin")) {
             return;

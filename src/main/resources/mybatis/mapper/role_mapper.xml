@@ -11,8 +11,8 @@
         <result property="desc" column="desc" jdbcType="VARCHAR"/>
     </resultMap>
     <insert id="insertRoleMenu">
-        INSERT INTO role_menu (role_id, menu_id)
-        <foreach collection="menus" item="menuId" index="index" separator=",">
+        INSERT INTO role_menu (role_id, menu_id) values
+        <foreach collection="menuIds" item="menuId" index="index" separator=",">
             (#{roleId}, #{menuId})
         </foreach>
     </insert>
