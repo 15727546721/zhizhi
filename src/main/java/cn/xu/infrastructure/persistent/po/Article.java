@@ -45,7 +45,7 @@ public class Article implements Serializable {
     /**
      * 文章作者的ID
      */
-    private Long authorId;
+    private Long userId;
 
     /**
      * 文章的状态：0:草稿、1:发布、2:下架、3:待审核、4:审核不通过

@@ -17,7 +17,7 @@ public class ArticleEntity {
     private String introduction;
     private String content;
     private String coverUrl;
-    private Long authorId;
+    private Long userId;
     private String status; // 0:草稿、1:发布、2:下架、3:待审核、4:审核不通过
     private Long viewCount;
     private Long favoritesCount;

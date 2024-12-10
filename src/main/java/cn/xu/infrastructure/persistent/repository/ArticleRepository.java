@@ -32,15 +32,15 @@ public class ArticleRepository implements IArticleRepository {
     public Long save(ArticleEntity articleEntity) {
         log.info("保存文章 {}: ", articleEntity);
         Article article = Article.builder()
-                .id(articleEntity.getId())
                 .title(articleEntity.getTitle())
-                .authorId(articleEntity.getAuthorId())
+                .userId(articleEntity.getUserId())
                 .introduction(articleEntity.getIntroduction())
                 .content(articleEntity.getContent())
                 .coverUrl(articleEntity.getCoverUrl())
                 .status(articleEntity.getStatus())
                 .build();
-        return articleDao.insert(article);
+        articleDao.insert(article); //插入后得到的id值会赋给article的id属性
+        return article.getId();
     }
 
     @Override
@@ -65,7 +65,7 @@ public class ArticleRepository implements IArticleRepository {
                 articleDao.deleteByIds(articleIds);
                 return 1; // 返回成功
             } catch (Exception e) {
-                log.error("Error deleting articles: {}", e.getMessage(), e);
+                log.error("删除文章失败: {}", e.getMessage(), e);
                 status.setRollbackOnly(); // 设置事务回滚
                 return 0; // 返回失败
             }
@@ -79,11 +79,11 @@ public class ArticleRepository implements IArticleRepository {
 
     @Override
     public void update(ArticleEntity articleEntity) {
-        log.info("更新文章 articleEntity: " + articleEntity);
+        log.info("更新文章 {}", articleEntity);
         Article article = Article.builder()
                 .id(articleEntity.getId())
                 .title(articleEntity.getTitle())
-                .authorId(articleEntity.getAuthorId())
+                .userId(articleEntity.getUserId())
                 .introduction(articleEntity.getIntroduction())
                 .content(articleEntity.getContent())
                 .coverUrl(articleEntity.getCoverUrl())

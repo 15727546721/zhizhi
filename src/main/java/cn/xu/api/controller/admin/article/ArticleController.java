@@ -62,7 +62,7 @@ public class ArticleController {
                         .coverUrl(createArticleRequest.getCoverUrl())
                         .content(createArticleRequest.getContent())
                         .introduction(createArticleRequest.getIntroduction())
-                        .authorId(StpUtil.getLoginIdAsLong())
+                        .userId(StpUtil.getLoginIdAsLong()) // 当前登录用户ID
                         .build());
                 //2. 保存文章分类
                 articleCategoryService.saveArticleCategory(articleId, createArticleRequest.getCategoryId());
@@ -102,7 +102,7 @@ public class ArticleController {
                         .coverUrl(createArticleRequest.getCoverUrl())
                         .content(createArticleRequest.getContent())
                         .introduction(createArticleRequest.getIntroduction())
-                        .authorId(StpUtil.getLoginIdAsLong())
+                        .userId(StpUtil.getLoginIdAsLong())
                         .status(createArticleRequest.getStatus())
                         .build());
                 //2. 更新文章分类
