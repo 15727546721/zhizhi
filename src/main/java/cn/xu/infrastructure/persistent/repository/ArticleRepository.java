@@ -30,15 +30,14 @@ public class ArticleRepository implements IArticleRepository {
 
     @Override
     public Long save(ArticleEntity articleEntity) {
-        log.info("保存文章 articleEntity: " + articleEntity);
+        log.info("保存文章 {}: ", articleEntity);
         Article article = Article.builder()
                 .id(articleEntity.getId())
                 .title(articleEntity.getTitle())
-                .authorId(StpUtil.getLoginIdAsLong())
-                .introduction(articleEntity.getDescription())
+                .authorId(articleEntity.getAuthorId())
+                .introduction(articleEntity.getIntroduction())
                 .content(articleEntity.getContent())
                 .coverUrl(articleEntity.getCoverUrl())
-                .commentEnabled(articleEntity.getCommentEnabled())
                 .status(articleEntity.getStatus())
                 .build();
         return articleDao.insert(article);
@@ -85,10 +84,9 @@ public class ArticleRepository implements IArticleRepository {
                 .id(articleEntity.getId())
                 .title(articleEntity.getTitle())
                 .authorId(articleEntity.getAuthorId())
-                .introduction(articleEntity.getDescription())
+                .introduction(articleEntity.getIntroduction())
                 .content(articleEntity.getContent())
                 .coverUrl(articleEntity.getCoverUrl())
-                .commentEnabled(articleEntity.getCommentEnabled())
                 .status(articleEntity.getStatus())
                 .build();
         articleDao.update(article);
@@ -98,10 +96,9 @@ public class ArticleRepository implements IArticleRepository {
         return ArticleEntity.builder()
                .id(article.getId())
                .title(article.getTitle())
-               .description(article.getIntroduction())
+               .introduction(article.getIntroduction())
                .content(article.getContent())
                .coverUrl(article.getCoverUrl())
-               .commentEnabled(article.getCommentEnabled())
                .status(article.getStatus())
                .build();
     }

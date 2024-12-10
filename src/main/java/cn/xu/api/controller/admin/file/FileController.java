@@ -25,7 +25,7 @@ public class FileController {
     }
 
     @PostMapping("/upload")
-    public ResponseEntity uploadFile(@RequestPart("file") MultipartFile file, @RequestParam(required = false) String fileName) {
+    public ResponseEntity uploadFile(@RequestPart("multipartFile") MultipartFile file, @RequestParam(required = false) String fileName) {
         try {
             if (StringUtils.isEmpty(fileName)) {
                 fileName = file.getOriginalFilename();

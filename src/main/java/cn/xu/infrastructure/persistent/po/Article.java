@@ -53,11 +53,6 @@ public class Article implements Serializable {
     private String status;
 
     /**
-     * 是否允许评论，0表示不允许，1表示允许
-     */
-    private String commentEnabled;
-
-    /**
      * 文章的阅读次数
      */
     private Long viewCount;

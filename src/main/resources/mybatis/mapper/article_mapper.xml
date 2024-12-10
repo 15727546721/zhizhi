@@ -12,7 +12,6 @@
         <result property="coverUrl" column="cover_url" jdbcType="VARCHAR"/>
         <result property="authorId" column="author_id" jdbcType="BIGINT"/>
         <result property="status" column="status" jdbcType="CHAR"/>
-        <result property="commentEnabled" column="comment_enabled" jdbcType="CHAR"/>
         <result property="viewCount" column="view_count" jdbcType="BIGINT"/>
         <result property="favoritesCount" column="favorites_count" jdbcType="BIGINT"/>
         <result property="likeCount" column="like_count" jdbcType="BIGINT"/>
@@ -24,7 +23,7 @@
         id
         ,title,content,
         cover_url,author_id,
-        status,comment_enabled,
+        status,
         view_count,favorites_count,
         like_count,create_time,update_time
     </sql>
@@ -32,19 +31,18 @@
     <insert id="insert" parameterType="cn.xu.infrastructure.persistent.po.Article" useGeneratedKeys="true"
             keyProperty="id">
         INSERT INTO article (title, introduction, content, cover_url, author_id, status,
-                             comment_enabled, view_count, favorites_count, like_count, create_time, update_time)
+                             view_count, favorites_count, like_count, create_time, update_time)
         VALUES (#{title}, #{introduction}, #{content}, #{coverUrl}, #{authorId}, #{status},
-                #{commentEnabled}, #{viewCount}, #{favoritesCount}, #{likeCount}, now(), now())
+                #{viewCount}, #{favoritesCount}, #{likeCount}, now(), now())
     </insert>
     <update id="update">
         UPDATE article
         SET title           = #{title},
-            introduction     = #{introduction},
+            introduction    = #{introduction},
             content         = #{content},
             cover_url       = #{coverUrl},
             author_id       = #{authorId},
             status          = #{status},
-            comment_enabled = #{commentEnabled},
             view_count      = #{viewCount},
             favorites_count = #{favoritesCount},
             like_count      = #{likeCount},
@@ -103,7 +101,6 @@
                cover_url,
                author_id,
                status,
-               comment_enabled,
                view_count,
                favorites_count,
                like_count,

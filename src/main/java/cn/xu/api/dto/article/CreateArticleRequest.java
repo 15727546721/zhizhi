@@ -14,11 +14,10 @@ import java.util.List;
 public class CreateArticleRequest {
     private Long id;
     private String title;
-    private String description;
+    private String introduction;
     private String content;
     private String coverUrl;
     private String status;
-    private Boolean commentEnabled;
     private Long categoryId;
     private List<Long> tagIds; // 标签ID列表
 }

@@ -14,12 +14,11 @@ import java.time.LocalDateTime;
 public class ArticleEntity {
     private Long id;
     private String title;
-    private String description;
+    private String introduction;
     private String content;
     private String coverUrl;
     private Long authorId;
     private String status; // 0:草稿、1:发布、2:下架、3:待审核、4:审核不通过
-    private String commentEnabled;
     private Long viewCount;
     private Long favoritesCount;
     private Long likeCount;

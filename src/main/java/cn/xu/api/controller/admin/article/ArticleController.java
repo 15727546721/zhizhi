@@ -61,8 +61,7 @@ public class ArticleController {
                         .title(createArticleRequest.getTitle())
                         .coverUrl(createArticleRequest.getCoverUrl())
                         .content(createArticleRequest.getContent())
-                        .description(createArticleRequest.getDescription())
-                        .commentEnabled(createArticleRequest.getCommentEnabled() ? "1" : "0")
+                        .introduction(createArticleRequest.getIntroduction())
                         .authorId(StpUtil.getLoginIdAsLong())
                         .build());
                 //2. 保存文章分类
@@ -102,8 +101,7 @@ public class ArticleController {
                         .title(createArticleRequest.getTitle())
                         .coverUrl(createArticleRequest.getCoverUrl())
                         .content(createArticleRequest.getContent())
-                        .description(createArticleRequest.getDescription())
-                        .commentEnabled(createArticleRequest.getCommentEnabled() ? "1" : "0")
+                        .introduction(createArticleRequest.getIntroduction())
                         .authorId(StpUtil.getLoginIdAsLong())
                         .status(createArticleRequest.getStatus())
                         .build());
@@ -176,9 +174,8 @@ public class ArticleController {
         response.setTitle(article.getTitle());
         response.setContent(article.getContent());
         response.setCoverUrl(article.getCoverUrl());
-        response.setDescription(article.getDescription());
+        response.setIntroduction(article.getIntroduction());
         response.setStatus(article.getStatus());
-        response.setCommentEnabled(article.getCommentEnabled().equals("1"));
         response.setCategoryId(category == null ? null : category.getId());
         response.setTagIds(tag.isEmpty() ? null : tag.stream().map(TagEntity::getId).collect(Collectors.toList()));
         log.info("文章详情获取结果: {}", response);

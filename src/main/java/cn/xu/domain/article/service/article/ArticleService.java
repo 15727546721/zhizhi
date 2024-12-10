@@ -37,7 +37,7 @@ public class ArticleService implements IArticleService {
     @Transactional(rollbackFor = Exception.class)
     public Long createArticle(ArticleEntity articleEntity) {
         long authorId = StpUtil.getLoginIdAsLong();// 获取当前登录用户ID
-
+        articleEntity.setAuthorId(authorId);
         // 保存逻辑
         return articleRepository.save(articleEntity);
     }
