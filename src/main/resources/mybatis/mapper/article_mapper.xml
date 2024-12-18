@@ -82,7 +82,7 @@
                 AND a.status = #{status}
             </if>
             <if test="categoryId != null">
-                AND a.category_id = #{categoryId}
+                AND ac.category_id = #{categoryId}
             </if>
             <if test="tagId != null">
                 AND EXISTS (SELECT 1 FROM article_tag WHERE article_id = a.id AND tag_id = #{tagId})
@@ -108,5 +108,35 @@
                update_time
         FROM article
         WHERE id = #{id}
+    </select>
+    <select id="queryArticleByPage" resultType="cn.xu.domain.article.model.entity.ArticleRecommendOrNew">
+        SELECT
+            a.id AS article_id,
+            a.title,
+            a.introduction,
+            a.content,
+            a.cover_url,
+            a.user_id,
+            a.status,
+            a.view_count,
+            a.favorites_count,
+            a.like_count,
+            a.create_time,
+            a.update_time,
+            GROUP_CONCAT(DISTINCT t.name ORDER BY t.name SEPARATOR ', ') AS tags,
+            u.nickname AS author_nickname,
+            u.avatar AS author_avatar
+        FROM
+            article a
+                LEFT JOIN
+            article_tag at ON a.id = at.article_id
+            LEFT JOIN
+            tag t ON at.tag_id = t.id
+            LEFT JOIN
+            user u ON a.user_id = u.id
+        GROUP BY
+            a.id
+        ORDER BY
+            a.create_time DESC;
     </select>
 </mapper>
