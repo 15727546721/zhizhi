@@ -30,4 +30,10 @@ public interface IUserDao {
     int deleteUser(@Param("userId") Long userId);
 
     void updatePassword(UserPasswordEntity userPasswordEntity);
+
+    UserInfoEntity selectUserInfoByUserId(@Param("userId") Long id);
+
+    void updateUserInfo(UserInfoEntity userInfoEntity);
+
+    void updateAvatar(@Param("userId") Long id, @Param("avatar") String avatar);
 }

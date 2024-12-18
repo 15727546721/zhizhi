@@ -1,8 +1,10 @@
 package cn.xu.domain.article.service;
 
+import cn.xu.api.controller.web.article.ArticleRecommendOrNewRequest;
 import cn.xu.api.dto.article.ArticlePageResponse;
 import cn.xu.api.dto.article.ArticleRequest;
 import cn.xu.api.dto.common.PageResponse;
+import cn.xu.common.ResponseEntity;
 import cn.xu.domain.article.model.entity.ArticleEntity;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -21,4 +23,6 @@ public interface IArticleService {
     void updateArticle(ArticleEntity articleEntity);
 
     ArticleEntity getArticleById(Long id);
+
+    ResponseEntity getRecommendArticleOrNewArticle(ArticleRecommendOrNewRequest articleRequest);
 }

@@ -188,4 +188,49 @@ public class AdminController {
                 .build();
     }
 
+    /**
+     * 查询用户个人信息
+     */
+    @GetMapping("/user/profile/info")
+    @Operation(summary = "查询用户个人信息")
+    public ResponseEntity queryUserInfo() {
+        log.info("查询用户个人信息");
+        Long id = StpUtil.getLoginIdAsLong();
+        UserInfoEntity userInfoEntity = userService.queryUserInfo(id);
+        return ResponseEntity.<UserInfoEntity>builder()
+                .data(userInfoEntity)
+                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .info("查询用户个人信息成功")
+                .build();
+    }
+    /**
+     * 更新用户个人信息
+     */
+    @PostMapping("/user/profile/update")
+    @Operation(summary = "更新用户个人信息")
+    public ResponseEntity updateUserInfo(@RequestBody UserInfoEntity userInfoEntity) {
+        log.info("更新用户个人信息: {}", userInfoEntity);
+        Long id = StpUtil.getLoginIdAsLong();
+        userInfoEntity.setId(id);
+        userService.updateUserInfo(userInfoEntity);
+        return ResponseEntity.<String>builder()
+                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .info("更新用户个人信息成功")
+                .build();
+    }
+
+    /**
+     * 上传头像
+     */
+    @PostMapping("/user/profile/avatar")
+    @Operation(summary = "上传头像")
+    public ResponseEntity uploadAvatar(String avatar) {
+        log.info("上传头像: {}", avatar);
+        Long id = StpUtil.getLoginIdAsLong();
+        userService.uploadAvatar(id, avatar);
+        return ResponseEntity.<String>builder()
+                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .info("上传头像成功")
+                .build();
+    }
 }

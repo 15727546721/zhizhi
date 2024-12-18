@@ -141,6 +141,23 @@ public class UserRepository implements IUserRepository {
         userDao.updatePassword(userPasswordEntity);
     }
 
+    @Override
+    public UserInfoEntity findUserInfoByUserId(Long id) {
+
+        UserInfoEntity userInfo = userDao.selectUserInfoByUserId(id);
+        return userInfo;
+    }
+
+    @Override
+    public void updateUserInfo(UserInfoEntity userInfoEntity) {
+        userDao.updateUserInfo(userInfoEntity);
+    }
+
+    @Override
+    public void updateAvatar(Long id, String avatar) {
+        userDao.updateAvatar(id, avatar);
+    }
+
     private UserEntity convertToUserEntity(User user) {
         return UserEntity.builder()
                 .id(user.getId())

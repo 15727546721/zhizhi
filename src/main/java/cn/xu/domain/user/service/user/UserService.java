@@ -4,6 +4,7 @@ import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.api.dto.user.UserPasswordRequest;
 import cn.xu.domain.permission.repository.IPermissionRepository;
 import cn.xu.domain.user.model.entity.UserEntity;
+import cn.xu.domain.user.model.entity.UserInfoEntity;
 import cn.xu.domain.user.model.entity.UserPasswordEntity;
 import cn.xu.domain.user.model.entity.UserRoleEntity;
 import cn.xu.domain.user.repository.IUserRepository;
@@ -51,5 +52,21 @@ public class UserService implements IUserService {
                .oldPassword(userPasswordRequest.getOldPassword())
                 .newPassword(userPasswordRequest.getNewPassword())
                .build());
+    }
+
+    @Override
+    public UserInfoEntity queryUserInfo(Long id) {
+        UserInfoEntity userInfoEntity = userRepository.findUserInfoByUserId(id);
+        return userInfoEntity;
+    }
+
+    @Override
+    public void updateUserInfo(UserInfoEntity userInfoEntity) {
+        userRepository.updateUserInfo(userInfoEntity);
+    }
+
+    @Override
+    public void uploadAvatar(Long id, String avatar) {
+        userRepository.updateAvatar(id, avatar);
     }
 }

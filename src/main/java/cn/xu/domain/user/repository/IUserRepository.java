@@ -69,4 +69,10 @@ public interface IUserRepository {
     void deleteUser(Long userId);
 
     void updatePassword(UserPasswordEntity userPasswordEntity);
+
+    UserInfoEntity findUserInfoByUserId(Long id);
+
+    void updateUserInfo(UserInfoEntity userInfoEntity);
+
+    void updateAvatar(Long id, String avatar);
 }
