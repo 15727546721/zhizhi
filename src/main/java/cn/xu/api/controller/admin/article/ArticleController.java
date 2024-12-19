@@ -103,7 +103,6 @@ public class ArticleController {
                         .content(createArticleRequest.getContent())
                         .introduction(createArticleRequest.getIntroduction())
                         .userId(StpUtil.getLoginIdAsLong())
-                        .status(createArticleRequest.getStatus())
                         .build());
                 //2. 更新文章分类
                 articleCategoryService.updateArticleCategory(createArticleRequest.getId(), createArticleRequest.getCategoryId());
@@ -175,7 +174,6 @@ public class ArticleController {
         response.setContent(article.getContent());
         response.setCoverUrl(article.getCoverUrl());
         response.setIntroduction(article.getIntroduction());
-        response.setStatus(article.getStatus());
         response.setCategoryId(category == null ? null : category.getId());
         response.setTagIds(tag.isEmpty() ? null : tag.stream().map(TagEntity::getId).collect(Collectors.toList()));
         log.info("文章详情获取结果: {}", response);

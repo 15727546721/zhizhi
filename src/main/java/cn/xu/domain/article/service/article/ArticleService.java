@@ -1,11 +1,14 @@
 package cn.xu.domain.article.service.article;
 
 import cn.dev33.satoken.stp.StpUtil;
+import cn.xu.api.controller.web.article.ArticleRecommendOrNewRequest;
 import cn.xu.api.dto.article.ArticlePageResponse;
 import cn.xu.api.dto.article.ArticleRequest;
 import cn.xu.api.dto.common.PageResponse;
 import cn.xu.common.Constants;
+import cn.xu.common.ResponseEntity;
 import cn.xu.domain.article.model.entity.ArticleEntity;
+import cn.xu.domain.article.model.entity.ArticleRecommendOrNew;
 import cn.xu.domain.article.repository.IArticleRepository;
 import cn.xu.domain.article.repository.IArticleTagRepository;
 import cn.xu.domain.article.repository.ITagRepository;
@@ -84,6 +87,22 @@ public class ArticleService implements IArticleService {
         }
 
         return article;
+    }
+
+    @Override
+    public ResponseEntity getRecommendArticleOrNewArticle(ArticleRecommendOrNewRequest articleRequest) {
+        articleRequest.getType();
+        Long userId = StpUtil.getLoginIdAsLong();
+        if (articleRequest.getType() == Constants.ArticleType.RECOMMEND.getCode()) {
+            // 推荐文章
+        } else if (articleRequest.getType() == Constants.ArticleType.NEW.getCode()) {
+            // 最新文章
+        } else {
+            throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "请求类型错误");
+        }
+        //目前只需要简单的分页查询，其他先不管后续逻辑以后实现
+        List<ArticleRecommendOrNew> articles = articleRepository.queryArticleByPage();
+        return ResponseEntity.builder().data(articles).build();
     }
 
 }

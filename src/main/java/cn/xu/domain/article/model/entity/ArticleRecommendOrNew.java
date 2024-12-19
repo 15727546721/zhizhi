@@ -1,26 +1,26 @@
 package cn.xu.domain.article.model.entity;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
+import lombok.Data;
+
+import java.util.List;
 
 @Data
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
-public class ArticleEntity {
-    private Long id;
+public class ArticleRecommendOrNew {
+    private Long articleId;
     private String title;
     private String introduction;
     private String content;
     private String coverUrl;
     private Long userId;
+    private String status;
     private Long viewCount;
     private Long favoritesCount;
     private Long likeCount;
-    private LocalDateTime createTime;
-    private LocalDateTime updateTime;
+    private String createTime;
+    private String updateTime;
+    private List<String> tags;
+    private Long authorId;
+    private String authorNickname;
+    private String authorAvatar;
 }

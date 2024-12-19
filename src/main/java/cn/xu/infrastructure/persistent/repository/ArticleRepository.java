@@ -1,9 +1,9 @@
 package cn.xu.infrastructure.persistent.repository;
 
-import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.api.dto.article.ArticlePageResponse;
 import cn.xu.api.dto.article.ArticleRequest;
 import cn.xu.domain.article.model.entity.ArticleEntity;
+import cn.xu.domain.article.model.entity.ArticleRecommendOrNew;
 import cn.xu.domain.article.repository.IArticleRepository;
 import cn.xu.infrastructure.persistent.dao.IArticleDao;
 import cn.xu.infrastructure.persistent.dao.IArticleTagDao;
@@ -13,8 +13,8 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.annotation.Resource;
-import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Repository
@@ -37,7 +37,6 @@ public class ArticleRepository implements IArticleRepository {
                 .introduction(articleEntity.getIntroduction())
                 .content(articleEntity.getContent())
                 .coverUrl(articleEntity.getCoverUrl())
-                .status(articleEntity.getStatus())
                 .build();
         articleDao.insert(article); //插入后得到的id值会赋给article的id属性
         return article.getId();
@@ -45,7 +44,7 @@ public class ArticleRepository implements IArticleRepository {
 
     @Override
     public List<ArticlePageResponse> queryArticle(ArticleRequest articleRequest) {
-        articleRequest.setPage(0);
+        articleRequest.setPage(articleRequest.getPage() - 1);
         List<ArticlePageResponse> articles = articleDao.queryByPage(articleRequest);
         log.info("查询文章结果: {}", articles);
 
@@ -87,9 +86,14 @@ public class ArticleRepository implements IArticleRepository {
                 .introduction(articleEntity.getIntroduction())
                 .content(articleEntity.getContent())
                 .coverUrl(articleEntity.getCoverUrl())
-                .status(articleEntity.getStatus())
                 .build();
         articleDao.update(article);
+    }
+
+    @Override
+    public List<ArticleRecommendOrNew> queryArticleByPage() {
+        List<ArticleRecommendOrNew> articles = articleDao.queryArticleByPage(1 - 1, 10);
+        return articles;
     }
 
     private ArticleEntity convert(Article article) {
@@ -99,7 +103,18 @@ public class ArticleRepository implements IArticleRepository {
                .introduction(article.getIntroduction())
                .content(article.getContent())
                .coverUrl(article.getCoverUrl())
-               .status(article.getStatus())
                .build();
+    }
+
+    private List<ArticleEntity> convert(List<Article> articles) {
+        return articles.stream()
+                .map(article -> ArticleEntity.builder()
+                        .id(article.getId())
+                        .title(article.getTitle())
+                        .introduction(article.getIntroduction())
+                        .content(article.getContent())
+                        .coverUrl(article.getCoverUrl())
+                        .build())
+                .collect(Collectors.toList());
     }
 }

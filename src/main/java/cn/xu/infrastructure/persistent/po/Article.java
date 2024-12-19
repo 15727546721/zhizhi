@@ -48,11 +48,6 @@ public class Article implements Serializable {
     private Long userId;
 
     /**
-     * 文章的状态：0:草稿、1:发布、2:下架、3:待审核、4:审核不通过
-     */
-    private String status;
-
-    /**
      * 文章的阅读次数
      */
     private Long viewCount;
