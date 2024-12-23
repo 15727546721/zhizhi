@@ -15,10 +15,13 @@ import java.util.Date;
 @Data
 public class ArticlePageResponse {
     private Long id;
+    /**
+     * 作者昵称
+     */
+    private String nickname;
     private String title;
     private String description;
     private String coverUrl;
-    private String status;
     private Long viewCount;
     @JsonFormat(pattern = DateUtil.FORMAT_STRING, timezone="GMT+8")
     private Date createTime;
