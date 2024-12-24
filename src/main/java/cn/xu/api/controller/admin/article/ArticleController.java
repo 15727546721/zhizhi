@@ -63,7 +63,7 @@ public class ArticleController {
                         .title(createArticleRequest.getTitle())
                         .coverUrl(createArticleRequest.getCoverUrl())
                         .content(createArticleRequest.getContent())
-                        .introduction(createArticleRequest.getIntroduction())
+                        .description(createArticleRequest.getDescription())
                         .userId(StpUtil.getLoginIdAsLong()) // 当前登录用户ID
                         .build());
                 //2. 保存文章分类
@@ -103,7 +103,7 @@ public class ArticleController {
                         .title(createArticleRequest.getTitle())
                         .coverUrl(createArticleRequest.getCoverUrl())
                         .content(createArticleRequest.getContent())
-                        .introduction(createArticleRequest.getIntroduction())
+                        .description(createArticleRequest.getDescription())
                         .userId(StpUtil.getLoginIdAsLong())
                         .build());
                 //2. 更新文章分类
@@ -175,7 +175,7 @@ public class ArticleController {
         response.setTitle(article.getTitle());
         response.setContent(article.getContent());
         response.setCoverUrl(article.getCoverUrl());
-        response.setIntroduction(article.getIntroduction());
+        response.setDescription(article.getDescription());
         response.setCategoryId(category == null ? null : category.getId());
         response.setTagIds(tag.isEmpty() ? null : tag.stream().map(TagEntity::getId).collect(Collectors.toList()));
         log.info("文章详情获取结果: {}", response);

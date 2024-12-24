@@ -15,7 +15,7 @@ public class ArticleDetailsResponse {
     private Long id;
     private String title;
     private String coverUrl;
-    private String introduction;
+    private String description;
     private String content;
     private Long categoryId;
     private List<Long> tagIds;

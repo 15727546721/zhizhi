@@ -44,4 +44,9 @@ public class CategoryService implements ICategoryService {
     public CategoryEntity getCategoryByArticleId(Long id) {
         return categoryRepository.getCategoryByArticleId(id);
     }
+
+    @Override
+    public List<CategoryEntity> getCategoryList() {
+        return categoryRepository.getCategoryList();
+    }
 }

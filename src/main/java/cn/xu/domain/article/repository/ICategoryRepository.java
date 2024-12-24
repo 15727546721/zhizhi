@@ -16,4 +16,6 @@ public interface ICategoryRepository {
     List<CategoryEntity> getCategorySelect();
 
     CategoryEntity getCategoryByArticleId(Long id);
+
+    List<CategoryEntity> getCategoryList();
 }

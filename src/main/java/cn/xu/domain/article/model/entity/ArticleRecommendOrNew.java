@@ -9,7 +9,7 @@ import java.util.List;
 public class ArticleRecommendOrNew {
     private Long articleId;
     private String title;
-    private String introduction;
+    private String description;
     private String content;
     private String coverUrl;
     private Long userId;

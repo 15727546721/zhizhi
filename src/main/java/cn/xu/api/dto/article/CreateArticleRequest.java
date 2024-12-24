@@ -14,7 +14,7 @@ import java.util.List;
 public class CreateArticleRequest {
     private Long id;
     private String title;
-    private String introduction;
+    private String description;
     private String content;
     private String coverUrl;
     private Long categoryId;

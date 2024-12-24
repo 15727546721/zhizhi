@@ -1,5 +1,6 @@
 package cn.xu.domain.article.repository;
 
+import cn.xu.api.controller.web.article.ArticleListDTO;
 import cn.xu.api.dto.article.ArticlePageResponse;
 import cn.xu.api.dto.article.ArticleRequest;
 import cn.xu.domain.article.model.entity.ArticleEntity;
@@ -19,4 +20,6 @@ public interface IArticleRepository {
     void update(ArticleEntity articleEntity);
 
     List<ArticleRecommendOrNew> queryArticleByPage();
+
+    List<ArticleListDTO> queryArticleByCategory(Long categoryId);
 }

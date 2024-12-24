@@ -1,6 +1,6 @@
 package cn.xu.domain.article.service;
 
-import cn.xu.api.controller.web.article.ArticleRecommendOrNewRequest;
+import cn.xu.api.controller.web.article.ArticleListDTO;
 import cn.xu.api.dto.article.ArticlePageResponse;
 import cn.xu.api.dto.article.ArticleRequest;
 import cn.xu.api.dto.common.PageResponse;
@@ -24,5 +24,5 @@ public interface IArticleService {
 
     ArticleEntity getArticleById(Long id);
 
-    ResponseEntity getRecommendArticleOrNewArticle(ArticleRecommendOrNewRequest articleRequest);
+    List<ArticleListDTO> getArticleByCategory(Long categoryId);
 }

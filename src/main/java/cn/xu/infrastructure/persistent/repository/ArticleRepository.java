@@ -1,5 +1,6 @@
 package cn.xu.infrastructure.persistent.repository;
 
+import cn.xu.api.controller.web.article.ArticleListDTO;
 import cn.xu.api.dto.article.ArticlePageResponse;
 import cn.xu.api.dto.article.ArticleRequest;
 import cn.xu.domain.article.model.entity.ArticleEntity;
@@ -34,7 +35,7 @@ public class ArticleRepository implements IArticleRepository {
         Article article = Article.builder()
                 .title(articleEntity.getTitle())
                 .userId(articleEntity.getUserId())
-                .introduction(articleEntity.getIntroduction())
+                .description(articleEntity.getDescription())
                 .content(articleEntity.getContent())
                 .coverUrl(articleEntity.getCoverUrl())
                 .build();
@@ -83,7 +84,7 @@ public class ArticleRepository implements IArticleRepository {
                 .id(articleEntity.getId())
                 .title(articleEntity.getTitle())
                 .userId(articleEntity.getUserId())
-                .introduction(articleEntity.getIntroduction())
+                .description(articleEntity.getDescription())
                 .content(articleEntity.getContent())
                 .coverUrl(articleEntity.getCoverUrl())
                 .build();
@@ -92,15 +93,19 @@ public class ArticleRepository implements IArticleRepository {
 
     @Override
     public List<ArticleRecommendOrNew> queryArticleByPage() {
-        List<ArticleRecommendOrNew> articles = articleDao.queryArticleByPage(1 - 1, 10);
-        return articles;
+        return articleDao.queryArticleByPage(0, 10);
+    }
+
+    @Override
+    public List<ArticleListDTO> queryArticleByCategory(Long categoryId) {
+        return articleDao.queryByCategory(categoryId);
     }
 
     private ArticleEntity convert(Article article) {
         return ArticleEntity.builder()
                 .id(article.getId())
                 .title(article.getTitle())
-                .introduction(article.getIntroduction())
+                .description(article.getDescription())
                 .content(article.getContent())
                 .coverUrl(article.getCoverUrl())
                 .build();
@@ -111,7 +116,7 @@ public class ArticleRepository implements IArticleRepository {
                 .map(article -> ArticleEntity.builder()
                         .id(article.getId())
                         .title(article.getTitle())
-                        .introduction(article.getIntroduction())
+                        .description(article.getDescription())
                         .content(article.getContent())
                         .coverUrl(article.getCoverUrl())
                         .build())

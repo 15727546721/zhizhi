@@ -30,7 +30,7 @@ public class Article implements Serializable {
     /**
      * 文章的简介
      */
-    private String introduction;
+    private String description;
 
     /**
      * 文章的内容

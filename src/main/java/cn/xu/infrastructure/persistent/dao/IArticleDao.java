@@ -1,5 +1,6 @@
 package cn.xu.infrastructure.persistent.dao;
 
+import cn.xu.api.controller.web.article.ArticleListDTO;
 import cn.xu.api.dto.article.ArticlePageResponse;
 import cn.xu.api.dto.article.ArticleRequest;
 import cn.xu.domain.article.model.entity.ArticleRecommendOrNew;
@@ -22,4 +23,6 @@ public interface IArticleDao {
     void update(Article article);
 
     List<ArticleRecommendOrNew> queryArticleByPage(@Param("page") int page, @Param("size") int size);
+
+    List<ArticleListDTO> queryByCategory(Long categoryId);
 }

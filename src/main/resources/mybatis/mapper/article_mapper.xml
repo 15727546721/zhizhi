@@ -7,7 +7,7 @@
     <resultMap id="BaseResultMap" type="cn.xu.infrastructure.persistent.po.Article">
         <id property="id" column="id" jdbcType="BIGINT"/>
         <result property="title" column="title" jdbcType="VARCHAR"/>
-        <result property="introduction" column="introduction" jdbcType="VARCHAR"/>
+        <result property="description" column="description" jdbcType="VARCHAR"/>
         <result property="content" column="content" jdbcType="VARCHAR"/>
         <result property="coverUrl" column="cover_url" jdbcType="VARCHAR"/>
         <result property="userId" column="user_id" jdbcType="BIGINT"/>
@@ -17,6 +17,44 @@
         <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
         <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
     </resultMap>
+
+    <resultMap id="ArticleListResultMap" type="cn.xu.api.controller.web.article.ArticleListDTO">
+        <id property="id" column="id" />
+        <result property="title" column="title" />
+        <result property="description" column="description" />
+        <result property="coverUrl" column="cover_url" />
+        <result property="viewCount" column="view_count" />
+        <result property="likeCount" column="like_count" />
+        <result property="createTime" column="create_time" />
+        <result property="nickname" column="nickname" />
+
+        <!-- 映射 Tag 集合 -->
+        <collection property="tagNameList" ofType="String">
+            <result property="name" column="tag_name" />
+        </collection>
+    </resultMap>
+
+    <select id="queryByCategory" parameterType="java.lang.Long" resultMap="ArticleListResultMap">
+        SELECT DISTINCT
+        a.id,
+        a.title,
+        a.description,
+        a.cover_url,
+        a.user_id,
+        a.view_count,
+        a.like_count,
+        a.create_time,
+        u.nickname,
+        t.name as tag_name
+        FROM article as a
+        JOIN user as u ON a.user_id = u.id
+        JOIN article_tag as at ON a.id = at.article_id
+        JOIN tag as t ON at.tag_id = t.id
+        <if test="categoryId != null">
+            JOIN article_category as ac ON a.id = ac.article_id
+            WHERE ac.category_id = #{categoryId}
+        </if>
+    </select>
 
     <sql id="Base_Column_List">
         id
@@ -28,15 +66,15 @@
 
     <insert id="insert" parameterType="cn.xu.infrastructure.persistent.po.Article" useGeneratedKeys="true"
             keyProperty="id">
-        INSERT INTO article (title, introduction, content, cover_url, user_id,
+        INSERT INTO article (title, description, content, cover_url, user_id,
                              view_count, favorites_count, like_count, create_time, update_time)
-        VALUES (#{title}, #{introduction}, #{content}, #{coverUrl}, #{userId},
+        VALUES (#{title}, #{description}, #{content}, #{coverUrl}, #{userId},
                 #{viewCount}, #{favoritesCount}, #{likeCount}, now(), now())
     </insert>
     <update id="update">
         UPDATE article
         SET title           = #{title},
-            introduction    = #{introduction},
+            description    = #{description},
             content         = #{content},
             cover_url       = #{coverUrl},
             user_id         = #{userId},
@@ -59,7 +97,7 @@
         SELECT
         a.id,
         a.title,
-        a.introduction,
+        a.description,
         a.cover_url AS coverUrl,
         a.create_time AS createTime,
         c.name AS categoryName,
@@ -91,7 +129,7 @@
     <select id="findById" resultType="cn.xu.infrastructure.persistent.po.Article" resultMap="BaseResultMap">
         SELECT id,
                title,
-               introduction,
+               description,
                content,
                cover_url,
                user_id,
@@ -106,7 +144,7 @@
     <select id="queryArticleByPage" resultType="cn.xu.domain.article.model.entity.ArticleRecommendOrNew">
         SELECT a.id                                                         AS article_id,
                a.title,
-               a.introduction,
+               a.description,
                a.content,
                a.cover_url,
                a.user_id,

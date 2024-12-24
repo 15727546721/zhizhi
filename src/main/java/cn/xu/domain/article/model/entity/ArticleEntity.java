@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 public class ArticleEntity {
     private Long id;
     private String title;
-    private String introduction;
+    private String description;
     private String content;
     private String coverUrl;
     private Long userId;

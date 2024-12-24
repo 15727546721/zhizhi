@@ -17,4 +17,6 @@ public interface ICategoryService {
     List<CategoryEntity> getCategorySelect();
 
     CategoryEntity getCategoryByArticleId(Long id);
+
+    List<CategoryEntity> getCategoryList();
 }
