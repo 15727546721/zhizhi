@@ -22,6 +22,7 @@ public class UserService implements IUserService {
     private IUserRepository userRepository;
     @Resource
     private IPermissionRepository permissionRepository;
+
     @Override
     public List<UserEntity> queryUserList(int page, int size) {
         List<UserEntity> userEntityList = userRepository.findUserByPage(page, size);
@@ -48,10 +49,10 @@ public class UserService implements IUserService {
     @Override
     public void updatePassword(UserPasswordRequest userPasswordRequest) {
         userRepository.updatePassword(UserPasswordEntity.builder()
-               .userId(StpUtil.getLoginIdAsLong())
-               .oldPassword(userPasswordRequest.getOldPassword())
+                .userId(StpUtil.getLoginIdAsLong())
+                .oldPassword(userPasswordRequest.getOldPassword())
                 .newPassword(userPasswordRequest.getNewPassword())
-               .build());
+                .build());
     }
 
     @Override

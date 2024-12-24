@@ -98,12 +98,12 @@ public class ArticleRepository implements IArticleRepository {
 
     private ArticleEntity convert(Article article) {
         return ArticleEntity.builder()
-               .id(article.getId())
-               .title(article.getTitle())
-               .introduction(article.getIntroduction())
-               .content(article.getContent())
-               .coverUrl(article.getCoverUrl())
-               .build();
+                .id(article.getId())
+                .title(article.getTitle())
+                .introduction(article.getIntroduction())
+                .content(article.getContent())
+                .coverUrl(article.getCoverUrl())
+                .build();
     }
 
     private List<ArticleEntity> convert(List<Article> articles) {

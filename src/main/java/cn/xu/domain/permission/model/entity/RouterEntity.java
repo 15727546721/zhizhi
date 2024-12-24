@@ -26,7 +26,7 @@ public class RouterEntity {
     private List<RouterEntity> children;
 
     @Data
-    public static class MetaEntity{
+    public static class MetaEntity {
         private String title;
         private String icon;
         private Boolean hidden;

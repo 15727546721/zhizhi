@@ -4,6 +4,7 @@ import cn.xu.common.Constants;
 import cn.xu.common.ResponseEntity;
 import cn.xu.domain.file.service.MinioService;
 import cn.xu.exception.AppException;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
@@ -13,6 +14,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 import java.util.List;
 
+@Tag(name = "文件管理", description = "文件管理相关接口")
 @Slf4j
 @RestController
 @RequestMapping("system/file")

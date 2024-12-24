@@ -1,7 +1,6 @@
 package cn.xu.common.utils;
 /**
  * 时间操作工具类
- *
  */
 
 import cn.xu.exception.AppException;
@@ -193,13 +192,14 @@ public class DateUtil {
         }
         return date;
     }
+
     /**
      * 将  String 转换成  date
      *
      * @param dateTime
      * @return
      */
-    public static Date strToDateTime(String dateTime,String formatStr) {
+    public static Date strToDateTime(String dateTime, String formatStr) {
         Date date = null;
         try {
             SimpleDateFormat format = new SimpleDateFormat(formatStr);
@@ -209,6 +209,7 @@ public class DateUtil {
         }
         return date;
     }
+
     /**
      * 将  date 转换成  时间戳
      *
@@ -240,7 +241,7 @@ public class DateUtil {
      * @param dateTime
      * @return
      */
-    public static String dateTimeToStr(Date dateTime,String pattern) {
+    public static String dateTimeToStr(Date dateTime, String pattern) {
 
         SimpleDateFormat format = new SimpleDateFormat(pattern);
         return format.format(dateTime);
@@ -667,7 +668,7 @@ public class DateUtil {
      * @param nowDate
      * @return
      */
-    public static long getDiffDateToMinutes (Date endDate, Date nowDate) {
+    public static long getDiffDateToMinutes(Date endDate, Date nowDate) {
 
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(nowDate);

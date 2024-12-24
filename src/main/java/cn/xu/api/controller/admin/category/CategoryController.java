@@ -6,6 +6,7 @@ import cn.xu.common.Constants;
 import cn.xu.common.ResponseEntity;
 import cn.xu.domain.article.model.entity.CategoryEntity;
 import cn.xu.domain.article.service.ICategoryService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.bind.annotation.*;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 import java.util.List;
 
+@Tag(name = "文章分类管理", description = "文章分类管理相关接口")
 @Slf4j
 @RequestMapping("system/category")
 @RestController
@@ -53,6 +55,7 @@ public class CategoryController {
                 .data(categoryEntity)
                 .build();
     }
+
     @GetMapping("/getCategorySelect")
     public ResponseEntity getCategorySelect() {
         log.info("获取分类下拉列表");

@@ -51,7 +51,8 @@
         WHERE id = #{id}
     </update>
     <delete id="deleteMenu">
-        DELETE FROM menu
+        DELETE
+        FROM menu
         WHERE id = #{id}
     </delete>
     <select id="selectMenuList" resultMap="BaseResultMap">
@@ -71,9 +72,10 @@
     </select>
     <select id="getMenuById" resultType="java.lang.Long">
         select rm.menu_id
-        from user where u.id = #{id}
-        join user_role ur on u.id = ur.user_id
-        join role_menu rm on rm.role_id = ru.id
+        from user
+        where u.id = #{id} join user_role ur
+        on u.id = ur.user_id
+            join role_menu rm on rm.role_id = ru.id
     </select>
     <select id="listByIds" resultMap="BaseResultMap">
         SELECT

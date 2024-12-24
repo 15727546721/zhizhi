@@ -49,7 +49,7 @@
     <select id="selectByArticleId" resultType="cn.xu.infrastructure.persistent.po.Category">
         select c.id, c.name
         from category c
-        inner join article_category ac on c.id = ac.category_id
+                 inner join article_category ac on c.id = ac.category_id
         where ac.article_id = #{articleId}
     </select>
 </mapper>

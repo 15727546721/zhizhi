@@ -20,8 +20,8 @@ public interface IPermissionService {
 
     /**
      * 获取菜单选项树
-     * @return
      *
+     * @return
      */
     List<MenuOptionsEntity> getMenuOptionsTree();
 

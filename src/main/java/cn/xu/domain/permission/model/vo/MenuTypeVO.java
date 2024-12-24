@@ -17,6 +17,7 @@ public enum MenuTypeVO {
     public String getCode() {
         return code;
     }
+
     public String getName() {
         return name;
     }

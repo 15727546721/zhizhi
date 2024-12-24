@@ -5,19 +5,22 @@
 <mapper namespace="cn.xu.infrastructure.persistent.dao.IArticleCategoryDao">
 
     <resultMap id="BaseResultMap" type="cn.xu.infrastructure.persistent.po.ArticleCategory">
-            <id property="id" column="id" jdbcType="BIGINT"/>
-            <result property="articleId" column="article_id" jdbcType="BIGINT"/>
-            <result property="categoryId" column="category_id" jdbcType="BIGINT"/>
+        <id property="id" column="id" jdbcType="BIGINT"/>
+        <result property="articleId" column="article_id" jdbcType="BIGINT"/>
+        <result property="categoryId" column="category_id" jdbcType="BIGINT"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        id,article_id,category_id
+        id
+        ,article_id,category_id
     </sql>
     <insert id="insert" parameterType="cn.xu.infrastructure.persistent.po.ArticleCategory">
         INSERT INTO article_category (article_id, category_id)
         VALUES (#{articleId}, #{categoryId})
     </insert>
     <delete id="deleteByArticleId">
-        DELETE FROM article_category WHERE article_id = #{articleId}
+        DELETE
+        FROM article_category
+        WHERE article_id = #{articleId}
     </delete>
 </mapper>

@@ -6,6 +6,7 @@ import cn.xu.common.Constants;
 import cn.xu.common.ResponseEntity;
 import cn.xu.domain.article.model.entity.TagEntity;
 import cn.xu.domain.article.service.ITagService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.bind.annotation.*;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 import java.util.List;
 
+@Tag(name = "文章标签管理", description = "文章标签管理相关接口")
 @Slf4j
 @RequestMapping("system/tag")
 @RestController

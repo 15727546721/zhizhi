@@ -21,7 +21,7 @@ public class Application {
         String ip = "localhost";
         try {
             ip = InetAddress.getLocalHost().getHostAddress();
-        }catch (UnknownHostException e){
+        } catch (UnknownHostException e) {
             log.error("获取ip地址失败", e);
         }
         String port = env.getProperty("server.port");

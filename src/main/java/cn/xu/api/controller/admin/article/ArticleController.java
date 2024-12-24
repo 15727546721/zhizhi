@@ -13,6 +13,7 @@ import cn.xu.domain.article.model.entity.CategoryEntity;
 import cn.xu.domain.article.model.entity.TagEntity;
 import cn.xu.domain.article.service.*;
 import cn.xu.exception.AppException;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +23,7 @@ import javax.annotation.Resource;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Tag(name = "文章管理", description = "文章管理相关接口")
 @Slf4j
 @RequestMapping("system/article")
 @RestController

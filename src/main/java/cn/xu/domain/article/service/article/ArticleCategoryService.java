@@ -11,6 +11,7 @@ public class ArticleCategoryService implements IArticleCategoryService {
 
     @Resource
     private IArticleCategoryRepository articleCategoryRepository;
+
     @Override
     public void saveArticleCategory(Long articleId, Long categoryId) {
         articleCategoryRepository.saveArticleCategory(articleId, categoryId);

@@ -112,8 +112,8 @@ public class TagRepository implements ITagRepository {
         List<Tag> tag = tagDao.selectByArticleId(id);
         log.info("查询文章ID: {} 对应的标签: {}", id, tag);
         List<TagEntity> tagEntityList = tag.stream()
-               .map(this::convertToTagEntity)
-               .collect(Collectors.toList());
+                .map(this::convertToTagEntity)
+                .collect(Collectors.toList());
         return tagEntityList;
     }
 

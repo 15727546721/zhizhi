@@ -47,7 +47,7 @@ public class RoleController {
     }
 
     @GetMapping("getRoleMenuIds")
-    @Operation(summary = "获取当前登录用户所拥有的权限" )
+    @Operation(summary = "获取当前登录用户所拥有的权限")
     public ResponseEntity<List<Long>> selectRoleMenuById(Long roleId) {
         List<Long> roleMenuIds = permissionService.selectRoleMenuById(roleId);
         return ResponseEntity.<List<Long>>builder()

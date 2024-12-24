@@ -9,7 +9,8 @@ import java.io.Serializable;
 import java.util.Date;
 
 /**
- * 系统管理-权限资源表 
+ * 系统管理-权限资源表
+ *
  * @TableName menu
  */
 @AllArgsConstructor

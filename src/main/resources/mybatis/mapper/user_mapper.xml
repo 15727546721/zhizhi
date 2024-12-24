@@ -17,7 +17,7 @@
     <insert id="insertUser" parameterType="cn.xu.domain.user.model.entity.UserEntity">
         insert into user (id, username, password, email, nickname, avatar, status, create_time, update_time)
         values (#{user.id}, #{user.username}, #{user.password}, #{user.email}, #{user.nickname}, #{user.avatar},
-                #{user.status}, now(), now())
+        #{user.status}, now(), now())
         <selectKey resultType="java.lang.Long" keyProperty="id" order="AFTER">
             select LAST_INSERT_ID()
         </selectKey>
@@ -34,21 +34,22 @@
     </update>
     <update id="updatePassword" parameterType="cn.xu.domain.user.model.entity.UserEntity">
         update user
-        set password = #{newPassword},
+        set password   = #{newPassword},
             update_time=now()
-        where id = id and password = #{oldPassword}
+        where id = id
+          and password = #{oldPassword}
     </update>
     <update id="updateUserInfo" parameterType="cn.xu.domain.user.model.entity.UserEntity">
         update user
-        set nickname = #{nickname},
-            email = #{email},
-            avatar = #{avatar},
+        set nickname    = #{nickname},
+            email       = #{email},
+            avatar      = #{avatar},
             update_time = now()
         where id = #{id}
     </update>
     <update id="updateAvatar">
         update user
-        set avatar = #{avatar},
+        set avatar      = #{avatar},
             update_time = now()
         where id = #{userId}
     </update>

@@ -94,6 +94,7 @@ public class GlobalExceptionHandler {
                 .info(ex.getMessage())
                 .build();
     }
+
     /**
      * 处理全局异常
      *

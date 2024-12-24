@@ -23,7 +23,7 @@ public class ArticlePageResponse {
     private String description;
     private String coverUrl;
     private Long viewCount;
-    @JsonFormat(pattern = DateUtil.FORMAT_STRING, timezone="GMT+8")
+    @JsonFormat(pattern = DateUtil.FORMAT_STRING, timezone = "GMT+8")
     private Date createTime;
     private String categoryName;
     private String tagNames;

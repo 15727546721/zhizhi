@@ -99,6 +99,7 @@ public class AdminController {
                 .info("管理员退出成功")
                 .build();
     }
+
     @PostMapping(value = "/updatePassword")
     @Operation(summary = "修改密码")
     public ResponseEntity updatePassword(@RequestBody UserPasswordRequest userPasswordRequest) {
@@ -132,7 +133,7 @@ public class AdminController {
         if (StringUtils.isEmpty(userRequest.getUsername()) || StringUtils.isEmpty(userRequest.getPassword())
                 || StringUtils.isEmpty(userRequest.getEmail())) {
             throw new AppException(Constants.ResponseCode.NULL_PARAMETER.getCode(), "添加用户参数为空");
-            }
+        }
         if (userRequest.getRoleId() == null) {
             throw new AppException(Constants.ResponseCode.NULL_PARAMETER.getCode(), "角色不能为空");
         }
@@ -203,6 +204,7 @@ public class AdminController {
                 .info("查询用户个人信息成功")
                 .build();
     }
+
     /**
      * 更新用户个人信息
      */
