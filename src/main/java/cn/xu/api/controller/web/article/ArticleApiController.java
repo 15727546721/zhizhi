@@ -41,7 +41,7 @@ public class ArticleApiController {
 
     @GetMapping("/{id}")
     @Operation(summary = "获取文章详情")
-    public ResponseEntity<ArticleEntity> findArticleDetail(@PathVariable("id") Long id) {
+    public ResponseEntity<ArticleEntity> getArticleDetail(@PathVariable("id") Long id) {
         ArticleEntity articleById = articleService.getArticleById(id);
         return ResponseEntity.<ArticleEntity>builder()
                 .code(Constants.ResponseCode.SUCCESS.getCode())

@@ -69,7 +69,7 @@
         INSERT INTO article (title, description, content, cover_url, user_id,
                              view_count, collect_count, like_count, create_time, update_time)
         VALUES (#{title}, #{description}, #{content}, #{coverUrl}, #{userId},
-                #{viewCount}, #{favoritesCount}, #{likeCount}, now(), now())
+                #{viewCount}, #{collectCount}, #{likeCount}, now(), now())
     </insert>
     <update id="update">
         UPDATE article
@@ -79,7 +79,7 @@
             cover_url     = #{coverUrl},
             user_id       = #{userId},
             view_count    = #{viewCount},
-            collect_count = #{favoritesCount},
+            collect_count = #{collectCount},
             like_count    = #{likeCount},
             update_time   = now()
         WHERE id = #{id}
