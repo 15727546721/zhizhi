@@ -57,11 +57,8 @@ public class GlobalExceptionHandler {
 
     // 全局异常拦截（拦截项目中的NotLoginException异常）
     @ExceptionHandler(NotLoginException.class)
-    public ResponseEntity<String> handlerNotLoginException(NotLoginException nle)
-            throws Exception {
+    public ResponseEntity<String> handlerNotLoginException(NotLoginException nle) {
         log.error("未登录异常:{}", nle);
-        // 打印堆栈，以供调试
-        nle.printStackTrace();
 
         // 判断场景值，定制化异常信息
         String message = "";
@@ -81,7 +78,7 @@ public class GlobalExceptionHandler {
 
         // 返回给前端
         return ResponseEntity.<String>builder()
-                .code(Constants.ResponseCode.UN_ERROR.getCode())
+                .code(Constants.UserErrorCode.TOKEN_EXPIRED.getCode())
                 .info(message)
                 .build();
     }
