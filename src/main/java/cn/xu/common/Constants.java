@@ -41,4 +41,16 @@ public class Constants {
         private String info;
 
     }
+
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Getter
+    public enum ArticleType {
+        RECOMMEND(1, "推荐"),
+        NEW(2, "最新"),
+        ;
+
+        private Integer code;
+        private String info;
+    }
 }

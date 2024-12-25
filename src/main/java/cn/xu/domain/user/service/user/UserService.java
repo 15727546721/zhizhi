@@ -70,4 +70,9 @@ public class UserService implements IUserService {
     public void uploadAvatar(Long id, String avatar) {
         userRepository.updateAvatar(id, avatar);
     }
+
+    @Override
+    public UserEntity getUserInfo(Long id) {
+        return userRepository.findUserById(id);
+    }
 }

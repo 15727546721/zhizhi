@@ -19,7 +19,7 @@ public class ArticleEntity {
     private String coverUrl;
     private Long userId;
     private Long viewCount;
-    private Long favoritesCount;
+    private Long collectCount;
     private Long likeCount;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;

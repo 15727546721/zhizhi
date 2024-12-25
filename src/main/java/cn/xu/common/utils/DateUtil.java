@@ -663,7 +663,8 @@ public class DateUtil {
     }
 
     /**
-     * 计算俩个时间相差的分钟
+     * 计算两个时间相差的分钟
+     *
      * @param endDate
      * @param nowDate
      * @return

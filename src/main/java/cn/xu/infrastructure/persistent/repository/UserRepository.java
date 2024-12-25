@@ -45,22 +45,19 @@ public class UserRepository implements IUserRepository {
             throw new AppException(Constants.ResponseCode.NULL_PARAMETER.getCode()
                     , Constants.ResponseCode.NULL_PARAMETER.getInfo());
         }
-        LoginFormVO loginFormVO = userDao.selectUserByUserName(username);
-        return loginFormVO;
+        return userDao.selectUserByUserName(username);
     }
 
     @Override
     public UserEntity findUserById(Long userId) {
 
-        UserEntity userEntity = userDao.selectUserById(userId);
-        return userEntity;
+        return userDao.selectUserById(userId);
     }
 
     @Override
     public UserInfoEntity findUserInfoById(Long userId) {
-        UserInfoEntity userInfo = userDao.selectUserInfoById(userId);
 
-        return userInfo;
+        return userDao.selectUserInfoById(userId);
     }
 
     @Override
@@ -144,8 +141,7 @@ public class UserRepository implements IUserRepository {
     @Override
     public UserInfoEntity findUserInfoByUserId(Long id) {
 
-        UserInfoEntity userInfo = userDao.selectUserInfoByUserId(id);
-        return userInfo;
+        return userDao.selectUserInfoByUserId(id);
     }
 
     @Override

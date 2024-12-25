@@ -23,4 +23,6 @@ public interface IUserService {
     void updateUserInfo(UserInfoEntity userInfoEntity);
 
     void uploadAvatar(Long id, String avatar);
+
+    UserEntity getUserInfo(Long id);
 }

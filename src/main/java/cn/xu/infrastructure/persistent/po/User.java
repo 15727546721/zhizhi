@@ -45,6 +45,11 @@ public class User {
     private String status;
 
     /**
+     * 个人介绍
+     */
+    private String description;
+
+    /**
      * 创建时间
      */
     private LocalDateTime createTime;

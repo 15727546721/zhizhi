@@ -55,7 +55,7 @@ public class Article implements Serializable {
     /**
      * 文章的收藏次数
      */
-    private Long favoritesCount;
+    private Long collectCount;
 
     /**
      * 文章的点赞次数
