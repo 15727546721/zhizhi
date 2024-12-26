@@ -7,6 +7,7 @@ import cn.xu.domain.article.model.entity.ArticleEntity;
 import cn.xu.domain.article.model.entity.ArticleRecommendOrNew;
 
 import java.util.List;
+import java.util.Map;
 
 public interface IArticleRepository {
     Long save(ArticleEntity articleAggregate);
@@ -22,4 +23,19 @@ public interface IArticleRepository {
     List<ArticleRecommendOrNew> queryArticleByPage();
 
     List<ArticleListDTO> queryArticleByCategory(Long categoryId);
+
+    /**
+     * 更新文章点赞数
+     *
+     * @param articleId 文章ID
+     * @param likeCount 点赞数
+     */
+    void updateArticleLikeCount(Long articleId, Long likeCount);
+
+    /**
+     * 批量更新文章点赞数
+     *
+     * @param likeCounts key为文章ID，value为点赞数的Map
+     */
+    void batchUpdateArticleLikeCount(Map<Long, Long> likeCounts);
 }

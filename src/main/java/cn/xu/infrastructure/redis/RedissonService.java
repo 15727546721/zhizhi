@@ -84,6 +84,11 @@ public class RedissonService implements IRedisService {
         return set.contains(value);
     }
 
+    public void removeFromSet(String key, String value) {
+        RSet<String> set = redissonClient.getSet(key);
+        set.remove(value);
+    }
+
     public void addToList(String key, String value) {
         RList<String> list = redissonClient.getList(key);
         list.add(value);

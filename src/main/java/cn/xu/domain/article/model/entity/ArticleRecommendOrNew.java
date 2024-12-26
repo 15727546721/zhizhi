@@ -15,7 +15,7 @@ public class ArticleRecommendOrNew {
     private Long userId;
     private String status;
     private Long viewCount;
-    private Long favoritesCount;
+    private Long collectCount;
     private Long likeCount;
     private String createTime;
     private String updateTime;

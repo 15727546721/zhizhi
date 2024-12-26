@@ -91,5 +91,25 @@ public class ArticleService implements IArticleService {
         return articleRepository.queryArticleByCategory(categoryId);
     }
 
+    @Override
+    public List<ArticleListDTO> getHotArticles(int limit) {
+        return null;
+    }
+
+    @Override
+    public List<ArticleListDTO> getUserLikedArticles(Long userId) {
+        return null;
+    }
+
+    @Override
+    public List<Long> getArticleLikedUsers(Long articleId) {
+        return null;
+    }
+
+    @Override
+    public boolean isArticleLiked(Long articleId, Long userId) {
+        return false;
+    }
+
 }
 

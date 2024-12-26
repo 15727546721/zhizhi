@@ -125,6 +125,13 @@ public interface IRedisService {
     boolean isSetMember(String key, String value);
 
     /**
+     * 移除集合中的指定值
+     *
+     * @param key
+     * @param value
+     */
+    public void removeFromSet(String key, String value);
+    /**
      * 将指定的值添加到列表中
      *
      * @param key   键

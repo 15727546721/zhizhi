@@ -15,6 +15,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.annotation.Resource;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -99,6 +100,16 @@ public class ArticleRepository implements IArticleRepository {
     @Override
     public List<ArticleListDTO> queryArticleByCategory(Long categoryId) {
         return articleDao.queryByCategory(categoryId);
+    }
+
+    @Override
+    public void updateArticleLikeCount(Long articleId, Long likeCount) {
+
+    }
+
+    @Override
+    public void batchUpdateArticleLikeCount(Map<Long, Long> likeCounts) {
+
     }
 
     private ArticleEntity convert(Article article) {
