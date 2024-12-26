@@ -50,6 +50,14 @@ public class UserController {
                 .info("用户登录成功")
                 .build();
     }
+    @PostMapping("/logout")
+    public ResponseEntity logout() {
+        StpUtil.logout();
+        return ResponseEntity.builder()
+                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .info("用户登出成功")
+                .build();
+    }
     @GetMapping("/info/{id}")
     public ResponseEntity<UserEntity> getUserInfo(@PathVariable Long id) {
         UserEntity userEntity = userService.getUserInfo(id);
