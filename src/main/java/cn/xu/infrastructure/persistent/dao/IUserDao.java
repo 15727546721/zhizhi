@@ -36,4 +36,14 @@ public interface IUserDao {
     void updateUserInfo(UserInfoEntity userInfoEntity);
 
     void updateAvatar(@Param("userId") Long id, @Param("avatar") String avatar);
+
+    void register(User user);
+
+    /**
+     * 根据邮箱和密码查询用户
+     * @param email
+     * @param password
+     * @return 用户ID
+     */
+    UserEntity findUserLoginByEmailAndPassword(@Param("email") String email, @Param("password") String password);
 }

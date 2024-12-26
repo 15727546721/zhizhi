@@ -9,7 +9,7 @@
         <result property="email" column="email" jdbcType="VARCHAR"/>
         <result property="nickname" column="nickname" jdbcType="VARCHAR"/>
         <result property="avatar" column="avatar" jdbcType="VARCHAR"/>
-        <result property="status" column="status" jdbcType="CHAR"/>
+        <result property="status" column="status" jdbcType="INTEGER"/>
         <result property="description" column="description" jdbcType="VARCHAR"/>
         <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
         <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
@@ -22,6 +22,10 @@
         <selectKey resultType="java.lang.Long" keyProperty="id" order="AFTER">
             select LAST_INSERT_ID()
         </selectKey>
+    </insert>
+    <insert id="register" parameterType="cn.xu.api.controller.web.user.RegisterRequest">
+        insert into user (password, email, nickname, status, create_time, update_time)
+        values (#{password}, #{email}, #{nickname}, #{status}, now(), now())
     </insert>
     <update id="updateUser" parameterType="cn.xu.domain.user.model.entity.UserEntity">
         update user
@@ -137,6 +141,9 @@
                  LEFT JOIN user_role ur ON u.id = ur.user_id
                  LEFT JOIN role r ON ur.role_id = r.id
         WHERE u.id = #{userId}
+    </select>
+    <select id="findUserLoginByEmailAndPassword" resultType="cn.xu.domain.user.model.entity.UserEntity">
+        select * from user where email = #{email} and password = #{password}
     </select>
 
 </mapper>

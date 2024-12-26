@@ -1,6 +1,7 @@
 package cn.xu.infrastructure.persistent.repository;
 
 import cn.dev33.satoken.secure.SaSecureUtil;
+import cn.xu.api.controller.web.user.RegisterRequest;
 import cn.xu.common.Constants;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.model.entity.UserInfoEntity;
@@ -152,6 +153,22 @@ public class UserRepository implements IUserRepository {
     @Override
     public void updateAvatar(Long id, String avatar) {
         userDao.updateAvatar(id, avatar);
+    }
+
+    @Override
+    public void register(RegisterRequest registerRequest) {
+        User user = User.builder()
+                .nickname(registerRequest.getNickname())
+                .password(SaSecureUtil.sha256(registerRequest.getPassword()))
+                .email(registerRequest.getEmail())
+                .status(Constants.UserStatus.NORMAL.getCode())
+                .build();
+        userDao.register(user);
+    }
+
+    @Override
+    public UserEntity findUserLoginByEmailAndPassword(String email, String password) {
+        return userDao.findUserLoginByEmailAndPassword(email, password);
     }
 
     private UserEntity convertToUserEntity(User user) {

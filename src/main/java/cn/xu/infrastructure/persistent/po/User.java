@@ -42,7 +42,7 @@ public class User {
     /**
      * 用户状态（0：正常，1：封禁）
      */
-    private String status;
+    private Integer status;
 
     /**
      * 个人介绍

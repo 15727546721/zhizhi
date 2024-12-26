@@ -15,6 +15,6 @@ public class UserRoleEntity {
     private String nickname;
     private String email;
     private String avatar;
-    private String status;
+    private Integer status;
     private Long roleId;
 }

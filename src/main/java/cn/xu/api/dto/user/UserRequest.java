@@ -15,6 +15,6 @@ public class UserRequest {
     private String email;
     private String nickname;
     private String avatar;
-    private String status = "0";
+    private Integer status = 0;
     private Long roleId;
 }

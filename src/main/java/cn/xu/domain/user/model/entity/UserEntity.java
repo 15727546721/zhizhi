@@ -18,7 +18,7 @@ public class UserEntity {
     private String nickname;
     private String email;
     private String avatar;
-    private String status;
+    private Integer status;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 }

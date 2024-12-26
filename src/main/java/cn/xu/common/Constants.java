@@ -41,6 +41,20 @@ public class Constants {
         private String info;
 
     }
+    @Getter
+    public enum UserStatus {
+        NORMAL(0, "正常"),
+        LOCKED(1, "锁定"),
+        ;
+        private Integer code;
+        private String info;
+        UserStatus(Integer code, String info) {
+            this.code = code;
+            this.info = info;
+        }
+
+
+    }
 
     @AllArgsConstructor
     @NoArgsConstructor

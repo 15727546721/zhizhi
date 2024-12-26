@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
+import java.util.Map;
 
 @Data
 @Builder
@@ -13,10 +14,7 @@ import java.io.Serializable;
 @AllArgsConstructor
 public class ResponseEntity<T> implements Serializable {
 
-    private static final long serialVersionUID = 5130392244064623509L;
-
     private Integer code;
     private String info;
     private T data;
-
 }

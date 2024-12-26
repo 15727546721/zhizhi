@@ -1,6 +1,9 @@
 package cn.xu.domain.user.service.user;
 
+import cn.dev33.satoken.secure.SaSecureUtil;
 import cn.dev33.satoken.stp.StpUtil;
+import cn.xu.api.controller.web.user.LoginRequest;
+import cn.xu.api.controller.web.user.RegisterRequest;
 import cn.xu.api.dto.user.UserPasswordRequest;
 import cn.xu.domain.permission.repository.IPermissionRepository;
 import cn.xu.domain.user.model.entity.UserEntity;
@@ -74,5 +77,20 @@ public class UserService implements IUserService {
     @Override
     public UserEntity getUserInfo(Long id) {
         return userRepository.findUserById(id);
+    }
+
+    @Override
+    public void register(RegisterRequest registerRequest) {
+        userRepository.register(registerRequest);
+    }
+
+    @Override
+    public UserEntity login(LoginRequest loginRequest) {
+        UserEntity user = userRepository.findUserLoginByEmailAndPassword(loginRequest.getEmail(),
+                SaSecureUtil.sha256(loginRequest.getPassword()));
+        if (user != null) {
+            StpUtil.login(user.getId());
+        }
+        return user;
     }
 }

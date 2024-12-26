@@ -1,5 +1,7 @@
 package cn.xu.domain.user.service;
 
+import cn.xu.api.controller.web.user.LoginRequest;
+import cn.xu.api.controller.web.user.RegisterRequest;
 import cn.xu.api.dto.user.UserPasswordRequest;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.model.entity.UserInfoEntity;
@@ -25,4 +27,8 @@ public interface IUserService {
     void uploadAvatar(Long id, String avatar);
 
     UserEntity getUserInfo(Long id);
+
+    void register(RegisterRequest registerRequest);
+
+    UserEntity login(LoginRequest loginRequest);
 }
