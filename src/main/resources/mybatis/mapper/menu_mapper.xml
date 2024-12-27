@@ -86,4 +86,11 @@
             #{id}
         </foreach>
     </select>
+    <select id="findPermissionsByUserid" resultType="java.lang.String">
+        SELECT m.perm
+        FROM menu m
+                 INNER JOIN user_role ur ON m.id = ur.menu_id
+        WHERE ur.user_id = #{userId}
+          AND m.perm IS NOT NULL
+    </select>
 </mapper>

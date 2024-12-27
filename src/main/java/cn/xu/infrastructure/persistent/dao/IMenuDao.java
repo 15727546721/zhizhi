@@ -21,9 +21,26 @@ public interface IMenuDao {
 
     void deleteMenu(Long id);
 
+    /**
+     * 根据用户id获取用户的菜单id列表
+     * @param userId 用户id
+     * @return 菜单id列表
+     */
     List<Long> getMenuById(@Param("userId") long userId);
 
+    /**
+     * 根据菜单id列表获取菜单列表
+     * @param menuIds
+     * @return
+     */
     List<Menu> listByIds(@Param("menuIds") List<Long> menuIds);
+
+    /**
+     * 根据用户id获取用户的菜单权限
+     * @param userId 用户id
+     * @return 菜单权限列表
+     */
+    List<String> findPermissionsByUserid(@Param("userId") Long userId);
 }
 
 

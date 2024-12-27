@@ -197,6 +197,11 @@ public class PermissionRepository implements IPermissionRepository {
         return menuEntityList;
     }
 
+    @Override
+    public List<String> findPermissionsByUserid(Long userId) {
+        return menuDao.findPermissionsByUserid(userId);
+    }
+
     private MenuEntity convert(Menu menu) {
         if (menu == null) {
             return null;

@@ -44,4 +44,11 @@ public interface IPermissionRepository {
     List<Long> getMenuById(long userId);
 
     List<MenuEntity> listByIds(List<Long> menuIds);
+
+    /**
+     * 根据用户ID获取用户的权限列表
+     * @param userId
+     * @return
+     */
+    List<String> findPermissionsByUserid(Long userId);
 }

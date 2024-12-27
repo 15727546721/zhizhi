@@ -7,9 +7,10 @@ import cn.xu.infrastructure.persistent.repository.PermissionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
-import javax.annotation.Resource;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 
@@ -21,39 +22,67 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserPermission implements StpInterface {
 
-    @Resource
-    private PermissionRepository permissionRepository;
+    private final PermissionRepository permissionRepository;
+
+    private static final String ROLE_LIST_KEY = "ROLE_LIST";
+    private static final String PERMISSION_LIST_KEY = "PERMISSION_LIST";
 
     /**
-     * 返回一个账号所拥有的权限码集合
-     * 即你在调用 StpUtil.login(id) 时写入的标识值。
+     * 获取权限码集合
+     *
+     * @param loginId   登录ID
+     * @param loginType 登录类型
+     * @return 权限码集合
      */
     @Override
     public List<String> getPermissionList(Object loginId, String loginType) {
-        // 本list仅做模拟，实际项目中要根据具体业务逻辑来查询权限
-        List<String> list = new ArrayList<>();
-        list.add("admin");
-        list.add("user-add");
-        list.add("user-delete");
-        list.add("user-update");
-        list.add("user-get");
-        list.add("article-get");
-        log.info("用户权限列表：{}", list);
-        return list;
+        try {
+            if (loginId == null || !StringUtils.hasText(String.valueOf(loginId))) {
+                return Collections.emptyList();
+            }
+
+            // 从Session中获取权限列表，如果不存在则从数据库查询并缓存
+            SaSession session = StpUtil.getSessionByLoginId(loginId);
+            return session.get(PERMISSION_LIST_KEY, () -> {
+                Long userId = Long.valueOf(String.valueOf(loginId));
+                List<String> permissions = new ArrayList<>(permissionRepository.findPermissionsByUserid(userId));
+
+                log.info("用户 [{}] 加载权限列表: {}", loginId, permissions);
+                return permissions;
+            });
+        } catch (Exception e) {
+            log.error("获取用户权限列表异常, loginId: {}", loginId, e);
+            return Collections.emptyList();
+        }
     }
 
     /**
-     * 返回一个账号所拥有的角色标识集合 (权限与角色可分开校验)
+     * 获取角色标识集合
+     *
+     * @param loginId   登录ID
+     * @param loginType 登录类型
+     * @return 角色标识集合
      */
     @Override
     public List<String> getRoleList(Object loginId, String loginType) {
-        SaSession session = StpUtil.getSessionByLoginId(loginId);
-        List<String> roleList = session.get("Role_List", () -> {
-            // 从数据库查询这个账号id拥有的角色列表
-            return permissionRepository.findRolesByUserid(Long.valueOf((String) loginId));
-        });
-        log.info("用户id：{} 用户角色列表：{}", loginId, roleList);
-        return roleList;
+        try {
+            if (loginId == null || !StringUtils.hasText(String.valueOf(loginId))) {
+                return Collections.emptyList();
+            }
+
+            // 从Session中获取角色列表，如果不存在则从数据库查询并缓存
+            SaSession session = StpUtil.getSessionByLoginId(loginId);
+            return session.get(ROLE_LIST_KEY, () -> {
+                Long userId = Long.valueOf(String.valueOf(loginId));
+                List<String> roles = permissionRepository.findRolesByUserid(userId);
+
+                log.info("用户 [{}] 加载角色列表: {}", loginId, roles);
+                return roles;
+            });
+        } catch (Exception e) {
+            log.error("获取用户角色列表异常, loginId: {}", loginId, e);
+            return Collections.emptyList();
+        }
     }
 
 }
