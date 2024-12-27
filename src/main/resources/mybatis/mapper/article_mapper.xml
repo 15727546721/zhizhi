@@ -48,10 +48,10 @@
         t.name as tag_name
         FROM article as a
         JOIN user as u ON a.user_id = u.id
-        JOIN article_tag as at ON a.id = at.article_id
-        JOIN tag as t ON at.tag_id = t.id
+        JOIN article_tag_relation as at ON a.id = at.article_id
+        JOIN article_tag as t ON at.tag_id = t.id
         <if test="categoryId != null">
-            JOIN article_category as ac ON a.id = ac.article_id
+            JOIN article_category_relation as ac ON a.id = ac.article_id
             WHERE ac.category_id = #{categoryId}
         </if>
     </select>
@@ -105,10 +105,10 @@
         u.nickname
         FROM
         article AS a
-        JOIN article_category AS ac ON a.id = ac.article_id
-        JOIN category AS c ON ac.category_id = c.id
-        LEFT JOIN article_tag AS at ON a.id = at.article_id
-        LEFT JOIN tag AS t ON at.tag_id = t.id
+        JOIN article_category_relation AS ac ON a.id = ac.article_id
+        JOIN article_category AS c ON ac.category_id = c.id
+        LEFT JOIN article_tag_relation AS at ON a.id = at.article_id
+        LEFT JOIN article_tag AS t ON at.tag_id = t.id
         LEFT JOIN user AS u ON a.user_id = u.id
         <where>
             <if test="title != null and title != ''">
@@ -118,7 +118,7 @@
                 AND ac.category_id = #{categoryId}
             </if>
             <if test="tagId != null">
-                AND EXISTS (SELECT 1 FROM article_tag WHERE article_id = a.id AND tag_id = #{tagId})
+                AND EXISTS (SELECT 1 FROM article_tag_relation WHERE article_id = a.id AND tag_id = #{tagId})
             </if>
         </where>
         GROUP BY a.id, c.name, u.nickname
@@ -158,10 +158,10 @@
                u.avatar                                                     AS author_avatar
         FROM article a
                  LEFT JOIN
-             article_tag at
+             article_tag_relation at
         ON a.id = at.article_id
             LEFT JOIN
-            tag t ON at.tag_id = t.id
+            article_tag t ON at.tag_id = t.id
             LEFT JOIN
             user u ON a.user_id = u.id
         GROUP BY

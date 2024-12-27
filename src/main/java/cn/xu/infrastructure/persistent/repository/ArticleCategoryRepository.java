@@ -2,7 +2,7 @@ package cn.xu.infrastructure.persistent.repository;
 
 import cn.xu.domain.article.repository.IArticleCategoryRepository;
 import cn.xu.infrastructure.persistent.dao.IArticleCategoryDao;
-import cn.xu.infrastructure.persistent.po.ArticleCategory;
+import cn.xu.infrastructure.persistent.po.ArticleCategoryRelation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 
@@ -17,7 +17,7 @@ public class ArticleCategoryRepository implements IArticleCategoryRepository {
     @Override
     public void saveArticleCategory(Long articleId, Long categoryId) {
         log.info("保存文章分类 articleId:{},categoryId:{}", articleId, categoryId);
-        ArticleCategory build = ArticleCategory.builder().articleId(articleId).categoryId(categoryId).build();
+        ArticleCategoryRelation build = ArticleCategoryRelation.builder().articleId(articleId).categoryId(categoryId).build();
         articleCategoryDao.insert(build);
     }
 

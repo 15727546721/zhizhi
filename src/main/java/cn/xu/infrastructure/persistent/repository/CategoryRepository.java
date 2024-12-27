@@ -5,7 +5,7 @@ import cn.xu.domain.article.model.entity.CategoryEntity;
 import cn.xu.domain.article.repository.ICategoryRepository;
 import cn.xu.exception.AppException;
 import cn.xu.infrastructure.persistent.dao.ICategoryDao;
-import cn.xu.infrastructure.persistent.po.Category;
+import cn.xu.infrastructure.persistent.po.ArticleCategory;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 
@@ -24,7 +24,7 @@ public class CategoryRepository implements ICategoryRepository {
     public void save(CategoryEntity category) {
 
         try {
-            categoryDao.insert(Category.builder()
+            categoryDao.insert(ArticleCategory.builder()
                     .id(category.getId())
                     .name(category.getName())
                     .description(category.getDescription())
@@ -37,9 +37,9 @@ public class CategoryRepository implements ICategoryRepository {
 
     @Override
     public List<CategoryEntity> queryCategoryList(int page, int size) {
-        List<Category> categoryList = categoryDao.selectListByPage((page - 1) * size, size);
-        log.info("查询分类列表，返回结果：{}", categoryList);
-        List<CategoryEntity> categoryEntityList = categoryList.stream()
+        List<ArticleCategory> articleCategoryList = categoryDao.selectListByPage((page - 1) * size, size);
+        log.info("查询分类列表，返回结果：{}", articleCategoryList);
+        List<CategoryEntity> categoryEntityList = articleCategoryList.stream()
                 .map(this::convertToCategoryEntity)
                 .collect(Collectors.toList());
 
@@ -49,7 +49,7 @@ public class CategoryRepository implements ICategoryRepository {
     @Override
     public void update(CategoryEntity categoryEntity) {
         try {
-            categoryDao.update(Category.builder()
+            categoryDao.update(ArticleCategory.builder()
                     .id(categoryEntity.getId())
                     .name(categoryEntity.getName())
                     .description(categoryEntity.getDescription())
@@ -72,9 +72,9 @@ public class CategoryRepository implements ICategoryRepository {
 
     @Override
     public List<CategoryEntity> getCategorySelect() {
-        List<Category> categoryList = categoryDao.selectList();
-        log.info("查询分类列表，返回结果：{}", categoryList);
-        List<CategoryEntity> categoryEntityList = categoryList.stream()
+        List<ArticleCategory> articleCategoryList = categoryDao.selectList();
+        log.info("查询分类列表，返回结果：{}", articleCategoryList);
+        List<CategoryEntity> categoryEntityList = articleCategoryList.stream()
                 .map(this::convertToCategoryEntity)
                 .collect(Collectors.toList());
 
@@ -84,33 +84,33 @@ public class CategoryRepository implements ICategoryRepository {
     @Override
     public CategoryEntity getCategoryByArticleId(Long id) {
         log.info("查询文章分类，文章ID：{}", id);
-        Category category = categoryDao.selectByArticleId(id);
-        log.info("查询文章分类，返回结果：{}", category);
-        return convertToCategoryEntity(category);
+        ArticleCategory articleCategory = categoryDao.selectByArticleId(id);
+        log.info("查询文章分类，返回结果：{}", articleCategory);
+        return convertToCategoryEntity(articleCategory);
     }
 
     @Override
     public List<CategoryEntity> getCategoryList() {
 
-        List<Category> categoryList = categoryDao.selectList();
-        log.info("查询分类列表，返回结果：{}", categoryList);
+        List<ArticleCategory> articleCategoryList = categoryDao.selectList();
+        log.info("查询分类列表，返回结果：{}", articleCategoryList);
 
-        return categoryList.stream()
+        return articleCategoryList.stream()
                 .map(this::convertToCategoryEntity)
                 .collect(Collectors.toList());
     }
 
 
-    private CategoryEntity convertToCategoryEntity(Category category) {
-        if (category == null) {
+    private CategoryEntity convertToCategoryEntity(ArticleCategory articleCategory) {
+        if (articleCategory == null) {
             return null;
         }
         CategoryEntity categoryEntity = new CategoryEntity();
-        categoryEntity.setId(category.getId());
-        categoryEntity.setName(category.getName());
-        categoryEntity.setDescription(category.getDescription());
-        categoryEntity.setCreateTime(category.getCreateTime());
-        categoryEntity.setUpdateTime(category.getUpdateTime());
+        categoryEntity.setId(articleCategory.getId());
+        categoryEntity.setName(articleCategory.getName());
+        categoryEntity.setDescription(articleCategory.getDescription());
+        categoryEntity.setCreateTime(articleCategory.getCreateTime());
+        categoryEntity.setUpdateTime(articleCategory.getUpdateTime());
         return categoryEntity;
     }
 }

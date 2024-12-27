@@ -1,7 +1,7 @@
 package cn.xu.domain.article.repository;
 
 import cn.xu.domain.article.model.entity.TagEntity;
-import cn.xu.infrastructure.persistent.po.Tag;
+import cn.xu.infrastructure.persistent.po.ArticleTag;
 
 import java.util.List;
 
@@ -14,7 +14,7 @@ public interface ITagRepository {
 
     void delete(List<Long> idList);
 
-    Tag findById(Long tagId);
+    ArticleTag findById(Long tagId);
 
     List<TagEntity> getTagSelectList();
 

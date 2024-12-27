@@ -6,24 +6,39 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 
-@Builder
+/**
+ * 文章标签表
+ * @TableName article_tag
+ */
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 @Data
 public class ArticleTag implements Serializable {
     /**
-     * 文章标签关联的唯一标识符
+     * 标签ID
      */
     private Long id;
 
     /**
-     * 文章的唯一标识符
+     * 标签名称
      */
-    private Long articleId;
+    private String name;
 
     /**
-     * 标签的唯一标识符
+     * 标签描述
      */
-    private Long tagId;
+    private String description;
+
+    /**
+     * 创建时间
+     */
+    private LocalDateTime createTime;
+
+    /**
+     * 更新时间
+     */
+    private LocalDateTime updateTime;
 }

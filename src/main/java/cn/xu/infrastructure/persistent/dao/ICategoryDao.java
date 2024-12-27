@@ -1,6 +1,6 @@
 package cn.xu.infrastructure.persistent.dao;
 
-import cn.xu.infrastructure.persistent.po.Category;
+import cn.xu.infrastructure.persistent.po.ArticleCategory;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -8,15 +8,15 @@ import java.util.List;
 
 @Mapper
 public interface ICategoryDao {
-    void insert(Category category);
+    void insert(ArticleCategory articleCategory);
 
-    List<Category> selectListByPage(@Param("page") int page, @Param("size") int size);
+    List<ArticleCategory> selectListByPage(@Param("page") int page, @Param("size") int size);
 
-    void update(Category category);
+    void update(ArticleCategory articleCategory);
 
     void delete(@Param("list") List<Long> idList);
 
-    List<Category> selectList();
+    List<ArticleCategory> selectList();
 
-    Category selectByArticleId(@Param("articleId") Long id);
+    ArticleCategory selectByArticleId(@Param("articleId") Long id);
 }

@@ -1,6 +1,6 @@
 package cn.xu.infrastructure.persistent.dao;
 
-import cn.xu.infrastructure.persistent.po.Tag;
+import cn.xu.infrastructure.persistent.po.ArticleTag;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -8,17 +8,17 @@ import java.util.List;
 
 @Mapper
 public interface ITagDao {
-    void insert(Tag tag);
+    void insert(ArticleTag articleTag);
 
-    List<Tag> selectListByPage(@Param("page") int page, @Param("size") int size);
+    List<ArticleTag> selectListByPage(@Param("page") int page, @Param("size") int size);
 
-    void update(Tag tag);
+    void update(ArticleTag articleTag);
 
     void delete(List<Long> idList);
 
-    Tag selectById(@Param("id") Long tagId);
+    ArticleTag selectById(@Param("id") Long tagId);
 
-    List<Tag> selectList();
+    List<ArticleTag> selectList();
 
-    List<Tag> selectByArticleId(@Param("articleId") Long id);
+    List<ArticleTag> selectByArticleId(@Param("articleId") Long id);
 }

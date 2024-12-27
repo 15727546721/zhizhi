@@ -2,49 +2,63 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="cn.xu.infrastructure.persistent.dao.IArticleTagDao">
+<mapper namespace="cn.xu.infrastructure.persistent.dao.ITagDao">
 
     <resultMap id="BaseResultMap" type="cn.xu.infrastructure.persistent.po.ArticleTag">
         <id property="id" column="id" jdbcType="BIGINT"/>
-        <result property="articleId" column="article_id" jdbcType="BIGINT"/>
-        <result property="tagId" column="tag_id" jdbcType="BIGINT"/>
+        <result property="name" column="name" jdbcType="VARCHAR"/>
+        <result property="description" column="description" jdbcType="VARCHAR"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
     </resultMap>
 
     <sql id="Base_Column_List">
         id
-        ,article_id,tag_id
+        ,name,description,
+        create_time,update_time
     </sql>
 
     <insert id="insert" parameterType="cn.xu.infrastructure.persistent.po.ArticleTag">
-        INSERT INTO article_tag (article_id, tag_id)
-        VALUES (#{articleId}, #{tagId})
+        INSERT INTO article_tag (name, description, create_time, update_time)
+        VALUES (#{name}, #{description}, NOW(), NOW())
     </insert>
 
-    <insert id="insertTags" parameterType="java.util.List">
-        INSERT INTO article_tag (article_id, tag_id)
-        VALUES
-        <foreach collection="list" item="tag" separator=",">
-            (#{tag.articleId}, #{tag.tagId})
-        </foreach>
-    </insert>
-    <insert id="insertBatchByList" parameterType="java.util.List">
-        INSERT INTO article_tag (article_id, tag_id)
-        VALUES
-        <foreach collection="list" item="tag" separator=",">
-            (#{tag.articleId}, #{tag.tagId})
-        </foreach>
-    </insert>
+    <update id="update" parameterType="cn.xu.infrastructure.persistent.po.ArticleTag">
+        update article_tag
+        set name        = #{name},
+            description = #{description}
+        where id = #{id}
+    </update>
 
-    <delete id="deleteByArticleIds">
-        DELETE FROM article_tag WHERE article_id IN
-        <foreach collection="articleIds" item="id" open="(" separator="," close=")">
+    <delete id="delete" parameterType="java.util.List">
+        DELETE FROM article_tag
+        WHERE id IN
+        <foreach item="id" collection="list" open="(" close=")" separator=",">
             #{id}
         </foreach>
     </delete>
-    <delete id="deleteByArticleId">
-        DELETE
+
+    <select id="selectListByPage" resultMap="BaseResultMap">
+        SELECT id, name, description, create_time, update_time
+        FROM article_tag LIMIT #{page}, #{size}
+    </select>
+
+    <select id="selectById" resultType="cn.xu.infrastructure.persistent.po.ArticleTag">
+        SELECT id, name, description, create_time, update_time
         FROM article_tag
-        WHERE article_id = #{articleId}
-    </delete>
+        WHERE id = #{id}
+    </select>
+    <select id="selectList" resultType="cn.xu.infrastructure.persistent.po.ArticleTag">
+        SELECT id, name
+        FROM article_tag
+    </select>
+    <select id="selectByArticleId" resultType="cn.xu.infrastructure.persistent.po.ArticleTag">
+        SELECT t.id, t.name
+        FROM article_tag t
+                 INNER JOIN article_tag_relation at
+        ON t.id = at.tag_id
+        WHERE at.article_id = #{articleId}
+    </select>
+
 
 </mapper>

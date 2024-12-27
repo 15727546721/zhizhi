@@ -2,25 +2,54 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="cn.xu.infrastructure.persistent.dao.IArticleCategoryDao">
+<mapper namespace="cn.xu.infrastructure.persistent.dao.ICategoryDao">
 
     <resultMap id="BaseResultMap" type="cn.xu.infrastructure.persistent.po.ArticleCategory">
         <id property="id" column="id" jdbcType="BIGINT"/>
-        <result property="articleId" column="article_id" jdbcType="BIGINT"/>
-        <result property="categoryId" column="category_id" jdbcType="BIGINT"/>
+        <result property="name" column="name" jdbcType="VARCHAR"/>
+        <result property="description" column="description" jdbcType="VARCHAR"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
     </resultMap>
 
     <sql id="Base_Column_List">
         id
-        ,article_id,category_id
+        ,`name`,description,
+        parent_id,created_time,updated_time
     </sql>
+
     <insert id="insert" parameterType="cn.xu.infrastructure.persistent.po.ArticleCategory">
-        INSERT INTO article_category (article_id, category_id)
-        VALUES (#{articleId}, #{categoryId})
+        insert into article_category (name, description, create_time, update_time)
+        values (#{name}, #{description}, now(), now())
     </insert>
-    <delete id="deleteByArticleId">
-        DELETE
-        FROM article_category
-        WHERE article_id = #{articleId}
+    <update id="update" parameterType="cn.xu.infrastructure.persistent.po.ArticleCategory">
+        update article_category
+        set name        = #{name},
+            description = #{description},
+            update_time = now()
+        where id = #{id}
+    </update>
+
+    <delete id="delete" parameterType="java.util.List">
+        DELETE FROM article_category
+        WHERE id IN
+        <foreach item="id" collection="list" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
     </delete>
+
+    <select id="selectListByPage" resultMap="BaseResultMap">
+        select id, name, description, create_time, update_time
+        from article_category limit #{page}, #{size}
+    </select>
+    <select id="selectList" resultType="cn.xu.infrastructure.persistent.po.ArticleCategory">
+        select id, name
+        from article_category
+    </select>
+    <select id="selectByArticleId" resultType="cn.xu.infrastructure.persistent.po.ArticleCategory">
+        select c.id, c.name
+        from article_category c
+                 inner join article_category_relation ac on c.id = ac.category_id
+        where ac.article_id = #{articleId}
+    </select>
 </mapper>

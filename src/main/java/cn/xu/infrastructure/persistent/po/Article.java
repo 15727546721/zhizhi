@@ -7,7 +7,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * 存储文章信息的表
+ * 文章表
  *
  * @TableName article
  */
@@ -18,57 +18,57 @@ import java.time.LocalDateTime;
 @ToString
 public class Article implements Serializable {
     /**
-     * 文章的唯一标识符
+     * 文章ID
      */
     private Long id;
 
     /**
-     * 文章的标题
+     * 文章标题
      */
     private String title;
 
     /**
-     * 文章的简介
+     * 文章简介
      */
     private String description;
 
     /**
-     * 文章的内容
+     * 文章内容
      */
     private String content;
 
     /**
-     * 文章封面图片的URL
+     * 文章封面图片URL
      */
     private String coverUrl;
 
     /**
-     * 文章作者的ID
+     * 作者ID
      */
     private Long userId;
 
     /**
-     * 文章的阅读次数
+     * 阅读次数
      */
     private Long viewCount;
 
     /**
-     * 文章的收藏次数
+     * 收藏次数
      */
     private Long collectCount;
 
     /**
-     * 文章的点赞次数
+     * 点赞次数
      */
     private Long likeCount;
 
     /**
-     * 文章的创建时间
+     * 创建时间
      */
     private LocalDateTime createTime;
 
     /**
-     * 文章的最后更新时间
+     * 文更新时间
      */
     private LocalDateTime updateTime;
 
