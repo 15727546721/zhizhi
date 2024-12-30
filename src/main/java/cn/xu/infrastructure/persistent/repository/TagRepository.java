@@ -117,6 +117,15 @@ public class TagRepository implements ITagRepository {
         return tagEntityList;
     }
 
+    @Override
+    public List<TagEntity> getTagList() {
+        List<ArticleTag> articleTagList = tagDao.selectList();
+        log.info("查询标签列表，返回结果：{}", articleTagList);
+        return articleTagList.stream()
+               .map(this::convertToTagEntity)
+               .collect(Collectors.toList());
+    }
+
     private TagEntity convertToTagEntity(ArticleTag articleTag) {
         if (articleTag == null) {
             return null;
