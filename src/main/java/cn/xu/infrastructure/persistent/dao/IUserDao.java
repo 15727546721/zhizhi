@@ -9,6 +9,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
+import java.util.Set;
 
 @Mapper
 public interface IUserDao {
@@ -41,9 +42,18 @@ public interface IUserDao {
 
     /**
      * 根据邮箱和密码查询用户
+     *
      * @param email
      * @param password
      * @return 用户ID
      */
     UserEntity findUserLoginByEmailAndPassword(@Param("email") String email, @Param("password") String password);
+
+    /**
+     * 根据用户ID集合查询用户列表
+     *
+     * @param userIds
+     * @return 用户列表
+     */
+    List<UserEntity> findUserByIds(@Param("userIds") Set<Long> userIds);
 }

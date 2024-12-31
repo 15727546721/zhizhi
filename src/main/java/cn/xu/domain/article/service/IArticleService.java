@@ -27,6 +27,7 @@ public interface IArticleService {
 
     /**
      * 获取热门文章列表
+     *
      * @param limit 限制数量
      * @return 热门文章列表
      */
@@ -34,6 +35,7 @@ public interface IArticleService {
 
     /**
      * 获取用户点赞的文章列表
+     *
      * @param userId 用户ID
      * @return 文章列表
      */
@@ -41,6 +43,7 @@ public interface IArticleService {
 
     /**
      * 获取文章的点赞用户列表
+     *
      * @param articleId 文章ID
      * @return 用户ID列表
      */
@@ -48,8 +51,9 @@ public interface IArticleService {
 
     /**
      * 获取文章的点赞状态
+     *
      * @param articleId 文章ID
-     * @param userId 用户ID
+     * @param userId    用户ID
      * @return 是否已点赞
      */
     boolean isArticleLiked(Long articleId, Long userId);

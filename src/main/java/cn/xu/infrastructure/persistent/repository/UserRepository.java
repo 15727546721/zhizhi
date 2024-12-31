@@ -21,6 +21,9 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.annotation.Resource;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 
@@ -170,6 +173,16 @@ public class UserRepository implements IUserRepository {
     public UserEntity findUserLoginByEmailAndPassword(String email, String password) {
         return userDao.findUserLoginByEmailAndPassword(email, password);
     }
+
+    @Override
+    public Map<Long, UserEntity> findUserByIds(Set<Long> userIds) {
+        //collect(Collectors.toMap(...))：使用 Collectors.toMap 方法将流中的元素收集到一个 Map 中。
+        //UserEntity::getId：作为 Map 的键（即用户 ID）。
+        //Function.identity()：作为 Map 的值（即原始的 UserEntity 对象）。
+        return userDao.findUserByIds(userIds).stream()
+                .collect(Collectors.toMap(UserEntity::getId, Function.identity()));
+    }
+
 
     private UserEntity convertToUserEntity(User user) {
         return UserEntity.builder()

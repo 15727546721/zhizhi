@@ -19,4 +19,11 @@ public interface ITagRepository {
     List<TagEntity> getTagSelectList();
 
     List<TagEntity> getTagsByArticleId(Long id);
+
+    /**
+     * 获取所有标签
+     *
+     * @return
+     */
+    List<TagEntity> getTagList();
 }

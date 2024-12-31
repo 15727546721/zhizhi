@@ -143,7 +143,26 @@
         WHERE u.id = #{userId}
     </select>
     <select id="findUserLoginByEmailAndPassword" resultType="cn.xu.domain.user.model.entity.UserEntity">
-        select * from user where email = #{email} and password = #{password}
+        select *
+        from user
+        where email = #{email}
+          and password = #{password}
+    </select>
+
+    <select id="findUserByIds" resultType="cn.xu.domain.user.model.entity.UserEntity">
+        SELECT * FROM user
+        WHERE
+        <choose>
+            <when test="userIds != null and userIds.size() > 0">
+                id IN
+                <foreach collection="userIds" item="userId" open="(" separator="," close=")">
+                    #{userId}
+                </foreach>
+            </when>
+            <otherwise>
+                1=0 <!-- 这是一个确保不返回任何结果的方式 -->
+            </otherwise>
+        </choose>
     </select>
 
 </mapper>

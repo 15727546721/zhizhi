@@ -8,6 +8,8 @@ import cn.xu.domain.user.model.entity.UserRoleEntity;
 import cn.xu.domain.user.model.valobj.LoginFormVO;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public interface IUserRepository {
 
@@ -80,4 +82,12 @@ public interface IUserRepository {
     void register(RegisterRequest registerRequest);
 
     UserEntity findUserLoginByEmailAndPassword(String email, String password);
+
+    /**
+     * 根据用户id集合查询用户集合
+     *
+     * @param userIds
+     * @return
+     */
+    Map<Long, UserEntity> findUserByIds(Set<Long> userIds);
 }

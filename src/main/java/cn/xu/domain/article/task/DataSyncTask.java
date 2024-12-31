@@ -1,6 +1,5 @@
 package cn.xu.domain.article.task;
 
-import cn.xu.domain.article.event.ArticleEvent;
 import cn.xu.domain.article.repository.IArticleRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.Cursor;
@@ -33,7 +32,7 @@ public class DataSyncTask {
     @Scheduled(fixedRate = 5000) // 每5秒执行一次
     public void syncDataToDatabase() {
         String syncLockKey = "article:sync:lock";
-        
+
         // 尝试获取同步锁
         Boolean acquired = redisTemplate.opsForValue().setIfAbsent(syncLockKey, "1", SYNC_LOCK_TIMEOUT, TimeUnit.SECONDS);
         if (Boolean.FALSE.equals(acquired)) {
@@ -66,7 +65,7 @@ public class DataSyncTask {
                 // 批量更新数据库
                 articleRepository.batchUpdateArticleLikeCount(likeCounts);
                 log.info("同步{}篇文章的点赞数到数据库", likeCounts.size());
-                
+
                 // 删除已同步的计数器
                 redisTemplate.delete(keys);
             }

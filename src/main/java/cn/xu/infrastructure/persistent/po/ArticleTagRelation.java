@@ -9,6 +9,7 @@ import java.io.Serializable;
 
 /**
  * 存储文章与标签之间的多对多关系
+ *
  * @TableName article_tag_relation
  */
 @Builder

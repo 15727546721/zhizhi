@@ -45,4 +45,9 @@ public class TagService implements ITagService {
 
         return tagRepository.getTagsByArticleId(id);
     }
+
+    @Override
+    public List<TagEntity> getTagList() {
+        return tagRepository.getTagList();
+    }
 }
