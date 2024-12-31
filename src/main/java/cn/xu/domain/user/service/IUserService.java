@@ -8,6 +8,8 @@ import cn.xu.domain.user.model.entity.UserInfoEntity;
 import cn.xu.domain.user.model.entity.UserRoleEntity;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public interface IUserService {
     List<UserEntity> queryUserList(int page, int size);
@@ -31,4 +33,11 @@ public interface IUserService {
     void register(RegisterRequest registerRequest);
 
     UserEntity login(LoginRequest loginRequest);
+
+    /**
+     * 批量获取用户信息
+     * @param userIds
+     * @return
+     */
+    Map<Long, UserEntity> getBatchUserInfo(Set<Long> userIds);
 }

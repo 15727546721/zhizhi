@@ -17,6 +17,8 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Slf4j
 @Service
@@ -92,5 +94,13 @@ public class UserService implements IUserService {
             StpUtil.login(user.getId());
         }
         return user;
+    }
+
+    @Override
+    public Map<Long, UserEntity> getBatchUserInfo(Set<Long> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return null;
+        }
+        return userRepository.findUserByIds(userIds);
     }
 }
