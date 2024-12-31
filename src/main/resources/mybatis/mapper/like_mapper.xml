@@ -4,11 +4,11 @@
 
     <!-- 插入点赞记录 -->
     <insert id="insertArticleLikeRecord">
-        INSERT INTO `like` (user_id, target_id, type, value, created_time, updated_time)
+        INSERT INTO `like` (user_id, target_id, type, value, create_time, update_time)
         VALUES (#{userId}, #{articleId}, #{type}, #{value}, NOW(), NOW()) ON DUPLICATE KEY
         UPDATE
             value = #{value},
-            updated_time = NOW()
+            update_time = NOW()
     </insert>
 
     <!-- 批量更新文章点赞数 -->
@@ -16,7 +16,7 @@
         <foreach collection="likeCounts" item="count" index="articleId" separator=";">
             UPDATE article
             SET like_count = #{count},
-            updated_time = NOW()
+            update_time = NOW()
             WHERE id = #{articleId}
         </foreach>
     </update>
@@ -28,7 +28,7 @@
         WHERE user_id = #{userId}
           AND type = 1
           AND value = 1
-        ORDER BY created_time DESC
+        ORDER BY create_time DESC
     </select>
 
     <!-- 获取文章的点赞用户列表 -->
@@ -38,7 +38,7 @@
         WHERE target_id = #{articleId}
           AND type = 1
           AND value = 1
-        ORDER BY created_time DESC
+        ORDER BY create_time DESC
     </select>
 
     <!-- 获取热门文章列表 -->

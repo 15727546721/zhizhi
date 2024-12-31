@@ -13,7 +13,6 @@ import cn.xu.domain.article.service.IArticleService;
 import cn.xu.domain.file.service.MinioService;
 import cn.xu.exception.AppException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
@@ -34,7 +33,6 @@ public class ArticleService implements IArticleService {
     private MinioService minioService; // minio客户端
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
     public Long createArticle(ArticleEntity articleEntity) {
         // 保存逻辑
         return articleRepository.save(articleEntity);

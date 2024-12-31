@@ -33,12 +33,12 @@ public class Like implements Serializable {
     /**
      * 点赞时间
      */
-    private Date createdTime;
+    private Date createTime;
 
     /**
      * 更新点赞时间
      */
-    private Date updatedTime;
+    private Date updateTime;
 
     /**
      * 是否点赞，1-点赞，0-取消点赞

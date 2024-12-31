@@ -15,7 +15,7 @@
     <sql id="Base_Column_List">
         id
         ,`name`,description,
-        parent_id,created_time,updated_time
+        parent_id,create_time,update_time
     </sql>
 
     <insert id="insert" parameterType="cn.xu.infrastructure.persistent.po.ArticleCategory">

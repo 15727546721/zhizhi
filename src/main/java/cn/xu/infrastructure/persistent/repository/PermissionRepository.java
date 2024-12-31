@@ -215,7 +215,7 @@ public class PermissionRepository implements IPermissionRepository {
                 .sort(menu.getSort())
                 .icon(menu.getIcon())
                 .type(menu.getType())
-                .createdTime(menu.getCreatedTime())
+                .createTime(menu.getCreateTime())
                 .updateTime(menu.getUpdateTime())
                 .redirect(menu.getRedirect())
                 .name(menu.getName())

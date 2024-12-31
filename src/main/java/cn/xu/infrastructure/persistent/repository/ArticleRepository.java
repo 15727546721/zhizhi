@@ -119,18 +119,8 @@ public class ArticleRepository implements IArticleRepository {
                 .description(article.getDescription())
                 .content(article.getContent())
                 .coverUrl(article.getCoverUrl())
+                .userId(article.getUserId())
                 .build();
     }
 
-    private List<ArticleEntity> convert(List<Article> articles) {
-        return articles.stream()
-                .map(article -> ArticleEntity.builder()
-                        .id(article.getId())
-                        .title(article.getTitle())
-                        .description(article.getDescription())
-                        .content(article.getContent())
-                        .coverUrl(article.getCoverUrl())
-                        .build())
-                .collect(Collectors.toList());
-    }
 }

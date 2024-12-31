@@ -77,8 +77,8 @@
                nickname,
                avatar,
                status,
-               created_time,
-               updated_time
+               create_time,
+               update_time
         from user
         where id = #{userId}
     </select>
