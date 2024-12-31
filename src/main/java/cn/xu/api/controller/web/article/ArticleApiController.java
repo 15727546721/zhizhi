@@ -7,11 +7,16 @@ import cn.xu.common.ResponseEntity;
 import cn.xu.domain.article.event.ArticleEvent;
 import cn.xu.domain.article.event.ArticleEventPublisher;
 import cn.xu.domain.article.model.entity.ArticleEntity;
+import cn.xu.domain.article.service.IArticleCategoryService;
 import cn.xu.domain.article.service.IArticleService;
+import cn.xu.domain.article.service.IArticleTagService;
+import cn.xu.domain.article.service.ITagService;
+import cn.xu.exception.AppException;
 import cn.xu.infrastructure.redis.IRedisService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -25,6 +30,14 @@ public class ArticleApiController {
 
     @Resource
     private IArticleService articleService;
+    @Resource
+    private IArticleCategoryService articleCategoryService;
+    @Resource
+    private IArticleTagService articleTagService;
+    @Resource
+    private ITagService tagService;
+    @Resource
+    private TransactionTemplate transactionTemplate;
     @Resource
     private ArticleEventPublisher articleEventPublisher;
     @Resource
@@ -52,6 +65,48 @@ public class ArticleApiController {
         return ResponseEntity.<ArticleEntity>builder()
                 .code(Constants.ResponseCode.SUCCESS.getCode())
                 .data(articleById)
+                .build();
+    }
+
+    @PostMapping("/publish")
+    @Operation(summary = "发布文章")
+    public ResponseEntity pushArticle(@RequestBody PublishArticleRequest publishArticleRequest) {
+        log.info("发布文章，文章内容：{}", publishArticleRequest);
+        Long userId = StpUtil.getLoginIdAsLong();
+        transactionTemplate.execute(status -> {
+            // 事务开始
+            try {
+                //1. 保存文章
+                Long articleId = articleService.createArticle(ArticleEntity.builder()
+                        .title(publishArticleRequest.getTitle())
+                        .coverUrl(publishArticleRequest.getCoverUrl())
+                        .content(publishArticleRequest.getContent())
+                        .description(publishArticleRequest.getDescription())
+                        .userId(userId) // 当前登录用户ID
+                        .build());
+                //2. 保存文章分类
+                articleCategoryService.saveArticleCategory(articleId, publishArticleRequest.getCategoryId());
+                //3. 保存文章标签
+                if (publishArticleRequest.getTagIds() == null || publishArticleRequest.getTagIds().isEmpty()) {
+                    throw new AppException(Constants.ResponseCode.NULL_PARAMETER.getCode(), "标签不能为空");
+                }
+                if (publishArticleRequest.getTagIds().size() > 3) {
+                    throw new AppException(Constants.ResponseCode.ILLEGAL_PARAMETER.getCode(), "标签不能超过3个");
+                }
+                articleTagService.saveArticleTag(articleId, publishArticleRequest.getTagIds());
+                // 事务提交
+                return 1;
+            } catch (Exception e) {
+                // 事务回滚
+                status.setRollbackOnly();
+                log.error("文章发布失败", e);
+                throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "文章发布失败");
+            }
+        });
+        log.info("文章发布成功");
+        return ResponseEntity.builder()
+                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .info("文章发布成功")
                 .build();
     }
 
