@@ -12,11 +12,7 @@ import cn.xu.infrastructure.redis.IRedisService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import java.util.List;
@@ -64,38 +60,38 @@ public class ArticleApiController {
     @SaCheckLogin
     public ResponseEntity likeArticle(Long id, boolean isLike) {
         log.info("点赞文章，文章ID：{}, 点赞状态：{}", id, isLike);
-        
+
         // 构建点赞记录key
         String likeKey = String.format("article:like:%d:users", id);
         Long userId = StpUtil.getLoginIdAsLong();
-        
+
         // 检查是否已经点赞
         boolean hasLiked = redisService.isSetMember(likeKey, String.valueOf(userId));
-        
+
         if (isLike && hasLiked) {
             return ResponseEntity.builder()
                     .code(Constants.ResponseCode.UN_ERROR.getCode())
                     .info("您已经点赞过该文章")
                     .build();
         }
-        
+
         if (!isLike && !hasLiked) {
             return ResponseEntity.builder()
                     .code(Constants.ResponseCode.UN_ERROR.getCode())
                     .info("您还没有点赞过该文章")
                     .build();
         }
-        
+
         // 更新点赞集合
         if (isLike) {
             redisService.addToSet(likeKey, String.valueOf(userId));
         } else {
             redisService.removeFromSet(likeKey, String.valueOf(userId));
         }
-        
+
         // 发布点赞事件
         articleEventPublisher.publishEvent(id, ArticleEvent.EventType.LIKE, isLike);
-        
+
         return ResponseEntity.builder()
                 .code(Constants.ResponseCode.SUCCESS.getCode())
                 .info(isLike ? "点赞成功" : "取消点赞成功")

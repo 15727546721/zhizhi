@@ -33,6 +33,7 @@ public class CommentApiController {
                 .code(Constants.ResponseCode.SUCCESS.getCode())
                 .build();
     }
+
     @Operation(summary = "回复评论")
     @PostMapping("/reply")
     public ResponseEntity replyComment(@RequestBody CommentRequest comment) {
@@ -42,6 +43,7 @@ public class CommentApiController {
                 .code(Constants.ResponseCode.SUCCESS.getCode())
                 .build();
     }
+
     @Operation(summary = "获取文章评论列表")
     @GetMapping("/getArticleComments/{articleId}")
     public ResponseEntity<List<CommentListDTO>> getArticleComments(@PathVariable("articleId") Long articleId) {
@@ -62,6 +64,7 @@ public class CommentApiController {
                 .code(Constants.ResponseCode.SUCCESS.getCode())
                 .build();
     }
+
     private List<CommentListDTO> convertToDTO(List<CommentEntity> commentEntities, Map<Long, UserEntity> userInfoMap) {
         if (commentEntities == null || commentEntities.isEmpty() || userInfoMap == null || userInfoMap.isEmpty()) {
             return Collections.emptyList();

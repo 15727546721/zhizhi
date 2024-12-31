@@ -1,6 +1,5 @@
 package cn.xu.domain.comment.service.comment;
 
-import cn.xu.api.controller.web.comment.CommentListDTO;
 import cn.xu.api.controller.web.comment.CommentRequest;
 import cn.xu.domain.comment.model.CommentEntity;
 import cn.xu.domain.comment.repository.ICommentRepository;
@@ -18,6 +17,7 @@ public class CommentService implements ICommentService {
 
     @Resource
     private ICommentRepository commentRepository;
+
     @Override
     public void addComment(CommentRequest comment) {
         commentRepository.addComment(comment);

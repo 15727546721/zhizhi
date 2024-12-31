@@ -42,6 +42,7 @@ public interface IUserDao {
 
     /**
      * 根据邮箱和密码查询用户
+     *
      * @param email
      * @param password
      * @return 用户ID
@@ -50,6 +51,7 @@ public interface IUserDao {
 
     /**
      * 根据用户ID集合查询用户列表
+     *
      * @param userIds
      * @return 用户列表
      */

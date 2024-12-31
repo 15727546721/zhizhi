@@ -19,6 +19,7 @@ public class TagApiController {
 
     @Resource
     private TagService tagService;
+
     @GetMapping("/list")
     public ResponseEntity getTagList() {
         List<TagEntity> tagEntityList = tagService.getTagList();

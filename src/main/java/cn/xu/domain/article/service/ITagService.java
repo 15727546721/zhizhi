@@ -19,6 +19,7 @@ public interface ITagService {
 
     /**
      * 获取所有标签
+     *
      * @return
      */
     List<TagEntity> getTagList();

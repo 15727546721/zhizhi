@@ -1,6 +1,5 @@
 package cn.xu.domain.comment.service;
 
-import cn.xu.api.controller.web.comment.CommentListDTO;
 import cn.xu.api.controller.web.comment.CommentRequest;
 import cn.xu.domain.comment.model.CommentEntity;
 

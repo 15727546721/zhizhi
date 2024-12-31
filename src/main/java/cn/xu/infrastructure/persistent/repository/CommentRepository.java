@@ -15,6 +15,7 @@ import java.util.List;
 public class CommentRepository implements ICommentRepository {
     @Resource
     private ICommentDao commentDao;
+
     @Override
     public void addComment(CommentRequest comment) {
         log.info("添加评论: " + comment);

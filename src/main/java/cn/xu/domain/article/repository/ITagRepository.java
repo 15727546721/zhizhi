@@ -22,6 +22,7 @@ public interface ITagRepository {
 
     /**
      * 获取所有标签
+     *
      * @return
      */
     List<TagEntity> getTagList();

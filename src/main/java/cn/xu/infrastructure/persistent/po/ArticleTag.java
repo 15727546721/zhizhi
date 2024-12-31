@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 
 /**
  * 文章标签表
+ *
  * @TableName article_tag
  */
 @AllArgsConstructor

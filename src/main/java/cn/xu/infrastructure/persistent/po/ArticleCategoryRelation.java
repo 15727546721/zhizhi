@@ -9,6 +9,7 @@ import java.io.Serializable;
 
 /**
  * 文章分类关系表
+ *
  * @TableName article_category_relation
  */
 @Builder

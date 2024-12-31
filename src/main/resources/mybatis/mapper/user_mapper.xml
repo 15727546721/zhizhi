@@ -143,7 +143,10 @@
         WHERE u.id = #{userId}
     </select>
     <select id="findUserLoginByEmailAndPassword" resultType="cn.xu.domain.user.model.entity.UserEntity">
-        select * from user where email = #{email} and password = #{password}
+        select *
+        from user
+        where email = #{email}
+          and password = #{password}
     </select>
 
     <select id="findUserByIds" resultType="cn.xu.domain.user.model.entity.UserEntity">

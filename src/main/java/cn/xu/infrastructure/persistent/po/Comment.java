@@ -7,6 +7,7 @@ import java.util.Date;
 
 /**
  * 评论表，用于存储用户评论及其相关信息
+ *
  * @TableName comment
  */
 @Data

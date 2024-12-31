@@ -5,52 +5,56 @@
 <mapper namespace="cn.xu.infrastructure.persistent.dao.ICommentDao">
 
     <resultMap id="BaseResultMap" type="cn.xu.infrastructure.persistent.po.Comment">
-            <id property="id" column="id" jdbcType="BIGINT"/>
-            <result property="type" column="type" jdbcType="INTEGER"/>
-            <result property="targetId" column="target_id" jdbcType="BIGINT"/>
-            <result property="parentId" column="parent_id" jdbcType="BIGINT"/>
-            <result property="userId" column="user_id" jdbcType="BIGINT"/>
-            <result property="replyToUserId" column="reply_to_user_id" jdbcType="BIGINT"/>
-            <result property="content" column="content" jdbcType="VARCHAR"/>
-            <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
-            <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+        <id property="id" column="id" jdbcType="BIGINT"/>
+        <result property="type" column="type" jdbcType="INTEGER"/>
+        <result property="targetId" column="target_id" jdbcType="BIGINT"/>
+        <result property="parentId" column="parent_id" jdbcType="BIGINT"/>
+        <result property="userId" column="user_id" jdbcType="BIGINT"/>
+        <result property="replyToUserId" column="reply_to_user_id" jdbcType="BIGINT"/>
+        <result property="content" column="content" jdbcType="VARCHAR"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
     </resultMap>
 
     <resultMap id="CommentResultMap" type="cn.xu.domain.comment.model.CommentEntity">
-        <id column="id" property="id" />
-        <result column="user_id" property="userId" />
-        <result column="content" property="content" />
-        <result column="parent_id" property="parentId" />
-        <result column="reply_to_user_id" property="replyToUserId" />
-        <result column="create_time" property="createTime" />
-        <result column="update_time" property="updateTime" />
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="content" property="content"/>
+        <result column="parent_id" property="parentId"/>
+        <result column="reply_to_user_id" property="replyToUserId"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
         <!-- 注意：这里没有映射 children 属性，因为它需要在服务层进行构建 -->
     </resultMap>
 
 
     <sql id="Base_Column_List">
-        id,type,target_id,
+        id
+        ,type,target_id,
         parent_id,user_id,reply_to_user_id,
         content,create_time,update_time
     </sql>
     <insert id="addComment" parameterType="cn.xu.api.controller.web.comment.CommentRequest">
-        INSERT INTO comment (
-            type,target_id,user_id,content,create_time,update_time
-        ) VALUES (
-            #{type},#{targetId},#{userId},#{content},now(),now()
-        )
+        INSERT INTO comment (type, target_id, user_id, content, create_time, update_time)
+        VALUES (#{type}, #{targetId}, #{userId}, #{content}, now(), now())
     </insert>
     <insert id="replyComment">
-        INSERT INTO comment (
-            type,target_id,user_id,reply_to_user_id,content,parent_id,create_time,update_time
-        ) VALUES (
-            #{type},#{targetId},#{userId},#{replyToUserId},#{content},#{parentId},now(),now()
-        )
+        INSERT INTO comment (type, target_id, user_id, reply_to_user_id, content, parent_id, create_time, update_time)
+        VALUES (#{type}, #{targetId}, #{userId}, #{replyToUserId}, #{content}, #{parentId}, now(), now())
     </insert>
     <select id="getArticleComments" resultMap="CommentResultMap">
-        SELECT id,type,target_id,parent_id,user_id,reply_to_user_id,content,create_time,update_time
+        SELECT id,
+               type,
+               target_id,
+               parent_id,
+               user_id,
+               reply_to_user_id,
+               content,
+               create_time,
+               update_time
         FROM comment
-        WHERE target_id = #{articleId} AND type = 1
+        WHERE target_id = #{articleId}
+          AND type = 1
         ORDER BY create_time DESC
     </select>
 </mapper>

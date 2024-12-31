@@ -36,6 +36,7 @@ public interface IUserService {
 
     /**
      * 批量获取用户信息
+     *
      * @param userIds
      * @return
      */

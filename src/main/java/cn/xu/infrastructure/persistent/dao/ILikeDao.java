@@ -10,24 +10,27 @@ import java.util.Map;
 public interface ILikeDao {
     /**
      * 插入文章点赞记录
+     *
      * @param articleId 文章id
-     * @param userId 用户id
-     * @param value 点赞值(1点赞，0取消点赞)
-     * @param type 点赞类型-1文章
+     * @param userId    用户id
+     * @param value     点赞值(1点赞，0取消点赞)
+     * @param type      点赞类型-1文章
      */
-    void insertArticleLikeRecord(@Param("articleId") Long articleId, 
-                               @Param("userId") Long userId, 
-                               @Param("value") int value, 
-                               @Param("type") int type);
+    void insertArticleLikeRecord(@Param("articleId") Long articleId,
+                                 @Param("userId") Long userId,
+                                 @Param("value") int value,
+                                 @Param("type") int type);
 
     /**
      * 批量更新文章点赞数
+     *
      * @param likeCounts 点赞数Map
      */
     void batchUpdateArticleLikeCount(@Param("likeCounts") Map<Long, Long> likeCounts);
 
     /**
      * 获取用户点赞的文章列表
+     *
      * @param userId 用户ID
      * @return 文章ID列表
      */
@@ -35,6 +38,7 @@ public interface ILikeDao {
 
     /**
      * 获取文章的点赞用户列表
+     *
      * @param articleId 文章ID
      * @return 用户ID列表
      */
@@ -42,6 +46,7 @@ public interface ILikeDao {
 
     /**
      * 获取热门文章ID列表（按点赞数排序）
+     *
      * @param limit 限制数量
      * @return 文章ID列表
      */

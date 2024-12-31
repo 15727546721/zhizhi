@@ -23,6 +23,7 @@ public interface IMenuDao {
 
     /**
      * 根据用户id获取用户的菜单id列表
+     *
      * @param userId 用户id
      * @return 菜单id列表
      */
@@ -30,6 +31,7 @@ public interface IMenuDao {
 
     /**
      * 根据菜单id列表获取菜单列表
+     *
      * @param menuIds
      * @return
      */
@@ -37,6 +39,7 @@ public interface IMenuDao {
 
     /**
      * 根据用户id获取用户的菜单权限
+     *
      * @param userId 用户id
      * @return 菜单权限列表
      */

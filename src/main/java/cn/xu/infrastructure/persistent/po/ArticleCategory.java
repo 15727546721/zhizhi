@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 
 /**
  * 存储文章分类信息的表
+ *
  * @TableName article_category
  */
 @AllArgsConstructor

@@ -47,6 +47,7 @@ public interface IPermissionRepository {
 
     /**
      * 根据用户ID获取用户的权限列表
+     *
      * @param userId
      * @return
      */
