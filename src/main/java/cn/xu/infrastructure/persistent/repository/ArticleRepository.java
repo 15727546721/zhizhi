@@ -120,6 +120,11 @@ public class ArticleRepository implements IArticleRepository {
                 .content(article.getContent())
                 .coverUrl(article.getCoverUrl())
                 .userId(article.getUserId())
+                .createTime(article.getCreateTime())
+                .updateTime(article.getUpdateTime())
+                .viewCount(article.getViewCount())
+                .likeCount(article.getLikeCount())
+                .collectCount(article.getCollectCount())
                 .build();
     }
 

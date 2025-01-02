@@ -16,7 +16,7 @@ public interface IUserDao {
 
     LoginFormVO selectUserByUserName(@Param("username") String username);
 
-    UserEntity selectUserById(@Param("userId") Long userId);
+    User selectUserById(@Param("userId") Long userId);
 
     UserInfoEntity selectUserInfoById(@Param("userId") Long userId);
 
