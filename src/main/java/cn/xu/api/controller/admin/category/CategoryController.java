@@ -2,10 +2,10 @@ package cn.xu.api.controller.admin.category;
 
 import cn.xu.api.dto.article.CategoryRequest;
 import cn.xu.api.dto.common.PageRequest;
-import cn.xu.common.Constants;
 import cn.xu.common.ResponseEntity;
 import cn.xu.domain.article.model.entity.CategoryEntity;
 import cn.xu.domain.article.service.ICategoryService;
+import cn.xu.infrastructure.common.ResponseCode;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.ObjectUtils;
@@ -28,8 +28,8 @@ public class CategoryController {
 
         if (ObjectUtils.isEmpty(categoryRequest)) {
             return ResponseEntity.builder()
-                    .code(Constants.ResponseCode.NULL_PARAMETER.getCode())
-                    .info(Constants.ResponseCode.NULL_PARAMETER.getInfo())
+                    .code(ResponseCode.NULL_PARAMETER.getCode())
+                    .info(ResponseCode.NULL_PARAMETER.getMessage())
                     .build();
         }
         CategoryEntity categoryEntity = CategoryEntity.builder()
@@ -38,7 +38,7 @@ public class CategoryController {
                 .build();
         categoryService.save(categoryEntity);
         return ResponseEntity.builder()
-                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .code(ResponseCode.SUCCESS.getCode())
                 .info("保存分类成功")
                 .build();
     }
@@ -50,7 +50,7 @@ public class CategoryController {
         log.info("查询分类列表: page={}, size={}", page, size);
         List<CategoryEntity> categoryEntity = categoryService.queryCategoryList(page, size);
         return ResponseEntity.<List<CategoryEntity>>builder()
-                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .code(ResponseCode.SUCCESS.getCode())
                 .info("查询分类列表成功")
                 .data(categoryEntity)
                 .build();
@@ -61,7 +61,7 @@ public class CategoryController {
         log.info("获取分类下拉列表");
         List<CategoryEntity> categoryEntity = categoryService.getCategorySelect();
         return ResponseEntity.<List<CategoryEntity>>builder()
-                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .code(ResponseCode.SUCCESS.getCode())
                 .info("查询分类列表成功")
                 .data(categoryEntity)
                 .build();
@@ -71,8 +71,8 @@ public class CategoryController {
     public ResponseEntity updateCategory(@RequestBody CategoryRequest categoryRequest) {
         if (ObjectUtils.isEmpty(categoryRequest)) {
             return ResponseEntity.builder()
-                    .code(Constants.ResponseCode.NULL_PARAMETER.getCode())
-                    .info(Constants.ResponseCode.NULL_PARAMETER.getInfo())
+                    .code(ResponseCode.NULL_PARAMETER.getCode())
+                    .info(ResponseCode.NULL_PARAMETER.getMessage())
                     .build();
         }
         CategoryEntity categoryEntity = CategoryEntity.builder()
@@ -82,7 +82,7 @@ public class CategoryController {
                 .build();
         categoryService.update(categoryEntity);
         return ResponseEntity.builder()
-                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .code(ResponseCode.SUCCESS.getCode())
                 .info("更新分类成功")
                 .build();
     }
@@ -91,13 +91,13 @@ public class CategoryController {
     public ResponseEntity deleteCategory(@RequestBody List<Long> idList) {
         if (idList.isEmpty()) {
             return ResponseEntity.builder()
-                    .code(Constants.ResponseCode.NULL_PARAMETER.getCode())
-                    .info(Constants.ResponseCode.NULL_PARAMETER.getInfo())
+                    .code(ResponseCode.NULL_PARAMETER.getCode())
+                    .info(ResponseCode.NULL_PARAMETER.getMessage())
                     .build();
         }
         categoryService.delete(idList);
         return ResponseEntity.builder()
-                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .code(ResponseCode.SUCCESS.getCode())
                 .info("删除分类成功")
                 .build();
     }

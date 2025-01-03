@@ -6,13 +6,13 @@ import cn.xu.api.dto.article.ArticlePageResponse;
 import cn.xu.api.dto.article.ArticleRequest;
 import cn.xu.api.dto.article.CreateArticleRequest;
 import cn.xu.api.dto.common.PageResponse;
-import cn.xu.common.Constants;
 import cn.xu.common.ResponseEntity;
 import cn.xu.domain.article.model.entity.ArticleEntity;
 import cn.xu.domain.article.model.entity.CategoryEntity;
 import cn.xu.domain.article.model.entity.TagEntity;
 import cn.xu.domain.article.service.*;
 import cn.xu.exception.AppException;
+import cn.xu.infrastructure.common.ResponseCode;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -47,7 +47,7 @@ public class ArticleController {
         String coverUrl = articleService.uploadCover(file);
         return ResponseEntity.<String>builder()
                 .data(coverUrl)
-                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .code(ResponseCode.SUCCESS.getCode())
                 .info("上传封面成功")
                 .build();
     }
@@ -70,10 +70,10 @@ public class ArticleController {
                 articleCategoryService.saveArticleCategory(articleId, createArticleRequest.getCategoryId());
                 //3. 保存文章标签
                 if (createArticleRequest.getTagIds() == null || createArticleRequest.getTagIds().isEmpty()) {
-                    throw new AppException(Constants.ResponseCode.NULL_PARAMETER.getCode(), "标签不能为空");
+                    throw new AppException(ResponseCode.NULL_PARAMETER.getCode(), "标签不能为空");
                 }
                 if (createArticleRequest.getTagIds().size() > 3) {
-                    throw new AppException(Constants.ResponseCode.ILLEGAL_PARAMETER.getCode(), "标签不能超过3个");
+                    throw new AppException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "标签不能超过3个");
                 }
                 articleTagService.saveArticleTag(articleId, createArticleRequest.getTagIds());
                 // 事务提交
@@ -82,11 +82,11 @@ public class ArticleController {
                 // 事务回滚
                 status.setRollbackOnly();
                 log.error("文章创建失败", e);
-                throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "文章创建失败");
+                throw new AppException(ResponseCode.UN_ERROR.getCode(), "文章创建失败");
             }
         });
         return ResponseEntity.builder()
-                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .code(ResponseCode.SUCCESS.getCode())
                 .info("文章创建成功")
                 .build();
     }
@@ -110,10 +110,10 @@ public class ArticleController {
                 articleCategoryService.updateArticleCategory(createArticleRequest.getId(), createArticleRequest.getCategoryId());
                 //3. 更新文章标签
                 if (createArticleRequest.getTagIds() == null || createArticleRequest.getTagIds().isEmpty()) {
-                    throw new AppException(Constants.ResponseCode.NULL_PARAMETER.getCode(), "标签不能为空");
+                    throw new AppException(ResponseCode.NULL_PARAMETER.getCode(), "标签不能为空");
                 }
                 if (createArticleRequest.getTagIds().size() > 3) {
-                    throw new AppException(Constants.ResponseCode.ILLEGAL_PARAMETER.getCode(), "标签不能超过3个");
+                    throw new AppException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "标签不能超过3个");
                 }
                 articleTagService.updateArticleTag(createArticleRequest.getId(), createArticleRequest.getTagIds());
                 return 1;
@@ -121,11 +121,11 @@ public class ArticleController {
                 // 事务回滚
                 status.setRollbackOnly();
                 log.error("文章更新失败", e);
-                throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "文章更新失败");
+                throw new AppException(ResponseCode.UN_ERROR.getCode(), "文章更新失败");
             }
         });
         return ResponseEntity.builder()
-                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .code(ResponseCode.SUCCESS.getCode())
                 .info("文章更新成功")
                 .build();
     }
@@ -134,7 +134,7 @@ public class ArticleController {
     public ResponseEntity deleteArticles(@RequestBody List<Long> articleIds) {
         articleService.deleteArticles(articleIds);
         return ResponseEntity.builder()
-                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .code(ResponseCode.SUCCESS.getCode())
                 .info("文章批量删除成功")
                 .build();
     }
@@ -153,7 +153,7 @@ public class ArticleController {
 
         return ResponseEntity.<PageResponse>builder()
                 .data(articles)
-                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .code(ResponseCode.SUCCESS.getCode())
                 .info("文章列表获取成功")
                 .build();
     }
@@ -168,7 +168,7 @@ public class ArticleController {
     public ResponseEntity<ArticleDetailsResponse> getArticle(@PathVariable("id") Long id) {
         log.info("文章详情获取参数: id={}", id);
         if (id == null) {
-            throw new AppException(Constants.ResponseCode.NULL_PARAMETER.getCode(), "文章ID不能为空");
+            throw new AppException(ResponseCode.NULL_PARAMETER.getCode(), "文章ID不能为空");
         }
         ArticleEntity article = articleService.getArticleById(id);
         CategoryEntity category = categoryService.getCategoryByArticleId(id);
@@ -184,7 +184,7 @@ public class ArticleController {
         log.info("文章详情获取结果: {}", response);
         return ResponseEntity.<ArticleDetailsResponse>builder()
                 .data(response)
-                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .code(ResponseCode.SUCCESS.getCode())
                 .info("文章获取成功")
                 .build();
     }

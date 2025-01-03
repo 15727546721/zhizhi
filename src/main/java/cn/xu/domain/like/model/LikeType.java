@@ -7,22 +7,22 @@ import lombok.Getter;
  */
 @Getter
 public enum LikeType {
-    
+
     ARTICLE(1, "文章", true),
     COMMENT(2, "评论", true),
     TOPIC(3, "话题", true),
     USER(4, "用户", false);  // 用户点赞暂不开放
-    
+
     private final int code;
     private final String description;
     private final boolean enabled;
-    
+
     LikeType(int code, String description, boolean enabled) {
         this.code = code;
         this.description = description;
         this.enabled = enabled;
     }
-    
+
     /**
      * 检查点赞类型是否可用
      */
@@ -31,7 +31,7 @@ public enum LikeType {
             throw new IllegalStateException(this.description + "点赞功能暂未开放");
         }
     }
-    
+
     /**
      * 获取点赞数上限
      */
@@ -47,7 +47,7 @@ public enum LikeType {
                 return 10_000L;     // 其他类型默认1万赞
         }
     }
-    
+
     /**
      * 检查点赞数是否超出限制
      */
@@ -56,14 +56,14 @@ public enum LikeType {
             throw new IllegalStateException(this.description + "点赞数已达到上限");
         }
     }
-    
+
     /**
      * 是否需要进行频率限制
      */
     public boolean needRateLimit() {
         return this != USER;  // 用户点赞不限制频率
     }
-    
+
     /**
      * 获取缓存过期时间（天）
      */
@@ -79,7 +79,7 @@ public enum LikeType {
                 return 3;   // 其他类型默认3天
         }
     }
-    
+
     /**
      * 根据编码获取点赞类型
      */

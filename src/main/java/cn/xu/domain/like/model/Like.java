@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
  */
 @Getter
 public class Like {
-    
+
     private Long id;
     private Long userId;
     private Long targetId;

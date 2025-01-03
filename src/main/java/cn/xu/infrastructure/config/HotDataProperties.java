@@ -14,9 +14,9 @@ import java.util.List;
 @Component
 @ConfigurationProperties(prefix = "hot-data")
 public class HotDataProperties {
-    
+
     private List<HotDataItem> items;
-    
+
     @Data
     public static class HotDataItem {
         private Long targetId;

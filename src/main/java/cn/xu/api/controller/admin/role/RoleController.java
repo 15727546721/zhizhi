@@ -4,10 +4,10 @@ import cn.xu.api.dto.common.PageResponse;
 import cn.xu.api.dto.permission.RoleAddOrUpdateRequest;
 import cn.xu.api.dto.permission.RoleMenuRequest;
 import cn.xu.api.dto.permission.RoleRequest;
-import cn.xu.common.Constants;
 import cn.xu.common.ResponseEntity;
 import cn.xu.domain.permission.model.entity.RoleEntity;
 import cn.xu.domain.permission.service.service.PermissionService;
+import cn.xu.infrastructure.common.ResponseCode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
@@ -31,7 +31,7 @@ public class RoleController {
         return ResponseEntity.builder()
                 .data(pageResponse)
                 .info("获取角色列表成功")
-                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .code(ResponseCode.SUCCESS.getCode())
                 .build();
     }
 
@@ -42,7 +42,7 @@ public class RoleController {
         return ResponseEntity.<List<Long>>builder()
                 .data(currentUserRole)
                 .info("获取当前登录用户所拥有的权限成功")
-                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .code(ResponseCode.SUCCESS.getCode())
                 .build();
     }
 
@@ -53,7 +53,7 @@ public class RoleController {
         return ResponseEntity.<List<Long>>builder()
                 .data(roleMenuIds)
                 .info("获取当前登录用户所拥有的权限成功")
-                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .code(ResponseCode.SUCCESS.getCode())
                 .build();
     }
 
@@ -63,7 +63,7 @@ public class RoleController {
         permissionService.assignRoleMenus(roleMenuRequest);
         return ResponseEntity.builder()
                 .info("分配角色权限成功")
-                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .code(ResponseCode.SUCCESS.getCode())
                 .build();
     }
 
@@ -73,7 +73,7 @@ public class RoleController {
         permissionService.addRole(role);
         return ResponseEntity.builder()
                 .info("添加角色成功")
-                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .code(ResponseCode.SUCCESS.getCode())
                 .build();
     }
 
@@ -83,7 +83,7 @@ public class RoleController {
         permissionService.updateRole(role);
         return ResponseEntity.builder()
                 .info("修改角色成功")
-                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .code(ResponseCode.SUCCESS.getCode())
                 .build();
     }
 
@@ -93,7 +93,7 @@ public class RoleController {
         permissionService.deleteRoleByIds(ids);
         return ResponseEntity.builder()
                 .info("删除角色成功")
-                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .code(ResponseCode.SUCCESS.getCode())
                 .build();
     }
 

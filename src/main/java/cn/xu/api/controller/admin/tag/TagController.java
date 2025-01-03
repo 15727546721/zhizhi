@@ -2,10 +2,10 @@ package cn.xu.api.controller.admin.tag;
 
 import cn.xu.api.dto.article.TagRequest;
 import cn.xu.api.dto.common.PageRequest;
-import cn.xu.common.Constants;
 import cn.xu.common.ResponseEntity;
 import cn.xu.domain.article.model.entity.TagEntity;
 import cn.xu.domain.article.service.ITagService;
+import cn.xu.infrastructure.common.ResponseCode;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.ObjectUtils;
@@ -27,8 +27,8 @@ public class TagController {
     public ResponseEntity addTag(@RequestBody TagRequest tagRequest) {
         if (ObjectUtils.isEmpty(tagRequest)) {
             return ResponseEntity.builder()
-                    .code(Constants.ResponseCode.NULL_PARAMETER.getCode())
-                    .info(Constants.ResponseCode.NULL_PARAMETER.getInfo())
+                    .code(ResponseCode.NULL_PARAMETER.getCode())
+                    .info(ResponseCode.NULL_PARAMETER.getMessage())
                     .build();
         }
         TagEntity tagEntity = TagEntity.builder()
@@ -37,7 +37,7 @@ public class TagController {
                 .build();
         tagService.save(tagEntity);
         return ResponseEntity.builder()
-                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .code(ResponseCode.SUCCESS.getCode())
                 .info("保存标签成功")
                 .build();
     }
@@ -49,7 +49,7 @@ public class TagController {
         log.info("查询标签列表: page={}, size={}", page, size);
         List<TagEntity> tagEntityList = tagService.queryTagList(page, size);
         return ResponseEntity.<List<TagEntity>>builder()
-                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .code(ResponseCode.SUCCESS.getCode())
                 .info("查询标签列表成功")
                 .data(tagEntityList)
                 .build();
@@ -60,7 +60,7 @@ public class TagController {
         log.info("查询标签下拉列表");
         List<TagEntity> tagEntityList = tagService.getTagSelectList();
         return ResponseEntity.<List<TagEntity>>builder()
-                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .code(ResponseCode.SUCCESS.getCode())
                 .info("查询标签列表成功")
                 .data(tagEntityList)
                 .build();
@@ -70,8 +70,8 @@ public class TagController {
     public ResponseEntity updateTag(@RequestBody TagRequest tagRequest) {
         if (ObjectUtils.isEmpty(tagRequest)) {
             return ResponseEntity.builder()
-                    .code(Constants.ResponseCode.NULL_PARAMETER.getCode())
-                    .info(Constants.ResponseCode.NULL_PARAMETER.getInfo())
+                    .code(ResponseCode.NULL_PARAMETER.getCode())
+                    .info(ResponseCode.NULL_PARAMETER.getMessage())
                     .build();
         }
         TagEntity tagEntity = TagEntity.builder()
@@ -81,7 +81,7 @@ public class TagController {
                 .build();
         tagService.update(tagEntity);
         return ResponseEntity.builder()
-                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .code(ResponseCode.SUCCESS.getCode())
                 .info("更新标签成功")
                 .build();
     }
@@ -90,13 +90,13 @@ public class TagController {
     public ResponseEntity deleteTag(@RequestBody List<Long> idList) {
         if (idList.isEmpty()) {
             return ResponseEntity.builder()
-                    .code(Constants.ResponseCode.NULL_PARAMETER.getCode())
-                    .info(Constants.ResponseCode.NULL_PARAMETER.getInfo())
+                    .code(ResponseCode.NULL_PARAMETER.getCode())
+                    .info(ResponseCode.NULL_PARAMETER.getMessage())
                     .build();
         }
         tagService.delete(idList);
         return ResponseEntity.builder()
-                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .code(ResponseCode.SUCCESS.getCode())
                 .info("删除标签成功")
                 .build();
     }

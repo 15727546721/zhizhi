@@ -1,11 +1,12 @@
 package cn.xu.api.controller.web.comment;
 
-import cn.xu.common.Constants;
+
 import cn.xu.common.ResponseEntity;
 import cn.xu.domain.comment.model.CommentEntity;
 import cn.xu.domain.comment.service.ICommentService;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.service.IUserService;
+import cn.xu.infrastructure.common.ResponseCode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
@@ -30,7 +31,7 @@ public class CommentApiController {
         commentService.addComment(comment);
         return ResponseEntity.builder()
                 .info("评论成功")
-                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .code(ResponseCode.SUCCESS.getCode())
                 .build();
     }
 
@@ -40,7 +41,7 @@ public class CommentApiController {
         commentService.replyComment(comment);
         return ResponseEntity.builder()
                 .info("回复评论成功")
-                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .code(ResponseCode.SUCCESS.getCode())
                 .build();
     }
 
@@ -61,7 +62,7 @@ public class CommentApiController {
 
         return ResponseEntity.<List<CommentListDTO>>builder()
                 .data(commentListDTOList)
-                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .code(ResponseCode.SUCCESS.getCode())
                 .build();
     }
 

@@ -60,7 +60,7 @@ public class LikeRepository implements ILikeRepository {
         try {
             return likeDao.countByTargetIdAndType(targetId, type.getCode());
         } catch (Exception e) {
-            log.error("MySQL获取点赞数量失败: targetId={}, type={}, error={}", 
+            log.error("MySQL获取点赞数量失败: targetId={}, type={}, error={}",
                     targetId, type, e.getMessage());
             return 0L;
         }
@@ -72,7 +72,7 @@ public class LikeRepository implements ILikeRepository {
             LikePO po = likeDao.findByUserIdAndTargetIdAndType(userId, targetId, type.getCode());
             return po != null && po.getStatus() == 1;
         } catch (Exception e) {
-            log.error("MySQL获取点赞状态失败: userId={}, targetId={}, type={}, error={}", 
+            log.error("MySQL获取点赞状态失败: userId={}, targetId={}, type={}, error={}",
                     userId, targetId, type, e.getMessage());
             return false;
         }
@@ -86,11 +86,11 @@ public class LikeRepository implements ILikeRepository {
                 po.setStatus(0);
                 po.setUpdateTime(LocalDateTime.now());
                 likeDao.update(po);
-                log.info("MySQL删除点赞记录成功: userId={}, targetId={}, type={}", 
+                log.info("MySQL删除点赞记录成功: userId={}, targetId={}, type={}",
                         userId, targetId, type);
             }
         } catch (Exception e) {
-            log.error("MySQL删除点赞记录失败: userId={}, targetId={}, type={}, error={}", 
+            log.error("MySQL删除点赞记录失败: userId={}, targetId={}, type={}, error={}",
                     userId, targetId, type, e.getMessage());
             throw new RuntimeException("MySQL删除点赞记录失败", e);
         }
@@ -101,7 +101,7 @@ public class LikeRepository implements ILikeRepository {
         try {
             return likeDao.getLikedUserIds(targetId, type.getCode());
         } catch (Exception e) {
-            log.error("MySQL获取点赞用户ID列表失败: targetId={}, type={}, error={}", 
+            log.error("MySQL获取点赞用户ID列表失败: targetId={}, type={}, error={}",
                     targetId, type, e.getMessage());
             return null;
         }
@@ -115,7 +115,7 @@ public class LikeRepository implements ILikeRepository {
                     .map(this::convertToDomain)
                     .collect(Collectors.toSet());
         } catch (Exception e) {
-            log.error("MySQL分页获取点赞记录失败: type={}, offset={}, limit={}, error={}", 
+            log.error("MySQL分页获取点赞记录失败: type={}, offset={}, limit={}, error={}",
                     type, offset, limit, e.getMessage());
             return null;
         }
@@ -149,7 +149,7 @@ public class LikeRepository implements ILikeRepository {
         po.setTargetId(like.getTargetId());
         po.setType(like.getType().getCode());
         po.setStatus(like.isLiked() ? 1 : 0);
-        
+
         // 如果是新记录，设置创建时间和更新时间
         if (like.getId() == null) {
             po.setCreateTime(LocalDateTime.now());
@@ -158,22 +158,22 @@ public class LikeRepository implements ILikeRepository {
             po.setId(like.getId());
             po.setUpdateTime(LocalDateTime.now());
         }
-        
+
         return po;
     }
 
     private Like convertToDomain(LikePO po) {
         // 创建Like对象，注意：这里会默认设置liked=true和当前时间
         Like like = Like.create(po.getUserId(), po.getTargetId(), LikeType.fromCode(po.getType()));
-        
+
         // 设置ID
         like.setId(po.getId());
-        
+
         // 如果数据库中的状态是未点赞，需要调用cancel方法
         if (po.getStatus() == 0) {
             like.cancel();
         }
-        
+
         return like;
     }
 }

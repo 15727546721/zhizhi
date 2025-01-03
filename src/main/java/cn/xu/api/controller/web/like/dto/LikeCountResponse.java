@@ -11,17 +11,17 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class LikeCountResponse {
-    
+
     /**
      * 点赞数量
      */
     private Long count;
-    
+
     /**
      * 点赞类型
      */
     private String type;
-    
+
     /**
      * 目标ID
      */

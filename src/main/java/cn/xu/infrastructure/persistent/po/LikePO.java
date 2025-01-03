@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 
 /**
  * 点赞持久化对象
+ *
  * @TableName like
  */
 @Data

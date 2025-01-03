@@ -1,9 +1,10 @@
 package cn.xu.api.controller.admin.file;
 
-import cn.xu.common.Constants;
+
 import cn.xu.common.ResponseEntity;
 import cn.xu.domain.file.service.MinioService;
 import cn.xu.exception.AppException;
+import cn.xu.infrastructure.common.ResponseCode;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -35,12 +36,12 @@ public class FileController {
             String uploadFileUrl = minioService.uploadFile(file, fileName);
             return ResponseEntity.<String>builder()
                     .data(uploadFileUrl)
-                    .code(Constants.ResponseCode.SUCCESS.getCode())
+                    .code(ResponseCode.SUCCESS.getCode())
                     .info("上传成功")
                     .build();
         } catch (Exception e) {
             log.error("上传文件失败: " + e.getMessage());
-            throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "上传文件失败");
+            throw new AppException(ResponseCode.UN_ERROR.getCode(), "上传文件失败");
         }
     }
 
@@ -50,12 +51,12 @@ public class FileController {
             // 解析 URL 获取桶名和对象名
             minioService.deleteFile(fileUrl);
             return ResponseEntity.builder()
-                    .code(Constants.ResponseCode.SUCCESS.getCode())
+                    .code(ResponseCode.SUCCESS.getCode())
                     .info("删除成功")
                     .build();
         } catch (Exception e) {
             log.error("删除文件失败: " + e.getMessage());
-            throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "删除文件失败");
+            throw new AppException(ResponseCode.UN_ERROR.getCode(), "删除文件失败");
         }
     }
 
@@ -66,7 +67,7 @@ public class FileController {
             minioService.downloadFile(fileName, localFilePath);
         } catch (Exception e) {
             log.error("下载文件失败: " + e.getMessage());
-            throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "下载文件失败");
+            throw new AppException(ResponseCode.UN_ERROR.getCode(), "下载文件失败");
         }
     }
 

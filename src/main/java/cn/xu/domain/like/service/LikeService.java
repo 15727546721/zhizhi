@@ -6,7 +6,7 @@ import cn.xu.domain.like.command.LikeCommand;
  * 点赞应用服务接口
  */
 public interface LikeService {
-    
+
     /**
      * 点赞
      *

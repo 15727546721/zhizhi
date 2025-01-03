@@ -31,10 +31,10 @@ public class RedisLikeHotDataManager {
                 .forEach(item -> {
                     try {
                         likeRepository.syncToCache(item.getTargetId(), item.getType());
-                        log.info("预热点赞数据成功: targetId={}, type={}", 
+                        log.info("预热点赞数据成功: targetId={}, type={}",
                                 item.getTargetId(), item.getType());
                     } catch (Exception e) {
-                        log.error("预热点赞数据失败: targetId={}, type={}, error={}", 
+                        log.error("预热点赞数据失败: targetId={}, type={}, error={}",
                                 item.getTargetId(), item.getType(), e.getMessage());
                     }
                 });
@@ -53,10 +53,10 @@ public class RedisLikeHotDataManager {
                 .forEach(item -> {
                     try {
                         likeRepository.syncToCache(item.getTargetId(), item.getType());
-                        log.info("重建点赞数据成功: targetId={}, type={}", 
+                        log.info("重建点赞数据成功: targetId={}, type={}",
                                 item.getTargetId(), item.getType());
                     } catch (Exception e) {
-                        log.error("重建点赞数据失败: targetId={}, type={}, error={}", 
+                        log.error("重建点赞数据失败: targetId={}, type={}, error={}",
                                 item.getTargetId(), item.getType(), e.getMessage());
                     }
                 });

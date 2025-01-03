@@ -7,8 +7,8 @@ import cn.xu.api.dto.common.PageRequest;
 import cn.xu.api.dto.user.LoginFormRequest;
 import cn.xu.api.dto.user.UserPasswordRequest;
 import cn.xu.api.dto.user.UserRequest;
-import cn.xu.common.Constants;
 import cn.xu.common.ResponseEntity;
+import cn.xu.domain.user.constant.UserErrorCode;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.model.entity.UserInfoEntity;
 import cn.xu.domain.user.model.entity.UserRoleEntity;
@@ -16,6 +16,7 @@ import cn.xu.domain.user.model.valobj.LoginFormVO;
 import cn.xu.domain.user.service.IUserLoginService;
 import cn.xu.domain.user.service.IUserService;
 import cn.xu.exception.AppException;
+import cn.xu.infrastructure.common.ResponseCode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
@@ -41,13 +42,13 @@ public class AdminController {
     public ResponseEntity<String> loginByAdmin(@RequestBody LoginFormRequest loginFormRequest) {
         log.info("管理员登录: {}", loginFormRequest);
         if (StringUtils.isEmpty(loginFormRequest.getUsername()) || StringUtils.isEmpty(loginFormRequest.getPassword())) {
-            throw new AppException(Constants.ResponseCode.NULL_PARAMETER.getCode(), "管理员登录参数为空");
+            throw new AppException(ResponseCode.NULL_PARAMETER.getCode(), "管理员登录参数为空");
         }
         String token = userLoginService.loginByAdmin(new LoginFormVO(loginFormRequest.getUsername()
                 , loginFormRequest.getPassword()));
         return ResponseEntity.<String>builder()
                 .data(token)
-                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .code(ResponseCode.SUCCESS.getCode())
                 .info("管理员登录成功")
                 .build();
     }
@@ -59,13 +60,13 @@ public class AdminController {
         log.info("管理员获取信息: {}", token);
         if (StringUtils.isEmpty(token)) {
             token = StpUtil.getTokenValue();
-//            throw new AppException(Constants.ResponseCode.NULL_PARAMETER.getCode(), "管理员token为空");
+//            throw new AppException(ResponseCode.NULL_PARAMETER.getCode(), "管理员token为空");
         }
 
         UserInfoEntity userInfo = userLoginService.getInfoByToken(token);
         return ResponseEntity.<UserInfoEntity>builder()
                 .data(userInfo)
-                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .code(ResponseCode.SUCCESS.getCode())
                 .info("管理员获取信息成功")
                 .build();
     }
@@ -75,16 +76,16 @@ public class AdminController {
     public ResponseEntity<String> logout(String token) {
         log.info("管理员退出: {}", token);
         if (StringUtils.isEmpty(token)) {
-            throw new AppException(Constants.ResponseCode.NULL_PARAMETER.getCode(), "管理员token为空");
+            throw new AppException(ResponseCode.NULL_PARAMETER.getCode(), "管理员token为空");
         }
         Object userId = StpUtil.getLoginIdByToken(token);
         if (userId == null) {
-            throw new AppException(Constants.UserErrorCode.ILLEGAL_TOKEN.getCode(),
-                    Constants.UserErrorCode.ILLEGAL_TOKEN.getInfo());
+            throw new AppException(UserErrorCode.ILLEGAL_TOKEN.getCode(),
+                    UserErrorCode.ILLEGAL_TOKEN.getMessage());
         }
         StpUtil.logout(userId);
         return ResponseEntity.<String>builder()
-                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .code(ResponseCode.SUCCESS.getCode())
                 .info("管理员退出成功")
                 .build();
     }
@@ -95,7 +96,7 @@ public class AdminController {
         log.info("管理员退出 {}", StpUtil.getLoginId());
         StpUtil.logout();
         return ResponseEntity.<String>builder()
-                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .code(ResponseCode.SUCCESS.getCode())
                 .info("管理员退出成功")
                 .build();
     }
@@ -105,7 +106,7 @@ public class AdminController {
     public ResponseEntity updatePassword(@RequestBody UserPasswordRequest userPasswordRequest) {
         userService.updatePassword(userPasswordRequest);
         return ResponseEntity.builder()
-                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .code(ResponseCode.SUCCESS.getCode())
                 .info("修改密码成功")
                 .build();
     }
@@ -121,7 +122,7 @@ public class AdminController {
         List<UserEntity> userEntityList = userService.queryUserList(page, size);
         return ResponseEntity.<List<UserEntity>>builder()
                 .data(userEntityList)
-                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .code(ResponseCode.SUCCESS.getCode())
                 .info("查询用户列表成功")
                 .build();
     }
@@ -132,10 +133,10 @@ public class AdminController {
         log.info("添加用户: {}", userRequest);
         if (StringUtils.isEmpty(userRequest.getUsername()) || StringUtils.isEmpty(userRequest.getPassword())
                 || StringUtils.isEmpty(userRequest.getEmail())) {
-            throw new AppException(Constants.ResponseCode.NULL_PARAMETER.getCode(), "添加用户参数为空");
+            throw new AppException(ResponseCode.NULL_PARAMETER.getCode(), "添加用户参数为空");
         }
         if (userRequest.getRoleId() == null) {
-            throw new AppException(Constants.ResponseCode.NULL_PARAMETER.getCode(), "角色不能为空");
+            throw new AppException(ResponseCode.NULL_PARAMETER.getCode(), "角色不能为空");
         }
         userService.addUser(UserRoleEntity.builder()
                 .username(userRequest.getUsername())
@@ -148,7 +149,7 @@ public class AdminController {
                 .build());
 
         return ResponseEntity.<String>builder()
-                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .code(ResponseCode.SUCCESS.getCode())
                 .info("添加用户成功")
                 .build();
     }
@@ -167,12 +168,12 @@ public class AdminController {
         int result = userService.updateUser(userEntity);
         if (result > 0) {
             return ResponseEntity.<String>builder()
-                    .code(Constants.ResponseCode.SUCCESS.getCode())
+                    .code(ResponseCode.SUCCESS.getCode())
                     .info("更新用户成功")
                     .build();
         } else {
             return ResponseEntity.<String>builder()
-                    .code(Constants.ResponseCode.UN_ERROR.getCode())
+                    .code(ResponseCode.UN_ERROR.getCode())
                     .info("更新用户失败")
                     .build();
         }
@@ -184,7 +185,7 @@ public class AdminController {
         log.info("删除用户: {}", userId);
         userService.deleteUser(userId);
         return ResponseEntity.<String>builder()
-                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .code(ResponseCode.SUCCESS.getCode())
                 .info("删除用户成功")
                 .build();
     }
@@ -200,7 +201,7 @@ public class AdminController {
         UserInfoEntity userInfoEntity = userService.queryUserInfo(id);
         return ResponseEntity.<UserInfoEntity>builder()
                 .data(userInfoEntity)
-                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .code(ResponseCode.SUCCESS.getCode())
                 .info("查询用户个人信息成功")
                 .build();
     }
@@ -216,7 +217,7 @@ public class AdminController {
         userInfoEntity.setId(id);
         userService.updateUserInfo(userInfoEntity);
         return ResponseEntity.<String>builder()
-                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .code(ResponseCode.SUCCESS.getCode())
                 .info("更新用户个人信息成功")
                 .build();
     }
@@ -231,7 +232,7 @@ public class AdminController {
         Long id = StpUtil.getLoginIdAsLong();
         userService.uploadAvatar(id, avatar);
         return ResponseEntity.<String>builder()
-                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .code(ResponseCode.SUCCESS.getCode())
                 .info("上传头像成功")
                 .build();
     }

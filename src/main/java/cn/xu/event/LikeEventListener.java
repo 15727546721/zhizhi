@@ -12,10 +12,10 @@ public class LikeEventListener {
     @EventListener
     public void handleLikeEvent(LikeEvent event) {
         if (event.isLiked()) {
-            log.info("用户[{}]点赞了{}[{}]", event.getUserId(), 
+            log.info("用户[{}]点赞了{}[{}]", event.getUserId(),
                     event.getType().getDescription(), event.getTargetId());
         } else {
-            log.info("用户[{}]取消点赞了{}[{}]", event.getUserId(), 
+            log.info("用户[{}]取消点赞了{}[{}]", event.getUserId(),
                     event.getType().getDescription(), event.getTargetId());
         }
         // TODO: 这里可以添加其他业务逻辑，比如：

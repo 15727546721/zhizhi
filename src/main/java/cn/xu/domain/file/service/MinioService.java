@@ -1,7 +1,8 @@
 package cn.xu.domain.file.service;
 
-import cn.xu.common.Constants;
+
 import cn.xu.exception.AppException;
+import cn.xu.infrastructure.common.ResponseCode;
 import com.alibaba.fastjson2.JSONObject;
 import io.minio.*;
 import io.minio.errors.MinioException;
@@ -74,7 +75,7 @@ public class MinioService implements IFileStorageService {
             return sharedUrl;
         } catch (MinioException e) {
             log.error("上传文件到MinIO失败", e);
-            throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "上传文件失败");
+            throw new AppException(ResponseCode.UN_ERROR.getCode(), "上传文件失败");
         }
     }
 
@@ -85,7 +86,7 @@ public class MinioService implements IFileStorageService {
         fileUrl = jsonObject.getString("fileUrl");
         if (StringUtils.isEmpty(fileUrl)) {
             log.error("文件URL为空，无法删除");
-            throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "文件URL为空，无法删除");
+            throw new AppException(ResponseCode.UN_ERROR.getCode(), "文件URL为空，无法删除");
         }
         try {
             String objectName = fileUrl.substring(fileUrl.indexOf(bucketName) + bucketName.length() + 1);
@@ -101,7 +102,7 @@ public class MinioService implements IFileStorageService {
             log.info("文件删除成功: {}", objectName);
         } catch (MinioException e) {
             log.error("删除文件失败: {}", e.getMessage());
-            throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "删除文件失败");
+            throw new AppException(ResponseCode.UN_ERROR.getCode(), "删除文件失败");
         }
     }
 

@@ -1,12 +1,12 @@
 package cn.xu.api.controller.admin.menu;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
-import cn.xu.common.Constants;
 import cn.xu.common.ResponseEntity;
 import cn.xu.domain.permission.model.entity.MenuEntity;
 import cn.xu.domain.permission.model.entity.MenuOptionsEntity;
 import cn.xu.domain.permission.model.entity.RouterEntity;
 import cn.xu.domain.permission.service.IPermissionService;
+import cn.xu.infrastructure.common.ResponseCode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
@@ -29,7 +29,7 @@ public class MenuController {
         return ResponseEntity.<List<MenuEntity>>builder()
                 .data(menuEntities)
                 .info("获取菜单树成功")
-                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .code(ResponseCode.SUCCESS.getCode())
                 .build();
     }
 
@@ -40,7 +40,7 @@ public class MenuController {
         return ResponseEntity.<List<MenuOptionsEntity>>builder()
                 .data(menuOptionsTree)
                 .info("获取下拉菜单树成功")
-                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .code(ResponseCode.SUCCESS.getCode())
                 .build();
     }
 
@@ -51,7 +51,7 @@ public class MenuController {
         return ResponseEntity.<List<RouterEntity>>builder()
                 .data(routerList)
                 .info("获取用户菜单成功")
-                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .code(ResponseCode.SUCCESS.getCode())
                 .build();
     }
 
@@ -62,7 +62,7 @@ public class MenuController {
         return ResponseEntity.<MenuEntity>builder()
                 .data(permissionService.selectMenuById(id))
                 .info("获取菜单详情成功")
-                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .code(ResponseCode.SUCCESS.getCode())
                 .build();
     }
 
@@ -72,7 +72,7 @@ public class MenuController {
         permissionService.addMenu(menu);
         return ResponseEntity.builder()
                 .info("添加菜单成功")
-                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .code(ResponseCode.SUCCESS.getCode())
                 .build();
     }
 
@@ -82,7 +82,7 @@ public class MenuController {
         permissionService.updateMenu(menu);
         return ResponseEntity.builder()
                 .info("修改菜单成功")
-                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .code(ResponseCode.SUCCESS.getCode())
                 .build();
     }
 
@@ -92,7 +92,7 @@ public class MenuController {
         permissionService.deleteMenu(id);
         return ResponseEntity.builder()
                 .info("删除菜单成功")
-                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .code(ResponseCode.SUCCESS.getCode())
                 .build();
     }
 }

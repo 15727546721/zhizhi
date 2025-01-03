@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 public class RedisLikeRepository implements ILikeRepository {
 
     private final RedisTemplate<String, Object> redisTemplate;
-    
+
     // Redis key 前缀
     private static final String LIKE_COUNT_KEY = "like:count:";  // 点赞数
     private static final String USER_LIKE_KEY = "like:user:";    // 用户点赞集合
@@ -41,34 +41,34 @@ public class RedisLikeRepository implements ILikeRepository {
         saveLikeScript = new DefaultRedisScript<>();
         saveLikeScript.setResultType(Long.class);
         saveLikeScript.setScriptText(
-            "local count_key = KEYS[1] " +
-            "local user_key = KEYS[2] " +
-            "local user_id = ARGV[1] " +
-            "if redis.call('SADD', user_key, user_id) == 1 then " +
-            "  local count = redis.call('INCR', count_key) " +
-            "  return count " +
-            "else " +
-            "  return -1 " +
-            "end"
+                "local count_key = KEYS[1] " +
+                        "local user_key = KEYS[2] " +
+                        "local user_id = ARGV[1] " +
+                        "if redis.call('SADD', user_key, user_id) == 1 then " +
+                        "  local count = redis.call('INCR', count_key) " +
+                        "  return count " +
+                        "else " +
+                        "  return -1 " +
+                        "end"
         );
 
         // 初始化移除点赞的Lua脚本
         removeLikeScript = new DefaultRedisScript<>();
         removeLikeScript.setResultType(Long.class);
         removeLikeScript.setScriptText(
-            "local count_key = KEYS[1] " +
-            "local user_key = KEYS[2] " +
-            "local user_id = ARGV[1] " +
-            "if redis.call('SREM', user_key, user_id) == 1 then " +
-            "  local count = redis.call('DECR', count_key) " +
-            "  if count < 0 then " +
-            "    redis.call('SET', count_key, 0) " +
-            "    return 0 " +
-            "  end " +
-            "  return count " +
-            "else " +
-            "  return -1 " +
-            "end"
+                "local count_key = KEYS[1] " +
+                        "local user_key = KEYS[2] " +
+                        "local user_id = ARGV[1] " +
+                        "if redis.call('SREM', user_key, user_id) == 1 then " +
+                        "  local count = redis.call('DECR', count_key) " +
+                        "  if count < 0 then " +
+                        "    redis.call('SET', count_key, 0) " +
+                        "    return 0 " +
+                        "  end " +
+                        "  return count " +
+                        "else " +
+                        "  return -1 " +
+                        "end"
         );
     }
 
@@ -77,13 +77,13 @@ public class RedisLikeRepository implements ILikeRepository {
         try {
             String countKey = buildCountKey(like.getType(), like.getTargetId());
             String userKey = buildUserKey(like.getType(), like.getTargetId());
-            
+
             if (like.isLiked()) {
                 // 执行Lua脚本添加点赞
                 Long result = redisTemplate.execute(
-                    saveLikeScript,
-                    Arrays.asList(countKey, userKey),
-                    String.valueOf(like.getUserId())
+                        saveLikeScript,
+                        Arrays.asList(countKey, userKey),
+                        String.valueOf(like.getUserId())
                 );
 
                 if (result != null && result >= 0) {
@@ -97,9 +97,9 @@ public class RedisLikeRepository implements ILikeRepository {
             } else {
                 // 执行Lua脚本移除点赞
                 Long result = redisTemplate.execute(
-                    removeLikeScript,
-                    Arrays.asList(countKey, userKey),
-                    String.valueOf(like.getUserId())
+                        removeLikeScript,
+                        Arrays.asList(countKey, userKey),
+                        String.valueOf(like.getUserId())
                 );
 
                 if (result != null && result >= 0) {
@@ -121,7 +121,7 @@ public class RedisLikeRepository implements ILikeRepository {
             Object count = redisTemplate.opsForValue().get(countKey);
             return convertToLong(count);
         } catch (Exception e) {
-            log.error("Redis获取点赞数量失败: targetId={}, type={}, error={}", 
+            log.error("Redis获取点赞数量失败: targetId={}, type={}, error={}",
                     targetId, type, e.getMessage());
             return 0L;
         }
@@ -132,10 +132,10 @@ public class RedisLikeRepository implements ILikeRepository {
         try {
             String userKey = buildUserKey(type, targetId);
             return Boolean.TRUE.equals(
-                redisTemplate.opsForSet().isMember(userKey, String.valueOf(userId))
+                    redisTemplate.opsForSet().isMember(userKey, String.valueOf(userId))
             );
         } catch (Exception e) {
-            log.error("Redis检查点赞状态失败: userId={}, targetId={}, type={}, error={}", 
+            log.error("Redis检查点赞状态失败: userId={}, targetId={}, type={}, error={}",
                     userId, targetId, type, e.getMessage());
             return false;
         }
@@ -146,23 +146,23 @@ public class RedisLikeRepository implements ILikeRepository {
         try {
             String countKey = buildCountKey(type, targetId);
             String userKey = buildUserKey(type, targetId);
-            
+
             // 执行Lua脚本移除点赞
             Long result = redisTemplate.execute(
-                removeLikeScript,
-                Arrays.asList(countKey, userKey),
-                String.valueOf(userId)
+                    removeLikeScript,
+                    Arrays.asList(countKey, userKey),
+                    String.valueOf(userId)
             );
 
             if (result != null && result >= 0) {
-                log.info("Redis删除点赞记录成功: userId={}, targetId={}, type={}", 
+                log.info("Redis删除点赞记录成功: userId={}, targetId={}, type={}",
                         userId, targetId, type);
             } else {
-                log.info("Redis用户未点赞: userId={}, targetId={}, type={}", 
+                log.info("Redis用户未点赞: userId={}, targetId={}, type={}",
                         userId, targetId, type);
             }
         } catch (Exception e) {
-            log.error("Redis删除点赞记录失败: userId={}, targetId={}, type={}, error={}", 
+            log.error("Redis删除点赞记录失败: userId={}, targetId={}, type={}, error={}",
                     userId, targetId, type, e.getMessage());
             throw new RuntimeException("Redis删除点赞记录失败", e);
         }
@@ -181,7 +181,7 @@ public class RedisLikeRepository implements ILikeRepository {
                     .map(Long::parseLong)
                     .collect(Collectors.toSet());
         } catch (Exception e) {
-            log.error("Redis获取点赞用户列表失败: targetId={}, type={}, error={}", 
+            log.error("Redis获取点赞用户列表失败: targetId={}, type={}, error={}",
                     targetId, type, e.getMessage());
             return Collections.emptySet();
         }

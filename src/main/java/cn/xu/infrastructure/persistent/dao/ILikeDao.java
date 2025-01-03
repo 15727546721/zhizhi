@@ -25,27 +25,27 @@ public interface ILikeDao {
      * 根据用户ID、目标ID和类型查询点赞记录
      */
     LikePO findByUserIdAndTargetIdAndType(@Param("userId") Long userId,
-                                         @Param("targetId") Long targetId,
-                                         @Param("type") Integer type);
+                                          @Param("targetId") Long targetId,
+                                          @Param("type") Integer type);
 
     /**
      * 统计目标的点赞数量
      */
     Long countByTargetIdAndType(@Param("targetId") Long targetId,
-                               @Param("type") Integer type);
+                                @Param("type") Integer type);
 
     /**
      * 获取点赞用户ID列表
      */
     Set<Long> getLikedUserIds(@Param("targetId") Long targetId,
-                             @Param("type") Integer type);
+                              @Param("type") Integer type);
 
     /**
      * 分页获取指定类型的点赞记录
      */
     Set<LikePO> getPageByType(@Param("type") Integer type,
-                             @Param("offset") Integer offset,
-                             @Param("limit") Integer limit);
+                              @Param("offset") Integer offset,
+                              @Param("limit") Integer limit);
 
     /**
      * 获取指定类型的点赞记录总数

@@ -27,7 +27,7 @@ public class CompositeLikeRepository implements ILikeRepository {
 
     private final IRedisLikeRepository redisLikeRepository;
     private final LikeRepository mysqlLikeRepository;
-    
+
     // 批量同步的大小限制
     private static final int BATCH_SIZE = 1000;
 
@@ -35,27 +35,27 @@ public class CompositeLikeRepository implements ILikeRepository {
     public void save(Like like) {
         // 参数校验
         validateLike(like);
-        
+
         // 检查点赞类型是否可用
         like.getType().checkEnabled();
-        
+
         // 如果是点赞操作，检查点赞数是否超出限制
         if (like.isLiked()) {
             Long currentCount = getLikeCount(like.getTargetId(), like.getType());
             like.getType().checkLikeCount(currentCount);
         }
-        
+
         try {
             // 先写入MySQL
             mysqlLikeRepository.save(like);
-            
+
             // 再更新Redis
             if (like.isLiked()) {
                 redisLikeRepository.saveLike(like.getUserId(), like.getTargetId(), like.getType());
             } else {
                 redisLikeRepository.removeLike(like.getUserId(), like.getTargetId(), like.getType());
             }
-            
+
             log.info("保存点赞记录成功: {}", like);
         } catch (Exception e) {
             log.error("保存点赞记录失败: {}, error: {}", like, e.getMessage());
@@ -68,7 +68,7 @@ public class CompositeLikeRepository implements ILikeRepository {
         // 参数校验
         validateTargetId(targetId);
         validateLikeType(type);
-        
+
         try {
             // 优先从Redis获取
             Long count = redisLikeRepository.getLikeCount(targetId, type);
@@ -82,7 +82,7 @@ public class CompositeLikeRepository implements ILikeRepository {
             }
             return count;
         } catch (Exception e) {
-            log.error("获取点赞数失败: targetId={}, type={}, error={}", 
+            log.error("获取点赞数失败: targetId={}, type={}, error={}",
                     targetId, type, e.getMessage());
             return 0L;
         }
@@ -94,7 +94,7 @@ public class CompositeLikeRepository implements ILikeRepository {
         validateUserId(userId);
         validateTargetId(targetId);
         validateLikeType(type);
-        
+
         try {
             // 优先从Redis查询
             boolean liked = redisLikeRepository.hasLiked(userId, targetId, type);
@@ -108,7 +108,7 @@ public class CompositeLikeRepository implements ILikeRepository {
             }
             return liked;
         } catch (Exception e) {
-            log.error("查询点赞状态失败: userId={}, targetId={}, type={}, error={}", 
+            log.error("查询点赞状态失败: userId={}, targetId={}, type={}, error={}",
                     userId, targetId, type, e.getMessage());
             return false;
         }
@@ -120,17 +120,17 @@ public class CompositeLikeRepository implements ILikeRepository {
         validateUserId(userId);
         validateTargetId(targetId);
         validateLikeType(type);
-        
+
         try {
             // 先更新MySQL
             mysqlLikeRepository.delete(userId, targetId, type);
             // 再删除Redis中的数据
             redisLikeRepository.removeLike(userId, targetId, type);
-            
-            log.info("删除点赞记录成功: userId={}, targetId={}, type={}", 
+
+            log.info("删除点赞记录成功: userId={}, targetId={}, type={}",
                     userId, targetId, type);
         } catch (Exception e) {
-            log.error("删除点赞记录失败: userId={}, targetId={}, type={}, error={}", 
+            log.error("删除点赞记录失败: userId={}, targetId={}, type={}, error={}",
                     userId, targetId, type, e.getMessage());
             throw new RuntimeException("删除点赞记录失败", e);
         }
@@ -151,7 +151,7 @@ public class CompositeLikeRepository implements ILikeRepository {
             }
             return userIds;
         } catch (Exception e) {
-            log.error("获取点赞用户列表失败: targetId={}, type={}, error={}", 
+            log.error("获取点赞用户列表失败: targetId={}, type={}, error={}",
                     targetId, type, e.getMessage());
             return null;
         }
@@ -162,7 +162,7 @@ public class CompositeLikeRepository implements ILikeRepository {
         try {
             return mysqlLikeRepository.getPageByType(type, offset, limit);
         } catch (Exception e) {
-            log.error("分页获取点赞记录失败: type={}, offset={}, limit={}, error={}", 
+            log.error("分页获取点赞记录失败: type={}, offset={}, limit={}, error={}",
                     type, offset, limit, e.getMessage());
             return null;
         }
@@ -183,11 +183,11 @@ public class CompositeLikeRepository implements ILikeRepository {
         try {
             syncMySQLDataToRedis(targetId, type);
         } catch (Exception e) {
-            log.error("同步点赞数据到缓存失败: targetId={}, type={}, error={}", 
+            log.error("同步点赞数据到缓存失败: targetId={}, type={}, error={}",
                     targetId, type, e.getMessage());
         }
     }
-    
+
     @Override
     public void cleanExpiredCache() {
         // 缓存永久保存，不需要清理过期缓存
@@ -202,16 +202,16 @@ public class CompositeLikeRepository implements ILikeRepository {
     public void syncMySQLDataToRedis() {
         log.info("开始同步MySQL点赞数据到Redis...");
         int totalCount = 0;
-        
+
         try {
             for (LikeType type : LikeType.values()) {
                 if (!type.isEnabled()) {
                     continue;
                 }
-                
+
                 totalCount += syncTypeData(type);
             }
-            
+
             log.info("同步MySQL点赞数据到Redis完成，共同步{}条记录", totalCount);
         } catch (Exception e) {
             log.error("同步MySQL点赞数据到Redis失败: {}", e.getMessage());
@@ -228,71 +228,71 @@ public class CompositeLikeRepository implements ILikeRepository {
             if (likedUserIds == null || likedUserIds.isEmpty()) {
                 return;
             }
-            
+
             // 清理旧的缓存数据
             redisLikeRepository.cleanCache(targetId, type);
-            
+
             // 批量添加到Redis
             for (Long userId : likedUserIds) {
                 redisLikeRepository.saveLike(userId, targetId, type);
             }
-            
-            log.info("同步MySQL数据到Redis成功: targetId={}, type={}, count={}", 
+
+            log.info("同步MySQL数据到Redis成功: targetId={}, type={}, count={}",
                     targetId, type, likedUserIds.size());
         } catch (Exception e) {
-            log.error("同步MySQL数据到Redis失败: targetId={}, type={}, error={}", 
+            log.error("同步MySQL数据到Redis失败: targetId={}, type={}, error={}",
                     targetId, type, e.getMessage());
         }
     }
-    
+
     /**
      * 同步指定类型的数据
      */
     private int syncTypeData(LikeType type) {
         int totalCount = 0;
         int offset = 0;
-        
+
         try {
             // 获取该类型的总记录数
             Long total = mysqlLikeRepository.countByType(type);
             if (total == null || total == 0) {
                 return 0;
             }
-            
+
             // 分批同步数据
             while (offset < total) {
                 Set<Like> records = mysqlLikeRepository.getPageByType(type, offset, BATCH_SIZE);
                 if (records == null || records.isEmpty()) {
                     break;
                 }
-                
+
                 // 按目标ID分组处理
                 Map<Long, Set<Long>> targetUserMap = records.stream()
-                    .collect(Collectors.groupingBy(
-                        Like::getTargetId,
-                        Collectors.mapping(Like::getUserId, Collectors.toSet())
-                    ));
-                
+                        .collect(Collectors.groupingBy(
+                                Like::getTargetId,
+                                Collectors.mapping(Like::getUserId, Collectors.toSet())
+                        ));
+
                 // 批量同步到Redis
                 for (Map.Entry<Long, Set<Long>> entry : targetUserMap.entrySet()) {
                     Long targetId = entry.getKey();
                     Set<Long> userIds = entry.getValue();
-                    
+
                     // 清理旧的缓存数据
                     redisLikeRepository.cleanCache(targetId, type);
-                    
+
                     // 批量添加到Redis
                     for (Long userId : userIds) {
                         redisLikeRepository.saveLike(userId, targetId, type);
                     }
-                    
+
                     totalCount += userIds.size();
                 }
-                
+
                 offset += records.size();
                 log.info("同步{}类型数据进度: {}/{}", type.getDescription(), offset, total);
             }
-            
+
             log.info("同步{}类型数据完成，共同步{}条记录", type.getDescription(), totalCount);
             return totalCount;
         } catch (Exception e) {

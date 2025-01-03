@@ -1,9 +1,10 @@
 package cn.xu.api.controller.web.tag;
 
-import cn.xu.common.Constants;
+
 import cn.xu.common.ResponseEntity;
 import cn.xu.domain.article.model.entity.TagEntity;
 import cn.xu.domain.article.service.article.TagService;
+import cn.xu.infrastructure.common.ResponseCode;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,7 +25,7 @@ public class TagApiController {
     public ResponseEntity getTagList() {
         List<TagEntity> tagEntityList = tagService.getTagList();
         return ResponseEntity.<List<TagEntity>>builder()
-                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .code(ResponseCode.SUCCESS.getCode())
                 .info("查询标签列表成功")
                 .data(tagEntityList)
                 .build();

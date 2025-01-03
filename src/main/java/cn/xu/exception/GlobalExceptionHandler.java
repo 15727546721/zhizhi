@@ -1,8 +1,9 @@
 package cn.xu.exception;
 
 import cn.dev33.satoken.exception.NotLoginException;
-import cn.xu.common.Constants;
 import cn.xu.common.ResponseEntity;
+import cn.xu.domain.user.constant.UserErrorCode;
+import cn.xu.infrastructure.common.ResponseCode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
@@ -49,7 +50,7 @@ public class GlobalExceptionHandler {
         });
 
         return ResponseEntity.<Map<String, String>>builder()
-                .code(Constants.ResponseCode.ILLEGAL_PARAMETER.getCode())
+                .code(ResponseCode.ILLEGAL_PARAMETER.getCode())
                 .info(ex.getMessage())
                 .data(errors)
                 .build();
@@ -78,7 +79,7 @@ public class GlobalExceptionHandler {
 
         // 返回给前端
         return ResponseEntity.<String>builder()
-                .code(Constants.UserErrorCode.TOKEN_EXPIRED.getCode())
+                .code(UserErrorCode.TOKEN_EXPIRED.getCode())
                 .info(message)
                 .build();
     }
@@ -87,7 +88,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex) {
         log.error("参数解析异常: {}", ex);
         return ResponseEntity.<String>builder()
-                .code(Constants.ResponseCode.ILLEGAL_PARAMETER.getCode())
+                .code(ResponseCode.ILLEGAL_PARAMETER.getCode())
                 .info(ex.getMessage())
                 .build();
     }
@@ -102,7 +103,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> handleExceptions(Exception ex) {
         log.error("全局异常:{}", ex);
         return ResponseEntity.<String>builder()
-                .code(Constants.ResponseCode.UN_ERROR.getCode())
+                .code(ResponseCode.UN_ERROR.getCode())
                 .info(ex.getMessage())
                 .build();
     }

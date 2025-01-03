@@ -6,7 +6,7 @@ import cn.xu.domain.like.model.LikeType;
  * 点赞领域服务接口
  */
 public interface LikeDomainService {
-    
+
     /**
      * 点赞
      *

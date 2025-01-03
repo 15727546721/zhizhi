@@ -29,7 +29,7 @@ public class LikeEventHandler implements EventHandler<LikeEvent> {
     // Redis key 前缀
     private static final String LOCK_KEY_PREFIX = "like:lock:";
     private static final String PROCESSED_EVENT_KEY = "like:processed:";
-    
+
     // 时间常量
     private static final long LOCK_WAIT_TIME = 3000L;
     private static final long LOCK_LEASE_TIME = 5000L;
@@ -62,7 +62,7 @@ public class LikeEventHandler implements EventHandler<LikeEvent> {
 
             // 更新MySQL中的点赞关系记录
             updateMySQLLikeRelation(event);
-            
+
             // 标记事件为已处理
             markEventAsProcessed(eventId);
 
@@ -79,15 +79,15 @@ public class LikeEventHandler implements EventHandler<LikeEvent> {
         try {
             // 使用工厂方法创建Like实例
             Like like = Like.create(event.getUserId(), event.getTargetId(), event.getType());
-            
+
             // 根据事件状态设置点赞状态
             if (!event.isLiked()) {
                 like.cancel();
             }
-            
+
             // 保存点赞关系到MySQL
             likeRepository.save(like);
-            
+
         } catch (Exception e) {
             log.error("更新MySQL点赞关系失败: {}", e.getMessage());
             throw new RuntimeException("更新MySQL点赞关系失败", e);

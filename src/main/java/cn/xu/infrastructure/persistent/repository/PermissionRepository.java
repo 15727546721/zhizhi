@@ -1,10 +1,11 @@
 package cn.xu.infrastructure.persistent.repository;
 
-import cn.xu.common.Constants;
+
 import cn.xu.domain.permission.model.entity.MenuEntity;
 import cn.xu.domain.permission.model.entity.RoleEntity;
 import cn.xu.domain.permission.repository.IPermissionRepository;
 import cn.xu.exception.AppException;
+import cn.xu.infrastructure.common.ResponseCode;
 import cn.xu.infrastructure.persistent.dao.IMenuDao;
 import cn.xu.infrastructure.persistent.dao.IRoleDao;
 import cn.xu.infrastructure.persistent.po.Menu;
@@ -107,7 +108,7 @@ public class PermissionRepository implements IPermissionRepository {
             roleDao.insertRole(role);
         } catch (Exception e) {
             log.error("新增角色失败", e);
-            throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "新增角色失败");
+            throw new AppException(ResponseCode.UN_ERROR.getCode(), "新增角色失败");
         }
     }
 
@@ -122,7 +123,7 @@ public class PermissionRepository implements IPermissionRepository {
                     .build());
         } catch (Exception e) {
             log.error("更新角色失败", e);
-            throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "更新角色失败");
+            throw new AppException(ResponseCode.UN_ERROR.getCode(), "更新角色失败");
         }
     }
 
@@ -138,7 +139,7 @@ public class PermissionRepository implements IPermissionRepository {
                 status.setRollbackOnly();
                 // 处理异常
                 log.error("删除角色失败", e);
-                throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "删除角色失败");
+                throw new AppException(ResponseCode.UN_ERROR.getCode(), "删除角色失败");
             }
         });
     }

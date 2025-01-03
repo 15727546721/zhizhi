@@ -2,12 +2,13 @@ package cn.xu.domain.user.service.login;
 
 import cn.dev33.satoken.secure.SaSecureUtil;
 import cn.dev33.satoken.stp.StpUtil;
-import cn.xu.common.Constants;
+import cn.xu.domain.user.constant.UserErrorCode;
 import cn.xu.domain.user.model.entity.UserInfoEntity;
 import cn.xu.domain.user.model.valobj.LoginFormVO;
 import cn.xu.domain.user.repository.IUserRepository;
 import cn.xu.domain.user.service.IUserLoginService;
 import cn.xu.exception.AppException;
+import cn.xu.infrastructure.common.ResponseCode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
@@ -24,18 +25,18 @@ public class UserLoginService implements IUserLoginService {
     @Override
     public String loginByAdmin(LoginFormVO loginFormVO) {
         if (ObjectUtils.isEmpty(loginFormVO)) {
-            throw new AppException(Constants.ResponseCode.NULL_PARAMETER.getCode(), "登录参数不能为空");
+            throw new AppException(ResponseCode.NULL_PARAMETER.getCode(), "登录参数不能为空");
         }
         String password = SaSecureUtil.sha256(loginFormVO.getPassword());
         LoginFormVO userByUsername = userRepository.findUserByUsername(loginFormVO.getUsername());
         if (ObjectUtils.isEmpty(userByUsername)) {
-            throw new AppException(Constants.ResponseCode.NULL_RESPONSE.getCode(), "该用户不存在");
+            throw new AppException(ResponseCode.NULL_RESPONSE.getCode(), "该用户不存在");
         }
         if (!userByUsername.getPassword().equals(password)) {
-            throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "密码错误");
+            throw new AppException(ResponseCode.UN_ERROR.getCode(), "密码错误");
         }
 //        if (!userByUsername.getRole().equals("admin")) {
-//            throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "权限不足");
+//            throw new AppException(ResponseCode.UN_ERROR.getCode(), "权限不足");
 //        }
         // 登录
         StpUtil.login(userByUsername.getId());
@@ -47,8 +48,8 @@ public class UserLoginService implements IUserLoginService {
     public UserInfoEntity getInfoByToken(String token) {
         Object userId = StpUtil.getLoginIdByToken(token);
         if (ObjectUtils.isEmpty(userId)) {
-            throw new AppException(Constants.UserErrorCode.ILLEGAL_TOKEN.getCode(),
-                    Constants.UserErrorCode.ILLEGAL_TOKEN.getInfo());
+            throw new AppException(UserErrorCode.ILLEGAL_TOKEN.getCode(),
+                    UserErrorCode.ILLEGAL_TOKEN.getMessage());
         }
         UserInfoEntity userInfo = userRepository.findUserInfoById(Long.valueOf(userId.toString()));
         log.info("用户信息:{}", userInfo);

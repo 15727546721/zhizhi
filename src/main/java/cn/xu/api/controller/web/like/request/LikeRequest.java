@@ -11,21 +11,21 @@ import javax.validation.constraints.Positive;
  */
 @Data
 public class LikeRequest {
-    
+
     /**
      * 用户ID
      */
     @NotNull(message = "用户ID不能为空")
     @Positive(message = "用户ID必须大于0")
     private Long userId;
-    
+
     /**
      * 目标ID
      */
     @NotNull(message = "目标ID不能为空")
     @Positive(message = "目标ID必须大于0")
     private Long targetId;
-    
+
     /**
      * 点赞类型
      */

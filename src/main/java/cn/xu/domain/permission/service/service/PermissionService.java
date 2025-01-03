@@ -4,7 +4,6 @@ import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.api.dto.common.PageResponse;
 import cn.xu.api.dto.permission.RoleAddOrUpdateRequest;
 import cn.xu.api.dto.permission.RoleMenuRequest;
-import cn.xu.common.Constants;
 import cn.xu.domain.permission.model.entity.MenuEntity;
 import cn.xu.domain.permission.model.entity.MenuOptionsEntity;
 import cn.xu.domain.permission.model.entity.RoleEntity;
@@ -14,6 +13,7 @@ import cn.xu.domain.permission.model.vo.MenuTypeVO;
 import cn.xu.domain.permission.repository.IPermissionRepository;
 import cn.xu.domain.permission.service.IPermissionService;
 import cn.xu.exception.AppException;
+import cn.xu.infrastructure.common.ResponseCode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -118,7 +118,7 @@ public class PermissionService implements IPermissionService {
             return;
         }
         if (roleId == null || menuIds.isEmpty()) {
-            throw new AppException(Constants.ResponseCode.NULL_PARAMETER.getCode(), "参数不能为空");
+            throw new AppException(ResponseCode.NULL_PARAMETER.getCode(), "参数不能为空");
         }
         RoleEntity roleEntity = permissionRepository.selectRoleById(roleId);
         if (roleEntity != null && roleEntity.getCode().equals("admin")) {
@@ -135,7 +135,7 @@ public class PermissionService implements IPermissionService {
                 // 回滚事务
                 status.setRollbackOnly();
                 log.error("分配角色权限失败", e);
-                throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "分配角色权限失败");
+                throw new AppException(ResponseCode.UN_ERROR.getCode(), "分配角色权限失败");
             }
         });
     }
@@ -194,7 +194,7 @@ public class PermissionService implements IPermissionService {
             }
         } catch (Exception e) {
             log.error("获取当前用户菜单失败", e);
-            throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "获取当前用户菜单失败");
+            throw new AppException(ResponseCode.UN_ERROR.getCode(), "获取当前用户菜单失败");
         }
 
         List<RouterEntity> routerList = buildRouterTree(menus);

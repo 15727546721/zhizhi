@@ -2,7 +2,7 @@ package cn.xu.infrastructure.persistent.repository;
 
 import cn.dev33.satoken.secure.SaSecureUtil;
 import cn.xu.api.controller.web.user.RegisterRequest;
-import cn.xu.common.Constants;
+import cn.xu.domain.user.constant.UserStatus;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.model.entity.UserInfoEntity;
 import cn.xu.domain.user.model.entity.UserPasswordEntity;
@@ -10,6 +10,7 @@ import cn.xu.domain.user.model.entity.UserRoleEntity;
 import cn.xu.domain.user.model.valobj.LoginFormVO;
 import cn.xu.domain.user.repository.IUserRepository;
 import cn.xu.exception.AppException;
+import cn.xu.infrastructure.common.ResponseCode;
 import cn.xu.infrastructure.persistent.dao.IUserDao;
 import cn.xu.infrastructure.persistent.dao.IUserRoleDao;
 import cn.xu.infrastructure.persistent.po.User;
@@ -25,7 +26,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
 
 /**
  * 用户仓储服务
@@ -46,8 +46,7 @@ public class UserRepository implements IUserRepository {
     @Override
     public LoginFormVO findUserByUsername(String username) {
         if (StringUtils.isEmpty(username)) {
-            throw new AppException(Constants.ResponseCode.NULL_PARAMETER.getCode()
-                    , Constants.ResponseCode.NULL_PARAMETER.getInfo());
+            throw new AppException(ResponseCode.NULL_PARAMETER.getCode(), ResponseCode.NULL_PARAMETER.getMessage());
         }
         return userDao.selectUserByUserName(username);
     }
@@ -59,7 +58,6 @@ public class UserRepository implements IUserRepository {
 
     @Override
     public UserInfoEntity findUserInfoById(Long userId) {
-
         return userDao.selectUserInfoById(userId);
     }
 
@@ -90,14 +88,11 @@ public class UserRepository implements IUserRepository {
                         .userId(userId)
                         .roleId(userRoleEntity.getRoleId())
                         .build());
-                return null; // 没有异常则返回 null
+                return null;
             } catch (Exception e) {
-                // 记录错误日志
                 log.error("添加用户失败: {}", userRoleEntity, e);
-                // 标记事务为回滚
                 status.setRollbackOnly();
-                // 抛出异常以确保事务回滚
-                throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "添加用户失败");
+                throw new AppException(ResponseCode.UN_ERROR.getCode(), "添加用户失败");
             }
         });
     }
@@ -110,28 +105,22 @@ public class UserRepository implements IUserRepository {
                 .email(userEntity.getEmail())
                 .status(userEntity.getStatus())
                 .nickname(userEntity.getNickname())
-                .avatar(userEntity.getAvatar()) // 如果有新的头像，设置它
+                .avatar(userEntity.getAvatar())
                 .build();
-        int result = userDao.updateUser(user);
-        return result;
+        return userDao.updateUser(user);
     }
 
     @Override
     public void deleteUser(Long userId) {
         transactionTemplate.execute(status -> {
             try {
-                // 删除用户角色关联记录
                 userRoleDao.deleteUserRoleByUserId(userId);
-                // 删除用户记录
                 userDao.deleteUser(userId);
-                return null; // 没有异常则返回 null
+                return null;
             } catch (Exception e) {
-                // 记录错误日志
                 log.error("删除用户失败, 用户ID: " + userId, e);
-                // 标记事务为回滚
                 status.setRollbackOnly();
-                // 抛出异常以确保事务回滚
-                throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "删除用户失败");
+                throw new AppException(ResponseCode.UN_ERROR.getCode(), "删除用户失败");
             }
         });
     }
@@ -143,7 +132,6 @@ public class UserRepository implements IUserRepository {
 
     @Override
     public UserInfoEntity findUserInfoByUserId(Long id) {
-
         return userDao.selectUserInfoByUserId(id);
     }
 
@@ -163,7 +151,7 @@ public class UserRepository implements IUserRepository {
                 .nickname(registerRequest.getNickname())
                 .password(SaSecureUtil.sha256(registerRequest.getPassword()))
                 .email(registerRequest.getEmail())
-                .status(Constants.UserStatus.NORMAL.getCode())
+                .status(UserStatus.NORMAL.getCode())
                 .build();
         userDao.register(user);
     }
@@ -175,13 +163,9 @@ public class UserRepository implements IUserRepository {
 
     @Override
     public Map<Long, UserEntity> findUserByIds(Set<Long> userIds) {
-        //collect(Collectors.toMap(...))：使用 Collectors.toMap 方法将流中的元素收集到一个 Map 中。
-        //UserEntity::getId：作为 Map 的键（即用户 ID）。
-        //Function.identity()：作为 Map 的值（即原始的 UserEntity 对象）。
         return userDao.findUserByIds(userIds).stream()
                 .collect(Collectors.toMap(UserEntity::getId, Function.identity()));
     }
-
 
     private UserEntity convertToUserEntity(User user) {
         return UserEntity.builder()

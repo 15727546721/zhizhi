@@ -33,11 +33,11 @@ public class LikeServiceImpl implements LikeService {
 
         // 调用领域服务处理点赞
         boolean success = likeDomainService.like(command.getUserId(), command.getTargetId(), command.getType());
-        
+
         if (success) {
             // 发布点赞事件
             publishLikeEvent(command, true);
-            log.info("用户[{}]点赞了{}[{}]", 
+            log.info("用户[{}]点赞了{}[{}]",
                     command.getUserId(), command.getType().getDescription(), command.getTargetId());
         }
     }
@@ -50,11 +50,11 @@ public class LikeServiceImpl implements LikeService {
 
         // 调用领域服务处理取消点赞
         boolean success = likeDomainService.unlike(command.getUserId(), command.getTargetId(), command.getType());
-        
+
         if (success) {
             // 发布取消点赞事件
             publishLikeEvent(command, false);
-            log.info("用户[{}]取消点赞了{}[{}]", 
+            log.info("用户[{}]取消点赞了{}[{}]",
                     command.getUserId(), command.getType().getDescription(), command.getTargetId());
         }
     }

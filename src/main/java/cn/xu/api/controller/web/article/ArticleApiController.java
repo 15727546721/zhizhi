@@ -2,7 +2,6 @@ package cn.xu.api.controller.web.article;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.stp.StpUtil;
-import cn.xu.common.Constants;
 import cn.xu.common.ResponseEntity;
 import cn.xu.domain.article.model.entity.ArticleEntity;
 import cn.xu.domain.article.service.IArticleCategoryService;
@@ -10,6 +9,7 @@ import cn.xu.domain.article.service.IArticleService;
 import cn.xu.domain.article.service.IArticleTagService;
 import cn.xu.domain.article.service.ITagService;
 import cn.xu.exception.AppException;
+import cn.xu.infrastructure.common.ResponseCode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
@@ -45,7 +45,7 @@ public class ArticleApiController {
         }
         List<ArticleListDTO> articleEntityList = articleService.getArticleByCategory(categoryId);
         return ResponseEntity.<List<ArticleListDTO>>builder()
-                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .code(ResponseCode.SUCCESS.getCode())
                 .data(articleEntityList)
                 .build();
     }
@@ -58,7 +58,7 @@ public class ArticleApiController {
         ArticleEntity articleById = articleService.getArticleById(id);
         log.info("文章详情：{}", articleById);
         return ResponseEntity.<ArticleEntity>builder()
-                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .code(ResponseCode.SUCCESS.getCode())
                 .data(articleById)
                 .build();
     }
@@ -83,10 +83,10 @@ public class ArticleApiController {
                 articleCategoryService.saveArticleCategory(articleId, publishArticleRequest.getCategoryId());
                 //3. 保存文章标签
                 if (publishArticleRequest.getTagIds() == null || publishArticleRequest.getTagIds().isEmpty()) {
-                    throw new AppException(Constants.ResponseCode.NULL_PARAMETER.getCode(), "标签不能为空");
+                    throw new AppException(ResponseCode.NULL_PARAMETER.getCode(), "标签不能为空");
                 }
                 if (publishArticleRequest.getTagIds().size() > 3) {
-                    throw new AppException(Constants.ResponseCode.ILLEGAL_PARAMETER.getCode(), "标签不能超过3个");
+                    throw new AppException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "标签不能超过3个");
                 }
                 articleTagService.saveArticleTag(articleId, publishArticleRequest.getTagIds());
                 // 事务提交
@@ -95,12 +95,12 @@ public class ArticleApiController {
                 // 事务回滚
                 status.setRollbackOnly();
                 log.error("文章发布失败", e);
-                throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "文章发布失败");
+                throw new AppException(ResponseCode.UN_ERROR.getCode(), "文章发布失败");
             }
         });
         log.info("文章发布成功");
         return ResponseEntity.builder()
-                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .code(ResponseCode.SUCCESS.getCode())
                 .info("文章发布成功")
                 .build();
     }
@@ -110,7 +110,7 @@ public class ArticleApiController {
     public ResponseEntity<List<ArticleListDTO>> getHotArticles(@RequestParam(defaultValue = "10") int limit) {
         List<ArticleListDTO> hotArticles = articleService.getHotArticles(limit);
         return ResponseEntity.<List<ArticleListDTO>>builder()
-                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .code(ResponseCode.SUCCESS.getCode())
                 .data(hotArticles)
                 .build();
     }
@@ -122,7 +122,7 @@ public class ArticleApiController {
         Long userId = StpUtil.getLoginIdAsLong();
         List<ArticleListDTO> likedArticles = articleService.getUserLikedArticles(userId);
         return ResponseEntity.<List<ArticleListDTO>>builder()
-                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .code(ResponseCode.SUCCESS.getCode())
                 .data(likedArticles)
                 .build();
     }
@@ -132,7 +132,7 @@ public class ArticleApiController {
     public ResponseEntity<List<Long>> getArticleLikedUsers(@PathVariable("id") Long articleId) {
         List<Long> likedUsers = articleService.getArticleLikedUsers(articleId);
         return ResponseEntity.<List<Long>>builder()
-                .code(Constants.ResponseCode.SUCCESS.getCode())
+                .code(ResponseCode.SUCCESS.getCode())
                 .data(likedUsers)
                 .build();
     }

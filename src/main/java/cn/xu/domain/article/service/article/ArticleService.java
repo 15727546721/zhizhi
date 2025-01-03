@@ -4,7 +4,6 @@ import cn.xu.api.controller.web.article.ArticleListDTO;
 import cn.xu.api.dto.article.ArticlePageResponse;
 import cn.xu.api.dto.article.ArticleRequest;
 import cn.xu.api.dto.common.PageResponse;
-import cn.xu.common.Constants;
 import cn.xu.domain.article.model.entity.ArticleEntity;
 import cn.xu.domain.article.repository.IArticleRepository;
 import cn.xu.domain.article.repository.IArticleTagRepository;
@@ -12,6 +11,7 @@ import cn.xu.domain.article.repository.ITagRepository;
 import cn.xu.domain.article.service.IArticleService;
 import cn.xu.domain.file.service.MinioService;
 import cn.xu.exception.AppException;
+import cn.xu.infrastructure.common.ResponseCode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -44,10 +44,10 @@ public class ArticleService implements IArticleService {
         try {
             uploadFileUrl = minioService.uploadFile(imageFile, null);
         } catch (Exception e) {
-            throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "上传封面失败");
+            throw new AppException(ResponseCode.UN_ERROR.getCode(), "上传封面失败");
         }
         if (uploadFileUrl == null) {
-            throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "上传封面失败");
+            throw new AppException(ResponseCode.UN_ERROR.getCode(), "上传封面失败");
         }
         return uploadFileUrl;
     }
@@ -77,7 +77,7 @@ public class ArticleService implements IArticleService {
     public ArticleEntity getArticleById(Long id) {
         ArticleEntity article = articleRepository.findById(id);
         if (article == null) {
-            throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "未查询到文章");
+            throw new AppException(ResponseCode.UN_ERROR.getCode(), "未查询到文章");
         }
 
         return article;
