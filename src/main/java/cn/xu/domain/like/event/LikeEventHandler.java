@@ -26,10 +26,15 @@ public class LikeEventHandler implements EventHandler<LikeEvent> {
     @Resource
     private ILikeRepository likeRepository;
 
+    // Redis key 前缀
     private static final String LOCK_KEY_PREFIX = "like:lock:";
     private static final String LIKE_COUNT_KEY = "like:count:";
+    private static final String USER_SET_KEY = "like:users:";
+    
+    // 时间常量
     private static final long LOCK_WAIT_TIME = 3000L;
     private static final long LOCK_LEASE_TIME = 5000L;
+    private static final long CACHE_EXPIRE_DAYS = 7;
 
     @Override
     public void onEvent(LikeEvent event, long sequence, boolean endOfBatch) {
@@ -65,32 +70,47 @@ public class LikeEventHandler implements EventHandler<LikeEvent> {
 
     private void updateRedisLikeCount(LikeEvent event) {
         String countKey = LIKE_COUNT_KEY + event.getType().name().toLowerCase() + ":" + event.getTargetId();
+        String userSetKey = USER_SET_KEY + event.getType().name().toLowerCase() + ":" + event.getTargetId();
 
         try {
-            // 更新点赞计数
-            Object currentValue = redisTemplate.opsForValue().get(countKey);
-            Long currentCount = convertToLong(currentValue);
+            String userId = String.valueOf(event.getUserId());
             
-            Long newCount = event.isLiked() ? currentCount + 1 : Math.max(0, currentCount - 1);
+            if (event.isLiked()) {
+                // 尝试将用户ID添加到Set中，如果添加成功说明之前没有点赞
+                Boolean added = redisTemplate.opsForSet().add(userSetKey, userId) == 1;
+                if (added) {
+                    // 增加点赞计数
+                    redisTemplate.opsForValue().increment(countKey, 1L);
+                    log.info("用户[{}]点赞了{}[{}]", 
+                            event.getUserId(), event.getType().getDescription(), event.getTargetId());
+                } else {
+                    log.info("用户[{}]已经点赞过{}[{}]", 
+                            event.getUserId(), event.getType().getDescription(), event.getTargetId());
+                }
+            } else {
+                // 尝试从Set中移除用户ID，如果移除成功说明之前确实点赞了
+                Boolean removed = redisTemplate.opsForSet().remove(userSetKey, userId) == 1;
+                if (removed) {
+                    // 减少点赞计数，确保不会小于0
+                    Object currentValue = redisTemplate.opsForValue().get(countKey);
+                    Long currentCount = convertToLong(currentValue);
+                    if (currentCount > 0) {
+                        redisTemplate.opsForValue().decrement(countKey, 1L);
+                    }
+                    log.info("用户[{}]取消点赞了{}[{}]", 
+                            event.getUserId(), event.getType().getDescription(), event.getTargetId());
+                } else {
+                    log.info("用户[{}]没有点赞过{}[{}]", 
+                            event.getUserId(), event.getType().getDescription(), event.getTargetId());
+                }
+            }
             
-            // 更新Redis中的计数
-            redisTemplate.opsForValue().set(countKey, newCount);
-            
-            log.info("{}[{}]点赞数更新为: {}", 
-                    event.getType().getDescription(), event.getTargetId(), newCount);
+            // 设置过期时间
+            redisTemplate.expire(countKey, CACHE_EXPIRE_DAYS, TimeUnit.DAYS);
+            redisTemplate.expire(userSetKey, CACHE_EXPIRE_DAYS, TimeUnit.DAYS);
 
         } catch (Exception e) {
             log.error("更新Redis点赞数失败: {}", e.getMessage());
-            // 发生异常时回滚Redis操作
-            if (event.isLiked()) {
-                Object currentValue = redisTemplate.opsForValue().get(countKey);
-                Long currentCount = convertToLong(currentValue);
-                if (currentCount > 0) {
-                    redisTemplate.opsForValue().decrement(countKey);
-                }
-            } else {
-                redisTemplate.opsForValue().increment(countKey);
-            }
             throw new RuntimeException("更新Redis点赞数失败", e);
         }
     }
