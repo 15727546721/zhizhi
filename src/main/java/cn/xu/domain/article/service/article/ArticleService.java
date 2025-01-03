@@ -75,7 +75,6 @@ public class ArticleService implements IArticleService {
 
     @Override
     public ArticleEntity getArticleById(Long id) {
-
         ArticleEntity article = articleRepository.findById(id);
         if (article == null) {
             throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "未查询到文章");

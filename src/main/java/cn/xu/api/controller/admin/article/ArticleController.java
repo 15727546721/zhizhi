@@ -167,6 +167,9 @@ public class ArticleController {
     @GetMapping("info/{id}")
     public ResponseEntity<ArticleDetailsResponse> getArticle(@PathVariable("id") Long id) {
         log.info("文章详情获取参数: id={}", id);
+        if (id == null) {
+            throw new AppException(Constants.ResponseCode.NULL_PARAMETER.getCode(), "文章ID不能为空");
+        }
         ArticleEntity article = articleService.getArticleById(id);
         CategoryEntity category = categoryService.getCategoryByArticleId(id);
         List<TagEntity> tag = tagService.getTagsByArticleId(id);
