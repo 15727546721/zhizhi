@@ -4,6 +4,8 @@ import cn.xu.infrastructure.persistent.po.LikePO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import java.util.Set;
+
 /**
  * 点赞数据访问接口
  */
@@ -12,12 +14,12 @@ public interface ILikeDao {
     /**
      * 插入点赞记录
      */
-    void insert(LikePO likePO);
+    void insert(LikePO po);
 
     /**
      * 更新点赞记录
      */
-    void update(LikePO likePO);
+    void update(LikePO po);
 
     /**
      * 根据用户ID、目标ID和类型查询点赞记录
@@ -27,15 +29,26 @@ public interface ILikeDao {
                                          @Param("type") Integer type);
 
     /**
-     * 统计目标的点赞数
+     * 统计目标的点赞数量
      */
     Long countByTargetIdAndType(@Param("targetId") Long targetId,
                                @Param("type") Integer type);
 
     /**
-     * 更新点赞数
+     * 获取点赞用户ID列表
      */
-    void updateLikeCount(@Param("targetId") Long targetId,
-                        @Param("type") Integer type,
-                        @Param("count") Long count);
+    Set<Long> getLikedUserIds(@Param("targetId") Long targetId,
+                             @Param("type") Integer type);
+
+    /**
+     * 分页获取指定类型的点赞记录
+     */
+    Set<LikePO> getPageByType(@Param("type") Integer type,
+                             @Param("offset") Integer offset,
+                             @Param("limit") Integer limit);
+
+    /**
+     * 获取指定类型的点赞记录总数
+     */
+    Long countByType(@Param("type") Integer type);
 }

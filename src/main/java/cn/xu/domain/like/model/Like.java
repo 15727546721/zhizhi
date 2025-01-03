@@ -1,7 +1,6 @@
 package cn.xu.domain.like.model;
 
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 

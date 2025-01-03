@@ -28,18 +28,25 @@ public class LikeEventHandler implements EventHandler<LikeEvent> {
 
     // Redis key 前缀
     private static final String LOCK_KEY_PREFIX = "like:lock:";
-    private static final String LIKE_COUNT_KEY = "like:count:";
-    private static final String USER_SET_KEY = "like:users:";
+    private static final String PROCESSED_EVENT_KEY = "like:processed:";
     
     // 时间常量
     private static final long LOCK_WAIT_TIME = 3000L;
     private static final long LOCK_LEASE_TIME = 5000L;
-    private static final long CACHE_EXPIRE_DAYS = 7;
+    private static final long EVENT_EXPIRE_TIME = 3600L;
 
     @Override
     public void onEvent(LikeEvent event, long sequence, boolean endOfBatch) {
         if (event == null || event.getTargetId() == null || event.getUserId() == null || event.getType() == null) {
             log.error("无效的点赞事件: {}", event);
+            return;
+        }
+
+        // 生成事件唯一标识
+        String eventId = generateEventId(event);
+        // 检查事件是否已处理
+        if (isEventProcessed(eventId)) {
+            log.info("事件已处理，跳过: {}", eventId);
             return;
         }
 
@@ -53,11 +60,11 @@ public class LikeEventHandler implements EventHandler<LikeEvent> {
                 return;
             }
 
-            // 更新Redis中的点赞数量
-            updateRedisLikeCount(event);
-            
             // 更新MySQL中的点赞关系记录
             updateMySQLLikeRelation(event);
+            
+            // 标记事件为已处理
+            markEventAsProcessed(eventId);
 
         } catch (Exception e) {
             log.error("处理点赞事件失败: {}", e.getMessage());
@@ -65,53 +72,6 @@ public class LikeEventHandler implements EventHandler<LikeEvent> {
             if (lock.isHeldByCurrentThread()) {
                 lock.unlock();
             }
-        }
-    }
-
-    private void updateRedisLikeCount(LikeEvent event) {
-        String countKey = LIKE_COUNT_KEY + event.getType().name().toLowerCase() + ":" + event.getTargetId();
-        String userSetKey = USER_SET_KEY + event.getType().name().toLowerCase() + ":" + event.getTargetId();
-
-        try {
-            String userId = String.valueOf(event.getUserId());
-            
-            if (event.isLiked()) {
-                // 尝试将用户ID添加到Set中，如果添加成功说明之前没有点赞
-                Boolean added = redisTemplate.opsForSet().add(userSetKey, userId) == 1;
-                if (added) {
-                    // 增加点赞计数
-                    redisTemplate.opsForValue().increment(countKey, 1L);
-                    log.info("用户[{}]点赞了{}[{}]", 
-                            event.getUserId(), event.getType().getDescription(), event.getTargetId());
-                } else {
-                    log.info("用户[{}]已经点赞过{}[{}]", 
-                            event.getUserId(), event.getType().getDescription(), event.getTargetId());
-                }
-            } else {
-                // 尝试从Set中移除用户ID，如果移除成功说明之前确实点赞了
-                Boolean removed = redisTemplate.opsForSet().remove(userSetKey, userId) == 1;
-                if (removed) {
-                    // 减少点赞计数，确保不会小于0
-                    Object currentValue = redisTemplate.opsForValue().get(countKey);
-                    Long currentCount = convertToLong(currentValue);
-                    if (currentCount > 0) {
-                        redisTemplate.opsForValue().decrement(countKey, 1L);
-                    }
-                    log.info("用户[{}]取消点赞了{}[{}]", 
-                            event.getUserId(), event.getType().getDescription(), event.getTargetId());
-                } else {
-                    log.info("用户[{}]没有点赞过{}[{}]", 
-                            event.getUserId(), event.getType().getDescription(), event.getTargetId());
-                }
-            }
-            
-            // 设置过期时间
-            redisTemplate.expire(countKey, CACHE_EXPIRE_DAYS, TimeUnit.DAYS);
-            redisTemplate.expire(userSetKey, CACHE_EXPIRE_DAYS, TimeUnit.DAYS);
-
-        } catch (Exception e) {
-            log.error("更新Redis点赞数失败: {}", e.getMessage());
-            throw new RuntimeException("更新Redis点赞数失败", e);
         }
     }
 
@@ -135,25 +95,28 @@ public class LikeEventHandler implements EventHandler<LikeEvent> {
     }
 
     /**
-     * 将 Object 转换为 Long 类型
+     * 生成事件唯一标识
      */
-    private Long convertToLong(Object value) {
-        if (value == null) {
-            return 0L;
-        }
-        if (value instanceof Long) {
-            return (Long) value;
-        }
-        if (value instanceof Integer) {
-            return ((Integer) value).longValue();
-        }
-        if (value instanceof String) {
-            try {
-                return Long.parseLong((String) value);
-            } catch (NumberFormatException e) {
-                return 0L;
-            }
-        }
-        return 0L;
+    private String generateEventId(LikeEvent event) {
+        return String.format("%s:%d:%d:%d:%b",
+                PROCESSED_EVENT_KEY,
+                event.getUserId(),
+                event.getTargetId(),
+                event.getType().getCode(),
+                event.isLiked());
+    }
+
+    /**
+     * 检查事件是否已处理
+     */
+    private boolean isEventProcessed(String eventId) {
+        return Boolean.TRUE.equals(redisTemplate.hasKey(eventId));
+    }
+
+    /**
+     * 标记事件为已处理
+     */
+    private void markEventAsProcessed(String eventId) {
+        redisTemplate.opsForValue().set(eventId, "1", EVENT_EXPIRE_TIME, TimeUnit.SECONDS);
     }
 } 

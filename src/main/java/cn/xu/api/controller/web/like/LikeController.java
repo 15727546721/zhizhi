@@ -10,10 +10,12 @@ import cn.xu.domain.like.service.LikeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 
+@Slf4j
 @Tag(name = "点赞接口")
 @RestController
 @RequestMapping("/api/likes")
@@ -85,7 +87,7 @@ public class LikeController {
         try {
             Long count = likeService.getLikeCount(targetId, type);
             LikeCountResponse response = new LikeCountResponse(count, type, targetId);
-            
+            log.info("获取点赞数成功：" + response);
             return ResponseEntity.<LikeCountResponse>builder()
                     .code(Constants.ResponseCode.SUCCESS.getCode())
                     .info(Constants.ResponseCode.SUCCESS.getInfo())
