@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 import java.util.Map;
 
 /**
- * MySQL点赞仓储实现
+ * MySQL点赞仓储实现 - 只存储点赞关系，不存储点赞数量
  */
 @Slf4j
 @Repository
@@ -76,20 +76,8 @@ public class LikeRepository implements ILikeRepository {
 
     @Override
     public void batchUpdateLikeCount(Map<String, Long> likeCounts) {
-        try {
-            likeCounts.forEach((key, count) -> {
-                String[] parts = key.split(":");
-                if (parts.length >= 3) {
-                    String typeStr = parts[1];
-                    Long targetId = Long.parseLong(parts[2]);
-                    LikeType type = LikeType.fromName(typeStr.toUpperCase());
-                    likeDao.updateLikeCount(targetId, type.getCode(), count);
-                }
-            });
-        } catch (Exception e) {
-            log.error("批量更新点赞数失败: {}", e.getMessage());
-            throw new RuntimeException("批量更新点赞数失败", e);
-        }
+        // MySQL不再存储和更新点赞数量，此方法不再需要实现
+        log.debug("MySQL不存储点赞数量，忽略批量更新操作");
     }
 
     @Override
@@ -114,6 +102,11 @@ public class LikeRepository implements ILikeRepository {
         po.setTargetId(like.getTargetId());
         po.setType(like.getType().getCode());
         po.setStatus(like.isLiked() ? 1 : 0);
+        po.setCreateTime(like.getCreateTime());
+        po.setUpdateTime(like.getUpdateTime());
+        if (like.getId() != null) {
+            po.setId(like.getId());
+        }
         return po;
     }
 }

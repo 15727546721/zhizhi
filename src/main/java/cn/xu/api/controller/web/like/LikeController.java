@@ -1,15 +1,18 @@
 package cn.xu.api.controller.web.like;
 
 import cn.xu.api.controller.web.like.dto.LikeCountResponse;
-import cn.xu.api.controller.web.like.dto.LikeRequest;
+import cn.xu.api.controller.web.like.request.LikeRequest;
 import cn.xu.common.Constants;
 import cn.xu.common.ResponseEntity;
+import cn.xu.domain.like.command.LikeCommand;
 import cn.xu.domain.like.model.LikeType;
 import cn.xu.domain.like.service.LikeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+
+import javax.validation.Valid;
 
 @Tag(name = "点赞接口")
 @RestController
@@ -21,10 +24,15 @@ public class LikeController {
 
     @Operation(summary = "点赞")
     @PostMapping("/like")
-    public ResponseEntity<Void> like(@RequestBody LikeRequest request) {
+    public ResponseEntity<Void> like(@Valid @RequestBody LikeRequest request) {
         try {
-            likeService.like(request.getUserId(), request.getTargetId(), 
-                    LikeType.valueOf(request.getType().toUpperCase()));
+            LikeCommand command = LikeCommand.builder()
+                    .userId(request.getUserId())
+                    .targetId(request.getTargetId())
+                    .type(LikeType.valueOf(request.getType().toUpperCase()))
+                    .build();
+            
+            likeService.like(command);
             return ResponseEntity.<Void>builder()
                     .code(Constants.ResponseCode.SUCCESS.getCode())
                     .info("点赞成功")
@@ -44,10 +52,15 @@ public class LikeController {
 
     @Operation(summary = "取消点赞")
     @PostMapping("/unlike")
-    public ResponseEntity<Void> unlike(@RequestBody LikeRequest request) {
+    public ResponseEntity<Void> unlike(@Valid @RequestBody LikeRequest request) {
         try {
-            likeService.unlike(request.getUserId(), request.getTargetId(), 
-                    LikeType.valueOf(request.getType().toUpperCase()));
+            LikeCommand command = LikeCommand.builder()
+                    .userId(request.getUserId())
+                    .targetId(request.getTargetId())
+                    .type(LikeType.valueOf(request.getType().toUpperCase()))
+                    .build();
+            
+            likeService.unlike(command);
             return ResponseEntity.<Void>builder()
                     .code(Constants.ResponseCode.SUCCESS.getCode())
                     .info("取消点赞成功")
@@ -70,8 +83,7 @@ public class LikeController {
     public ResponseEntity<LikeCountResponse> getLikeCount(@RequestParam String type,
                                                         @RequestParam Long targetId) {
         try {
-            LikeType likeType = LikeType.valueOf(type.toUpperCase());
-            Long count = likeService.getLikeCount(targetId, likeType);
+            Long count = likeService.getLikeCount(targetId, type);
             LikeCountResponse response = new LikeCountResponse(count, type, targetId);
             
             return ResponseEntity.<LikeCountResponse>builder()
@@ -94,13 +106,13 @@ public class LikeController {
 
     @Operation(summary = "检查是否已点赞")
     @PostMapping("/check")
-    public ResponseEntity<Boolean> checkLike(@RequestBody LikeRequest likeRequest) {
-        Long userId = likeRequest.getUserId();
-        Long targetId = likeRequest.getTargetId();
-        String type = likeRequest.getType();
+    public ResponseEntity<Boolean> checkLike(@Valid @RequestBody LikeRequest request) {
         try {
-            Boolean liked = likeService.isLiked(userId, targetId, 
-                    LikeType.valueOf(type.toUpperCase()));
+            boolean liked = likeService.isLiked(
+                    request.getUserId(), 
+                    request.getTargetId(), 
+                    request.getType()
+            );
             
             return ResponseEntity.<Boolean>builder()
                     .code(Constants.ResponseCode.SUCCESS.getCode())

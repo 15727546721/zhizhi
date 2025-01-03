@@ -1,5 +1,6 @@
 package cn.xu.domain.like.event;
 
+import cn.xu.domain.like.model.Like;
 import cn.xu.domain.like.repository.ILikeRepository;
 import com.lmax.disruptor.EventHandler;
 import lombok.extern.slf4j.Slf4j;
@@ -9,8 +10,6 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -28,17 +27,9 @@ public class LikeEventHandler implements EventHandler<LikeEvent> {
     private ILikeRepository likeRepository;
 
     private static final String LOCK_KEY_PREFIX = "like:lock:";
+    private static final String LIKE_COUNT_KEY = "like:count:";
     private static final long LOCK_WAIT_TIME = 3000L;
     private static final long LOCK_LEASE_TIME = 5000L;
-
-    // 用于存储待同步的点赞数据
-    private final Map<String, Long> pendingLikeCounts = new ConcurrentHashMap<>();
-    // 上次同步时间
-    private volatile long lastSyncTime = System.currentTimeMillis();
-    // 同步间隔（毫秒）
-    private static final long SYNC_INTERVAL = 5000;
-    // 批量同步阈值
-    private static final int BATCH_SYNC_THRESHOLD = 100;
 
     @Override
     public void onEvent(LikeEvent event, long sequence, boolean endOfBatch) {
@@ -57,10 +48,11 @@ public class LikeEventHandler implements EventHandler<LikeEvent> {
                 return;
             }
 
-            handleLikeEvent(event);
+            // 更新Redis中的点赞数量
+            updateRedisLikeCount(event);
             
-            // 检查是否需要同步数据到数据库
-            checkAndSyncToDatabase(endOfBatch);
+            // 更新MySQL中的点赞关系记录
+            updateMySQLLikeRelation(event);
 
         } catch (Exception e) {
             log.error("处理点赞事件失败: {}", e.getMessage());
@@ -71,66 +63,77 @@ public class LikeEventHandler implements EventHandler<LikeEvent> {
         }
     }
 
-    private void handleLikeEvent(LikeEvent event) {
-        // 构建Redis key
-        String countKey = String.format("%s:like:%d:count", 
-                event.getType().name().toLowerCase(), event.getTargetId());
+    private void updateRedisLikeCount(LikeEvent event) {
+        String countKey = LIKE_COUNT_KEY + event.getType().name().toLowerCase() + ":" + event.getTargetId();
 
         try {
             // 更新点赞计数
-            Long currentCount = redisTemplate.opsForValue().get(countKey) != null ? 
-                    (Long) redisTemplate.opsForValue().get(countKey) : 0L;
+            Object currentValue = redisTemplate.opsForValue().get(countKey);
+            Long currentCount = convertToLong(currentValue);
             
             Long newCount = event.isLiked() ? currentCount + 1 : Math.max(0, currentCount - 1);
             
             // 更新Redis中的计数
             redisTemplate.opsForValue().set(countKey, newCount);
-
-            // 添加到待同步队列
-            pendingLikeCounts.put(countKey, newCount);
             
             log.info("{}[{}]点赞数更新为: {}", 
                     event.getType().getDescription(), event.getTargetId(), newCount);
 
         } catch (Exception e) {
-            log.error("处理点赞事件失败: {}", e.getMessage());
+            log.error("更新Redis点赞数失败: {}", e.getMessage());
             // 发生异常时回滚Redis操作
             if (event.isLiked()) {
-                Long currentCount = (Long) redisTemplate.opsForValue().get(countKey);
-                if (currentCount != null && currentCount > 0) {
+                Object currentValue = redisTemplate.opsForValue().get(countKey);
+                Long currentCount = convertToLong(currentValue);
+                if (currentCount > 0) {
                     redisTemplate.opsForValue().decrement(countKey);
                 }
             } else {
-                Long currentCount = (Long) redisTemplate.opsForValue().get(countKey);
-                if (currentCount != null) {
-                    redisTemplate.opsForValue().increment(countKey);
-                }
+                redisTemplate.opsForValue().increment(countKey);
             }
-            throw new RuntimeException("处理点赞事件失败", e);
+            throw new RuntimeException("更新Redis点赞数失败", e);
         }
     }
 
-    private void checkAndSyncToDatabase(boolean endOfBatch) {
-        long currentTime = System.currentTimeMillis();
-        boolean shouldSync = endOfBatch && (
-                pendingLikeCounts.size() >= BATCH_SYNC_THRESHOLD ||
-                        (currentTime - lastSyncTime) >= SYNC_INTERVAL
-        );
+    private void updateMySQLLikeRelation(LikeEvent event) {
+        try {
+            // 使用工厂方法创建Like实例
+            Like like = Like.create(event.getUserId(), event.getTargetId(), event.getType());
+            
+            // 根据事件状态设置点赞状态
+            if (!event.isLiked()) {
+                like.cancel();
+            }
+            
+            // 保存点赞关系到MySQL
+            likeRepository.save(like);
+            
+        } catch (Exception e) {
+            log.error("更新MySQL点赞关系失败: {}", e.getMessage());
+            throw new RuntimeException("更新MySQL点赞关系失败", e);
+        }
+    }
 
-        if (shouldSync && !pendingLikeCounts.isEmpty()) {
+    /**
+     * 将 Object 转换为 Long 类型
+     */
+    private Long convertToLong(Object value) {
+        if (value == null) {
+            return 0L;
+        }
+        if (value instanceof Long) {
+            return (Long) value;
+        }
+        if (value instanceof Integer) {
+            return ((Integer) value).longValue();
+        }
+        if (value instanceof String) {
             try {
-                // 批量更新数据库
-                likeRepository.batchUpdateLikeCount(pendingLikeCounts);
-                log.info("同步{}个目标的点赞数到数据库", pendingLikeCounts.size());
-
-                // 清空待同步队列
-                pendingLikeCounts.clear();
-                // 更新同步时间
-                lastSyncTime = currentTime;
-
-            } catch (Exception e) {
-                log.error("同步点赞数据到数据库失败: {}", e.getMessage());
+                return Long.parseLong((String) value);
+            } catch (NumberFormatException e) {
+                return 0L;
             }
         }
+        return 0L;
     }
 } 
