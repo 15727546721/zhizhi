@@ -43,6 +43,6 @@ public class Like implements Serializable {
     /**
      * 是否点赞，1-点赞，0-取消点赞
      */
-    private Integer value;
+    private Integer status;
 
 }

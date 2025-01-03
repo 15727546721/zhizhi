@@ -1,54 +1,41 @@
 package cn.xu.infrastructure.persistent.dao;
 
+import cn.xu.infrastructure.persistent.po.LikePO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
-import java.util.List;
-import java.util.Map;
-
+/**
+ * 点赞数据访问接口
+ */
 @Mapper
 public interface ILikeDao {
     /**
-     * 插入文章点赞记录
-     *
-     * @param articleId 文章id
-     * @param userId    用户id
-     * @param value     点赞值(1点赞，0取消点赞)
-     * @param type      点赞类型-1文章
+     * 插入点赞记录
      */
-    void insertArticleLikeRecord(@Param("articleId") Long articleId,
-                                 @Param("userId") Long userId,
-                                 @Param("value") int value,
-                                 @Param("type") int type);
+    void insert(LikePO likePO);
 
     /**
-     * 批量更新文章点赞数
-     *
-     * @param likeCounts 点赞数Map
+     * 更新点赞记录
      */
-    void batchUpdateArticleLikeCount(@Param("likeCounts") Map<Long, Long> likeCounts);
+    void update(LikePO likePO);
 
     /**
-     * 获取用户点赞的文章列表
-     *
-     * @param userId 用户ID
-     * @return 文章ID列表
+     * 根据用户ID、目标ID和类型查询点赞记录
      */
-    List<Long> getUserLikedArticles(@Param("userId") Long userId);
+    LikePO findByUserIdAndTargetIdAndType(@Param("userId") Long userId,
+                                         @Param("targetId") Long targetId,
+                                         @Param("type") Integer type);
 
     /**
-     * 获取文章的点赞用户列表
-     *
-     * @param articleId 文章ID
-     * @return 用户ID列表
+     * 统计目标的点赞数
      */
-    List<Long> getArticleLikedUsers(@Param("articleId") Long articleId);
+    Long countByTargetIdAndType(@Param("targetId") Long targetId,
+                               @Param("type") Integer type);
 
     /**
-     * 获取热门文章ID列表（按点赞数排序）
-     *
-     * @param limit 限制数量
-     * @return 文章ID列表
+     * 更新点赞数
      */
-    List<Long> getHotArticlesByLikes(@Param("limit") int limit);
+    void updateLikeCount(@Param("targetId") Long targetId,
+                        @Param("type") Integer type,
+                        @Param("count") Long count);
 }
