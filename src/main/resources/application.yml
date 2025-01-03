@@ -14,3 +14,21 @@ spring:
         max-wait: -1
         max-idle: 8
         min-idle: 0
+
+# 热点数据配置
+hot-data:
+  items:
+    # 热门文章的点赞数据
+    - targetId: 1
+      type: ARTICLE
+      needWarmup: true
+      needRebuild: true
+    - targetId: 2
+      type: ARTICLE
+      needWarmup: true
+      needRebuild: true
+    # 热门话题的点赞数据
+    - targetId: 1
+      type: TOPIC
+      needWarmup: true
+      needRebuild: true
