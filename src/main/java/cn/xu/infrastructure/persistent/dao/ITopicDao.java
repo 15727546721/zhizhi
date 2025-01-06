@@ -73,4 +73,11 @@ public interface ITopicDao {
      * @return 话题PO列表
      */
     List<TopicPO> findByCategoryId(@Param("categoryId") Long categoryId);
+
+    /**
+     * 查询未分类的话题
+     *
+     * @return 话题PO列表
+     */
+    List<TopicPO> findWithoutCategory();
 } 
