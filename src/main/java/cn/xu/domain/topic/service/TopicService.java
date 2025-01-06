@@ -31,7 +31,7 @@ public class TopicService {
     @Transactional(rollbackFor = Exception.class)
     public Topic createTopic(CreateTopicCommand command) {
         // 1. 检查分类是否存在
-        if (topicCategoryService.getCategory(command.getCategoryId()) == null) {
+        if (command.getCategoryId() != null && topicCategoryService.getCategory(command.getCategoryId()) == null) {
             throw new AppException(ResponseCode.UN_ERROR.getCode(), "话题分类不存在");
         }
         
