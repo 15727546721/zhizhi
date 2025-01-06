@@ -22,6 +22,10 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.Map;
+import java.util.HashMap;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 @Service
 @Slf4j
@@ -147,5 +151,177 @@ public class MinioService implements IFileStorageService {
         } catch (MinioException e) {
             throw new RuntimeException("Error listing files from MinIO", e);
         }
+    }
+
+    /**
+     * 上传话题图片
+     * @param file 图片文件
+     * @param filePath 文件存储路径
+     * @return 图片访问URL
+     */
+    public String uploadTopicImage(MultipartFile file, String filePath) {
+        // 检查文件大小（例如限制为5MB）
+        long maxSize = 5 * 1024 * 1024;
+        if (file.getSize() > maxSize) {
+            throw new AppException(ResponseCode.UN_ERROR.getCode(), "图片大小不能超过5MB");
+        }
+
+        try (InputStream inputStream = file.getInputStream()) {
+            // 检查桶是否存在
+            createBucketIfNotExists();
+
+            // 构建文件元数据
+            Map<String, String> headers = new HashMap<>();
+            headers.put("Content-Type", file.getContentType());
+            
+            // 创建PutObjectArgs对象
+            PutObjectArgs putObjectArgs = PutObjectArgs.builder()
+                    .bucket(bucketName)
+                    .object(filePath)
+                    .stream(inputStream, file.getSize(), -1)
+                    .contentType(file.getContentType())
+                    .headers(headers)
+                    .build();
+
+            // 上传文件
+            minioClient.putObject(putObjectArgs);
+
+            // 返回可访问的URL
+            String imageUrl = minioUrl + "/" + bucketName + "/" + filePath;
+            log.info("话题图片上传成功，访问URL: {}", imageUrl);
+            return imageUrl;
+
+        } catch (Exception e) {
+            log.error("上传话题图片到MinIO失败", e);
+            throw new AppException(ResponseCode.UN_ERROR.getCode(), "上传图片失败：" + e.getMessage());
+        }
+    }
+
+    /**
+     * 检查并创建存储桶
+     */
+    private void createBucketIfNotExists() {
+        try {
+            boolean exists = minioClient.bucketExists(
+                BucketExistsArgs.builder().bucket(bucketName).build()
+            );
+            if (!exists) {
+                minioClient.makeBucket(
+                    MakeBucketArgs.builder().bucket(bucketName).build()
+                );
+                
+                // 设置桶策略为公共读
+                String policy = String.format(
+                    "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"AWS\":[\"*\"]},\"Action\":[\"s3:GetObject\"],\"Resource\":[\"arn:aws:s3:::%s/*\"]}]}",
+                    bucketName
+                );
+                minioClient.setBucketPolicy(
+                    SetBucketPolicyArgs.builder().bucket(bucketName).config(policy).build()
+                );
+            }
+        } catch (Exception e) {
+            log.error("创建MinIO存储桶失败", e);
+            throw new AppException(ResponseCode.UN_ERROR.getCode(), "创建存储空间失败");
+        }
+    }
+
+    /**
+     * 批量删除话题图片
+     */
+    public void deleteTopicImages(List<String> imageUrls) {
+        if (imageUrls == null || imageUrls.isEmpty()) {
+            return;
+        }
+
+        for (String imageUrl : imageUrls) {
+            try {
+                String objectName = imageUrl.substring(imageUrl.indexOf(bucketName) + bucketName.length() + 1);
+                minioClient.removeObject(
+                    RemoveObjectArgs.builder()
+                        .bucket(bucketName)
+                        .object(objectName)
+                        .build()
+                );
+                log.info("成功删除话题图片: {}", objectName);
+            } catch (Exception e) {
+                log.error("删除话题图片失败: {}", imageUrl, e);
+            }
+        }
+    }
+
+    /**
+     * 将临时图片移动到永久存储目录
+     * @param tempImageUrl 临时图片URL
+     * @return 永久图片URL
+     */
+    public String moveToFormal(String tempImageUrl) {
+        if (!tempImageUrl.contains("/temp/")) {
+            return tempImageUrl; // 如果不是临时图片，直接返回原URL
+        }
+
+        try {
+            // 1. 从URL中提取文件名
+            String tempObjectName = tempImageUrl.substring(tempImageUrl.indexOf(bucketName) + bucketName.length() + 1);
+            String fileName = tempObjectName.substring(tempObjectName.lastIndexOf("/") + 1);
+            
+            // 2. 生成永久存储路径 (formal/年月/文件名)
+            String formalPath = String.format("formal/%s/%s",
+                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMM")),
+                fileName);
+
+            // 3. 复制文件到新位置
+            CopyObjectArgs copyArgs = CopyObjectArgs.builder()
+                    .bucket(bucketName)
+                    .object(formalPath)
+                    .source(CopySource.builder()
+                            .bucket(bucketName)
+                            .object(tempObjectName)
+                            .build())
+                    .build();
+            minioClient.copyObject(copyArgs);
+
+            // 4. 删除临时文件
+            RemoveObjectArgs removeArgs = RemoveObjectArgs.builder()
+                    .bucket(bucketName)
+                    .object(tempObjectName)
+                    .build();
+            minioClient.removeObject(removeArgs);
+
+            // 5. 返回新的URL
+            String formalUrl = minioUrl + "/" + bucketName + "/" + formalPath;
+            log.info("图片已从临时目录移动到永久目录: {} -> {}", tempImageUrl, formalUrl);
+            return formalUrl;
+
+        } catch (Exception e) {
+            log.error("移动图片到永久目录失败: {}", tempImageUrl, e);
+            throw new AppException(ResponseCode.UN_ERROR.getCode(), "处理图片失败：" + e.getMessage());
+        }
+    }
+
+    /**
+     * 批量移动临时图片到永久存储目录
+     * @param tempImageUrls 临时图片URL列表
+     * @return 永久图片URL列表
+     */
+    public List<String> moveToFormal(List<String> tempImageUrls) {
+        if (tempImageUrls == null || tempImageUrls.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        List<String> formalUrls = new ArrayList<>();
+        for (String tempUrl : tempImageUrls) {
+            try {
+                String formalUrl = moveToFormal(tempUrl);
+                formalUrls.add(formalUrl);
+            } catch (Exception e) {
+                log.error("移动图片失败: {}", tempUrl, e);
+                // 如果有失败，需要回滚已经移动的文件
+                if (!formalUrls.isEmpty()) {
+                    deleteTopicImages(formalUrls);
+                }
+                throw e;
+            }
+        }
+        return formalUrls;
     }
 }

@@ -24,7 +24,7 @@
             </if>
             create_time, update_time)
         values 
-            (#{userId}, #{content}, #{images},
+            (#{userId}, #{content}, #{images,jdbcType=VARCHAR},
             <if test="categoryId != null">
             #{categoryId},
             </if>
@@ -33,10 +33,16 @@
 
     <update id="update" parameterType="cn.xu.infrastructure.persistent.po.TopicPO">
         update topic
-        set content = #{content},
-            images = #{images},
-            category_id = #{categoryId},
+        <set>
+            content = #{content},
+            <if test="images != null">
+                images = #{images,jdbcType=VARCHAR},
+            </if>
+            <if test="categoryId != null">
+                category_id = #{categoryId},
+            </if>
             update_time = now()
+        </set>
         where id = #{id}
     </update>
 

@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -58,7 +59,7 @@ public class TopicPO {
      */
     public List<String> getImageList() {
         if (images == null || images.isEmpty()) {
-            return Collections.emptyList();
+            return new ArrayList<>();
         }
         return Arrays.asList(images.split(","));
     }
