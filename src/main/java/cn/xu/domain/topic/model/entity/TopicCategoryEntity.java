@@ -15,37 +15,37 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TopicCategoryEntity {
-    
+
     /**
      * 分类ID
      */
     private Long id;
-    
+
     /**
      * 分类名称
      */
     private String name;
-    
+
     /**
      * 分类描述
      */
     private String description;
-    
+
     /**
      * 排序序号，值越小越靠前
      */
     private Integer sort;
-    
+
     /**
      * 创建时间
      */
     private LocalDateTime createTime;
-    
+
     /**
      * 更新时间
      */
     private LocalDateTime updateTime;
-    
+
     /**
      * 验证分类数据
      */
@@ -63,7 +63,7 @@ public class TopicCategoryEntity {
             sort = 0;
         }
     }
-    
+
     /**
      * 更新分类内容
      */

@@ -11,9 +11,9 @@ import org.springframework.stereotype.Repository;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.ArrayList;
 
 @Slf4j
 @Repository
@@ -70,23 +70,23 @@ public class CommentRepository implements ICommentRepository {
     public List<CommentEntity> findByTypeAndTargetId(Integer type, Long targetId) {
         try {
             log.info("查询评论列表 - type: {}, targetId: {}", type, targetId);
-            
+
             // 1. 调用DAO层方法获取评论列表
             List<Comment> comments = commentDao.findByTypeAndTargetId(type, targetId);
-            
+
             // 2. 转换为领域实体
             if (comments == null || comments.isEmpty()) {
                 return new ArrayList<>();
             }
-            
+
             // 3. 将PO对象转换为领域实体对象
             List<CommentEntity> commentEntities = comments.stream()
                     .map(this::convertToCommentEntity)
                     .collect(Collectors.toList());
-                
+
             log.info("查询到评论数量: {}", commentEntities.size());
             return commentEntities;
-                
+
         } catch (Exception e) {
             log.error("查询评论列表失败 - type: {}, targetId: {}", type, targetId, e);
             throw new AppException(ResponseCode.UN_ERROR.getCode(), "查询评论列表失败：" + e.getMessage());

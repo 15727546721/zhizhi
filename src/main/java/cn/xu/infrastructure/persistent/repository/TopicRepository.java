@@ -85,7 +85,7 @@ public class TopicRepository implements ITopicRepository {
         if (topicEntity == null) {
             return null;
         }
-        
+
         TopicPO topicPO = TopicPO.builder()
                 .id(topicEntity.getId())
                 .userId(topicEntity.getUserId())
@@ -94,7 +94,7 @@ public class TopicRepository implements ITopicRepository {
                 .createTime(topicEntity.getCreateTime())
                 .updateTime(topicEntity.getUpdateTime())
                 .build();
-                
+
         // 设置图片列表
         if (topicEntity.getImages() != null && !topicEntity.getImages().isEmpty()) {
             topicPO.setImageList(topicEntity.getImages());
@@ -109,7 +109,7 @@ public class TopicRepository implements ITopicRepository {
         if (topicPO == null) {
             return null;
         }
-        
+
         return TopicEntity.builder()
                 .id(topicPO.getId())
                 .userId(topicPO.getUserId())

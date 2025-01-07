@@ -5,7 +5,6 @@ import cn.xu.domain.topic.command.CreateTopicCommand;
 import cn.xu.domain.topic.entity.Topic;
 import cn.xu.domain.topic.model.entity.TopicEntity;
 import cn.xu.domain.topic.repository.ITopicRepository;
-import cn.xu.domain.topic.service.ITopicCategoryService;
 import cn.xu.exception.AppException;
 import cn.xu.infrastructure.common.ResponseCode;
 import lombok.extern.slf4j.Slf4j;
@@ -13,9 +12,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.ArrayList;
 
 @Slf4j
 @Service
@@ -23,7 +22,7 @@ public class TopicService {
 
     @Resource
     private ITopicRepository topicRepository;
-    
+
     @Resource
     private ITopicCategoryService topicCategoryService;
 
@@ -46,7 +45,7 @@ public class TopicService {
             if (command.getImages() != null && !command.getImages().isEmpty()) {
                 formalImages = minioService.moveToFormal(command.getImages());
             }
-            
+
             // 3. 转换为领域实体
             TopicEntity topicEntity = TopicEntity.builder()
                     .userId(command.getUserId())
@@ -54,16 +53,16 @@ public class TopicService {
                     .images(formalImages)
                     .categoryId(command.getCategoryId())
                     .build();
-                    
+
             // 4. 验证
             topicEntity.validate();
-            
+
             // 5. 保存
             Long topicId = topicRepository.save(topicEntity);
-            
+
             // 6. 返回完整的话题信息
             return convertToTopic(topicRepository.findById(topicId));
-            
+
         } catch (Exception e) {
             // 发生异常时，删除已移动的永久图片
             if (!formalImages.isEmpty()) {
@@ -82,7 +81,7 @@ public class TopicService {
         if (existingTopic == null) {
             throw new AppException(ResponseCode.UN_ERROR.getCode(), "话题不存在");
         }
-        
+
         topicEntity.validate();
         topicRepository.update(topicEntity);
     }
@@ -183,20 +182,20 @@ public class TopicService {
         if (existingTopic == null) {
             throw new AppException(ResponseCode.UN_ERROR.getCode(), "话题不存在");
         }
-        
+
         // 获取需要删除的图片
         List<String> oldImages = existingTopic.getImages();
         if (oldImages != null) {
             List<String> deletedImages = oldImages.stream()
-                .filter(url -> !imageUrls.contains(url))
-                .collect(Collectors.toList());
-            
+                    .filter(url -> !imageUrls.contains(url))
+                    .collect(Collectors.toList());
+
             // 删除不再使用的图片
             if (!deletedImages.isEmpty()) {
                 minioService.deleteTopicImages(deletedImages);
             }
         }
-        
+
         // 更新话题图片
         existingTopic.setImages(imageUrls);
         topicRepository.update(existingTopic);

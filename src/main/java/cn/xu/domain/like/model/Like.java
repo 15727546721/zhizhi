@@ -1,6 +1,7 @@
 package cn.xu.domain.like.model;
 
 import lombok.Getter;
+import lombok.ToString;
 
 import java.time.LocalDateTime;
 
@@ -8,6 +9,7 @@ import java.time.LocalDateTime;
  * 点赞聚合根
  */
 @Getter
+@ToString
 public class Like {
 
     private Long id;

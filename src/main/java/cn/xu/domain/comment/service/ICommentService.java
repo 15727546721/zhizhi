@@ -30,7 +30,7 @@ public interface ICommentService {
     /**
      * 根据类型和目标ID获取评论列表
      *
-     * @param type 评论类型
+     * @param type     评论类型
      * @param targetId 目标ID（文章ID或话题ID）
      * @return 评论列表（已构建好父子关系）
      */

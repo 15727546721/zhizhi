@@ -2,7 +2,6 @@ package cn.xu.api.controller.web.topic;
 
 import cn.xu.api.dto.topic.TopicDTO;
 import cn.xu.common.ResponseEntity;
-import cn.xu.domain.file.service.IFileStorageService;
 import cn.xu.domain.file.service.MinioService;
 import cn.xu.domain.topic.command.CreateTopicCommand;
 import cn.xu.domain.topic.entity.Topic;
@@ -33,7 +32,7 @@ public class TopicController {
 
     @Resource
     private TopicService topicService;
-    
+
     @Resource
     private ITopicCategoryService topicCategoryService;
 
@@ -111,7 +110,7 @@ public class TopicController {
     public ResponseEntity<List<String>> uploadTopicImages(@RequestParam("files") MultipartFile[] files) {
         log.info("开始上传话题图片，文件数量: {}", files.length);
         List<String> imageUrls = new ArrayList<>();
-        
+
         try {
             for (MultipartFile file : files) {
                 // 检查文件类型
@@ -119,19 +118,19 @@ public class TopicController {
                 if (contentType == null || !contentType.startsWith("image/")) {
                     throw new AppException(ResponseCode.UN_ERROR.getCode(), "只能上传图片文件");
                 }
-                
+
                 // 生成临时文件存储路径 (temp/年月日/时间戳_文件名)
                 String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
-                String filePath = String.format("temp/%s/%s_%s", 
-                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")),
-                    timestamp,
-                    UUID.randomUUID());
-                    
+                String filePath = String.format("temp/%s/%s_%s",
+                        LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")),
+                        timestamp,
+                        UUID.randomUUID());
+
                 // 上传文件并获取URL
                 String imageUrl = minioService.uploadTopicImage(file, filePath);
                 imageUrls.add(imageUrl);
             }
-            
+
             return ResponseEntity.<List<String>>builder()
                     .code(ResponseCode.SUCCESS.getCode())
                     .info(ResponseCode.SUCCESS.getMessage())
@@ -157,15 +156,15 @@ public class TopicController {
                 Topic topic = topicService.getTopicById(topicId);
                 if (topic != null) {
                     List<String> remainingImages = topic.getImages().stream()
-                        .filter(url -> !imageUrls.contains(url))
-                        .collect(Collectors.toList());
+                            .filter(url -> !imageUrls.contains(url))
+                            .collect(Collectors.toList());
                     topicService.updateTopicImages(topicId, remainingImages);
                 }
             }
-            
+
             // 删除图片文件
             minioService.deleteTopicImages(imageUrls);
-            
+
             return ResponseEntity.<Void>builder()
                     .code(ResponseCode.SUCCESS.getCode())
                     .info(ResponseCode.SUCCESS.getMessage())
@@ -182,7 +181,7 @@ public class TopicController {
         if (topic == null) {
             return null;
         }
-        
+
         // 获取分类名称
         String categoryName = null;
         if (topic.getCategoryId() != null) {
@@ -191,7 +190,7 @@ public class TopicController {
                 categoryName = category.getName();
             }
         }
-        
+
         return TopicDTO.builder()
                 .id(topic.getId())
                 .userId(topic.getUserId())

@@ -24,7 +24,7 @@ public enum CommentType {
         if (value == null) {
             throw new AppException(ResponseCode.UN_ERROR.getCode(), "评论类型不能为空");
         }
-        
+
         for (CommentType type : CommentType.values()) {
             if (type.getValue().equals(value)) {
                 return type;

@@ -19,13 +19,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-import java.util.Map;
-import java.util.HashMap;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.*;
 
 @Service
 @Slf4j
@@ -155,7 +151,8 @@ public class MinioService implements IFileStorageService {
 
     /**
      * 上传话题图片
-     * @param file 图片文件
+     *
+     * @param file     图片文件
      * @param filePath 文件存储路径
      * @return 图片访问URL
      */
@@ -173,7 +170,7 @@ public class MinioService implements IFileStorageService {
             // 构建文件元数据
             Map<String, String> headers = new HashMap<>();
             headers.put("Content-Type", file.getContentType());
-            
+
             // 创建PutObjectArgs对象
             PutObjectArgs putObjectArgs = PutObjectArgs.builder()
                     .bucket(bucketName)
@@ -203,20 +200,20 @@ public class MinioService implements IFileStorageService {
     private void createBucketIfNotExists() {
         try {
             boolean exists = minioClient.bucketExists(
-                BucketExistsArgs.builder().bucket(bucketName).build()
+                    BucketExistsArgs.builder().bucket(bucketName).build()
             );
             if (!exists) {
                 minioClient.makeBucket(
-                    MakeBucketArgs.builder().bucket(bucketName).build()
+                        MakeBucketArgs.builder().bucket(bucketName).build()
                 );
-                
+
                 // 设置桶策略为公共读
                 String policy = String.format(
-                    "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"AWS\":[\"*\"]},\"Action\":[\"s3:GetObject\"],\"Resource\":[\"arn:aws:s3:::%s/*\"]}]}",
-                    bucketName
+                        "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"AWS\":[\"*\"]},\"Action\":[\"s3:GetObject\"],\"Resource\":[\"arn:aws:s3:::%s/*\"]}]}",
+                        bucketName
                 );
                 minioClient.setBucketPolicy(
-                    SetBucketPolicyArgs.builder().bucket(bucketName).config(policy).build()
+                        SetBucketPolicyArgs.builder().bucket(bucketName).config(policy).build()
                 );
             }
         } catch (Exception e) {
@@ -237,10 +234,10 @@ public class MinioService implements IFileStorageService {
             try {
                 String objectName = imageUrl.substring(imageUrl.indexOf(bucketName) + bucketName.length() + 1);
                 minioClient.removeObject(
-                    RemoveObjectArgs.builder()
-                        .bucket(bucketName)
-                        .object(objectName)
-                        .build()
+                        RemoveObjectArgs.builder()
+                                .bucket(bucketName)
+                                .object(objectName)
+                                .build()
                 );
                 log.info("成功删除话题图片: {}", objectName);
             } catch (Exception e) {
@@ -251,6 +248,7 @@ public class MinioService implements IFileStorageService {
 
     /**
      * 将临时图片移动到永久存储目录
+     *
      * @param tempImageUrl 临时图片URL
      * @return 永久图片URL
      */
@@ -263,11 +261,11 @@ public class MinioService implements IFileStorageService {
             // 1. 从URL中提取文件名
             String tempObjectName = tempImageUrl.substring(tempImageUrl.indexOf(bucketName) + bucketName.length() + 1);
             String fileName = tempObjectName.substring(tempObjectName.lastIndexOf("/") + 1);
-            
+
             // 2. 生成永久存储路径 (formal/年月/文件名)
             String formalPath = String.format("formal/%s/%s",
-                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMM")),
-                fileName);
+                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMM")),
+                    fileName);
 
             // 3. 复制文件到新位置
             CopyObjectArgs copyArgs = CopyObjectArgs.builder()
@@ -300,6 +298,7 @@ public class MinioService implements IFileStorageService {
 
     /**
      * 批量移动临时图片到永久存储目录
+     *
      * @param tempImageUrls 临时图片URL列表
      * @return 永久图片URL列表
      */

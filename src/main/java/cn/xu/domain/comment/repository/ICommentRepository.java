@@ -1,6 +1,7 @@
 package cn.xu.domain.comment.repository;
 
 import cn.xu.domain.comment.model.entity.CommentEntity;
+
 import java.util.List;
 
 public interface ICommentRepository {

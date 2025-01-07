@@ -15,32 +15,32 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TopicCategoryPO {
-    
+
     /**
      * 分类ID
      */
     private Long id;
-    
+
     /**
      * 分类名称
      */
     private String name;
-    
+
     /**
      * 分类描述
      */
     private String description;
-    
+
     /**
      * 排序序号，值越小越靠前
      */
     private Integer sort;
-    
+
     /**
      * 创建时间
      */
     private LocalDateTime createTime;
-    
+
     /**
      * 更新时间
      */

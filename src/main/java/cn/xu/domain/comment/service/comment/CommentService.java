@@ -57,16 +57,16 @@ public class CommentService implements ICommentService {
 
         try {
             log.info("开始查询评论列表 - type: {}, targetId: {}", type.getDescription(), targetId);
-            
+
             // 1. 获取所有评论
             List<CommentEntity> comments = commentRepository.findByTypeAndTargetId(type.getValue(), targetId);
-            
+
             // 2. 构建评论树形结构
             List<CommentEntity> nestedComments = buildNestedComments(comments);
-            
-            log.info("查询评论列表完成 - type: {}, targetId: {}, count: {}", 
+
+            log.info("查询评论列表完成 - type: {}, targetId: {}, count: {}",
                     type.getDescription(), targetId, nestedComments.size());
-            
+
             return nestedComments;
         } catch (Exception e) {
             log.error("查询评论列表失败 - type: {}, targetId: {}", type.getDescription(), targetId, e);
