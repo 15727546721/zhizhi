@@ -1,8 +1,11 @@
 package cn.xu.api.controller.web.comment;
 
 
+import cn.xu.api.controller.web.comment.dto.CommentListDTO;
+import cn.xu.api.controller.web.comment.request.CommentRequest;
 import cn.xu.common.ResponseEntity;
-import cn.xu.domain.comment.model.CommentEntity;
+import cn.xu.domain.comment.model.entity.CommentEntity;
+import cn.xu.domain.comment.model.valueobject.CommentType;
 import cn.xu.domain.comment.service.ICommentService;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.service.IUserService;
@@ -45,10 +48,14 @@ public class CommentApiController {
                 .build();
     }
 
-    @Operation(summary = "获取文章评论列表")
-    @GetMapping("/getArticleComments/{articleId}")
-    public ResponseEntity<List<CommentListDTO>> getArticleComments(@PathVariable("articleId") Long articleId) {
-        List<CommentEntity> commentEntityList = commentService.getArticleComments(articleId);
+    @Operation(summary = "获取评论列表")
+    @GetMapping("/list")
+    public ResponseEntity<List<CommentListDTO>> getCommentList(
+            @RequestParam("type") Integer type,
+            @RequestParam("targetId") Long targetId) {
+        // 转换评论类型
+        CommentType commentType = CommentType.of(type);
+        List<CommentEntity> commentEntityList = commentService.getCommentsByTypeAndTargetId(commentType, targetId);
 
         // 收集所有用户ID（包括子评论的用户）
         Set<Long> userIds = new HashSet<>();

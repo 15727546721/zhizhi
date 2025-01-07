@@ -1,10 +1,17 @@
 package cn.xu.domain.comment.service;
 
-import cn.xu.api.controller.web.comment.CommentRequest;
-import cn.xu.domain.comment.model.CommentEntity;
+import cn.xu.api.controller.web.comment.request.CommentRequest;
+import cn.xu.domain.comment.model.entity.CommentEntity;
+import cn.xu.domain.comment.model.valueobject.CommentType;
 
 import java.util.List;
 
+/**
+ * 评论服务接口
+ *
+ * @author xuhongzu
+ * @date 2024/03/16
+ */
 public interface ICommentService {
     /**
      * 添加评论
@@ -21,9 +28,11 @@ public interface ICommentService {
     void replyComment(CommentRequest comment);
 
     /**
-     * 获取文章评论列表
+     * 根据类型和目标ID获取评论列表
      *
-     * @return 文章评论列表
+     * @param type 评论类型
+     * @param targetId 目标ID（文章ID或话题ID）
+     * @return 评论列表（已构建好父子关系）
      */
-    List<CommentEntity> getArticleComments(Long articleId);
+    List<CommentEntity> getCommentsByTypeAndTargetId(CommentType type, Long targetId);
 }

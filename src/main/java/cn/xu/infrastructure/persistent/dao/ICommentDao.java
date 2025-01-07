@@ -1,33 +1,33 @@
 package cn.xu.infrastructure.persistent.dao;
 
-import cn.xu.api.controller.web.comment.CommentRequest;
-import cn.xu.domain.comment.model.CommentEntity;
+import cn.xu.infrastructure.persistent.po.Comment;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-
 import java.util.List;
 
 @Mapper
 public interface ICommentDao {
     /**
-     * 添加评论
-     *
-     * @param comment 评论请求参数
+     * 插入评论
      */
-    void addComment(CommentRequest comment);
-
+    int insert(Comment comment);
+    
     /**
-     * 回复评论
-     *
-     * @param comment
+     * 根据ID删除评论
      */
-    void replyComment(CommentRequest comment);
-
+    int deleteById(@Param("id") Long id);
+    
     /**
-     * 获取文章评论列表
+     * 根据ID查询评论
+     */
+    Comment findById(@Param("id") Long id);
+    
+    /**
+     * 根据类型和目标ID查询评论列表
      *
-     * @param articleId 文章ID
+     * @param type 评论类型（1-文章；2-话题）
+     * @param targetId 目标ID
      * @return 评论列表
      */
-    List<CommentEntity> getArticleComments(@Param("articleId") Long articleId);
+    List<Comment> findByTypeAndTargetId(@Param("type") Integer type, @Param("targetId") Long targetId);
 }
