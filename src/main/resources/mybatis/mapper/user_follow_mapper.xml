@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.xu.infrastructure.persistent.dao.IUserFollowDao">
+    <resultMap id="BaseResultMap" type="cn.xu.infrastructure.persistent.po.UserFollowPO">
+        <id column="id" property="id"/>
+        <result column="follower_id" property="followerId"/>
+        <result column="followed_id" property="followedId"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, follower_id, followed_id, status, create_time, update_time
+    </sql>
+
+    <insert id="insert" parameterType="cn.xu.infrastructure.persistent.po.UserFollowPO">
+        INSERT INTO user_follows (follower_id, followed_id, status)
+        VALUES (#{followerId}, #{followedId}, #{status})
+    </insert>
+
+    <update id="updateStatus">
+        UPDATE user_follows
+        SET status = #{status}
+        WHERE follower_id = #{followerId} AND followed_id = #{followedId}
+    </update>
+
+    <select id="getByFollowerAndFollowed" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM user_follows
+        WHERE follower_id = #{followerId} AND followed_id = #{followedId}
+    </select>
+
+    <select id="listByFollowerId" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM user_follows
+        WHERE follower_id = #{followerId} AND status = 1
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="listByFollowedId" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM user_follows
+        WHERE followed_id = #{followedId} AND status = 1
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="countFollowing" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM user_follows
+        WHERE follower_id = #{followerId} AND status = 1
+    </select>
+
+    <select id="countFollowers" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM user_follows
+        WHERE followed_id = #{followedId} AND status = 1
+    </select>
+</mapper> 
