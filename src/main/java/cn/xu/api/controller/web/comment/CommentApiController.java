@@ -104,4 +104,15 @@ public class CommentApiController {
             }
         }
     }
+
+    @Operation(summary = "删除评论")
+    @DeleteMapping("/delete")
+    public ResponseEntity deleteComment(@RequestParam("commentId") Long commentId,
+                                        @RequestParam("userId") Long userId) {
+        commentService.deleteComment(commentId, userId);
+        return ResponseEntity.builder()
+                .info("删除评论成功")
+                .code(ResponseCode.SUCCESS.getCode())
+                .build();
+    }
 }

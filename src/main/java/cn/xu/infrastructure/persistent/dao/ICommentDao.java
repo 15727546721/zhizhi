@@ -31,4 +31,20 @@ public interface ICommentDao {
      * @return 评论列表
      */
     List<Comment> findByTypeAndTargetId(@Param("type") Integer type, @Param("targetId") Long targetId);
+
+    /**
+     * 批量删除评论
+     *
+     * @param commentIds 评论ID列表
+     * @return 删除的记录数
+     */
+    int batchDelete(@Param("commentIds") List<Long> commentIds);
+
+    /**
+     * 根据父评论ID查询子评论列表
+     *
+     * @param parentId 父评论ID
+     * @return 子评论列表
+     */
+    List<Comment> findByParentId(@Param("parentId") Long parentId);
 }

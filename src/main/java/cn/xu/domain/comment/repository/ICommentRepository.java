@@ -39,4 +39,19 @@ public interface ICommentRepository {
      * 根据类型和目标ID查询评论列表
      */
     List<CommentEntity> findByTypeAndTargetId(Integer type, Long targetId);
+
+    /**
+     * 根据父评论ID查询子评论列表
+     *
+     * @param parentId 父评论ID
+     * @return 子评论列表
+     */
+    List<CommentEntity> findByParentId(Long parentId);
+
+    /**
+     * 批量删除评论
+     *
+     * @param commentIds 评论ID列表
+     */
+    void batchDelete(List<Long> commentIds);
 }

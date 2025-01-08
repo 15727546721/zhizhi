@@ -35,4 +35,12 @@ public interface ICommentService {
      * @return 评论列表（已构建好父子关系）
      */
     List<CommentEntity> getCommentsByTypeAndTargetId(CommentType type, Long targetId);
+
+    /**
+     * 删除评论
+     *
+     * @param commentId 评论ID
+     * @param userId   用户ID
+     */
+    void deleteComment(Long commentId, Long userId);
 }

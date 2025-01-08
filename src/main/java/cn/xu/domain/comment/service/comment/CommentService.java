@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -127,5 +128,51 @@ public class CommentService implements ICommentService {
                 .replyToUserId(request.getReplyToUserId())
                 .content(request.getContent())
                 .build();
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteComment(Long commentId, Long userId) {
+        try {
+            log.info("开始删除评论 - commentId: {}, userId: {}", commentId, userId);
+
+            // 1. 获取评论信息
+            CommentEntity comment = commentRepository.findById(commentId);
+            if (comment == null) {
+                throw new AppException(ResponseCode.UN_ERROR.getCode(), "评论不存在");
+            }
+
+            // 2. 验证是否为评论作者
+            if (!comment.getUserId().equals(userId)) {
+                throw new AppException(ResponseCode.UN_ERROR.getCode(), "只能删除自己发布的评论");
+            }
+
+            // 3. 如果是一级评论（parentId为null），则需要删除所有子评论
+            List<Long> commentIdsToDelete = new ArrayList<>();
+            commentIdsToDelete.add(commentId);
+
+            if (comment.getParentId() == null) {
+                // 3.1 获取所有子评论
+                List<CommentEntity> childComments = commentRepository.findByParentId(commentId);
+                if (childComments != null && !childComments.isEmpty()) {
+                    commentIdsToDelete.addAll(
+                        childComments.stream()
+                            .map(CommentEntity::getId)
+                            .collect(Collectors.toList())
+                    );
+                }
+            }
+
+            // 4. 批量删除评论
+            commentRepository.batchDelete(commentIdsToDelete);
+            log.info("删除评论成功 - commentId: {}, 删除评论数量: {}", commentId, commentIdsToDelete.size());
+
+        } catch (AppException e) {
+            log.error("删除评论失败 - commentId: {}, userId: {}, error: {}", commentId, userId, e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("删除评论发生未知错误 - commentId: {}, userId: {}", commentId, userId, e);
+            throw new AppException(ResponseCode.UN_ERROR.getCode(), "删除评论失败：" + e.getMessage());
+        }
     }
 }

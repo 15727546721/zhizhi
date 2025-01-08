@@ -71,15 +71,11 @@ public class CommentRepository implements ICommentRepository {
         try {
             log.info("查询评论列表 - type: {}, targetId: {}", type, targetId);
 
-            // 1. 调用DAO层方法获取评论列表
             List<Comment> comments = commentDao.findByTypeAndTargetId(type, targetId);
-
-            // 2. 转换为领域实体
             if (comments == null || comments.isEmpty()) {
                 return new ArrayList<>();
             }
 
-            // 3. 将PO对象转换为领域实体对象
             List<CommentEntity> commentEntities = comments.stream()
                     .map(this::convertToCommentEntity)
                     .collect(Collectors.toList());
@@ -90,6 +86,50 @@ public class CommentRepository implements ICommentRepository {
         } catch (Exception e) {
             log.error("查询评论列表失败 - type: {}, targetId: {}", type, targetId, e);
             throw new AppException(ResponseCode.UN_ERROR.getCode(), "查询评论列表失败：" + e.getMessage());
+        }
+    }
+
+    @Override
+    public List<CommentEntity> findByParentId(Long parentId) {
+        try {
+            log.info("查询子评论列表 - parentId: {}", parentId);
+
+            List<Comment> comments = commentDao.findByParentId(parentId);
+            if (comments == null || comments.isEmpty()) {
+                return new ArrayList<>();
+            }
+
+            List<CommentEntity> commentEntities = comments.stream()
+                    .map(this::convertToCommentEntity)
+                    .collect(Collectors.toList());
+
+            log.info("查询到子评论数量: {}", commentEntities.size());
+            return commentEntities;
+
+        } catch (Exception e) {
+            log.error("查询子评论列表失败 - parentId: {}", parentId, e);
+            throw new AppException(ResponseCode.UN_ERROR.getCode(), "查询子评论列表失败：" + e.getMessage());
+        }
+    }
+
+    @Override
+    public void batchDelete(List<Long> commentIds) {
+        if (commentIds == null || commentIds.isEmpty()) {
+            return;
+        }
+        try {
+            log.info("开始批量删除评论 - commentIds: {}", commentIds);
+            int deletedCount = commentDao.batchDelete(commentIds);
+            log.info("批量删除评论完成 - 删除数量: {}", deletedCount);
+            
+            // 如果删除数量与预期不符，抛出异常
+            if (deletedCount != commentIds.size()) {
+                log.error("批量删除评论数量不匹配 - 预期: {}, 实际: {}", commentIds.size(), deletedCount);
+                throw new AppException(ResponseCode.UN_ERROR.getCode(), "删除评论数量不匹配");
+            }
+        } catch (Exception e) {
+            log.error("批量删除评论失败 - commentIds: {}", commentIds, e);
+            throw new AppException(ResponseCode.UN_ERROR.getCode(), "批量删除评论失败：" + e.getMessage());
         }
     }
 
