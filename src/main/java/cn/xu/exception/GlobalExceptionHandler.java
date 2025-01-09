@@ -24,8 +24,8 @@ public class GlobalExceptionHandler {
      * @param ex
      * @return
      */
-    @ExceptionHandler(AppException.class)
-    public ResponseEntity<String> handleAppExceptions(AppException ex) {
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<String> handleAppExceptions(BusinessException ex) {
         log.error("业务异常:{}", ex);
         return ResponseEntity.<String>builder()
                 .code(ex.getCode())
