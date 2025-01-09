@@ -1,93 +1,72 @@
 package cn.xu.domain.user.repository;
 
-import cn.xu.api.controller.web.user.RegisterRequest;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.model.entity.UserInfoEntity;
-import cn.xu.domain.user.model.entity.UserPasswordEntity;
-import cn.xu.domain.user.model.entity.UserRoleEntity;
 import cn.xu.domain.user.model.valobj.LoginFormVO;
+import cn.xu.domain.user.model.valueobject.Email;
 
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 public interface IUserRepository {
-
+    /**
+     * 保存用户信息
+     */
+    UserEntity save(UserEntity user);
 
     /**
-     * 根据用户名查询用户
-     *
-     * @param username
-     * @return
+     * 根据用户ID查找用户
+     */
+    Optional<UserEntity> findById(Long id);
+
+    /**
+     * 根据用户名查找用户
+     */
+    Optional<UserEntity> findByUsername(String username);
+
+    /**
+     * 根据邮箱查找用户
+     */
+    Optional<UserEntity> findByEmail(Email email);
+
+    /**
+     * 检查用户名是否存在
+     */
+    boolean existsByUsername(String username);
+
+    /**
+     * 检查邮箱是否存在
+     */
+    boolean existsByEmail(Email email);
+
+    /**
+     * 分页查询所有用户
+     */
+    List<UserEntity> findAll(Integer page, Integer size);
+
+    /**
+     * 根据ID删除用户
+     */
+    void deleteById(Long id);
+
+    /**
+     * 批量查询用户信息
+     */
+    List<UserEntity> findByIds(Set<Long> userIds);
+
+    /**
+     * 根据用户名查找用户登录信息
      */
     LoginFormVO findUserByUsername(String username);
 
     /**
-     * 根据用户id查询用户
-     *
-     * @param userId
-     * @return
-     */
-    UserEntity findUserById(Long userId);
-
-    /**
-     * 根据用户id查询用户信息
-     *
-     * @param userId
-     * @return
+     * 根据用户ID查找用户详细信息
      */
     UserInfoEntity findUserInfoById(Long userId);
 
     /**
-     * 根据页码和每页大小查询用户
-     *
-     * @param page
-     * @param size
-     * @return
+     * 根据用户ID查询角色列表
      */
-    List<UserEntity> findUserByPage(int page, int size);
-
-    /**
-     * 保存用户
-     *
-     * @param userRoleEntity
-     * @return
-     */
-    void saveUser(UserRoleEntity userRoleEntity);
-
-    /**
-     * 更新用户
-     *
-     * @param userEntity
-     * @return
-     */
-    int updateUser(UserEntity userEntity);
-
-    /**
-     * 删除用户
-     *
-     * @param userId
-     * @return
-     */
-    void deleteUser(Long userId);
-
-    void updatePassword(UserPasswordEntity userPasswordEntity);
-
-    UserInfoEntity findUserInfoByUserId(Long id);
-
-    void updateUserInfo(UserInfoEntity userInfoEntity);
-
-    void updateAvatar(Long id, String avatar);
-
-    void register(RegisterRequest registerRequest);
-
-    UserEntity findUserLoginByEmailAndPassword(String email, String password);
-
-    /**
-     * 根据用户id集合查询用户集合
-     *
-     * @param userIds
-     * @return
-     */
-    Map<Long, UserEntity> findUserByIds(Set<Long> userIds);
+    List<String> findRolesByUserId(Long userId);
 }

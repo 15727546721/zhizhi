@@ -5,7 +5,7 @@ import cn.xu.domain.comment.model.entity.CommentEntity;
 import cn.xu.domain.comment.model.valueobject.CommentType;
 import cn.xu.domain.comment.repository.ICommentRepository;
 import cn.xu.domain.comment.service.ICommentService;
-import cn.xu.exception.AppException;
+import cn.xu.exception.BusinessException;
 import cn.xu.infrastructure.common.ResponseCode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -39,7 +39,7 @@ public class CommentService implements ICommentService {
         // 检查父评论是否存在
         CommentEntity parentComment = commentRepository.findById(request.getParentId());
         if (parentComment == null) {
-            throw new AppException(ResponseCode.UN_ERROR.getCode(), "回复的评论不存在");
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "回复的评论不存在");
         }
 
         CommentEntity commentEntity = convertToEntity(request);
@@ -50,10 +50,10 @@ public class CommentService implements ICommentService {
     @Override
     public List<CommentEntity> getCommentsByTypeAndTargetId(CommentType type, Long targetId) {
         if (type == null) {
-            throw new AppException(ResponseCode.UN_ERROR.getCode(), "评论类型不能为空");
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "评论类型不能为空");
         }
         if (targetId == null) {
-            throw new AppException(ResponseCode.UN_ERROR.getCode(), "目标ID不能为空");
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "目标ID不能为空");
         }
 
         try {
@@ -71,7 +71,7 @@ public class CommentService implements ICommentService {
             return nestedComments;
         } catch (Exception e) {
             log.error("查询评论列表失败 - type: {}, targetId: {}", type.getDescription(), targetId, e);
-            throw new AppException(ResponseCode.UN_ERROR.getCode(), "查询评论列表失败：" + e.getMessage());
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "查询评论列表失败：" + e.getMessage());
         }
     }
 
@@ -115,7 +115,7 @@ public class CommentService implements ICommentService {
             return rootComments;
         } catch (Exception e) {
             log.error("构建评论树形结构失败", e);
-            throw new AppException(ResponseCode.UN_ERROR.getCode(), "构建评论结构失败：" + e.getMessage());
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "构建评论结构失败：" + e.getMessage());
         }
     }
 
@@ -139,12 +139,12 @@ public class CommentService implements ICommentService {
             // 1. 获取评论信息
             CommentEntity comment = commentRepository.findById(commentId);
             if (comment == null) {
-                throw new AppException(ResponseCode.UN_ERROR.getCode(), "评论不存在");
+                throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "评论不存在");
             }
 
             // 2. 验证是否为评论作者
             if (!comment.getUserId().equals(userId)) {
-                throw new AppException(ResponseCode.UN_ERROR.getCode(), "只能删除自己发布的评论");
+                throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "只能删除自己发布的评论");
             }
 
             // 3. 如果是一级评论（parentId为null），则需要删除所有子评论
@@ -156,9 +156,9 @@ public class CommentService implements ICommentService {
                 List<CommentEntity> childComments = commentRepository.findByParentId(commentId);
                 if (childComments != null && !childComments.isEmpty()) {
                     commentIdsToDelete.addAll(
-                        childComments.stream()
-                            .map(CommentEntity::getId)
-                            .collect(Collectors.toList())
+                            childComments.stream()
+                                    .map(CommentEntity::getId)
+                                    .collect(Collectors.toList())
                     );
                 }
             }
@@ -167,12 +167,12 @@ public class CommentService implements ICommentService {
             commentRepository.batchDelete(commentIdsToDelete);
             log.info("删除评论成功 - commentId: {}, 删除评论数量: {}", commentId, commentIdsToDelete.size());
 
-        } catch (AppException e) {
+        } catch (BusinessException e) {
             log.error("删除评论失败 - commentId: {}, userId: {}, error: {}", commentId, userId, e.getMessage());
             throw e;
         } catch (Exception e) {
             log.error("删除评论发生未知错误 - commentId: {}, userId: {}", commentId, userId, e);
-            throw new AppException(ResponseCode.UN_ERROR.getCode(), "删除评论失败：" + e.getMessage());
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "删除评论失败：" + e.getMessage());
         }
     }
 }

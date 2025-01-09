@@ -1,6 +1,6 @@
 package cn.xu.domain.topic.model.entity;
 
-import cn.xu.exception.AppException;
+import cn.xu.exception.BusinessException;
 import cn.xu.infrastructure.common.ResponseCode;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -59,10 +59,10 @@ public class TopicEntity {
      */
     public void validate() {
         if (userId == null) {
-            throw new AppException(ResponseCode.UN_ERROR.getCode(), "用户ID不能为空");
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "用户ID不能为空");
         }
         if (!StringUtils.hasText(content)) {
-            throw new AppException(ResponseCode.UN_ERROR.getCode(), "话题内容不能为空");
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "话题内容不能为空");
         }
     }
 

@@ -1,17 +1,40 @@
 package cn.xu.domain.permission.model.entity;
 
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
-@AllArgsConstructor
-@NoArgsConstructor
-@Builder
+import java.time.LocalDateTime;
+
 @Data
+@Builder
 public class RoleEntity {
+    /**
+     * 角色ID
+     */
     private Long id;
-    private String name;
+
+    /**
+     * 角色编码
+     */
     private String code;
-    private String desc;
+
+    /**
+     * 角色名称
+     */
+    private String name;
+
+    /**
+     * 备注
+     */
+    private String remark;
+
+    /**
+     * 创建时间
+     */
+    private LocalDateTime createTime;
+
+    /**
+     * 更新时间
+     */
+    private LocalDateTime updateTime;
 }

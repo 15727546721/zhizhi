@@ -40,7 +40,7 @@ public interface ICommentService {
      * 删除评论
      *
      * @param commentId 评论ID
-     * @param userId   用户ID
+     * @param userId    用户ID
      */
     void deleteComment(Long commentId, Long userId);
 }

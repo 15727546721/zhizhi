@@ -1,7 +1,7 @@
 package cn.xu.domain.file.service;
 
 
-import cn.xu.exception.AppException;
+import cn.xu.exception.BusinessException;
 import cn.xu.infrastructure.common.ResponseCode;
 import com.alibaba.fastjson2.JSONObject;
 import io.minio.*;
@@ -75,7 +75,7 @@ public class MinioService implements IFileStorageService {
             return sharedUrl;
         } catch (MinioException e) {
             log.error("上传文件到MinIO失败", e);
-            throw new AppException(ResponseCode.UN_ERROR.getCode(), "上传文件失败");
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "上传文件失败");
         }
     }
 
@@ -86,7 +86,7 @@ public class MinioService implements IFileStorageService {
         fileUrl = jsonObject.getString("fileUrl");
         if (StringUtils.isEmpty(fileUrl)) {
             log.error("文件URL为空，无法删除");
-            throw new AppException(ResponseCode.UN_ERROR.getCode(), "文件URL为空，无法删除");
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "文件URL为空，无法删除");
         }
         try {
             String objectName = fileUrl.substring(fileUrl.indexOf(bucketName) + bucketName.length() + 1);
@@ -102,7 +102,7 @@ public class MinioService implements IFileStorageService {
             log.info("文件删除成功: {}", objectName);
         } catch (MinioException e) {
             log.error("删除文件失败: {}", e.getMessage());
-            throw new AppException(ResponseCode.UN_ERROR.getCode(), "删除文件失败");
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "删除文件失败");
         }
     }
 
@@ -160,7 +160,7 @@ public class MinioService implements IFileStorageService {
         // 检查文件大小（例如限制为5MB）
         long maxSize = 5 * 1024 * 1024;
         if (file.getSize() > maxSize) {
-            throw new AppException(ResponseCode.UN_ERROR.getCode(), "图片大小不能超过5MB");
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "图片大小不能超过5MB");
         }
 
         try (InputStream inputStream = file.getInputStream()) {
@@ -190,7 +190,7 @@ public class MinioService implements IFileStorageService {
 
         } catch (Exception e) {
             log.error("上传话题图片到MinIO失败", e);
-            throw new AppException(ResponseCode.UN_ERROR.getCode(), "上传图片失败：" + e.getMessage());
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "上传图片失败：" + e.getMessage());
         }
     }
 
@@ -218,7 +218,7 @@ public class MinioService implements IFileStorageService {
             }
         } catch (Exception e) {
             log.error("创建MinIO存储桶失败", e);
-            throw new AppException(ResponseCode.UN_ERROR.getCode(), "创建存储空间失败");
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "创建存储空间失败");
         }
     }
 
@@ -292,7 +292,7 @@ public class MinioService implements IFileStorageService {
 
         } catch (Exception e) {
             log.error("移动图片到永久目录失败: {}", tempImageUrl, e);
-            throw new AppException(ResponseCode.UN_ERROR.getCode(), "处理图片失败：" + e.getMessage());
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "处理图片失败：" + e.getMessage());
         }
     }
 

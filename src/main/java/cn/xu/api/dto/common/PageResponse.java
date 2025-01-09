@@ -1,17 +1,56 @@
 package cn.xu.api.dto.common;
 
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
-@AllArgsConstructor
-@NoArgsConstructor
-@Builder
 @Data
+@Builder
 public class PageResponse<T> {
-    private int page; // 当前页码，从1开始
-    private int size; // 每页记录数
-    private long total; // 总记录数
-    private T data; // 结果数据
+    /**
+     * 当前页码
+     */
+    private Integer pageNum;
+
+    /**
+     * 每页数量
+     */
+    private Integer pageSize;
+
+    /**
+     * 总记录数
+     */
+    private Long total;
+
+    /**
+     * 总页数
+     */
+    private Integer pages;
+
+    /**
+     * 分页数据
+     */
+    private T records;
+
+    /**
+     * 是否有下一页
+     */
+    private Boolean hasNext;
+
+    /**
+     * 是否有上一页
+     */
+    private Boolean hasPrevious;
+
+    public static <T> PageResponse<T> of(Integer pageNum, Integer pageSize, Long total, T records) {
+        int pages = (int) Math.ceil((double) total / pageSize);
+        return PageResponse.<T>builder()
+                .pageNum(pageNum)
+                .pageSize(pageSize)
+                .total(total)
+                .pages(pages)
+                .records(records)
+                .hasNext(pageNum < pages)
+                .hasPrevious(pageNum > 1)
+                .build();
+    }
 }

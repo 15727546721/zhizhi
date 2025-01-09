@@ -13,22 +13,23 @@
     </resultMap>
 
     <sql id="Base_Column_List">
-        id, user_id, content, images, category_id, create_time, update_time
+        id
+        , user_id, content, images, category_id, create_time, update_time
     </sql>
 
     <insert id="insert" parameterType="cn.xu.infrastructure.persistent.po.TopicPO">
-        insert into topic 
-            (user_id, content, images, 
-            <if test="categoryId != null">
+        insert into topic
+        (user_id, content, images,
+        <if test="categoryId != null">
             category_id,
-            </if>
-            create_time, update_time)
-        values 
-            (#{userId}, #{content}, #{images,jdbcType=VARCHAR},
-            <if test="categoryId != null">
+        </if>
+        create_time, update_time)
+        values
+        (#{userId}, #{content}, #{images,jdbcType=VARCHAR},
+        <if test="categoryId != null">
             #{categoryId},
-            </if>
-            now(), now())
+        </if>
+        now(), now())
     </insert>
 
     <update id="update" parameterType="cn.xu.infrastructure.persistent.po.TopicPO">
@@ -47,7 +48,8 @@
     </update>
 
     <delete id="deleteById" parameterType="java.lang.Long">
-        delete from topic
+        delete
+        from topic
         where id = #{id}
     </delete>
 

@@ -1,12 +1,21 @@
 package cn.xu.api.dto.permission;
 
-
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 @Data
+@Schema(description = "角色添加或更新请求")
 public class RoleAddOrUpdateRequest {
+
+    @Schema(description = "角色ID")
     private Long id;
-    private String name;
+
+    @Schema(description = "角色编码")
     private String code;
-    private String desc;
+
+    @Schema(description = "角色名称")
+    private String name;
+
+    @Schema(description = "备注")
+    private String remark;
 }

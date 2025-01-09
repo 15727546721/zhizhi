@@ -3,7 +3,7 @@ package cn.xu.common.utils;
  * 时间操作工具类
  */
 
-import cn.xu.exception.AppException;
+import cn.xu.exception.BusinessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -188,7 +188,7 @@ public class DateUtil {
             SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             date = format.parse(dateTime);
         } catch (ParseException e) {
-            throw new AppException("时间格式解析错误！");
+            throw new BusinessException("时间格式解析错误！");
         }
         return date;
     }
@@ -205,7 +205,7 @@ public class DateUtil {
             SimpleDateFormat format = new SimpleDateFormat(formatStr);
             date = format.parse(dateTime);
         } catch (ParseException e) {
-            throw new AppException("时间格式解析错误！");
+            throw new BusinessException("时间格式解析错误！");
         }
         return date;
     }

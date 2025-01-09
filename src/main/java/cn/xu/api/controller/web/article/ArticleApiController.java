@@ -8,7 +8,7 @@ import cn.xu.domain.article.service.IArticleCategoryService;
 import cn.xu.domain.article.service.IArticleService;
 import cn.xu.domain.article.service.IArticleTagService;
 import cn.xu.domain.article.service.ITagService;
-import cn.xu.exception.AppException;
+import cn.xu.exception.BusinessException;
 import cn.xu.infrastructure.common.ResponseCode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -83,10 +83,10 @@ public class ArticleApiController {
                 articleCategoryService.saveArticleCategory(articleId, publishArticleRequest.getCategoryId());
                 //3. 保存文章标签
                 if (publishArticleRequest.getTagIds() == null || publishArticleRequest.getTagIds().isEmpty()) {
-                    throw new AppException(ResponseCode.NULL_PARAMETER.getCode(), "标签不能为空");
+                    throw new BusinessException(ResponseCode.NULL_PARAMETER.getCode(), "标签不能为空");
                 }
                 if (publishArticleRequest.getTagIds().size() > 3) {
-                    throw new AppException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "标签不能超过3个");
+                    throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "标签不能超过3个");
                 }
                 articleTagService.saveArticleTag(articleId, publishArticleRequest.getTagIds());
                 // 事务提交
@@ -95,7 +95,7 @@ public class ArticleApiController {
                 // 事务回滚
                 status.setRollbackOnly();
                 log.error("文章发布失败", e);
-                throw new AppException(ResponseCode.UN_ERROR.getCode(), "文章发布失败");
+                throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "文章发布失败");
             }
         });
         log.info("文章发布成功");

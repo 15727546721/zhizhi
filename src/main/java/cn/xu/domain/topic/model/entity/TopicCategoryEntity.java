@@ -1,6 +1,6 @@
 package cn.xu.domain.topic.model.entity;
 
-import cn.xu.exception.AppException;
+import cn.xu.exception.BusinessException;
 import cn.xu.infrastructure.common.ResponseCode;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -51,13 +51,13 @@ public class TopicCategoryEntity {
      */
     public void validate() {
         if (!StringUtils.hasText(name)) {
-            throw new AppException(ResponseCode.NULL_PARAMETER.getCode(), "分类名称不能为空");
+            throw new BusinessException(ResponseCode.NULL_PARAMETER.getCode(), "分类名称不能为空");
         }
         if (name.length() > 50) {
-            throw new AppException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "分类名称不能超过50个字符");
+            throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "分类名称不能超过50个字符");
         }
         if (StringUtils.hasText(description) && description.length() > 255) {
-            throw new AppException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "分类描述不能超过255个字符");
+            throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "分类描述不能超过255个字符");
         }
         if (sort == null) {
             sort = 0;

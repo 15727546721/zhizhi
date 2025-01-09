@@ -21,4 +21,9 @@ public class UserEntity {
     private Integer status;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
+    private Integer gender;
+    private String phone;
+    private String region;
+    private String birthday;
+    private String description;
 }

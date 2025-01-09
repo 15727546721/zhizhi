@@ -1,6 +1,6 @@
 package cn.xu.domain.comment.model.entity;
 
-import cn.xu.exception.AppException;
+import cn.xu.exception.BusinessException;
 import cn.xu.infrastructure.common.ResponseCode;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -71,16 +71,16 @@ public class CommentEntity {
      */
     public void validate() {
         if (type == null) {
-            throw new AppException(ResponseCode.UN_ERROR.getCode(), "评论类型不能为空");
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "评论类型不能为空");
         }
         if (targetId == null) {
-            throw new AppException(ResponseCode.UN_ERROR.getCode(), "评论目标ID不能为空");
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "评论目标ID不能为空");
         }
         if (userId == null) {
-            throw new AppException(ResponseCode.UN_ERROR.getCode(), "用户ID不能为空");
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "用户ID不能为空");
         }
         if (!StringUtils.hasText(content)) {
-            throw new AppException(ResponseCode.UN_ERROR.getCode(), "评论内容不能为空");
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "评论内容不能为空");
         }
     }
 } 

@@ -2,7 +2,7 @@ package cn.xu.infrastructure.persistent.repository;
 
 import cn.xu.domain.topic.model.entity.TopicCategoryEntity;
 import cn.xu.domain.topic.repository.ITopicCategoryRepository;
-import cn.xu.exception.AppException;
+import cn.xu.exception.BusinessException;
 import cn.xu.infrastructure.common.ResponseCode;
 import cn.xu.infrastructure.persistent.dao.ITopicCategoryDao;
 import cn.xu.infrastructure.persistent.po.TopicCategoryPO;
@@ -30,12 +30,12 @@ public class TopicCategoryRepositoryImpl implements ITopicCategoryRepository {
             TopicCategoryPO categoryPO = convertToTopicCategoryPO(categoryEntity);
             int rows = topicCategoryDao.insert(categoryPO);
             if (rows <= 0) {
-                throw new AppException(ResponseCode.UN_ERROR.getCode(), "保存话题分类失败");
+                throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "保存话题分类失败");
             }
             return categoryPO.getId();
         } catch (Exception e) {
             log.error("保存话题分类失败: {}", categoryEntity, e);
-            throw new AppException(ResponseCode.UN_ERROR.getCode(), "保存话题分类失败");
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "保存话题分类失败");
         }
     }
 
@@ -47,11 +47,11 @@ public class TopicCategoryRepositoryImpl implements ITopicCategoryRepository {
             TopicCategoryPO categoryPO = convertToTopicCategoryPO(categoryEntity);
             int rows = topicCategoryDao.update(categoryPO);
             if (rows <= 0) {
-                throw new AppException(ResponseCode.UN_ERROR.getCode(), "更新话题分类失败");
+                throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "更新话题分类失败");
             }
         } catch (Exception e) {
             log.error("更新话题分类失败: {}", categoryEntity, e);
-            throw new AppException(ResponseCode.UN_ERROR.getCode(), "更新话题分类失败");
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "更新话题分类失败");
         }
     }
 
@@ -62,11 +62,11 @@ public class TopicCategoryRepositoryImpl implements ITopicCategoryRepository {
             log.info("删除话题分类: {}", id);
             int rows = topicCategoryDao.deleteById(id);
             if (rows <= 0) {
-                throw new AppException(ResponseCode.UN_ERROR.getCode(), "删除话题分类失败");
+                throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "删除话题分类失败");
             }
         } catch (Exception e) {
             log.error("删除话题分类失败: {}", id, e);
-            throw new AppException(ResponseCode.UN_ERROR.getCode(), "删除话题分类失败");
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "删除话题分类失败");
         }
     }
 
@@ -78,7 +78,7 @@ public class TopicCategoryRepositoryImpl implements ITopicCategoryRepository {
             return categoryPO != null ? convertToTopicCategoryEntity(categoryPO) : null;
         } catch (Exception e) {
             log.error("查询话题分类失败: {}", id, e);
-            throw new AppException(ResponseCode.UN_ERROR.getCode(), "查询话题分类失败");
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "查询话题分类失败");
         }
     }
 
@@ -95,7 +95,7 @@ public class TopicCategoryRepositoryImpl implements ITopicCategoryRepository {
                     .collect(Collectors.toList());
         } catch (Exception e) {
             log.error("查询所有话题分类失败", e);
-            throw new AppException(ResponseCode.UN_ERROR.getCode(), "查询所有话题分类失败");
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "查询所有话题分类失败");
         }
     }
 
@@ -107,7 +107,7 @@ public class TopicCategoryRepositoryImpl implements ITopicCategoryRepository {
             return categoryPO != null ? convertToTopicCategoryEntity(categoryPO) : null;
         } catch (Exception e) {
             log.error("根据名称查询话题分类失败: {}", name, e);
-            throw new AppException(ResponseCode.UN_ERROR.getCode(), "根据名称查询话题分类失败");
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "根据名称查询话题分类失败");
         }
     }
 

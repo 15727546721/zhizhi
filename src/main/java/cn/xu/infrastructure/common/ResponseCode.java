@@ -1,10 +1,8 @@
 package cn.xu.infrastructure.common;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 @Getter
-@AllArgsConstructor
 public enum ResponseCode {
     SUCCESS(20000, "成功"),
     UN_ERROR(20001, "未知失败"),
@@ -13,6 +11,11 @@ public enum ResponseCode {
     NULL_RESPONSE(20004, "响应参数为空"),
     DUPLICATE_KEY(20005, "重复的键");
 
-    private final Integer code;
+    private final int code;
     private final String message;
+
+    ResponseCode(int code, String message) {
+        this.code = code;
+        this.message = message;
+    }
 } 

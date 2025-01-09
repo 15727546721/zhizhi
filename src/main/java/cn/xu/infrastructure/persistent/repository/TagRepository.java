@@ -3,7 +3,7 @@ package cn.xu.infrastructure.persistent.repository;
 
 import cn.xu.domain.article.model.entity.TagEntity;
 import cn.xu.domain.article.repository.ITagRepository;
-import cn.xu.exception.AppException;
+import cn.xu.exception.BusinessException;
 import cn.xu.infrastructure.common.ResponseCode;
 import cn.xu.infrastructure.persistent.dao.ITagDao;
 import cn.xu.infrastructure.persistent.po.ArticleTag;
@@ -33,7 +33,7 @@ public class TagRepository implements ITagRepository {
             tagDao.insert(build);
         } catch (Exception e) {
             log.error("保存标签失败: {}", e.getMessage());
-            throw new AppException(ResponseCode.UN_ERROR.getCode(), "保存标签失败");
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "保存标签失败");
         }
     }
 
@@ -63,7 +63,7 @@ public class TagRepository implements ITagRepository {
             tagDao.update(articleTag);
         } catch (Exception e) {
             log.error("更新标签失败: {}", e.getMessage());
-            throw new AppException(ResponseCode.UN_ERROR.getCode(), "更新标签失败");
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "更新标签失败");
         }
     }
 
@@ -74,14 +74,14 @@ public class TagRepository implements ITagRepository {
             tagDao.delete(idList);
         } catch (Exception e) {
             log.error("删除标签失败: {}", e.getMessage());
-            throw new AppException(ResponseCode.UN_ERROR.getCode(), "删除标签失败");
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "删除标签失败");
         }
     }
 
     @Override
     public ArticleTag findById(Long tagId) {
         if (tagId == null) {
-            throw new AppException(ResponseCode.UN_ERROR.getCode(), "标签ID不能为空");
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "标签ID不能为空");
         }
         log.info("查询标签ID: {}", tagId);
         try {
@@ -90,7 +90,7 @@ public class TagRepository implements ITagRepository {
             return articleTag;
         } catch (Exception e) {
             log.error("查询标签失败: {}", e.getMessage());
-            throw new AppException(ResponseCode.UN_ERROR.getCode(), "查询标签失败");
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "查询标签失败");
         }
     }
 

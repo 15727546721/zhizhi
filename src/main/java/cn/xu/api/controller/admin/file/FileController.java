@@ -3,7 +3,7 @@ package cn.xu.api.controller.admin.file;
 
 import cn.xu.common.ResponseEntity;
 import cn.xu.domain.file.service.MinioService;
-import cn.xu.exception.AppException;
+import cn.xu.exception.BusinessException;
 import cn.xu.infrastructure.common.ResponseCode;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
@@ -41,7 +41,7 @@ public class FileController {
                     .build();
         } catch (Exception e) {
             log.error("上传文件失败: " + e.getMessage());
-            throw new AppException(ResponseCode.UN_ERROR.getCode(), "上传文件失败");
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "上传文件失败");
         }
     }
 
@@ -56,7 +56,7 @@ public class FileController {
                     .build();
         } catch (Exception e) {
             log.error("删除文件失败: " + e.getMessage());
-            throw new AppException(ResponseCode.UN_ERROR.getCode(), "删除文件失败");
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "删除文件失败");
         }
     }
 
@@ -67,7 +67,7 @@ public class FileController {
             minioService.downloadFile(fileName, localFilePath);
         } catch (Exception e) {
             log.error("下载文件失败: " + e.getMessage());
-            throw new AppException(ResponseCode.UN_ERROR.getCode(), "下载文件失败");
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "下载文件失败");
         }
     }
 

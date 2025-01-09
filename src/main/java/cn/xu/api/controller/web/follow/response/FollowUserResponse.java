@@ -10,19 +10,19 @@ import java.time.LocalDateTime;
 @Accessors(chain = true)
 @Schema(description = "关注用户信息响应")
 public class FollowUserResponse {
-    
+
     @Schema(description = "用户ID")
     private Long userId;
-    
+
     @Schema(description = "用户名称")
     private String username;
-    
+
     @Schema(description = "用户头像")
     private String avatar;
-    
+
     @Schema(description = "关注时间")
     private LocalDateTime followTime;
-    
+
     @Schema(description = "关注状态（0-取消关注，1-已关注）")
     private Integer status;
 } 

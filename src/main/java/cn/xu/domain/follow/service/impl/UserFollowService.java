@@ -4,7 +4,7 @@ import cn.xu.domain.follow.model.entity.UserFollowEntity;
 import cn.xu.domain.follow.model.valueobject.FollowStatus;
 import cn.xu.domain.follow.repository.IUserFollowRepository;
 import cn.xu.domain.follow.service.IUserFollowService;
-import cn.xu.exception.AppException;
+import cn.xu.exception.BusinessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,7 +22,7 @@ public class UserFollowService implements IUserFollowService {
     public void follow(Long followerId, Long followedId) {
         // 不能关注自己
         if (followerId.equals(followedId)) {
-            throw new AppException("不能关注自己");
+            throw new BusinessException("不能关注自己");
         }
 
         UserFollowEntity existingFollow = userFollowRepository.getByFollowerAndFollowed(followerId, followedId);

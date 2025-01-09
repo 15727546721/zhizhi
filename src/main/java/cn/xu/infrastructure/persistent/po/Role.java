@@ -1,17 +1,15 @@
 package cn.xu.infrastructure.persistent.po;
 
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
 
 @Data
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
 public class Role {
     /**
-     * 角色id
+     * 角色ID
      */
     private Long id;
 
@@ -26,8 +24,17 @@ public class Role {
     private String name;
 
     /**
-     * 角色介绍
+     * 备注
      */
-    private String desc;
+    private String remark;
 
+    /**
+     * 创建时间
+     */
+    private LocalDateTime createTime;
+
+    /**
+     * 更新时间
+     */
+    private LocalDateTime updateTime;
 }

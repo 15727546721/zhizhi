@@ -8,7 +8,6 @@ import cn.xu.domain.user.service.IUserService;
 import cn.xu.exception.BusinessException;
 import cn.xu.infrastructure.common.ResponseCode;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
@@ -28,13 +27,13 @@ public class UserController {
     public ResponseEntity<Void> register(@RequestBody @Valid RegisterRequest registerRequest) {
         // 参数校验
         validateRegisterRequest(registerRequest);
-        
+
         // 注册用户
         UserEntity user = userService.register(registerRequest);
-        
+
         // 自动登录
         StpUtil.login(user.getId());
-        
+
         return ResponseEntity.<Void>builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .info("用户注册成功")
@@ -49,17 +48,17 @@ public class UserController {
         if (!request.getPassword().equals(request.getConfirmPassword())) {
             throw new BusinessException("两次密码输入不一致");
         }
-        
+
         // 密码强度校验
         if (request.getPassword().length() < 6 || request.getPassword().length() > 20) {
             throw new BusinessException("密码长度必须在6-20个字符之间");
         }
-        
+
         // 用户名格式校验
         if (request.getUsername().length() < 4 || request.getUsername().length() > 20) {
             throw new BusinessException("用户名长度必须在4-20个字符之间");
         }
-        
+
         // 邮箱格式校验（使用Email值对象进行校验）
         try {
             new Email(request.getEmail());

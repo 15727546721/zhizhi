@@ -4,7 +4,7 @@ import cn.xu.domain.topic.command.CreateTopicCategoryCommand;
 import cn.xu.domain.topic.model.entity.TopicCategoryEntity;
 import cn.xu.domain.topic.repository.ITopicCategoryRepository;
 import cn.xu.domain.topic.service.ITopicCategoryService;
-import cn.xu.exception.AppException;
+import cn.xu.exception.BusinessException;
 import cn.xu.infrastructure.common.ResponseCode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -26,7 +26,7 @@ public class TopicCategoryServiceImpl implements ITopicCategoryService {
         // 1. 检查名称是否已存在
         TopicCategoryEntity existingCategory = topicCategoryRepository.findByName(command.getName());
         if (existingCategory != null) {
-            throw new AppException(ResponseCode.DUPLICATE_KEY.getCode(), "分类名称已存在");
+            throw new BusinessException(ResponseCode.DUPLICATE_KEY.getCode(), "分类名称已存在");
         }
 
         // 2. 创建分类实体
@@ -52,13 +52,13 @@ public class TopicCategoryServiceImpl implements ITopicCategoryService {
         // 1. 检查分类是否存在
         TopicCategoryEntity existingCategory = topicCategoryRepository.findById(id);
         if (existingCategory == null) {
-            throw new AppException(ResponseCode.UN_ERROR.getCode(), "分类不存在");
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "分类不存在");
         }
 
         // 2. 检查名称是否已被其他分类使用
         TopicCategoryEntity categoryWithSameName = topicCategoryRepository.findByName(command.getName());
         if (categoryWithSameName != null && !categoryWithSameName.getId().equals(id)) {
-            throw new AppException(ResponseCode.DUPLICATE_KEY.getCode(), "分类名称已存在");
+            throw new BusinessException(ResponseCode.DUPLICATE_KEY.getCode(), "分类名称已存在");
         }
 
         // 3. 创建新的分类实体
@@ -83,7 +83,7 @@ public class TopicCategoryServiceImpl implements ITopicCategoryService {
         // 1. 检查分类是否存在
         TopicCategoryEntity existingCategory = topicCategoryRepository.findById(id);
         if (existingCategory == null) {
-            throw new AppException(ResponseCode.UN_ERROR.getCode(), "分类不存在");
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "分类不存在");
         }
 
         // 2. 删除分类
@@ -94,7 +94,7 @@ public class TopicCategoryServiceImpl implements ITopicCategoryService {
     public TopicCategoryEntity getCategory(Long id) {
         TopicCategoryEntity category = topicCategoryRepository.findById(id);
         if (category == null) {
-            throw new AppException(ResponseCode.UN_ERROR.getCode(), "分类不存在");
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "分类不存在");
         }
         return category;
     }

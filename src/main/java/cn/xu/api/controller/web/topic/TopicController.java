@@ -8,7 +8,7 @@ import cn.xu.domain.topic.entity.Topic;
 import cn.xu.domain.topic.model.entity.TopicCategoryEntity;
 import cn.xu.domain.topic.service.ITopicCategoryService;
 import cn.xu.domain.topic.service.TopicService;
-import cn.xu.exception.AppException;
+import cn.xu.exception.BusinessException;
 import cn.xu.infrastructure.common.ResponseCode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -116,7 +116,7 @@ public class TopicController {
                 // 检查文件类型
                 String contentType = file.getContentType();
                 if (contentType == null || !contentType.startsWith("image/")) {
-                    throw new AppException(ResponseCode.UN_ERROR.getCode(), "只能上传图片文件");
+                    throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "只能上传图片文件");
                 }
 
                 // 生成临时文件存储路径 (temp/年月日/时间戳_文件名)
@@ -141,7 +141,7 @@ public class TopicController {
             if (!imageUrls.isEmpty()) {
                 minioService.deleteTopicImages(imageUrls);
             }
-            throw new AppException(ResponseCode.UN_ERROR.getCode(), "上传图片失败：" + e.getMessage());
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "上传图片失败：" + e.getMessage());
         }
     }
 
@@ -170,7 +170,7 @@ public class TopicController {
                     .info(ResponseCode.SUCCESS.getMessage())
                     .build();
         } catch (Exception e) {
-            throw new AppException(ResponseCode.UN_ERROR.getCode(), "删除图片失败：" + e.getMessage());
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "删除图片失败：" + e.getMessage());
         }
     }
 

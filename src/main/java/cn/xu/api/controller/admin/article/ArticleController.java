@@ -11,7 +11,7 @@ import cn.xu.domain.article.model.entity.ArticleEntity;
 import cn.xu.domain.article.model.entity.CategoryEntity;
 import cn.xu.domain.article.model.entity.TagEntity;
 import cn.xu.domain.article.service.*;
-import cn.xu.exception.AppException;
+import cn.xu.exception.BusinessException;
 import cn.xu.infrastructure.common.ResponseCode;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
@@ -70,10 +70,10 @@ public class ArticleController {
                 articleCategoryService.saveArticleCategory(articleId, createArticleRequest.getCategoryId());
                 //3. 保存文章标签
                 if (createArticleRequest.getTagIds() == null || createArticleRequest.getTagIds().isEmpty()) {
-                    throw new AppException(ResponseCode.NULL_PARAMETER.getCode(), "标签不能为空");
+                    throw new BusinessException(ResponseCode.NULL_PARAMETER.getCode(), "标签不能为空");
                 }
                 if (createArticleRequest.getTagIds().size() > 3) {
-                    throw new AppException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "标签不能超过3个");
+                    throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "标签不能超过3个");
                 }
                 articleTagService.saveArticleTag(articleId, createArticleRequest.getTagIds());
                 // 事务提交
@@ -82,7 +82,7 @@ public class ArticleController {
                 // 事务回滚
                 status.setRollbackOnly();
                 log.error("文章创建失败", e);
-                throw new AppException(ResponseCode.UN_ERROR.getCode(), "文章创建失败");
+                throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "文章创建失败");
             }
         });
         return ResponseEntity.builder()
@@ -110,10 +110,10 @@ public class ArticleController {
                 articleCategoryService.updateArticleCategory(createArticleRequest.getId(), createArticleRequest.getCategoryId());
                 //3. 更新文章标签
                 if (createArticleRequest.getTagIds() == null || createArticleRequest.getTagIds().isEmpty()) {
-                    throw new AppException(ResponseCode.NULL_PARAMETER.getCode(), "标签不能为空");
+                    throw new BusinessException(ResponseCode.NULL_PARAMETER.getCode(), "标签不能为空");
                 }
                 if (createArticleRequest.getTagIds().size() > 3) {
-                    throw new AppException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "标签不能超过3个");
+                    throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "标签不能超过3个");
                 }
                 articleTagService.updateArticleTag(createArticleRequest.getId(), createArticleRequest.getTagIds());
                 return 1;
@@ -121,7 +121,7 @@ public class ArticleController {
                 // 事务回滚
                 status.setRollbackOnly();
                 log.error("文章更新失败", e);
-                throw new AppException(ResponseCode.UN_ERROR.getCode(), "文章更新失败");
+                throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "文章更新失败");
             }
         });
         return ResponseEntity.builder()
@@ -168,7 +168,7 @@ public class ArticleController {
     public ResponseEntity<ArticleDetailsResponse> getArticle(@PathVariable("id") Long id) {
         log.info("文章详情获取参数: id={}", id);
         if (id == null) {
-            throw new AppException(ResponseCode.NULL_PARAMETER.getCode(), "文章ID不能为空");
+            throw new BusinessException(ResponseCode.NULL_PARAMETER.getCode(), "文章ID不能为空");
         }
         ArticleEntity article = articleService.getArticleById(id);
         CategoryEntity category = categoryService.getCategoryByArticleId(id);

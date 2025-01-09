@@ -1,7 +1,7 @@
 package cn.xu.domain.topic.entity;
 
 import cn.xu.domain.topic.constant.TopicErrorCode;
-import cn.xu.exception.AppException;
+import cn.xu.exception.BusinessException;
 import lombok.Builder;
 import lombok.Data;
 
@@ -19,7 +19,7 @@ public class TopicCategory {
 
     public void validate() {
         if (name == null || name.trim().isEmpty()) {
-            throw new AppException(TopicErrorCode.CATEGORY_NAME_EMPTY.getCode(), TopicErrorCode.CATEGORY_NAME_EMPTY.getMessage());
+            throw new BusinessException(TopicErrorCode.CATEGORY_NAME_EMPTY.getCode(), TopicErrorCode.CATEGORY_NAME_EMPTY.getMessage());
         }
     }
 } 

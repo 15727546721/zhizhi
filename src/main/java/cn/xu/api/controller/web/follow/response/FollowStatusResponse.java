@@ -8,7 +8,7 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 @Schema(description = "关注状态响应")
 public class FollowStatusResponse {
-    
+
     @Schema(description = "是否关注")
     private Boolean isFollowing;
 } 

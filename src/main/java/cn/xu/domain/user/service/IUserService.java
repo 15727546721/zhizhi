@@ -2,43 +2,90 @@ package cn.xu.domain.user.service;
 
 import cn.xu.api.controller.web.user.LoginRequest;
 import cn.xu.api.controller.web.user.RegisterRequest;
-import cn.xu.api.dto.user.UserPasswordRequest;
+import cn.xu.api.dto.common.PageRequest;
+import cn.xu.api.dto.user.UserRequest;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.model.entity.UserInfoEntity;
-import cn.xu.domain.user.model.entity.UserRoleEntity;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 public interface IUserService {
-    List<UserEntity> queryUserList(int page, int size);
+    /**
+     * 用户注册
+     */
+    UserEntity register(RegisterRequest request);
 
-    void addUser(UserRoleEntity userRole);
+    /**
+     * 用户登录
+     */
+    UserEntity login(LoginRequest request);
 
-    int updateUser(UserEntity userEntity);
+    /**
+     * 获取用户信息
+     */
+    UserEntity getUserInfo(Long userId);
 
-    void deleteUser(Long id);
+    /**
+     * 更新用户信息
+     */
+    UserEntity updateUserInfo(Long userId, String nickname, String avatar,
+                              Integer gender, String region, String birthday,
+                              String description);
 
-    void updatePassword(UserPasswordRequest userPasswordRequest);
+    /**
+     * 修改密码
+     */
+    void changePassword(Long userId, String oldPassword, String newPassword);
 
-    UserInfoEntity queryUserInfo(Long id);
+    /**
+     * 封禁用户
+     */
+    void banUser(Long userId);
 
+    /**
+     * 解封用户
+     */
+    void unbanUser(Long userId);
+
+    /**
+     * 查询用户列表
+     */
+    List<UserEntity> queryUserList(PageRequest pageRequest);
+
+    /**
+     * 添加用户
+     */
+    void addUser(UserRequest userRequest);
+
+    /**
+     * 更新用户
+     */
+    void updateUser(UserRequest userRequest);
+
+    /**
+     * 删除用户
+     */
+    void deleteUser(Long userId);
+
+    /**
+     * 查询用户个人信息
+     */
+    UserInfoEntity queryUserInfo();
+
+    /**
+     * 更新用户个人信息
+     */
     void updateUserInfo(UserInfoEntity userInfoEntity);
 
-    void uploadAvatar(Long id, String avatar);
-
-    UserEntity getUserInfo(Long id);
-
-    void register(RegisterRequest registerRequest);
-
-    UserEntity login(LoginRequest loginRequest);
+    /**
+     * 上传头像
+     */
+    void uploadAvatar(String avatar);
 
     /**
      * 批量获取用户信息
-     *
-     * @param userIds
-     * @return
      */
     Map<Long, UserEntity> getBatchUserInfo(Set<Long> userIds);
 }

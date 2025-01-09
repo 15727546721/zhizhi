@@ -53,7 +53,7 @@ public class AdminController {
     @Operation(summary = "获取用户信息")
     @SaCheckLogin
     public ResponseEntity<UserInfoEntity> getInfoByToken(@RequestHeader(required = false, value = "Authorization")
-                                                             String token) {
+                                                         String token) {
         log.info("获取用户信息: {}", token);
         UserInfoEntity userInfo = userLoginService.getInfoByToken(token.substring("Bearer".length() + 1));
         return ResponseEntity.<UserInfoEntity>builder()

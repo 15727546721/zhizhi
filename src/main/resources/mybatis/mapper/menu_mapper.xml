@@ -35,19 +35,19 @@
     </insert>
     <update id="updateMenu" parameterType="cn.xu.infrastructure.persistent.po.Menu">
         update menu
-        set parent_id    = #{parentId},
-            path         = #{path},
-            component    = #{component},
-            title        = #{title},
-            sort         = #{sort},
-            icon         = #{icon},
-            type         = #{type},
+        set parent_id   = #{parentId},
+            path        = #{path},
+            component   = #{component},
+            title       = #{title},
+            sort        = #{sort},
+            icon        = #{icon},
+            type        = #{type},
             create_time = #{createTime},
-            update_time  = #{updateTime},
-            redirect     = #{redirect},
-            name         = #{name},
-            hidden       = #{hidden},
-            perm         = #{perm}
+            update_time = #{updateTime},
+            redirect    = #{redirect},
+            name        = #{name},
+            hidden      = #{hidden},
+            perm        = #{perm}
         WHERE id = #{id}
     </update>
     <delete id="deleteMenu">

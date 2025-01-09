@@ -10,7 +10,7 @@ import cn.xu.domain.article.repository.IArticleTagRepository;
 import cn.xu.domain.article.repository.ITagRepository;
 import cn.xu.domain.article.service.IArticleService;
 import cn.xu.domain.file.service.MinioService;
-import cn.xu.exception.AppException;
+import cn.xu.exception.BusinessException;
 import cn.xu.infrastructure.common.ResponseCode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -44,10 +44,10 @@ public class ArticleService implements IArticleService {
         try {
             uploadFileUrl = minioService.uploadFile(imageFile, null);
         } catch (Exception e) {
-            throw new AppException(ResponseCode.UN_ERROR.getCode(), "上传封面失败");
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "上传封面失败");
         }
         if (uploadFileUrl == null) {
-            throw new AppException(ResponseCode.UN_ERROR.getCode(), "上传封面失败");
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "上传封面失败");
         }
         return uploadFileUrl;
     }
@@ -55,12 +55,12 @@ public class ArticleService implements IArticleService {
     @Override
     public PageResponse<List<ArticlePageResponse>> listArticle(ArticleRequest articleRequest) {
         List<ArticlePageResponse> articles = articleRepository.queryArticle(articleRequest);
-        return PageResponse.<List<ArticlePageResponse>>builder()
-                .data(articles)
-                .total(articles.size())
-                .page(articleRequest.getPage())
-                .size(articleRequest.getSize())
-                .build();
+        return PageResponse.of(
+                articleRequest.getPage(),
+                articleRequest.getSize(),
+                (long) articles.size(),
+                articles
+        );
     }
 
     @Override
@@ -77,7 +77,7 @@ public class ArticleService implements IArticleService {
     public ArticleEntity getArticleById(Long id) {
         ArticleEntity article = articleRepository.findById(id);
         if (article == null) {
-            throw new AppException(ResponseCode.UN_ERROR.getCode(), "未查询到文章");
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "未查询到文章");
         }
 
         return article;

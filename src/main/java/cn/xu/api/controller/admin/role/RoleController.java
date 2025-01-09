@@ -6,7 +6,8 @@ import cn.xu.api.dto.permission.RoleMenuRequest;
 import cn.xu.api.dto.permission.RoleRequest;
 import cn.xu.common.ResponseEntity;
 import cn.xu.domain.permission.model.entity.RoleEntity;
-import cn.xu.domain.permission.service.service.PermissionService;
+import cn.xu.domain.permission.service.IPermissionService;
+import cn.xu.exception.BusinessException;
 import cn.xu.infrastructure.common.ResponseCode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -21,14 +22,27 @@ import java.util.List;
 public class RoleController {
 
     @Resource
-    private PermissionService permissionService;
+    private IPermissionService permissionService;
 
     @GetMapping("/list")
     @Operation(summary = "角色列表")
-    public ResponseEntity selectRolePage(RoleRequest roleRequest) {
-        PageResponse<List<RoleEntity>> pageResponse =
-                permissionService.selectRolePage(roleRequest.getName(), roleRequest.getPage(), roleRequest.getSize());
-        return ResponseEntity.builder()
+    public ResponseEntity<PageResponse<List<RoleEntity>>> selectRolePage(RoleRequest roleRequest) {
+        // 参数校验和默认值设置
+        if (roleRequest.getPage() == null || roleRequest.getPage() < 1) {
+            roleRequest.setPage(1);
+        }
+        if (roleRequest.getSize() == null || roleRequest.getSize() < 1) {
+            roleRequest.setSize(10);
+        }
+
+        // 查询角色列表
+        PageResponse<List<RoleEntity>> pageResponse = permissionService.selectRolePage(
+                roleRequest.getName(),
+                roleRequest.getPage(),
+                roleRequest.getSize()
+        );
+
+        return ResponseEntity.<PageResponse<List<RoleEntity>>>builder()
                 .data(pageResponse)
                 .info("获取角色列表成功")
                 .code(ResponseCode.SUCCESS.getCode())
@@ -47,12 +61,15 @@ public class RoleController {
     }
 
     @GetMapping("getRoleMenuIds")
-    @Operation(summary = "获取当前登录用户所拥有的权限")
-    public ResponseEntity<List<Long>> selectRoleMenuById(Long roleId) {
+    @Operation(summary = "获取角色的菜单权限")
+    public ResponseEntity<List<Long>> selectRoleMenuById(@RequestParam("roleId") Long roleId) {
+        if (roleId == null) {
+            throw new BusinessException(ResponseCode.NULL_PARAMETER.getCode(), "角色ID不能为空");
+        }
         List<Long> roleMenuIds = permissionService.selectRoleMenuById(roleId);
         return ResponseEntity.<List<Long>>builder()
                 .data(roleMenuIds)
-                .info("获取当前登录用户所拥有的权限成功")
+                .info("获取角色菜单权限成功")
                 .code(ResponseCode.SUCCESS.getCode())
                 .build();
     }

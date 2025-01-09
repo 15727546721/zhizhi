@@ -1,6 +1,6 @@
 package cn.xu.domain.comment.model.valueobject;
 
-import cn.xu.exception.AppException;
+import cn.xu.exception.BusinessException;
 import cn.xu.infrastructure.common.ResponseCode;
 import lombok.Getter;
 
@@ -22,7 +22,7 @@ public enum CommentType {
 
     public static CommentType of(Integer value) {
         if (value == null) {
-            throw new AppException(ResponseCode.UN_ERROR.getCode(), "评论类型不能为空");
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "评论类型不能为空");
         }
 
         for (CommentType type : CommentType.values()) {
@@ -30,7 +30,7 @@ public enum CommentType {
                 return type;
             }
         }
-        throw new AppException(ResponseCode.UN_ERROR.getCode(), "无效的评论类型：" + value);
+        throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "无效的评论类型：" + value);
     }
 
     public static boolean isValid(Integer value) {

@@ -2,7 +2,7 @@ package cn.xu.infrastructure.persistent.repository;
 
 import cn.xu.domain.comment.model.entity.CommentEntity;
 import cn.xu.domain.comment.repository.ICommentRepository;
-import cn.xu.exception.AppException;
+import cn.xu.exception.BusinessException;
 import cn.xu.infrastructure.common.ResponseCode;
 import cn.xu.infrastructure.persistent.dao.ICommentDao;
 import cn.xu.infrastructure.persistent.po.Comment;
@@ -85,7 +85,7 @@ public class CommentRepository implements ICommentRepository {
 
         } catch (Exception e) {
             log.error("查询评论列表失败 - type: {}, targetId: {}", type, targetId, e);
-            throw new AppException(ResponseCode.UN_ERROR.getCode(), "查询评论列表失败：" + e.getMessage());
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "查询评论列表失败：" + e.getMessage());
         }
     }
 
@@ -108,7 +108,7 @@ public class CommentRepository implements ICommentRepository {
 
         } catch (Exception e) {
             log.error("查询子评论列表失败 - parentId: {}", parentId, e);
-            throw new AppException(ResponseCode.UN_ERROR.getCode(), "查询子评论列表失败：" + e.getMessage());
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "查询子评论列表失败：" + e.getMessage());
         }
     }
 
@@ -121,15 +121,15 @@ public class CommentRepository implements ICommentRepository {
             log.info("开始批量删除评论 - commentIds: {}", commentIds);
             int deletedCount = commentDao.batchDelete(commentIds);
             log.info("批量删除评论完成 - 删除数量: {}", deletedCount);
-            
+
             // 如果删除数量与预期不符，抛出异常
             if (deletedCount != commentIds.size()) {
                 log.error("批量删除评论数量不匹配 - 预期: {}, 实际: {}", commentIds.size(), deletedCount);
-                throw new AppException(ResponseCode.UN_ERROR.getCode(), "删除评论数量不匹配");
+                throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "删除评论数量不匹配");
             }
         } catch (Exception e) {
             log.error("批量删除评论失败 - commentIds: {}", commentIds, e);
-            throw new AppException(ResponseCode.UN_ERROR.getCode(), "批量删除评论失败：" + e.getMessage());
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "批量删除评论失败：" + e.getMessage());
         }
     }
 

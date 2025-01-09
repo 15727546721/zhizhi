@@ -75,7 +75,7 @@ public class FollowController {
         log.info("获取关注列表，页码：{}，每页数量：{}", pageNum, pageSize);
         Long currentUserId = StpUtil.getLoginIdAsLong();
         List<UserFollowEntity> followingList = userFollowService.getFollowingList(currentUserId);
-        return ResponseEntity.<List<UserFollowEntity>> builder()
+        return ResponseEntity.<List<UserFollowEntity>>builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .data(followingList)
                 .build();

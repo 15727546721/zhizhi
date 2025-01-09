@@ -5,7 +5,7 @@ import cn.xu.domain.topic.command.CreateTopicCommand;
 import cn.xu.domain.topic.entity.Topic;
 import cn.xu.domain.topic.model.entity.TopicEntity;
 import cn.xu.domain.topic.repository.ITopicRepository;
-import cn.xu.exception.AppException;
+import cn.xu.exception.BusinessException;
 import cn.xu.infrastructure.common.ResponseCode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -38,7 +38,7 @@ public class TopicService {
         try {
             // 1. 检查分类是否存在
             if (command.getCategoryId() != null && topicCategoryService.getCategory(command.getCategoryId()) == null) {
-                throw new AppException(ResponseCode.UN_ERROR.getCode(), "话题分类不存在");
+                throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "话题分类不存在");
             }
 
             // 2. 如果有图片，将临时图片移动到永久目录
@@ -79,7 +79,7 @@ public class TopicService {
     public void updateTopic(TopicEntity topicEntity) {
         TopicEntity existingTopic = topicRepository.findById(topicEntity.getId());
         if (existingTopic == null) {
-            throw new AppException(ResponseCode.UN_ERROR.getCode(), "话题不存在");
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "话题不存在");
         }
 
         topicEntity.validate();
@@ -180,7 +180,7 @@ public class TopicService {
     public void updateTopicImages(Long topicId, List<String> imageUrls) {
         TopicEntity existingTopic = topicRepository.findById(topicId);
         if (existingTopic == null) {
-            throw new AppException(ResponseCode.UN_ERROR.getCode(), "话题不存在");
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "话题不存在");
         }
 
         // 获取需要删除的图片

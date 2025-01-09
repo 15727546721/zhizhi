@@ -7,10 +7,6 @@ public interface IUserLoginService {
 
     /**
      * 登录
-     *
-     * @param username
-     * @param password
-     * @return
      */
     String loginByAdmin(LoginFormVO loginFormVO);
 
@@ -18,4 +14,9 @@ public interface IUserLoginService {
      * 根据token获取用户信息
      */
     UserInfoEntity getInfoByToken(String token);
+
+    /**
+     * 获取当前登录用户的信息和角色
+     */
+    UserInfoEntity getCurrentUserInfoAndRoles();
 }

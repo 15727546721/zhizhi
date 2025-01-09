@@ -3,7 +3,7 @@ package cn.xu.infrastructure.persistent.repository;
 
 import cn.xu.domain.article.model.entity.CategoryEntity;
 import cn.xu.domain.article.repository.ICategoryRepository;
-import cn.xu.exception.AppException;
+import cn.xu.exception.BusinessException;
 import cn.xu.infrastructure.common.ResponseCode;
 import cn.xu.infrastructure.persistent.dao.ICategoryDao;
 import cn.xu.infrastructure.persistent.po.ArticleCategory;
@@ -32,7 +32,7 @@ public class CategoryRepository implements ICategoryRepository {
                     .build());
         } catch (Exception e) {
             log.error("保存分类失败", e);
-            throw new AppException(ResponseCode.UN_ERROR.getCode(), "保存分类失败");
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "保存分类失败");
         }
     }
 
@@ -57,7 +57,7 @@ public class CategoryRepository implements ICategoryRepository {
                     .build());
         } catch (Exception e) {
             log.error("更新分类失败", e);
-            throw new AppException(ResponseCode.UN_ERROR.getCode(), "更新分类失败");
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "更新分类失败");
         }
     }
 
@@ -67,7 +67,7 @@ public class CategoryRepository implements ICategoryRepository {
             categoryDao.delete(idList);
         } catch (Exception e) {
             log.error("删除分类失败", e);
-            throw new AppException(ResponseCode.UN_ERROR.getCode(), "删除分类失败");
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "删除分类失败");
         }
     }
 

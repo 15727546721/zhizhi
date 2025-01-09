@@ -12,7 +12,8 @@
     </resultMap>
 
     <sql id="Base_Column_List">
-        id, name, description, sort, create_time, update_time
+        id
+        , name, description, sort, create_time, update_time
     </sql>
 
     <insert id="insert" parameterType="cn.xu.infrastructure.persistent.po.TopicCategoryPO">
@@ -22,15 +23,16 @@
 
     <update id="update" parameterType="cn.xu.infrastructure.persistent.po.TopicCategoryPO">
         update topic_category
-        set name = #{name},
+        set name        = #{name},
             description = #{description},
-            sort = #{sort},
+            sort        = #{sort},
             update_time = now()
         where id = #{id}
     </update>
 
     <delete id="deleteById" parameterType="java.lang.Long">
-        delete from topic_category
+        delete
+        from topic_category
         where id = #{id}
     </delete>
 

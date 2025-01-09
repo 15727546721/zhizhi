@@ -1,4 +1,4 @@
-package cn.xu.domain.permission.service.service;
+package cn.xu.domain.permission.service.impl;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.api.dto.common.PageResponse;
@@ -12,7 +12,7 @@ import cn.xu.domain.permission.model.vo.MenuComponentVO;
 import cn.xu.domain.permission.model.vo.MenuTypeVO;
 import cn.xu.domain.permission.repository.IPermissionRepository;
 import cn.xu.domain.permission.service.IPermissionService;
-import cn.xu.exception.AppException;
+import cn.xu.exception.BusinessException;
 import cn.xu.infrastructure.common.ResponseCode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service
-public class PermissionService implements IPermissionService {
+public class PermissionServiceImpl implements IPermissionService {
 
     @Resource
     private IPermissionRepository permissionRepository;
@@ -74,20 +74,18 @@ public class PermissionService implements IPermissionService {
 
     @Override
     public PageResponse<List<RoleEntity>> selectRolePage(String name, int page, int size) {
-        if (page <= 0) {
-            page = 1;
-        }
-        if (size <= 0) {
-            size = 10;
-        }
-        List<RoleEntity> roleEntities = permissionRepository.selectRolePage(name, page, size);
+        // 参数校验和默认值设置
+        page = Math.max(1, page);  // 确保页码最小为1
+        size = size <= 0 ? 10 : Math.min(size, 100);  // 确保每页数量在1-100之间
+
+        // 计算偏移量
+        int offset = (page - 1) * size;
+
+        // 查询数据
+        List<RoleEntity> roleEntities = permissionRepository.selectRolePage(name, offset, size);
         long total = permissionRepository.countRole(name);
-        return PageResponse.<List<RoleEntity>>builder()
-                .data(roleEntities)
-                .total(total)
-                .page(page)
-                .size(size)
-                .build();
+
+        return PageResponse.of(page, size, total, roleEntities);
     }
 
     @Override
@@ -100,12 +98,24 @@ public class PermissionService implements IPermissionService {
 
     @Override
     public List<Long> selectRoleMenuById(Long roleId) {
+        // 1. 检查角色是否存在
         RoleEntity roleEntity = permissionRepository.selectRoleById(roleId);
-        if (roleEntity != null && roleEntity.getCode().equals("admin")) {
+        if (roleEntity == null) {
+            throw new BusinessException(ResponseCode.NULL_RESPONSE.getCode(), "角色不存在");
+        }
+
+        // 2. 如果是超级管理员角色，返回所有菜单ID
+        if ("admin".equals(roleEntity.getCode())) {
             return permissionRepository.selectAllMenuId();
         }
-        List<Long> list = permissionRepository.selectMenuIdByRoleMenu(roleId);
-        return list;
+
+        // 3. 获取角色的菜单权限
+        List<Long> menuIds = permissionRepository.selectMenuIdByRoleMenu(roleId);
+        if (menuIds == null) {
+            menuIds = Collections.emptyList();
+        }
+
+        return menuIds;
     }
 
     @Override
@@ -118,7 +128,7 @@ public class PermissionService implements IPermissionService {
             return;
         }
         if (roleId == null || menuIds.isEmpty()) {
-            throw new AppException(ResponseCode.NULL_PARAMETER.getCode(), "参数不能为空");
+            throw new BusinessException(ResponseCode.NULL_PARAMETER.getCode(), "参数不能为空");
         }
         RoleEntity roleEntity = permissionRepository.selectRoleById(roleId);
         if (roleEntity != null && roleEntity.getCode().equals("admin")) {
@@ -135,28 +145,52 @@ public class PermissionService implements IPermissionService {
                 // 回滚事务
                 status.setRollbackOnly();
                 log.error("分配角色权限失败", e);
-                throw new AppException(ResponseCode.UN_ERROR.getCode(), "分配角色权限失败");
+                throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "分配角色权限失败");
             }
         });
     }
 
     @Override
     public void addRole(RoleAddOrUpdateRequest role) {
-        permissionRepository.addRole(RoleEntity.builder()
+        // 1. 检查角色编码是否已存在
+        if (permissionRepository.existsByCode(role.getCode())) {
+            throw new BusinessException(ResponseCode.DUPLICATE_KEY.getCode(), "角色编码已存在");
+        }
+
+        // 2. 创建角色实体
+        RoleEntity roleEntity = RoleEntity.builder()
                 .code(role.getCode())
                 .name(role.getName())
-                .desc(role.getDesc())
-                .build());
+                .remark(role.getRemark())
+                .build();
+
+        // 3. 保存角色
+        permissionRepository.addRole(roleEntity);
     }
 
     @Override
     public void updateRole(RoleAddOrUpdateRequest role) {
-        permissionRepository.updateRole(RoleEntity.builder()
+        // 1. 检查角色是否存在
+        RoleEntity existingRole = permissionRepository.selectRoleById(role.getId());
+        if (existingRole == null) {
+            throw new BusinessException(ResponseCode.NULL_RESPONSE.getCode(), "角色不存在");
+        }
+
+        // 2. 如果修改了编码，检查新编码是否已存在
+        if (!existingRole.getCode().equals(role.getCode()) &&
+                permissionRepository.existsByCode(role.getCode())) {
+            throw new BusinessException(ResponseCode.DUPLICATE_KEY.getCode(), "角色编码已存在");
+        }
+
+        // 3. 更新角色
+        RoleEntity roleEntity = RoleEntity.builder()
                 .id(role.getId())
                 .code(role.getCode())
                 .name(role.getName())
-                .desc(role.getDesc())
-                .build());
+                .remark(role.getRemark())
+                .build();
+
+        permissionRepository.updateRole(roleEntity);
     }
 
     @Override
@@ -194,7 +228,7 @@ public class PermissionService implements IPermissionService {
             }
         } catch (Exception e) {
             log.error("获取当前用户菜单失败", e);
-            throw new AppException(ResponseCode.UN_ERROR.getCode(), "获取当前用户菜单失败");
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "获取当前用户菜单失败");
         }
 
         List<RouterEntity> routerList = buildRouterTree(menus);
@@ -266,59 +300,69 @@ public class PermissionService implements IPermissionService {
 
     /**
      * 构建路由树
-     *
-     * @param menus
-     * @return
      */
     private List<RouterEntity> buildRouterTree(List<MenuEntity> menus) {
-        List<RouterEntity> resultList = new ArrayList<>();
-        for (MenuEntity menu : menus) {
-            Long parentId = menu.getParentId();
-            if (parentId == null || parentId == 0) {
-                RouterEntity.MetaEntity metaVO = new RouterEntity.MetaEntity(menu.getTitle(), menu.getIcon(), menu.getHidden());
-                RouterEntity build = RouterEntity.builder().id(menu.getId()).path(menu.getPath()).redirect(menu.getRedirect()).name(menu.getName()).component(menu.getComponent())
-                        .meta(metaVO).sort(menu.getSort()).build();
-                resultList.add(build);
-            }
+        if (menus == null || menus.isEmpty()) {
+            return Collections.emptyList();
         }
-        resultList.sort(Comparator.comparingInt(RouterEntity::getSort));
 
-        for (RouterEntity RouterEntity : resultList) {
-            RouterEntity.setChildren(getRouterChild(RouterEntity.getId(), menus));
-        }
-        return resultList;
+        // 使用Stream API过滤和转换根节点
+        List<RouterEntity> rootRouters = menus.stream()
+                .filter(menu -> menu.getParentId() == null || menu.getParentId() == 0)
+                .map(this::convertMenuToRouter)
+                .sorted(Comparator.comparingInt(RouterEntity::getSort))
+                .collect(Collectors.toList());
+
+        // 为每个根节点设置子节点
+        rootRouters.forEach(router -> router.setChildren(getRouterChild(router.getId(), menus)));
+
+        return rootRouters;
     }
 
     /**
-     * 获取路由菜单树
-     *
-     * @param pid
-     * @param menus
-     * @return
+     * 获取路由菜单树的子节点
      */
-    private List<RouterEntity> getRouterChild(Long pid, List<MenuEntity> menus) {
-        if (menus == null) {
+    private List<RouterEntity> getRouterChild(Long parentId, List<MenuEntity> menus) {
+        if (menus == null || menus.isEmpty()) {
             return Collections.emptyList();
         }
-        Map<Long, RouterEntity> routerMap = new HashMap<>();
-        for (MenuEntity e : menus) {
-            Long parentId = e.getParentId();
-            if (parentId != null && parentId.equals(pid)) {
-                // 子菜单的下级菜单
-                RouterEntity.MetaEntity metaVO = new RouterEntity.MetaEntity(e.getTitle(), e.getIcon(), e.getHidden());
-                RouterEntity build = RouterEntity.builder().id(e.getId()).path(e.getPath()).redirect(e.getRedirect()).name(e.getName()).component(e.getComponent())
-                        .meta(metaVO).sort(e.getSort()).build();
-                routerMap.put(e.getId(), build);
-            }
-        }
 
-        List<RouterEntity> children = new ArrayList<>(routerMap.values());
-        children.sort(Comparator.comparingInt(RouterEntity::getSort));
+        // 使用Stream API过滤和转换子节点
+        List<RouterEntity> children = menus.stream()
+                .filter(menu -> parentId.equals(menu.getParentId()))
+                .map(this::convertMenuToRouter)
+                .sorted(Comparator.comparingInt(RouterEntity::getSort))
+                .collect(Collectors.toList());
 
-        for (RouterEntity e : children) {
-            e.setChildren(getRouterChild(e.getId(), menus));
-        }
+        // 递归设置子节点的子节点
+        children.forEach(child -> child.setChildren(getRouterChild(child.getId(), menus)));
 
-        return children.isEmpty() ? Collections.emptyList() : children;
+        return children;
+    }
+
+    /**
+     * 将菜单实体转换为路由实体
+     */
+    private RouterEntity convertMenuToRouter(MenuEntity menu) {
+        RouterEntity.MetaEntity meta = new RouterEntity.MetaEntity(
+                menu.getTitle(),
+                menu.getIcon(),
+                menu.getHidden()
+        );
+
+        return RouterEntity.builder()
+                .id(menu.getId())
+                .path(menu.getPath())
+                .redirect(menu.getRedirect())
+                .name(menu.getName())
+                .component(menu.getComponent())
+                .meta(meta)
+                .sort(menu.getSort())
+                .build();
+    }
+
+    @Override
+    public long countRole(String name) {
+        return permissionRepository.countRole(name);
     }
 }

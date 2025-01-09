@@ -2,15 +2,13 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="cn.xu.infrastructure.persistent.dao.ILikeDao">
     <sql id="Base_Column_List">
-        id, user_id, target_id, type, status, create_time, update_time
+        id
+        , user_id, target_id, type, status, create_time, update_time
     </sql>
 
     <insert id="insert" parameterType="cn.xu.infrastructure.persistent.po.LikePO">
-        INSERT INTO `like` (
-            user_id, target_id, type, status, create_time, update_time
-        ) VALUES (
-            #{userId}, #{targetId}, #{type}, #{status}, #{createTime}, #{updateTime}
-        )
+        INSERT INTO `like` (user_id, target_id, type, status, create_time, update_time)
+        VALUES (#{userId}, #{targetId}, #{type}, #{status}, #{createTime}, #{updateTime})
     </insert>
 
     <update id="update" parameterType="cn.xu.infrastructure.persistent.po.LikePO">
@@ -25,7 +23,8 @@
     </update>
 
     <select id="findByUserIdAndTargetIdAndType" resultType="cn.xu.infrastructure.persistent.po.LikePO">
-        SELECT <include refid="Base_Column_List"/>
+        SELECT
+        <include refid="Base_Column_List"/>
         FROM `like`
         WHERE user_id = #{userId}
         AND target_id = #{targetId}
@@ -37,20 +36,21 @@
         SELECT COUNT(1)
         FROM `like`
         WHERE target_id = #{targetId}
-        AND type = #{type}
-        AND status = 1
+          AND type = #{type}
+          AND status = 1
     </select>
 
     <select id="getLikedUserIds" resultType="java.lang.Long">
         SELECT user_id
         FROM `like`
         WHERE target_id = #{targetId}
-        AND type = #{type}
-        AND status = 1
+          AND type = #{type}
+          AND status = 1
     </select>
 
     <select id="getPageByType" resultType="cn.xu.infrastructure.persistent.po.LikePO">
-        SELECT <include refid="Base_Column_List"/>
+        SELECT
+        <include refid="Base_Column_List"/>
         FROM `like`
         WHERE type = #{type}
         AND status = 1
@@ -62,6 +62,6 @@
         SELECT COUNT(1)
         FROM `like`
         WHERE type = #{type}
-        AND status = 1
+          AND status = 1
     </select>
 </mapper>
