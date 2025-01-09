@@ -5,6 +5,11 @@ import lombok.Data;
 @Data
 public class UserPasswordRequest {
     /**
+     * 用户ID
+     */
+    private Long userId;
+
+    /**
      * 旧密码
      */
     private String oldPassword;
