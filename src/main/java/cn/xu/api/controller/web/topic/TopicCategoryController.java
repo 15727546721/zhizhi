@@ -1,7 +1,7 @@
 package cn.xu.api.controller.web.topic;
 
+import cn.xu.api.dto.common.ResponseEntity;
 import cn.xu.api.dto.topic.TopicCategoryDTO;
-import cn.xu.common.ResponseEntity;
 import cn.xu.domain.topic.command.CreateTopicCategoryCommand;
 import cn.xu.domain.topic.model.entity.TopicCategoryEntity;
 import cn.xu.domain.topic.service.ITopicCategoryService;

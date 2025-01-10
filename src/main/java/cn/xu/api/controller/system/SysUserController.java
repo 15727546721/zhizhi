@@ -1,12 +1,12 @@
-package cn.xu.api.controller.admin;
+package cn.xu.api.controller.system;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.api.dto.common.PageRequest;
+import cn.xu.api.dto.common.ResponseEntity;
 import cn.xu.api.dto.user.LoginFormRequest;
 import cn.xu.api.dto.user.UserPasswordRequest;
 import cn.xu.api.dto.user.UserRequest;
-import cn.xu.common.ResponseEntity;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.model.entity.UserInfoEntity;
 import cn.xu.domain.user.model.valobj.LoginFormVO;
@@ -27,7 +27,7 @@ import java.util.List;
 @RequestMapping("/system")
 @RestController
 @Tag(name = "后台用户管理", description = "后台用户相关接口")
-public class AdminController {
+public class SysUserController {
 
     @Resource
     private IUserLoginService userLoginService;

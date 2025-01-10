@@ -80,4 +80,20 @@ public interface ITopicDao {
      * @return 话题PO列表
      */
     List<TopicPO> findWithoutCategory();
+
+    /**
+     * 分页查询话题列表
+     *
+     * @param offset 偏移量
+     * @param limit  每页数量
+     * @return 话题PO列表
+     */
+    List<TopicPO> findByPage(@Param("offset") int offset, @Param("limit") int limit);
+
+    /**
+     * 获取话题总数
+     *
+     * @return 话题总数
+     */
+    Long count();
 } 

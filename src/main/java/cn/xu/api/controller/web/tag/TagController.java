@@ -1,7 +1,7 @@
 package cn.xu.api.controller.web.tag;
 
 
-import cn.xu.common.ResponseEntity;
+import cn.xu.api.dto.common.ResponseEntity;
 import cn.xu.domain.article.model.entity.TagEntity;
 import cn.xu.domain.article.service.article.TagService;
 import cn.xu.infrastructure.common.ResponseCode;
@@ -16,7 +16,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/tag")
 @Tag(name = "文章标签接口", description = "文章标签相关接口")
-public class TagApiController {
+public class TagController {
 
     @Resource
     private TagService tagService;

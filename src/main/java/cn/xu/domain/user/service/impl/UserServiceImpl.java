@@ -96,7 +96,7 @@ public class UserServiceImpl implements IUserService {
 
     @Override
     public List<UserEntity> queryUserList(PageRequest pageRequest) {
-        return userRepository.findAll(pageRequest.getPage(), pageRequest.getSize());
+        return userRepository.findAll(pageRequest.getPageNo(), pageRequest.getPageSize());
     }
 
     @Override

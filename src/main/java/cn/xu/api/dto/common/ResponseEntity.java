@@ -1,4 +1,4 @@
-package cn.xu.common;
+package cn.xu.api.dto.common;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

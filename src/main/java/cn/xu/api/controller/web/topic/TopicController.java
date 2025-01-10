@@ -1,7 +1,7 @@
 package cn.xu.api.controller.web.topic;
 
+import cn.xu.api.dto.common.ResponseEntity;
 import cn.xu.api.dto.topic.TopicDTO;
-import cn.xu.common.ResponseEntity;
 import cn.xu.domain.file.service.MinioService;
 import cn.xu.domain.topic.command.CreateTopicCommand;
 import cn.xu.domain.topic.entity.Topic;

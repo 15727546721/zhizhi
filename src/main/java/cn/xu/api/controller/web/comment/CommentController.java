@@ -3,7 +3,7 @@ package cn.xu.api.controller.web.comment;
 
 import cn.xu.api.controller.web.comment.dto.CommentListDTO;
 import cn.xu.api.controller.web.comment.request.CommentRequest;
-import cn.xu.common.ResponseEntity;
+import cn.xu.api.dto.common.ResponseEntity;
 import cn.xu.domain.comment.model.entity.CommentEntity;
 import cn.xu.domain.comment.model.valueobject.CommentType;
 import cn.xu.domain.comment.service.ICommentService;
@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 @Tag(name = "评论接口", description = "评论相关接口")
 @RestController
 @RequestMapping("/api/comment")
-public class CommentApiController {
+public class CommentController {
 
     @Resource
     private ICommentService commentService;

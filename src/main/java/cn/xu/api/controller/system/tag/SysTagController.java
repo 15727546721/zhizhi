@@ -1,8 +1,8 @@
-package cn.xu.api.controller.admin.tag;
+package cn.xu.api.controller.system.tag;
 
 import cn.xu.api.dto.article.TagRequest;
 import cn.xu.api.dto.common.PageRequest;
-import cn.xu.common.ResponseEntity;
+import cn.xu.api.dto.common.ResponseEntity;
 import cn.xu.domain.article.model.entity.TagEntity;
 import cn.xu.domain.article.service.ITagService;
 import cn.xu.infrastructure.common.ResponseCode;
@@ -18,7 +18,7 @@ import java.util.List;
 @Slf4j
 @RequestMapping("system/tag")
 @RestController
-public class TagController {
+public class SysTagController {
 
     @Resource
     private ITagService tagService;
@@ -44,8 +44,8 @@ public class TagController {
 
     @GetMapping("/list")
     public ResponseEntity getTagList(@ModelAttribute PageRequest pageRequest) {
-        int page = pageRequest.getPage();
-        int size = pageRequest.getSize();
+        int page = pageRequest.getPageNo();
+        int size = pageRequest.getPageSize();
         log.info("查询标签列表: page={}, size={}", page, size);
         List<TagEntity> tagEntityList = tagService.queryTagList(page, size);
         return ResponseEntity.<List<TagEntity>>builder()

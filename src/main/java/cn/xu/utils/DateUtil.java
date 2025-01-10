@@ -1,4 +1,4 @@
-package cn.xu.common.utils;
+package cn.xu.utils;
 /**
  * 时间操作工具类
  */
@@ -39,6 +39,8 @@ public class DateUtil {
             "yyyy-MM-dd", "yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd HH:mm", "yyyy-MM",
             "yyyy/MM/dd", "yyyy/MM/dd HH:mm:ss", "yyyy/MM/dd HH:mm", "yyyy/MM",
             "yyyy.MM.dd", "yyyy.MM.dd HH:mm:ss", "yyyy.MM.dd HH:mm", "yyyy.MM"};
+
+    public static final String DATE_TIME_PATTERN = "yyyy-MM-dd HH:mm:ss";
 
     private DateUtil() {
     }
@@ -124,9 +126,13 @@ public class DateUtil {
      * @return
      */
     public static String getOneDayStartTime(String oneDay) {
-        SimpleDateFormat formate = new SimpleDateFormat("yyyy-MM-dd 00:00:00");
-        Date date = new Date(oneDay);
-        return formate.format(date);
+        try {
+            SimpleDateFormat formate = new SimpleDateFormat("yyyy-MM-dd 00:00:00");
+            Date date = new SimpleDateFormat("yyyy-MM-dd").parse(oneDay);
+            return formate.format(date);
+        } catch (ParseException e) {
+            throw new RuntimeException("日期解析错误: " + oneDay);
+        }
     }
 
     /**
@@ -146,9 +152,13 @@ public class DateUtil {
      * @return
      */
     public static String getOneDayEndTime(String oneDay) {
-        SimpleDateFormat formate = new SimpleDateFormat("yyyy-MM-dd 00:00:00");
-        Date date = new Date(oneDay);
-        return formate.format(date);
+        try {
+            SimpleDateFormat formate = new SimpleDateFormat("yyyy-MM-dd 00:00:00");
+            Date date = new SimpleDateFormat("yyyy-MM-dd").parse(oneDay);
+            return formate.format(date);
+        } catch (ParseException e) {
+            throw new RuntimeException("日期解析错误: " + oneDay);
+        }
     }
 
     /**
@@ -682,5 +692,36 @@ public class DateUtil {
         long minutes = durationMillis / (60 * 1000);
 
         return minutes;
+    }
+
+    /**
+     * 字符串转日期
+     *
+     * @param dateStr 日期字符串
+     * @return 日期
+     */
+    public static Date strToDate(String dateStr) {
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat(DATE_TIME_PATTERN);
+            return sdf.parse(dateStr);
+        } catch (ParseException e) {
+            return null;
+        }
+    }
+
+    /**
+     * 字符串转日期
+     *
+     * @param dateStr 日期字符串
+     * @param pattern 日期格式
+     * @return 日期
+     */
+    public static Date strToDate(String dateStr, String pattern) {
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat(pattern);
+            return sdf.parse(dateStr);
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

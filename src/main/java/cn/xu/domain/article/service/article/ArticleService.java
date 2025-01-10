@@ -56,8 +56,8 @@ public class ArticleService implements IArticleService {
     public PageResponse<List<ArticlePageResponse>> listArticle(ArticleRequest articleRequest) {
         List<ArticlePageResponse> articles = articleRepository.queryArticle(articleRequest);
         return PageResponse.of(
-                articleRequest.getPage(),
-                articleRequest.getSize(),
+                articleRequest.getPageNo(),
+                articleRequest.getPageSize(),
                 (long) articles.size(),
                 articles
         );

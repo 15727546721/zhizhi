@@ -1,7 +1,7 @@
 package cn.xu.api.controller.web.category;
 
 
-import cn.xu.common.ResponseEntity;
+import cn.xu.api.dto.common.ResponseEntity;
 import cn.xu.domain.article.model.entity.CategoryEntity;
 import cn.xu.domain.article.service.ICategoryService;
 import cn.xu.infrastructure.common.ResponseCode;
@@ -14,7 +14,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/category")
-public class CategoryApiController {
+public class CategoryController {
 
     @Resource
     private ICategoryService categoryService;

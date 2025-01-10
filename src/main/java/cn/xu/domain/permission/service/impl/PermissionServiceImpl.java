@@ -78,11 +78,8 @@ public class PermissionServiceImpl implements IPermissionService {
         page = Math.max(1, page);  // 确保页码最小为1
         size = size <= 0 ? 10 : Math.min(size, 100);  // 确保每页数量在1-100之间
 
-        // 计算偏移量
-        int offset = (page - 1) * size;
-
         // 查询数据
-        List<RoleEntity> roleEntities = permissionRepository.selectRolePage(name, offset, size);
+        List<RoleEntity> roleEntities = permissionRepository.selectRolePage(name, page, size);
         long total = permissionRepository.countRole(name);
 
         return PageResponse.of(page, size, total, roleEntities);

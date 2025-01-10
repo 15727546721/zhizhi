@@ -16,7 +16,7 @@ public interface IRoleDao {
     /**
      * 分页查询角色列表
      */
-    List<Role> selectRolePage(@Param("name") String name, @Param("page") int page, @Param("size") int size);
+    List<Role> selectRolePage(@Param("name") String name, @Param("offset") int offset, @Param("pageSize") int pageSize);
 
     /**
      * 查询角色总数

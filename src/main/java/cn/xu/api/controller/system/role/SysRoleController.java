@@ -1,10 +1,10 @@
-package cn.xu.api.controller.admin.role;
+package cn.xu.api.controller.system.role;
 
 import cn.xu.api.dto.common.PageResponse;
+import cn.xu.api.dto.common.ResponseEntity;
 import cn.xu.api.dto.permission.RoleAddOrUpdateRequest;
 import cn.xu.api.dto.permission.RoleMenuRequest;
 import cn.xu.api.dto.permission.RoleRequest;
-import cn.xu.common.ResponseEntity;
 import cn.xu.domain.permission.model.entity.RoleEntity;
 import cn.xu.domain.permission.service.IPermissionService;
 import cn.xu.exception.BusinessException;
@@ -19,7 +19,7 @@ import java.util.List;
 @Tag(name = "角色管理", description = "角色管理相关接口")
 @RestController
 @RequestMapping("/system/role")
-public class RoleController {
+public class SysRoleController {
 
     @Resource
     private IPermissionService permissionService;
@@ -27,19 +27,20 @@ public class RoleController {
     @GetMapping("/list")
     @Operation(summary = "角色列表")
     public ResponseEntity<PageResponse<List<RoleEntity>>> selectRolePage(RoleRequest roleRequest) {
+
         // 参数校验和默认值设置
-        if (roleRequest.getPage() == null || roleRequest.getPage() < 1) {
-            roleRequest.setPage(1);
+        if (roleRequest.getPageNo() == null || roleRequest.getPageNo() < 1) {
+            roleRequest.setPageNo(1);
         }
-        if (roleRequest.getSize() == null || roleRequest.getSize() < 1) {
-            roleRequest.setSize(10);
+        if (roleRequest.getPageSize() == null || roleRequest.getPageSize() < 1) {
+            roleRequest.setPageSize(10);
         }
 
         // 查询角色列表
         PageResponse<List<RoleEntity>> pageResponse = permissionService.selectRolePage(
                 roleRequest.getName(),
-                roleRequest.getPage(),
-                roleRequest.getSize()
+                roleRequest.getPageNo(),
+                roleRequest.getPageSize()
         );
 
         return ResponseEntity.<PageResponse<List<RoleEntity>>>builder()

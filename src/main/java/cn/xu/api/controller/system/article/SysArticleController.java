@@ -1,4 +1,4 @@
-package cn.xu.api.controller.admin.article;
+package cn.xu.api.controller.system.article;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.api.dto.article.ArticleDetailsResponse;
@@ -6,13 +6,14 @@ import cn.xu.api.dto.article.ArticlePageResponse;
 import cn.xu.api.dto.article.ArticleRequest;
 import cn.xu.api.dto.article.CreateArticleRequest;
 import cn.xu.api.dto.common.PageResponse;
-import cn.xu.common.ResponseEntity;
+import cn.xu.api.dto.common.ResponseEntity;
 import cn.xu.domain.article.model.entity.ArticleEntity;
 import cn.xu.domain.article.model.entity.CategoryEntity;
 import cn.xu.domain.article.model.entity.TagEntity;
 import cn.xu.domain.article.service.*;
 import cn.xu.exception.BusinessException;
 import cn.xu.infrastructure.common.ResponseCode;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -27,7 +28,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @RequestMapping("system/article")
 @RestController
-public class ArticleController {
+public class SysArticleController {
 
     @Resource
     private IArticleService articleService;
@@ -140,19 +141,24 @@ public class ArticleController {
     }
 
     @GetMapping("/list")
-    public ResponseEntity<PageResponse> listArticle(ArticleRequest articleRequest) {
+    @Operation(summary = "文章列表")
+    public ResponseEntity<PageResponse<List<ArticlePageResponse>>> listArticle(ArticleRequest articleRequest) {
         log.info("文章列表获取参数: {}", articleRequest);
-        if (articleRequest.getPage() <= 0) {
-            articleRequest.setPage(1);
-        }
-        if (articleRequest.getSize() <= 0) {
-            articleRequest.setSize(10);
-        }
-        PageResponse<List<ArticlePageResponse>> articles = articleService.listArticle(articleRequest);
-        log.info("文章列表获取结果: {}", articles);
 
-        return ResponseEntity.<PageResponse>builder()
-                .data(articles)
+        // 参数校验和默认值设置
+        if (articleRequest.getPageNo() == null || articleRequest.getPageNo() < 1) {
+            articleRequest.setPageNo(1);
+        }
+        if (articleRequest.getPageSize() == null || articleRequest.getPageSize() < 1) {
+            articleRequest.setPageSize(10);
+        }
+
+        // 查询文章列表
+        PageResponse<List<ArticlePageResponse>> articleList = articleService.listArticle(articleRequest);
+        log.info("文章列表获取结果: {}", articleList);
+
+        return ResponseEntity.<PageResponse<List<ArticlePageResponse>>>builder()
+                .data(articleList)
                 .code(ResponseCode.SUCCESS.getCode())
                 .info("文章列表获取成功")
                 .build();

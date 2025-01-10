@@ -1,30 +1,44 @@
 package cn.xu.api.dto.article;
 
-import cn.xu.common.utils.DateUtil;
 import com.fasterxml.jackson.annotation.JsonFormat;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
 @Data
+@Schema(description = "文章列表响应")
 public class ArticlePageResponse {
+
+    @Schema(description = "文章ID")
     private Long id;
-    /**
-     * 作者昵称
-     */
-    private String nickname;
+
+    @Schema(description = "文章标题")
     private String title;
-    private String description;
+
+    @Schema(description = "文章封面")
     private String coverUrl;
-    private Long viewCount;
-    @JsonFormat(pattern = DateUtil.FORMAT_STRING, timezone = "GMT+8")
-    private Date createTime;
+
+    @Schema(description = "文章描述")
+    private String description;
+
+    @Schema(description = "作者ID")
+    private Long userId;
+
+    @Schema(description = "作者昵称")
+    private String nickname;
+
+    @Schema(description = "分类名称")
     private String categoryName;
+
+    @Schema(description = "标签名称，逗号分隔")
     private String tagNames;
+
+    @Schema(description = "创建时间")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime createTime;
+
+    @Schema(description = "更新时间")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime updateTime;
 }

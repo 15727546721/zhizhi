@@ -106,4 +106,42 @@
             #{id}
         </foreach>
     </select>
+
+    <!-- 根据用户ID查询用户信息和角色 -->
+    <select id="getUserInfoWithRoles" resultType="cn.xu.domain.user.model.entity.UserInfoEntity">
+        SELECT u.id,
+               u.username,
+               u.nickname,
+               u.avatar,
+               u.email,
+               u.phone,
+               u.status,
+               u.create_time,
+               u.update_time,
+               GROUP_CONCAT(DISTINCT r.name ORDER BY r.name SEPARATOR ',') as roles
+        FROM user u
+                 LEFT JOIN user_role ur ON u.id = ur.user_id
+                 LEFT JOIN role r ON ur.role_id = r.id
+        WHERE u.id = #{userId}
+        GROUP BY u.id
+    </select>
+
+    <!-- 根据用户名查询用户信息和角色 -->
+    <select id="getUserInfoWithRolesByUsername" resultType="cn.xu.domain.user.model.entity.UserInfoEntity">
+        SELECT u.id,
+               u.username,
+               u.nickname,
+               u.avatar,
+               u.email,
+               u.phone,
+               u.status,
+               u.create_time,
+               u.update_time,
+               GROUP_CONCAT(DISTINCT r.name ORDER BY r.name SEPARATOR ',') as roles
+        FROM user u
+                 LEFT JOIN user_role ur ON u.id = ur.user_id
+                 LEFT JOIN role r ON ur.role_id = r.id
+        WHERE u.username = #{username}
+        GROUP BY u.id
+    </select>
 </mapper>

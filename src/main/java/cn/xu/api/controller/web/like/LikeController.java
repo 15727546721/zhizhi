@@ -2,7 +2,7 @@ package cn.xu.api.controller.web.like;
 
 import cn.xu.api.controller.web.like.dto.LikeCountResponse;
 import cn.xu.api.controller.web.like.request.LikeRequest;
-import cn.xu.common.ResponseEntity;
+import cn.xu.api.dto.common.ResponseEntity;
 import cn.xu.domain.like.command.LikeCommand;
 import cn.xu.domain.like.model.LikeType;
 import cn.xu.domain.like.service.LikeService;

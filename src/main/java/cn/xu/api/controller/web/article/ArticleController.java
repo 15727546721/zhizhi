@@ -2,7 +2,7 @@ package cn.xu.api.controller.web.article;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.stp.StpUtil;
-import cn.xu.common.ResponseEntity;
+import cn.xu.api.dto.common.ResponseEntity;
 import cn.xu.domain.article.model.entity.ArticleEntity;
 import cn.xu.domain.article.service.IArticleCategoryService;
 import cn.xu.domain.article.service.IArticleService;
@@ -23,7 +23,7 @@ import java.util.List;
 @RestController
 @Tag(name = "文章接口", description = "文章相关接口")
 @Slf4j
-public class ArticleApiController {
+public class ArticleController {
 
     @Resource
     private IArticleService articleService;

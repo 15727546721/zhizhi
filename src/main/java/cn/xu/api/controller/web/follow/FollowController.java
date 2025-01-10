@@ -1,7 +1,7 @@
 package cn.xu.api.controller.web.follow;
 
 import cn.dev33.satoken.stp.StpUtil;
-import cn.xu.common.ResponseEntity;
+import cn.xu.api.dto.common.ResponseEntity;
 import cn.xu.domain.follow.model.entity.UserFollowEntity;
 import cn.xu.domain.follow.service.IUserFollowService;
 import cn.xu.infrastructure.common.ResponseCode;

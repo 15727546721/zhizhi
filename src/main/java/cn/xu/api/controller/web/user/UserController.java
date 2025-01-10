@@ -1,7 +1,7 @@
 package cn.xu.api.controller.web.user;
 
 import cn.dev33.satoken.stp.StpUtil;
-import cn.xu.common.ResponseEntity;
+import cn.xu.api.dto.common.ResponseEntity;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.model.valueobject.Email;
 import cn.xu.domain.user.service.IUserService;

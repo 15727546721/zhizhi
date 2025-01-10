@@ -52,4 +52,8 @@
                  inner join article_category_relation ac on c.id = ac.category_id
         where ac.article_id = #{articleId}
     </select>
+    <select id="selectCategoryPage" resultMap="BaseResultMap">
+        select id, name, create_time, update_time
+        from article_category limit #{offset}, #{pageSize}
+    </select>
 </mapper>

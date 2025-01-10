@@ -53,11 +53,12 @@ public class PermissionRepository implements IPermissionRepository {
 
     @Override
     public List<RoleEntity> selectRolePage(String name, int page, int size) {
-        List<Role> roleList = roleDao.selectRolePage(name, page * size, size);
-        List<RoleEntity> roleEntityList = roleList.stream()
+        int offset = Math.max(0, (page - 1) * size);
+
+        List<Role> roleList = roleDao.selectRolePage(name, offset, size);
+        return roleList.stream()
                 .map(this::convert)
                 .collect(Collectors.toList());
-        return roleEntityList;
     }
 
     @Override

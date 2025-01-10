@@ -1,7 +1,7 @@
-package cn.xu.api.controller.admin.file;
+package cn.xu.api.controller.system.file;
 
 
-import cn.xu.common.ResponseEntity;
+import cn.xu.api.dto.common.ResponseEntity;
 import cn.xu.domain.file.service.MinioService;
 import cn.xu.exception.BusinessException;
 import cn.xu.infrastructure.common.ResponseCode;

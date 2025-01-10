@@ -31,7 +31,7 @@
             </if>
         </where>
         ORDER BY create_time DESC
-        LIMIT #{page}, #{size}
+        LIMIT #{offset}, #{pageSize}
     </select>
 
     <!-- 查询角色总数 -->

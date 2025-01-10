@@ -45,7 +45,7 @@ public class ArticleRepository implements IArticleRepository {
 
     @Override
     public List<ArticlePageResponse> queryArticle(ArticleRequest articleRequest) {
-        articleRequest.setPage(articleRequest.getPage() - 1);
+        articleRequest.setPageNo(articleRequest.getPageNo() - 1);
         List<ArticlePageResponse> articles = articleDao.queryByPage(articleRequest);
         log.info("查询文章结果: {}", articles);
 

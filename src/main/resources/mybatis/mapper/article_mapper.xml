@@ -30,7 +30,7 @@
 
         <!-- 映射 Tag 集合 -->
         <collection property="tagNameList" ofType="String">
-            <result property="name" column="tag_name"/>
+            <result property="name" column="name"/>
         </collection>
     </resultMap>
 
@@ -100,6 +100,7 @@
         a.description,
         a.cover_url AS coverUrl,
         a.create_time AS createTime,
+        a.update_time AS updateTime,
         c.name AS categoryName,
         GROUP_CONCAT(t.name SEPARATOR ',') AS tagNames,
         u.nickname
@@ -123,7 +124,7 @@
         </where>
         GROUP BY a.id, c.name, u.nickname
         ORDER BY a.create_time DESC
-        LIMIT #{page}, #{size}
+        LIMIT #{pageNo}, #{pageSize}
     </select>
 
     <select id="findById" resultType="cn.xu.infrastructure.persistent.po.Article" resultMap="BaseResultMap">
@@ -169,4 +170,53 @@
         ORDER BY
             a.create_time DESC;
     </select>
+
+    <!-- 分页查询文章列表 -->
+    <select id="selectArticlePage" resultMap="ArticlePageResponseMap">
+        SELECT
+        a.id,
+        a.title,
+        a.cover_url,
+        a.description,
+        a.user_id,
+        u.nickname,
+        c.name as category_name,
+        GROUP_CONCAT(DISTINCT t.name ORDER BY t.name SEPARATOR ',') as tag_names,
+        a.create_time,
+        a.update_time
+        FROM article a
+        LEFT JOIN user u ON a.user_id = u.id
+        LEFT JOIN article_category_relation ac ON a.id = ac.article_id
+        LEFT JOIN article_category c ON ac.category_id = c.id
+        LEFT JOIN article_tag_relation at ON a.id = at.article_id
+        LEFT JOIN article_tag t ON at.tag_id = t.id
+        <where>
+            <if test="title != null and title != ''">
+                AND a.title LIKE CONCAT('%', #{title}, '%')
+            </if>
+            <if test="categoryId != null">
+                AND ac.category_id = #{categoryId}
+            </if>
+            <if test="tagId != null">
+                AND at.tag_id = #{tagId}
+            </if>
+        </where>
+        GROUP BY a.id, a.title, a.cover_url, a.description, a.user_id, u.nickname, c.name, a.create_time, a.update_time
+        ORDER BY a.create_time DESC
+        LIMIT #{offset}, #{size}
+    </select>
+
+    <!-- 文章列表响应结果映射 -->
+    <resultMap id="ArticlePageResponseMap" type="cn.xu.api.dto.article.ArticlePageResponse">
+        <id property="id" column="id"/>
+        <result property="title" column="title"/>
+        <result property="coverUrl" column="cover_url"/>
+        <result property="description" column="description"/>
+        <result property="userId" column="user_id"/>
+        <result property="nickname" column="nickname"/>
+        <result property="categoryName" column="category_name"/>
+        <result property="tagNames" column="tag_names"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
 </mapper>

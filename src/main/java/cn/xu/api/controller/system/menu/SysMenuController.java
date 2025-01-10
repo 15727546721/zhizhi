@@ -1,7 +1,7 @@
-package cn.xu.api.controller.admin.menu;
+package cn.xu.api.controller.system.menu;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
-import cn.xu.common.ResponseEntity;
+import cn.xu.api.dto.common.ResponseEntity;
 import cn.xu.domain.permission.model.entity.MenuEntity;
 import cn.xu.domain.permission.model.entity.MenuOptionsEntity;
 import cn.xu.domain.permission.model.entity.RouterEntity;
@@ -17,7 +17,7 @@ import java.util.List;
 @Tag(name = "菜单管理", description = "菜单管理相关接口")
 @RequestMapping("/system/menu")
 @RestController
-public class MenuController {
+public class SysMenuController {
 
     @Resource
     private IPermissionService permissionService;

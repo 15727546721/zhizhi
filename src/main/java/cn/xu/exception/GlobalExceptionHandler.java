@@ -1,7 +1,7 @@
 package cn.xu.exception;
 
 import cn.dev33.satoken.exception.NotLoginException;
-import cn.xu.common.ResponseEntity;
+import cn.xu.api.dto.common.ResponseEntity;
 import cn.xu.domain.user.constant.UserErrorCode;
 import cn.xu.infrastructure.common.ResponseCode;
 import lombok.extern.slf4j.Slf4j;

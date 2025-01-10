@@ -1,8 +1,8 @@
-package cn.xu.api.controller.admin.category;
+package cn.xu.api.controller.system.category;
 
 import cn.xu.api.dto.article.CategoryRequest;
 import cn.xu.api.dto.common.PageRequest;
-import cn.xu.common.ResponseEntity;
+import cn.xu.api.dto.common.ResponseEntity;
 import cn.xu.domain.article.model.entity.CategoryEntity;
 import cn.xu.domain.article.service.ICategoryService;
 import cn.xu.infrastructure.common.ResponseCode;
@@ -18,7 +18,7 @@ import java.util.List;
 @Slf4j
 @RequestMapping("system/category")
 @RestController
-public class CategoryController {
+public class SysCategoryController {
 
     @Resource
     private ICategoryService categoryService;
@@ -45,8 +45,8 @@ public class CategoryController {
 
     @GetMapping("/list")
     public ResponseEntity getCategoryList(@ModelAttribute PageRequest pageRequest) {
-        int page = pageRequest.getPage();
-        int size = pageRequest.getSize();
+        int page = pageRequest.getPageNo();
+        int size = pageRequest.getPageSize();
         log.info("查询分类列表: page={}, size={}", page, size);
         List<CategoryEntity> categoryEntity = categoryService.queryCategoryList(page, size);
         return ResponseEntity.<List<CategoryEntity>>builder()
