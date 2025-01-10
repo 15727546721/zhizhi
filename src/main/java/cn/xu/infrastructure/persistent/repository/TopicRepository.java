@@ -78,6 +78,33 @@ public class TopicRepository implements ITopicRepository {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<TopicEntity> findByPage(int offset, int limit) {
+        try {
+            log.info("分页查询话题列表, offset: {}, limit: {}", offset, limit);
+            List<TopicPO> topicPOs = topicDao.findByPage(offset, limit);
+            if (topicPOs == null || topicPOs.isEmpty()) {
+                return Collections.emptyList();
+            }
+            return topicPOs.stream()
+                    .map(this::convertToTopicEntity)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("分页查询话题列表失败", e);
+            return Collections.emptyList();
+        }
+    }
+
+    @Override
+    public Long count() {
+        try {
+            return topicDao.count();
+        } catch (Exception e) {
+            log.error("查询话题总数失败", e);
+            return 0L;
+        }
+    }
+
     /**
      * 将领域实体转换为PO对象
      */

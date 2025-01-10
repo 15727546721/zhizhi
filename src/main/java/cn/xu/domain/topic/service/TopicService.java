@@ -1,7 +1,12 @@
 package cn.xu.domain.topic.service;
 
+import cn.xu.api.dto.common.PageRequest;
+import cn.xu.api.dto.topic.TopicResponse;
+import cn.xu.api.dto.topic.TopicUpdateRequest;
 import cn.xu.domain.file.service.MinioService;
 import cn.xu.domain.topic.command.CreateTopicCommand;
+import cn.xu.domain.topic.command.TopicPageQuery;
+import cn.xu.domain.topic.command.TopicUpdateCommand;
 import cn.xu.domain.topic.entity.Topic;
 import cn.xu.domain.topic.model.entity.TopicEntity;
 import cn.xu.domain.topic.repository.ITopicRepository;
@@ -208,4 +213,88 @@ public class TopicService {
         TopicEntity topicEntity = topicRepository.findById(id);
         return convertToTopic(topicEntity);
     }
-} 
+
+    /**
+     * 分页查询话题列表
+     *
+     * @param pageRequest 分页请求参数
+     * @return 话题响应列表
+     */
+    public List<TopicResponse> getTopics(PageRequest pageRequest) {
+        TopicPageQuery query = TopicPageQuery.builder()
+                .pageNum(pageRequest.getPageNo())
+                .pageSize(pageRequest.getPageSize())
+                .build();
+
+        List<TopicEntity> topicEntities = topicRepository.findByPage(query.getOffset(), query.getLimit());
+        return topicEntities.stream()
+                .map(this::convertToTopicResponse)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 获取话题详情
+     *
+     * @param id 话题ID
+     * @return 话题响应
+     */
+    public TopicResponse getTopicDetail(Long id) {
+        if (id == null) {
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "话题ID不能为空");
+        }
+        TopicEntity topicEntity = topicRepository.findById(id);
+        if (topicEntity == null) {
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "话题不存在");
+        }
+        return convertToTopicResponse(topicEntity);
+    }
+
+    /**
+     * 更新话题
+     *
+     * @param id      话题ID
+     * @param request 更新请求
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void updateTopic(Long id, TopicUpdateRequest request) {
+        TopicUpdateCommand command = TopicUpdateCommand.builder()
+                .id(id)
+                .content(request.getContent())
+                .images(request.getImages())
+                .categoryId(request.getCategoryId())
+                .build();
+
+        command.validate();
+
+        TopicEntity existingTopic = topicRepository.findById(id);
+        if (existingTopic == null) {
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "话题不存在");
+        }
+
+        // 更新话题内容
+        existingTopic.setContent(command.getContent());
+        existingTopic.setImages(command.getImages());
+        existingTopic.setCategoryId(command.getCategoryId());
+
+        // 验证更新后的话题
+        existingTopic.validate();
+
+        // 保存更新
+        topicRepository.update(existingTopic);
+    }
+
+    private TopicResponse convertToTopicResponse(TopicEntity topicEntity) {
+        if (topicEntity == null) {
+            return null;
+        }
+        return TopicResponse.builder()
+                .id(topicEntity.getId())
+                .userId(topicEntity.getUserId())
+                .content(topicEntity.getContent())
+                .images(topicEntity.getImages())
+                .categoryId(topicEntity.getCategoryId())
+                .createTime(topicEntity.getCreateTime())
+                .updateTime(topicEntity.getUpdateTime())
+                .build();
+    }
+}

@@ -68,4 +68,20 @@ public interface ITopicRepository {
      * @return 话题列表
      */
     List<TopicEntity> findByCategoryId(Long categoryId);
+
+    /**
+     * 分页查询话题列表
+     *
+     * @param offset 偏移量
+     * @param limit  每页数量
+     * @return 话题列表
+     */
+    List<TopicEntity> findByPage(int offset, int limit);
+
+    /**
+     * 获取话题总数
+     *
+     * @return 话题总数
+     */
+    Long count();
 } 
