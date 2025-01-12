@@ -45,11 +45,12 @@
         a.like_count,
         a.create_time,
         u.nickname,
-        t.name as tag_name
+        t.name as tag_name,
+        t.name
         FROM article as a
         JOIN user as u ON a.user_id = u.id
-        JOIN article_tag_relation as at ON a.id = at.article_id
-        JOIN article_tag as t ON at.tag_id = t.id
+        LEFT JOIN article_tag_relation as at ON a.id = at.article_id
+        LEFT JOIN article_tag as t ON at.tag_id = t.id
         <if test="categoryId != null">
             JOIN article_category_relation as ac ON a.id = ac.article_id
             WHERE ac.category_id = #{categoryId}
