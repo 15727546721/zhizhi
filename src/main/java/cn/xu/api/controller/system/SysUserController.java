@@ -19,6 +19,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import java.util.List;
@@ -144,12 +145,29 @@ public class SysUserController {
     }
 
     @PostMapping("/user/profile/avatar")
-    @Operation(summary = "上传头像")
-    public ResponseEntity<Void> uploadAvatar(String avatar) {
-        userService.uploadAvatar(avatar);
-        return ResponseEntity.<Void>builder()
+    @Operation(summary = "上传用户头像")
+    public ResponseEntity<String> uploadAvatar(@RequestParam("file") MultipartFile file) {
+        if (file.isEmpty()) {
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "请选择要上传的头像文件");
+        }
+        
+        // 校验文件类型
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "只能上传图片文件");
+        }
+        
+        // 校验文件大小（2MB）
+        long maxSize = 2 * 1024 * 1024;
+        if (file.getSize() > maxSize) {
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "头像文件大小不能超过2MB");
+        }
+
+        String avatarUrl = userService.uploadAvatar(file);
+        return ResponseEntity.<String>builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .info("头像上传成功")
+                .data(avatarUrl)
                 .build();
     }
 

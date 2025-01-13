@@ -10,6 +10,7 @@ import cn.xu.domain.user.model.entity.UserInfoEntity;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.springframework.web.multipart.MultipartFile;
 
 public interface IUserService {
     /**
@@ -80,9 +81,11 @@ public interface IUserService {
     void updateUserInfo(UserInfoEntity userInfoEntity);
 
     /**
-     * 上传头像
+     * 上传用户头像
+     * @param file 头像文件
+     * @return 头像访问URL
      */
-    void uploadAvatar(String avatar);
+    String uploadAvatar(MultipartFile file);
 
     /**
      * 批量获取用户信息

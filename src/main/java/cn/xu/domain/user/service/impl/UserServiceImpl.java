@@ -6,27 +6,41 @@ import cn.xu.api.controller.web.user.LoginRequest;
 import cn.xu.api.controller.web.user.RegisterRequest;
 import cn.xu.api.dto.common.PageRequest;
 import cn.xu.api.dto.user.UserRequest;
+import cn.xu.domain.file.service.IFileStorageService;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.model.entity.UserInfoEntity;
 import cn.xu.domain.user.model.valueobject.Email;
 import cn.xu.domain.user.repository.IUserRepository;
 import cn.xu.domain.user.service.IUserService;
 import cn.xu.exception.BusinessException;
+import cn.xu.infrastructure.common.ResponseCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.HashMap;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import javax.annotation.Resource;
 
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements IUserService {
 
+    private static final Logger log = LoggerFactory.getLogger(UserServiceImpl.class);
+
     private final IUserRepository userRepository;
+
+    @Resource
+    private IFileStorageService fileStorageService;
 
     @Override
     @Transactional
@@ -175,12 +189,47 @@ public class UserServiceImpl implements IUserService {
     }
 
     @Override
-    @Transactional
-    public void uploadAvatar(String avatar) {
-        Long userId = StpUtil.getLoginIdAsLong();
-        UserEntity user = getUserInfo(userId);
-        user.setAvatar(avatar);
-        userRepository.save(user);
+    @Transactional(rollbackFor = Exception.class)
+    public String uploadAvatar(MultipartFile file) {
+        // 获取当前用户
+        UserEntity currentUser = getCurrentUser();
+        if (currentUser == null) {
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "用户未登录");
+        }
+
+        try {
+            // 生成文件存储路径
+            String fileName = String.format("avatar/%s/%s_%s", 
+                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMM")),
+                currentUser.getId(),
+                file.getOriginalFilename()
+            );
+
+            // 上传新头像
+            String avatarUrl = fileStorageService.uploadFile(file, fileName);
+
+            // 获取旧头像URL
+            String oldAvatarUrl = currentUser.getAvatar();
+
+            // 更新用户头像URL
+            currentUser.setAvatar(avatarUrl);
+            userRepository.save(currentUser);
+
+            // 如果存在旧头像且不是默认头像，则删除
+            if (StringUtils.isNotEmpty(oldAvatarUrl)) {
+                try {
+                    fileStorageService.deleteFile(oldAvatarUrl);
+                } catch (Exception e) {
+                    // 删除旧头像失败不影响主流程，只记录日志
+                    log.error("删除旧头像失败: {}", oldAvatarUrl, e);
+                }
+            }
+
+            return avatarUrl;
+        } catch (Exception e) {
+            log.error("上传头像失败", e);
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "上传头像失败：" + e.getMessage());
+        }
     }
 
     @Override
@@ -253,5 +302,10 @@ public class UserServiceImpl implements IUserService {
                 .createTime(user.getCreateTime())
                 .updateTime(user.getUpdateTime())
                 .build();
+    }
+
+    private UserEntity getCurrentUser() {
+        Long userId = StpUtil.getLoginIdAsLong();
+        return getUserInfo(userId);
     }
 } 
