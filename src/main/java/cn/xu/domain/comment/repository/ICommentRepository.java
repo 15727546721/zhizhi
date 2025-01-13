@@ -27,11 +27,16 @@ public interface ICommentRepository {
 
     /**
      * 根据ID获取评论
+     *
+     * @param id 评论ID
+     * @return 评论实体
      */
     CommentEntity findById(Long id);
 
     /**
-     * 删除评论
+     * 根据ID删除评论
+     *
+     * @param id 评论ID
      */
     void deleteById(Long id);
 
@@ -54,4 +59,41 @@ public interface ICommentRepository {
      * @param commentIds 评论ID列表
      */
     void batchDelete(List<Long> commentIds);
+
+    /**
+     * 查询一级评论列表
+     */
+    List<CommentEntity> findRootComments(Long targetId, Integer type);
+
+    /**
+     * 分页查询二级评论列表
+     */
+    List<CommentEntity> findRepliesByPage(Long parentId, int offset, int limit);
+
+    /**
+     * 分页查询一级评论列表
+     *
+     * @param type   评论类型（可选）
+     * @param userId 用户ID（可选）
+     * @param offset 偏移量
+     * @param limit  每页数量
+     * @return 一级评论列表
+     */
+    List<CommentEntity> findRootCommentsByPage(Integer type, Long userId, int offset, int limit);
+
+    /**
+     * 统计一级评论总数
+     *
+     * @param type   评论类型（可选）
+     * @param userId 用户ID（可选）
+     * @return 评论总数
+     */
+    long countRootComments(Integer type, Long userId);
+
+    /**
+     * 根据父评论ID删除所有子评论
+     *
+     * @param parentId 父评论ID
+     */
+    void deleteByParentId(Long parentId);
 }

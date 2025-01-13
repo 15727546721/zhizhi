@@ -69,4 +69,12 @@ public interface IUserDao {
      * 根据用户名查询用户信息和角色
      */
     UserInfoEntity getUserInfoWithRolesByUsername(@Param("username") String username);
+
+    /**
+     * 批量查询用户信息
+     *
+     * @param userIds 用户ID集合
+     * @return 用户信息列表
+     */
+    List<User> findByIds(@Param("userIds") Set<Long> userIds);
 }

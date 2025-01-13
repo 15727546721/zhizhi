@@ -144,4 +144,15 @@
         WHERE u.username = #{username}
         GROUP BY u.id
     </select>
+
+    <!-- 批量查询用户信息 -->
+    <select id="findByIds" resultMap="userMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM user
+        WHERE id IN
+        <foreach collection="userIds" item="userId" open="(" separator="," close=")">
+            #{userId}
+        </foreach>
+    </select>
 </mapper>

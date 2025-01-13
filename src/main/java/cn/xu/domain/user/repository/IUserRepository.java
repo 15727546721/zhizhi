@@ -52,6 +52,9 @@ public interface IUserRepository {
 
     /**
      * 批量查询用户信息
+     *
+     * @param userIds 用户ID集合
+     * @return 用户信息列表
      */
     List<UserEntity> findByIds(Set<Long> userIds);
 

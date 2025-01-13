@@ -12,6 +12,7 @@ import cn.xu.domain.topic.model.entity.TopicEntity;
 import cn.xu.domain.topic.repository.ITopicRepository;
 import cn.xu.exception.BusinessException;
 import cn.xu.infrastructure.common.ResponseCode;
+import cn.xu.infrastructure.persistent.repository.CommentRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +34,9 @@ public class TopicService {
 
     @Resource
     private MinioService minioService;
+
+    @Resource
+    private CommentRepository commentRepository;
 
     /**
      * 创建话题
@@ -116,6 +120,9 @@ public class TopicService {
      */
     @Transactional(rollbackFor = Exception.class)
     public void deleteTopic(Long id) {
+        // 删除与话题相关的评论
+        commentRepository.deleteByTopicId(id);
+        
         Topic topic = getTopicById(id);
         if (topic != null && topic.getImages() != null && !topic.getImages().isEmpty()) {
             minioService.deleteTopicImages(topic.getImages());

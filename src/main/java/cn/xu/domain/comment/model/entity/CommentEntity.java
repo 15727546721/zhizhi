@@ -44,7 +44,7 @@ public class CommentEntity {
     /**
      * 回复的用户ID，若为回复评论则存在
      */
-    private Long replyToUserId;
+    private Long replyUserId;
 
     /**
      * 评论的具体内容

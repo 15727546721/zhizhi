@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.ArrayList;
 
 @Slf4j
 @Repository
@@ -93,8 +94,16 @@ public class UserRepository implements IUserRepository {
 
     @Override
     public List<UserEntity> findByIds(Set<Long> userIds) {
-        return userDao.selectByIds(userIds).stream()
-                .map(this::convertToUserEntity)
+        if (userIds == null || userIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+        
+        // 调用DAO层查询
+        List<User> users = userDao.findByIds(userIds);
+        
+        // 转换为领域实体
+        return users.stream()
+                .map(this::convertToEntity)
                 .collect(Collectors.toList());
     }
 
@@ -171,6 +180,24 @@ public class UserRepository implements IUserRepository {
                 .birthday(user.getBirthday())
                 .status(user.getStatus())
                 .description(user.getDescription())
+                .createTime(user.getCreateTime())
+                .updateTime(user.getUpdateTime())
+                .build();
+    }
+
+    /**
+     * PO转换为领域实体
+     */
+    private UserEntity convertToEntity(User user) {
+        if (user == null) {
+            return null;
+        }
+        return UserEntity.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .nickname(user.getNickname())
+                .email(user.getEmail())
+                .avatar(user.getAvatar())
                 .createTime(user.getCreateTime())
                 .updateTime(user.getUpdateTime())
                 .build();

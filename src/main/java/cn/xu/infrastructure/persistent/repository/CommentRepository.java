@@ -58,12 +58,25 @@ public class CommentRepository implements ICommentRepository {
 
     @Override
     public CommentEntity findById(Long id) {
-        return convertToCommentEntity(commentDao.findById(id));
+        try {
+            log.info("查询评论 - id: {}", id);
+            return commentDao.selectById(id);
+        } catch (Exception e) {
+            log.error("查询评论失败 - id: {}", id, e);
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "查询评论失败：" + e.getMessage());
+        }
     }
 
     @Override
     public void deleteById(Long id) {
-        commentDao.deleteById(id);
+        try {
+            log.info("删除评论 - id: {}", id);
+            commentDao.deleteById(id);
+            log.info("删除评论成功 - id: {}", id);
+        } catch (Exception e) {
+            log.error("删除评论失败 - id: {}", id, e);
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "删除评论失败：" + e.getMessage());
+        }
     }
 
     @Override
@@ -133,6 +146,96 @@ public class CommentRepository implements ICommentRepository {
         }
     }
 
+    public void deleteByTopicId(Long topicId) {
+        try {
+            log.info("删除与话题相关的评论 - topicId: {}", topicId);
+            commentDao.deleteByTypeAndTargetId(2, topicId);
+        } catch (Exception e) {
+            log.error("删除与话题相关的评论失败 - topicId: {}", topicId, e);
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "删除与话题相关的评论失败");
+        }
+    }
+
+    public List<CommentEntity> findRootComments(Long targetId, Integer type) {
+        try {
+            log.info("查询一级评论列表 - targetId: {}, type: {}", targetId, type);
+            List<Comment> comments = commentDao.findRootComments(targetId, type);
+            if (comments == null || comments.isEmpty()) {
+                return new ArrayList<>();
+            }
+            return comments.stream()
+                    .map(this::convertToCommentEntity)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("查询一级评论列表失败 - targetId: {}, type: {}", targetId, type, e);
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "查询评论列表失败：" + e.getMessage());
+        }
+    }
+
+    public List<CommentEntity> findRepliesByPage(Long parentId, int offset, int limit) {
+        try {
+            log.info("分页查询二级评论列表 - parentId: {}, offset: {}, limit: {}", parentId, offset, limit);
+            List<Comment> replies = commentDao.findRepliesByPage(parentId, offset, limit);
+            if (replies == null || replies.isEmpty()) {
+                return new ArrayList<>();
+            }
+            return replies.stream()
+                    .map(this::convertToCommentEntity)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("分页查询二级评论列表失败 - parentId: {}", parentId, e);
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "查询回复列表失败：" + e.getMessage());
+        }
+    }
+
+    /**
+     * 统计一级评论总数
+     *
+     * @param type 评论类型（可选）
+     * @return 评论总数
+     */
+    @Override
+    public long countRootComments(Integer type, Long userId) {
+        return commentDao.countRootComments(type, userId);
+    }
+
+    /**
+     * 分页查询一级评论列表
+     *
+     * @param type   评论类型（可选）
+     * @param userId 用户ID
+     * @param offset 偏移量
+     * @param limit  每页数量
+     * @return 一级评论列表
+     */
+    @Override
+    public List<CommentEntity> findRootCommentsByPage(Integer type, Long userId, int offset, int limit) {
+        List<Comment> comments = commentDao.findRootCommentsByPage(type, userId, offset, limit);
+        return comments.stream()
+                .map(this::convertToCommentEntity)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 将PO对象转换为领域实体对象
+     */
+    private CommentEntity convertToEntity(Comment comment) {
+        if (comment == null) {
+            return null;
+        }
+        return CommentEntity.builder()
+                .id(comment.getId())
+                .userId(comment.getUserId())
+                .type(comment.getType())
+                .targetId(comment.getTargetId())
+                .content(comment.getContent())
+                .parentId(comment.getParentId())
+                .replyUserId(comment.getReplyUserId())
+                .createTime(comment.getCreateTime())
+                .updateTime(comment.getUpdateTime())
+                .build();
+    }
+
     private Comment convertToComment(CommentEntity entity) {
         if (entity == null) {
             return null;
@@ -143,7 +246,7 @@ public class CommentRepository implements ICommentRepository {
         comment.setTargetId(entity.getTargetId());
         comment.setParentId(entity.getParentId());
         comment.setUserId(entity.getUserId());
-        comment.setReplyToUserId(entity.getReplyToUserId());
+        comment.setReplyUserId(entity.getReplyUserId());
         comment.setContent(entity.getContent());
         comment.setCreateTime(entity.getCreateTime());
         comment.setUpdateTime(entity.getUpdateTime());
@@ -160,10 +263,22 @@ public class CommentRepository implements ICommentRepository {
                 .targetId(comment.getTargetId())
                 .parentId(comment.getParentId())
                 .userId(comment.getUserId())
-                .replyToUserId(comment.getReplyToUserId())
+                .replyUserId(comment.getReplyUserId())
                 .content(comment.getContent())
                 .createTime(comment.getCreateTime())
                 .updateTime(comment.getUpdateTime())
                 .build();
+    }
+
+    @Override
+    public void deleteByParentId(Long parentId) {
+        try {
+            log.info("删除子评论 - parentId: {}", parentId);
+            commentDao.deleteByParentId(parentId);
+            log.info("删除子评论成功 - parentId: {}", parentId);
+        } catch (Exception e) {
+            log.error("删除子评论失败 - parentId: {}", parentId, e);
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "删除子评论失败：" + e.getMessage());
+        }
     }
 }

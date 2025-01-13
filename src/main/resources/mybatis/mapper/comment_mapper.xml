@@ -7,28 +7,25 @@
         <result column="target_id" property="targetId" jdbcType="BIGINT"/>
         <result column="parent_id" property="parentId" jdbcType="BIGINT"/>
         <result column="user_id" property="userId" jdbcType="BIGINT"/>
-        <result column="reply_to_user_id" property="replyToUserId" jdbcType="BIGINT"/>
+        <result column="reply_user_id" property="replyUserId" jdbcType="BIGINT"/>
         <result column="content" property="content" jdbcType="VARCHAR"/>
         <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
         <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        id
-        , type, target_id, parent_id, user_id, reply_to_user_id, content, create_time, update_time
+        id, type, target_id, parent_id, user_id, reply_user_id, content, create_time, update_time
     </sql>
 
     <insert id="insert" parameterType="cn.xu.infrastructure.persistent.po.Comment" useGeneratedKeys="true"
             keyProperty="id">
-        insert into comment (type, target_id, parent_id, user_id, reply_to_user_id, content, create_time, update_time)
-        values (#{type}, #{targetId}, #{parentId}, #{userId}, #{replyToUserId}, #{content}, #{createTime},
+        insert into comment (type, target_id, parent_id, user_id, reply_user_id, content, create_time, update_time)
+        values (#{type}, #{targetId}, #{parentId}, #{userId}, #{replyUserId}, #{content}, #{createTime},
                 #{updateTime})
     </insert>
 
     <delete id="deleteById">
-        delete
-        from comment
-        where id = #{id}
+        delete from comment where id = #{id}
     </delete>
 
     <select id="findById" resultMap="BaseResultMap">
@@ -41,24 +38,18 @@
     <select id="findByTypeAndTargetId" resultMap="BaseResultMap">
         SELECT
         <include refid="Base_Column_List"/>
-        FROM
-        comment
-        WHERE
-        type = #{type}
+        FROM comment
+        WHERE type = #{type}
         AND target_id = #{targetId}
-        ORDER BY
-        create_time DESC
+        ORDER BY create_time DESC
     </select>
 
     <select id="findByParentId" resultMap="BaseResultMap">
         SELECT
         <include refid="Base_Column_List"/>
-        FROM
-        comment
-        WHERE
-        parent_id = #{parentId}
-        ORDER BY
-        create_time DESC
+        FROM comment
+        WHERE parent_id = #{parentId}
+        ORDER BY create_time DESC
     </select>
 
     <!-- 批量删除评论 -->
@@ -68,5 +59,84 @@
         <foreach collection="commentIds" item="id" open="(" separator="," close=")">
             #{id}
         </foreach>
+    </delete>
+
+    <delete id="deleteByTypeAndTargetId" parameterType="map">
+        DELETE FROM comment
+        WHERE type = #{type} AND target_id = #{targetId}
+    </delete>
+
+    <!-- 查询一级评论列表 -->
+    <select id="findRootComments" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM comment
+        WHERE target_id = #{targetId}
+        AND parent_id IS NULL
+        <if test="type != null">
+            AND type = #{type}
+        </if>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 分页查询二级评论列表 -->
+    <select id="findRepliesByPage" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM comment
+        WHERE parent_id = #{parentId}
+        ORDER BY create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 分页查询一级评论列表 -->
+    <select id="findRootCommentsByPage" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM comment
+        WHERE parent_id IS NULL
+        <if test="type != null">
+            AND type = #{type}
+        </if>
+        <if test="userId != null">
+            AND user_id = #{userId}
+        </if>
+        ORDER BY create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 统计一级评论总数 -->
+    <select id="countRootComments" resultType="long">
+        SELECT COUNT(*)
+        FROM comment
+        WHERE parent_id IS NULL
+        <if test="type != null">
+            AND type = #{type}
+        </if>
+        <if test="userId != null">
+            AND user_id = #{userId}
+        </if>
+    </select>
+
+    <!-- 根据ID查询评论 -->
+    <select id="selectById" resultType="cn.xu.domain.comment.model.entity.CommentEntity">
+        SELECT 
+            id, 
+            type, 
+            target_id as targetId, 
+            parent_id as parentId, 
+            user_id as userId, 
+            reply_user_id as replyUserId, 
+            content, 
+            create_time as createTime, 
+            update_time as updateTime
+        FROM comment
+        WHERE id = #{id}
+    </select>
+    
+    <!-- 根据父评论ID删除所有子评论 -->
+    <delete id="deleteByParentId">
+        DELETE FROM comment 
+        WHERE parent_id = #{parentId}
     </delete>
 </mapper>

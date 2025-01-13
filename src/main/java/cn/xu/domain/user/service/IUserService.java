@@ -88,4 +88,12 @@ public interface IUserService {
      * 批量获取用户信息
      */
     Map<Long, UserEntity> getBatchUserInfo(Set<Long> userIds);
+
+    /**
+     * 批量获取用户信息Map
+     *
+     * @param userIds 用户ID集合
+     * @return 用户信息Map, key为用户ID, value为用户信息
+     */
+    Map<Long, UserEntity> getUserMapByIds(Set<Long> userIds);
 }

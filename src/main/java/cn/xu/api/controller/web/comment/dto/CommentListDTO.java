@@ -16,7 +16,7 @@ import java.util.List;
 public class CommentListDTO {
     private Long id;
     private Long userId;
-    private Long replyToUserId;
+    private Long replyUserId;
     private String content;
     private LocalDateTime createTime;
     private UserEntity userInfo;

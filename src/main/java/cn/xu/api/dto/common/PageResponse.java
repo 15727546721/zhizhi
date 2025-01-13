@@ -1,46 +1,37 @@
 package cn.xu.api.dto.common;
 
-import lombok.Builder;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import lombok.experimental.SuperBuilder;
+
+import java.util.List;
 
 @Data
-@Builder
+@SuperBuilder
+@Schema(description = "分页响应对象")
 public class PageResponse<T> {
-    /**
-     * 当前页码
-     */
+    
+    @Schema(description = "当前页码")
     private Integer pageNum;
-
-    /**
-     * 每页数量
-     */
+    
+    @Schema(description = "每页数量")
     private Integer pageSize;
-
-    /**
-     * 总记录数
-     */
+    
+    @Schema(description = "总记录数")
     private Long total;
-
-    /**
-     * 总页数
-     */
+    
+    @Schema(description = "总页数")
     private Integer pages;
-
-    /**
-     * 分页数据
-     */
+    
+    @Schema(description = "分页数据")
     private T records;
-
-    /**
-     * 是否有下一页
-     */
+    
+    @Schema(description = "是否有下一页")
     private Boolean hasNext;
-
-    /**
-     * 是否有上一页
-     */
+    
+    @Schema(description = "是否有上一页")
     private Boolean hasPrevious;
-
+    
     public static <T> PageResponse<T> of(Integer pageNum, Integer pageSize, Long total, T records) {
         int pages = (int) Math.ceil((double) total / pageSize);
         return PageResponse.<T>builder()

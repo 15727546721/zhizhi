@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.HashMap;
 
 @Service
 @RequiredArgsConstructor
@@ -186,6 +187,30 @@ public class UserServiceImpl implements IUserService {
     public Map<Long, UserEntity> getBatchUserInfo(Set<Long> userIds) {
         return userRepository.findByIds(userIds).stream()
                 .collect(Collectors.toMap(UserEntity::getId, user -> user));
+    }
+
+    /**
+     * 批量获取用户信息Map
+     *
+     * @param userIds 用户ID集合
+     * @return 用户信息Map, key为用户ID, value为用户信息
+     */
+    @Override
+    public Map<Long, UserEntity> getUserMapByIds(Set<Long> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return new HashMap<>();
+        }
+        
+        // 批量查询用户信息
+        List<UserEntity> userList = userRepository.findByIds(userIds);
+        
+        // 转换为Map
+        return userList.stream()
+                .collect(Collectors.toMap(
+                        UserEntity::getId,
+                        user -> user,
+                        (existing, replacement) -> existing
+                ));
     }
 
     private void validateUsernameAndEmail(String username, String email) {

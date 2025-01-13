@@ -82,7 +82,7 @@ public class CommentController {
                 .map(commentEntity -> CommentListDTO.builder()
                         .id(commentEntity.getId())
                         .userId(commentEntity.getUserId())
-                        .replyToUserId(commentEntity.getReplyToUserId())
+                        .replyUserId(commentEntity.getReplyUserId())
                         .content(commentEntity.getContent())
                         .createTime(commentEntity.getCreateTime())
                         .userInfo(userInfoMap.get(commentEntity.getUserId()))

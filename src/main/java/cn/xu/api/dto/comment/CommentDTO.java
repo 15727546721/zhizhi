@@ -1,17 +1,17 @@
-package cn.xu.infrastructure.persistent.po;
+package cn.xu.api.dto.comment;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
-import java.io.Serializable;
 import java.time.LocalDateTime;
 
-/**
- * 评论表，用于存储用户评论及其相关信息
- *
- * @TableName comment
- */
 @Data
-public class Comment implements Serializable {
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class CommentDTO {
     /**
      * 评论ID
      */
@@ -38,6 +38,16 @@ public class Comment implements Serializable {
     private Long userId;
 
     /**
+     * 发表评论的用户名称
+     */
+    private String nickname;
+
+    /**
+     * 发表评论的用户头像
+     */
+    private String avatar;
+
+    /**
      * 回复的用户ID，若为回复评论则存在
      */
     private Long replyUserId;
@@ -56,5 +66,4 @@ public class Comment implements Serializable {
      * 更新时间
      */
     private LocalDateTime updateTime;
-
-}
+} 
