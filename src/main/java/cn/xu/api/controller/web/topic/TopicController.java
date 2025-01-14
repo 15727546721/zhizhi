@@ -50,26 +50,17 @@ public class TopicController {
                 .build();
     }
 
-    @Operation(summary = "获取所有话题列表")
-    @GetMapping("/list")
-    public ResponseEntity<List<TopicDTO>> getAllTopics() {
-        log.info("获取所有话题列表");
-        List<Topic> topics = topicService.getAllTopics();
-        log.info("获取所有话题列表: " + topics);
-        List<TopicDTO> topicDTOs = topics.stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
-        return ResponseEntity.<List<TopicDTO>>builder()
-                .code(ResponseCode.SUCCESS.getCode())
-                .info(ResponseCode.SUCCESS.getMessage())
-                .data(topicDTOs)
-                .build();
-    }
-
     @Operation(summary = "获取话题列表")
-    @GetMapping("/{id}")
-    public ResponseEntity<List<TopicDTO>> getTopicList(@PathVariable("id") Long categoryId) {
-        List<Topic> topics = topicService.getTopicList(categoryId);
+    @GetMapping("/list")
+    public ResponseEntity<List<TopicDTO>> getTopics(@RequestParam(value = "categoryId", required = false) Long categoryId) {
+        List<Topic> topics;
+        if (categoryId == null) {
+            log.info("获取所有话题列表");
+            topics = topicService.getAllTopics();
+        } else {
+            log.info("获取分类ID为 " + categoryId + " 的话题列表");
+            topics = topicService.getTopicList(categoryId);
+        }
         log.info("获取话题列表: " + topics);
         List<TopicDTO> topicDTOs = topics.stream()
                 .map(this::convertToDTO)
