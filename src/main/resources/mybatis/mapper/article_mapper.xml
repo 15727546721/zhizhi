@@ -220,4 +220,20 @@
         <result property="createTime" column="create_time"/>
         <result property="updateTime" column="update_time"/>
     </resultMap>
+
+    <select id="findAll" resultType="cn.xu.infrastructure.persistent.po.Article">
+        SELECT id,
+               title,
+               description,
+               content,
+               cover_url,
+               user_id,
+               view_count,
+               collect_count,
+               like_count,
+               create_time,
+               update_time
+        FROM article
+        ORDER BY create_time DESC
+    </select>
 </mapper>

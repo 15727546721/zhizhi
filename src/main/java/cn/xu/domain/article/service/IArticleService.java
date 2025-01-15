@@ -57,4 +57,11 @@ public interface IArticleService {
      * @return 是否已点赞
      */
     boolean isArticleLiked(Long articleId, Long userId);
+
+    /**
+     * 获取所有文章，用于重建索引
+     *
+     * @return 所有文章列表
+     */
+    List<ArticleEntity> getAllArticles();
 }

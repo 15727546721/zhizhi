@@ -25,4 +25,11 @@ public interface IArticleDao {
     List<ArticleRecommendOrNew> queryArticleByPage(@Param("page") int page, @Param("size") int size);
 
     List<ArticleListDTO> queryByCategory(Long categoryId);
+
+    /**
+     * 获取所有文章
+     *
+     * @return 所有文章列表
+     */
+    List<Article> findAll();
 }

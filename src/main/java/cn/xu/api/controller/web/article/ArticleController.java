@@ -8,11 +8,13 @@ import cn.xu.domain.article.service.IArticleCategoryService;
 import cn.xu.domain.article.service.IArticleService;
 import cn.xu.domain.article.service.IArticleTagService;
 import cn.xu.domain.article.service.ITagService;
+import cn.xu.domain.article.service.article.ArticleIndexService;
 import cn.xu.exception.BusinessException;
 import cn.xu.infrastructure.common.ResponseCode;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.bind.annotation.*;
 
@@ -35,6 +37,8 @@ public class ArticleController {
     private ITagService tagService;
     @Resource
     private TransactionTemplate transactionTemplate;
+    @Resource
+    private ArticleIndexService articleIndexService;
 
     @GetMapping("/category")
     @Operation(summary = "通过分类获取文章列表")
@@ -135,6 +139,32 @@ public class ArticleController {
                 .code(ResponseCode.SUCCESS.getCode())
                 .data(likedUsers)
                 .build();
+    }
+
+    @GetMapping("/search")
+    @Operation(summary = "搜索文章")
+    public ResponseEntity<List<ArticleEntity>> searchArticles(@RequestParam String title) {
+        try {
+            if (StringUtils.isBlank(title)) {
+                return ResponseEntity.<List<ArticleEntity>>builder()
+                    .code(ResponseCode.ILLEGAL_PARAMETER.getCode())
+                    .info("搜索关键词不能为空")
+                    .build();
+            }
+
+            List<ArticleEntity> articles = articleIndexService.searchArticles(title);
+            return ResponseEntity.<List<ArticleEntity>>builder()
+                .data(articles)
+                .code(ResponseCode.SUCCESS.getCode())
+                .info("搜索成功")
+                .build();
+        } catch (Exception e) {
+            log.error("文章搜索失败: {}", e.getMessage(), e);
+            return ResponseEntity.<List<ArticleEntity>>builder()
+                .code(ResponseCode.UN_ERROR.getCode())
+                .info("搜索失败")
+                .build();
+        }
     }
 
 }

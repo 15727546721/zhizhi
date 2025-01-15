@@ -42,3 +42,8 @@ upload:
     cover:
       path: ${user.home}/zhizhi/upload/article/cover/
       url-prefix: /upload/article/cover/
+
+lucene:
+  index:
+#    path: /data/lucene/article
+    path: D:/data/lucene/article # lucene 索引存放的位置

@@ -108,5 +108,10 @@ public class ArticleService implements IArticleService {
         return false;
     }
 
+    @Override
+    public List<ArticleEntity> getAllArticles() {
+        return articleRepository.findAll();
+    }
+
 }
 

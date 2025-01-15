@@ -16,6 +16,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import javax.annotation.Resource;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Repository
@@ -109,6 +110,14 @@ public class ArticleRepository implements IArticleRepository {
     @Override
     public void batchUpdateArticleLikeCount(Map<Long, Long> likeCounts) {
 
+    }
+
+    @Override
+    public List<ArticleEntity> findAll() {
+        List<Article> articles = articleDao.findAll();
+        return articles.stream()
+                .map(this::convert)
+                .collect(Collectors.toList());
     }
 
     private ArticleEntity convert(Article article) {

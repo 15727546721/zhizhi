@@ -38,4 +38,11 @@ public interface IArticleRepository {
      * @param likeCounts key为文章ID，value为点赞数的Map
      */
     void batchUpdateArticleLikeCount(Map<Long, Long> likeCounts);
+
+    /**
+     * 获取所有文章
+     *
+     * @return 所有文章列表
+     */
+    List<ArticleEntity> findAll();
 }
