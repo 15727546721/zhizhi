@@ -92,9 +92,13 @@ public class TopicCategoryServiceImpl implements ITopicCategoryService {
 
     @Override
     public TopicCategoryEntity getCategory(Long id) {
+        if (id == null) {
+            return null; // 如果ID为空，直接返回null
+        }
         TopicCategoryEntity category = topicCategoryRepository.findById(id);
         if (category == null) {
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "分类不存在");
+            log.warn("分类ID为 " + id + " 的分类不存在");
+            return null; // 返回null而不是抛出异常
         }
         return category;
     }
