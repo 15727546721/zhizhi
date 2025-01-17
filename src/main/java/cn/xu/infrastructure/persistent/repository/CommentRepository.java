@@ -209,11 +209,35 @@ public class CommentRepository implements ICommentRepository {
      * @return 一级评论列表
      */
     @Override
-    public List<CommentEntity> findRootCommentsByPage(Integer type, Long userId, int offset, int limit) {
-        List<Comment> comments = commentDao.findRootCommentsByPage(type, userId, offset, limit);
-        return comments.stream()
-                .map(this::convertToCommentEntity)
-                .collect(Collectors.toList());
+    public List<CommentEntity> findRootCommentsByPage(Integer type, Long targetId, int offset, int limit) {
+        try {
+            log.info("分页查询一级评论列表 - type: {}, targetId: {}, offset: {}, limit: {}", type, targetId, offset, limit);
+            
+            // 参数校验
+            if (offset < 0) {
+                offset = 0;
+            }
+            if (limit <= 0) {
+                limit = 10;
+            }
+            
+            List<Comment> comments = commentDao.findRootCommentsByPage(type, targetId, offset, limit);
+            if (comments == null || comments.isEmpty()) {
+                return new ArrayList<>();
+            }
+            
+            // 批量转换为实体对象
+            List<CommentEntity> commentEntities = comments.stream()
+                    .map(this::convertToCommentEntity)
+                    .collect(Collectors.toList());
+                    
+            log.info("查询到评论数量: {}", commentEntities.size());
+            return commentEntities;
+            
+        } catch (Exception e) {
+            log.error("分页查询一级评论列表失败 - type: {}, targetId: {}", type, targetId, e);
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "查询评论列表失败：" + e.getMessage());
+        }
     }
 
     /**
@@ -279,6 +303,41 @@ public class CommentRepository implements ICommentRepository {
         } catch (Exception e) {
             log.error("删除子评论失败 - parentId: {}", parentId, e);
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "删除子评论失败：" + e.getMessage());
+        }
+    }
+
+    @Override
+    public Long save(CommentEntity commentEntity) {
+        try {
+            log.info("保存评论 - commentEntity: {}", commentEntity);
+            Comment comment = convertToComment(commentEntity);
+            comment.setCreateTime(LocalDateTime.now());
+            comment.setUpdateTime(LocalDateTime.now());
+            commentDao.insert(comment);
+            log.info("保存评论成功 - id: {}", comment.getId());
+            return comment.getId();
+        } catch (Exception e) {
+            log.error("保存评论失败 - commentEntity: {}", commentEntity, e);
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "保存评论失败：" + e.getMessage());
+        }
+    }
+
+    @Override
+    public List<CommentEntity> findRepliesByParentIds(List<Long> parentIds) {
+        try {
+            log.info("批量查询子评论 - parentIds: {}", parentIds);
+            if (parentIds == null || parentIds.isEmpty()) {
+                return new ArrayList<>();
+            }
+            List<Comment> replies = commentDao.findByParentIds(parentIds);
+            List<CommentEntity> replyEntities = replies.stream()
+                    .map(this::convertToCommentEntity)
+                    .collect(Collectors.toList());
+            log.info("批量查询子评论成功 - parentIds: {}, count: {}", parentIds, replyEntities.size());
+            return replyEntities;
+        } catch (Exception e) {
+            log.error("批量查询子评论失败 - parentIds: {}", parentIds, e);
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "查询回复列表失败：" + e.getMessage());
         }
     }
 }

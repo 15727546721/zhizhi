@@ -6,6 +6,14 @@ import java.util.List;
 
 public interface ICommentRepository {
     /**
+     * 保存评论
+     *
+     * @param commentEntity 评论实体
+     * @return 评论ID
+     */
+    Long save(CommentEntity commentEntity);
+
+    /**
      * 添加评论
      */
     Long addComment(CommentEntity commentEntity);
@@ -96,4 +104,12 @@ public interface ICommentRepository {
      * @param parentId 父评论ID
      */
     void deleteByParentId(Long parentId);
+
+    /**
+     * 根据父评论ID列表批量查询子评论
+     *
+     * @param parentIds 父评论ID列表
+     * @return 子评论列表
+     */
+    List<CommentEntity> findRepliesByParentIds(List<Long> parentIds);
 }

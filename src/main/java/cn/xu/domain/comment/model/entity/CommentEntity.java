@@ -47,6 +47,11 @@ public class CommentEntity {
     private Long replyUserId;
 
     /**
+     * 回复的具体评论ID
+     */
+    private Long replyCommentId;
+
+    /**
      * 评论的具体内容
      */
     private String content;
@@ -82,5 +87,9 @@ public class CommentEntity {
         if (!StringUtils.hasText(content)) {
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "评论内容不能为空");
         }
+        if (content.length() > 1000) {
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "评论内容不能超过1000字");
+        }
+
     }
 } 

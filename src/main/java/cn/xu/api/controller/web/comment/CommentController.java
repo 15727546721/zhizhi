@@ -1,6 +1,5 @@
 package cn.xu.api.controller.web.comment;
 
-
 import cn.xu.api.controller.web.comment.dto.CommentListDTO;
 import cn.xu.api.controller.web.comment.request.CommentRequest;
 import cn.xu.api.dto.common.ResponseEntity;
@@ -11,10 +10,11 @@ import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.service.IUserService;
 import cn.xu.infrastructure.common.ResponseCode;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
-
 import javax.annotation.Resource;
+import javax.validation.Valid;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -28,22 +28,12 @@ public class CommentController {
     @Resource
     private IUserService userService;
 
-    @Operation(summary = "评论")
+    @Operation(summary = "发表评论")
     @PostMapping("/add")
-    public ResponseEntity addComment(@RequestBody CommentRequest comment) {
-        commentService.addComment(comment);
+    public ResponseEntity addComment(@Valid @RequestBody CommentRequest request) {
+        commentService.saveComment(request);
         return ResponseEntity.builder()
                 .info("评论成功")
-                .code(ResponseCode.SUCCESS.getCode())
-                .build();
-    }
-
-    @Operation(summary = "回复评论")
-    @PostMapping("/reply")
-    public ResponseEntity replyComment(@RequestBody CommentRequest comment) {
-        commentService.replyComment(comment);
-        return ResponseEntity.builder()
-                .info("回复评论成功")
                 .code(ResponseCode.SUCCESS.getCode())
                 .build();
     }
@@ -51,11 +41,13 @@ public class CommentController {
     @Operation(summary = "获取评论列表")
     @GetMapping("/list")
     public ResponseEntity<List<CommentListDTO>> getCommentList(
-            @RequestParam("type") Integer type,
-            @RequestParam("targetId") Long targetId) {
-        // 转换评论类型
+            @Parameter(description = "评论类型") @RequestParam("type") Integer type,
+            @Parameter(description = "目标ID") @RequestParam("targetId") Long targetId,
+            @Parameter(description = "页码") @RequestParam(defaultValue = "1") Integer pageNum,
+            @Parameter(description = "每页数量") @RequestParam(defaultValue = "20") Integer pageSize) {
+        
         CommentType commentType = CommentType.of(type);
-        List<CommentEntity> commentEntityList = commentService.getCommentsByTypeAndTargetId(commentType, targetId);
+        List<CommentEntity> commentEntityList = commentService.getPagedComments(commentType, targetId, pageNum, pageSize);
 
         // 收集所有用户ID（包括子评论的用户）
         Set<Long> userIds = new HashSet<>();
@@ -70,47 +62,50 @@ public class CommentController {
         return ResponseEntity.<List<CommentListDTO>>builder()
                 .data(commentListDTOList)
                 .code(ResponseCode.SUCCESS.getCode())
+                .info("获取评论列表成功")
                 .build();
     }
 
     private List<CommentListDTO> convertToDTO(List<CommentEntity> commentEntities, Map<Long, UserEntity> userInfoMap) {
-        if (commentEntities == null || commentEntities.isEmpty() || userInfoMap == null || userInfoMap.isEmpty()) {
+        if (commentEntities == null || commentEntities.isEmpty()) {
             return Collections.emptyList();
         }
 
         return commentEntities.stream()
-                .map(commentEntity -> CommentListDTO.builder()
-                        .id(commentEntity.getId())
-                        .userId(commentEntity.getUserId())
-                        .replyUserId(commentEntity.getReplyUserId())
-                        .content(commentEntity.getContent())
-                        .createTime(commentEntity.getCreateTime())
-                        .userInfo(userInfoMap.get(commentEntity.getUserId()))
-                        .replyComment(convertToDTO(commentEntity.getChildren(), userInfoMap))
-                        .build())
+                .map(commentEntity -> convertSingleCommentToDTO(commentEntity, userInfoMap))
                 .collect(Collectors.toList());
     }
 
-    // 递归收集用户ID
+    private CommentListDTO convertSingleCommentToDTO(CommentEntity commentEntity, Map<Long, UserEntity> userInfoMap) {
+        return CommentListDTO.builder()
+                .id(commentEntity.getId())
+                .userId(commentEntity.getUserId())
+                .replyUserId(commentEntity.getReplyUserId())
+                .content(commentEntity.getContent())
+                .createTime(commentEntity.getCreateTime())
+                .userInfo(userInfoMap.get(commentEntity.getUserId()))
+                .replyComment(convertToDTO(commentEntity.getChildren(), userInfoMap))
+                .build();
+    }
+
     private void collectUserIds(List<CommentEntity> comments, Set<Long> userIds) {
         if (comments == null || comments.isEmpty()) {
             return;
         }
 
-        for (CommentEntity comment : comments) {
+        comments.forEach(comment -> {
             userIds.add(comment.getUserId());
-            if (comment.getChildren() != null) {
-                collectUserIds(comment.getChildren(), userIds);
-            }
-        }
+            Optional.ofNullable(comment.getReplyUserId()).ifPresent(userIds::add);
+            Optional.ofNullable(comment.getChildren()).ifPresent(children -> collectUserIds(children, userIds));
+        });
     }
 
     @Operation(summary = "删除评论")
     @DeleteMapping("/delete")
-    public ResponseEntity deleteComment(@RequestParam("commentId") Long commentId,
-                                        @RequestParam("userId") Long userId) {
-        commentService.deleteComment(commentId, userId);
-        return ResponseEntity.builder()
+    public ResponseEntity<Void> deleteComment(
+            @Parameter(description = "评论ID") @RequestParam("commentId") Long commentId) {
+        commentService.deleteComment(commentId);
+        return ResponseEntity.<Void>builder()
                 .info("删除评论成功")
                 .code(ResponseCode.SUCCESS.getCode())
                 .build();

@@ -262,6 +262,16 @@ public class UserServiceImpl implements IUserService {
                 ));
     }
 
+    @Override
+    public Long getCurrentUserId() {
+        try {
+            return StpUtil.getLoginIdAsLong();
+        } catch (Exception e) {
+            log.error("获取当前用户ID失败", e);
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "用户未登录");
+        }
+    }
+
     private void validateUsernameAndEmail(String username, String email) {
         if (userRepository.existsByUsername(username)) {
             throw new BusinessException("用户名已存在");

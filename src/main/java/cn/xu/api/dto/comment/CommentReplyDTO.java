@@ -1,5 +1,6 @@
 package cn.xu.api.dto.comment;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,49 +12,32 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Schema(description = "评论回复DTO")
 public class CommentReplyDTO {
-    /**
-     * 评论ID
-     */
+    @Schema(description = "评论ID")
     private Long id;
 
-    /**
-     * 评论内容
-     */
+    @Schema(description = "评论内容")
     private String content;
 
-    /**
-     * 评论用户ID
-     */
+    @Schema(description = "评论用户ID")
     private Long userId;
 
-    /**
-     * 评论用户昵称
-     */
+    @Schema(description = "评论用户昵称")
     private String nickName;
 
-    /**
-     * 评论用户头像
-     */
+    @Schema(description = "评论用户头像")
     private String avatar;
 
-    /**
-     * 被回复用户ID
-     */
+    @Schema(description = "被回复用户ID")
     private Long replyUserId;
 
-    /**
-     * 被回复用户昵称
-     */
+    @Schema(description = "被回复用户昵称")
     private String replyNickname;
 
-    /**
-     * 被回复用户头像
-     */
+    @Schema(description = "被回复用户头像")
     private String replyAvatar;
 
-    /**
-     * 评论时间
-     */
+    @Schema(description = "创建时间")
     private LocalDateTime createTime;
 }

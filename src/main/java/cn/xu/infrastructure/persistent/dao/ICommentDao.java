@@ -52,6 +52,14 @@ public interface ICommentDao {
     List<Comment> findByParentId(@Param("parentId") Long parentId);
 
     /**
+     * 根据父评论ID列表批量查询子评论
+     *
+     * @param parentIds 父评论ID列表
+     * @return 子评论列表
+     */
+    List<Comment> findByParentIds(@Param("parentIds") List<Long> parentIds);
+
+    /**
      * 根据类型和目标ID删除评论
      *
      * @param type     评论类型（1-文章；2-话题）
@@ -89,15 +97,11 @@ public interface ICommentDao {
 
     /**
      * 分页查询一级评论列表
-     *
-     * @param type   评论类型（可选）
-     * @param userId 用户ID（可选）
-     * @param offset 偏移量
-     * @param limit  每页数量
-     * @return 一级评论列表
      */
-    List<Comment> findRootCommentsByPage(@Param("type") Integer type, @Param("userId") Long userId,
-                                       @Param("offset") int offset, @Param("limit") int limit);
+    List<Comment> findRootCommentsByPage(@Param("type") Integer type, 
+                                       @Param("targetId") Long targetId,
+                                       @Param("offset") int offset, 
+                                       @Param("limit") int limit);
 
     /**
      * 根据ID查询评论

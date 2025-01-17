@@ -14,6 +14,13 @@ import org.springframework.web.multipart.MultipartFile;
 
 public interface IUserService {
     /**
+     * 获取当前登录用户ID
+     *
+     * @return 当前登录用户ID
+     */
+    Long getCurrentUserId();
+
+    /**
      * 用户注册
      */
     UserEntity register(RegisterRequest request);

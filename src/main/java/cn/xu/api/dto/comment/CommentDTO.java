@@ -1,5 +1,6 @@
 package cn.xu.api.dto.comment;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,59 +12,38 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Schema(description = "评论DTO")
 public class CommentDTO {
-    /**
-     * 评论ID
-     */
+    @Schema(description = "评论ID")
     private Long id;
 
-    /**
-     * 评论类型，如1-文章；2-话题
-     */
+    @Schema(description = "评论类型")
     private Integer type;
 
-    /**
-     * 评论来源的标识符
-     */
+    @Schema(description = "评论目标ID")
     private Long targetId;
 
-    /**
-     * 父评论的唯一标识符，顶级评论为NULL
-     */
+    @Schema(description = "父评论ID")
     private Long parentId;
 
-    /**
-     * 发表评论的用户ID
-     */
+    @Schema(description = "评论用户ID")
     private Long userId;
 
-    /**
-     * 发表评论的用户名称
-     */
+    @Schema(description = "评论用户昵称")
     private String nickname;
 
-    /**
-     * 发表评论的用户头像
-     */
+    @Schema(description = "评论用户头像")
     private String avatar;
 
-    /**
-     * 回复的用户ID，若为回复评论则存在
-     */
+    @Schema(description = "被回复用户ID")
     private Long replyUserId;
 
-    /**
-     * 评论的具体内容
-     */
+    @Schema(description = "评论内容")
     private String content;
 
-    /**
-     * 创建时间
-     */
+    @Schema(description = "创建时间")
     private LocalDateTime createTime;
 
-    /**
-     * 更新时间
-     */
+    @Schema(description = "更新时间")
     private LocalDateTime updateTime;
 } 

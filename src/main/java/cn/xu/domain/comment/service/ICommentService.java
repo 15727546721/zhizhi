@@ -14,33 +14,41 @@ import java.util.List;
  */
 public interface ICommentService {
     /**
-     * 添加评论
+     * 保存评论（包括发表评论和回复评论）
      *
-     * @param comment 评论请求参数
+     * @param request 评论请求参数
      */
-    void addComment(CommentRequest comment);
+    void saveComment(CommentRequest request);
 
     /**
-     * 回复评论
-     *
-     * @param comment 评论请求参数
-     */
-    void replyComment(CommentRequest comment);
-
-    /**
-     * 根据类型和目标ID获取评论列表
+     * 分页获取评论列表
      *
      * @param type     评论类型
      * @param targetId 目标ID（文章ID或话题ID）
+     * @param pageNum  页码
+     * @param pageSize 每页数量
      * @return 评论列表（已构建好父子关系）
      */
-    List<CommentEntity> getCommentsByTypeAndTargetId(CommentType type, Long targetId);
+    List<CommentEntity> getPagedComments(CommentType type, Long targetId, Integer pageNum, Integer pageSize);
 
     /**
      * 删除评论
      *
      * @param commentId 评论ID
-     * @param userId    用户ID
      */
-    void deleteComment(Long commentId, Long userId);
+    void deleteComment(Long commentId);
+
+    /**
+     * 删除评论（管理员操作）
+     * @param commentId
+     */
+    void deleteCommentByAdmin(Long commentId);
+
+    /**
+     * 获取评论详情
+     *
+     * @param commentId 评论ID
+     * @return 评论实体
+     */
+    CommentEntity getCommentById(Long commentId);
 }

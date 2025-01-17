@@ -98,8 +98,8 @@
         <if test="type != null">
             AND type = #{type}
         </if>
-        <if test="userId != null">
-            AND user_id = #{userId}
+        <if test="targetId != null">
+            AND target_id = #{targetId}
         </if>
         ORDER BY create_time DESC
         LIMIT #{offset}, #{limit}
@@ -139,4 +139,18 @@
         DELETE FROM comment 
         WHERE parent_id = #{parentId}
     </delete>
+
+    <!-- 根据父评论ID列表批量查询子评论 -->
+    <select id="findByParentIds" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM comment
+        WHERE parent_id IN
+        <foreach collection="parentIds" item="parentId" open="(" separator="," close=")">
+            #{parentId}
+        </foreach>
+        ORDER BY create_time ASC
+    </select>
+
+    <!-- 根据父评论ID删除所有子评论 -->
 </mapper>
