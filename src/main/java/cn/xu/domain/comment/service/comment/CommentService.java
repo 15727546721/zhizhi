@@ -13,6 +13,8 @@ import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.service.IUserService;
 import cn.xu.exception.BusinessException;
 import cn.xu.infrastructure.common.ResponseCode;
+import cn.xu.domain.message.event.MessageEvent;
+import cn.xu.domain.message.service.MessagePublisher;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +32,9 @@ public class CommentService implements ICommentService {
     @Resource
     private IUserService userService;
 
+    @Resource
+    private MessagePublisher messagePublisher;
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void saveComment(CommentRequest request) {
@@ -39,6 +44,7 @@ public class CommentService implements ICommentService {
 
             // 1. 获取当前用户
             Long currentUserId = userService.getCurrentUserId();
+            UserEntity currentUser = userService.getUserById(currentUserId);
 
             // 2. 构建评论实体
             CommentEntity commentEntity = CommentEntity.builder()
@@ -69,12 +75,47 @@ public class CommentService implements ICommentService {
             commentRepository.save(commentEntity);
             log.info("保存评论成功 - commentId: {}", commentEntity.getId());
 
+            // 6. 发送消息通知文章作者
+            if (CommentType.ARTICLE.equals(request.getType())) {
+                // 获取文章作者ID
+                Long authorId = getArticleAuthorId(request.getTargetId());
+                if (authorId != null && !authorId.equals(currentUserId)) {  // 不给自己发通知
+                    // 创建评论消息事件
+                    MessageEvent messageEvent = MessageEvent.createCommentEvent(
+                        currentUserId,  // 评论者ID
+                        authorId,       // 文章作者ID
+                        String.format("%s 评论了你的文章：%s", 
+                            currentUser.getNickname(), 
+                            commentEntity.getContent()),
+                        request.getTargetId()  // 文章ID
+                    );
+                    
+                    // 通过Disruptor异步发送消息
+                    messagePublisher.publishMessage(messageEvent);
+                    log.info("发送评论通知消息成功 - fromUser: {}, toUser: {}", currentUserId, authorId);
+                }
+            }
+
         } catch (BusinessException e) {
             log.error("保存评论失败 - error: {}", e.getMessage());
             throw e;
         } catch (Exception e) {
             log.error("保存评论发生未知错误", e);
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "保存评论失败：" + e.getMessage());
+        }
+    }
+
+    /**
+     * 获取文章作者ID
+     */
+    private Long getArticleAuthorId(Long articleId) {
+        try {
+            // 这里应该调用文章领域的服务获取作者ID
+            // 实际项目中可能需要通过领域事件或接口调用获取
+            return articleService.getArticleAuthorId(articleId);
+        } catch (Exception e) {
+            log.error("获取文章作者ID失败 - articleId: {}", articleId, e);
+            return null;
         }
     }
 

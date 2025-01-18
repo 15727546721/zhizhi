@@ -7,7 +7,10 @@ import cn.xu.domain.like.event.LikeEventHandler;
 import cn.xu.domain.logging.event.OperationLogEvent;
 import cn.xu.domain.logging.event.factory.OperationLogEventFactory;
 import cn.xu.domain.logging.event.handler.OperationLogEventHandler;
+import cn.xu.domain.message.event.MessageEvent;
+import cn.xu.domain.message.event.handler.MessageEventHandler;
 import com.lmax.disruptor.BlockingWaitStrategy;
+import com.lmax.disruptor.EventFactory;
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
@@ -32,6 +35,9 @@ public class DisruptorConfig {
 
     @Resource
     private OperationLogEventHandler operationLogEventHandler;
+
+    @Resource
+    private MessageEventHandler messageEventHandler;
 
     @Bean
     public RingBuffer<LikeEvent> likeEventRingBuffer() {
@@ -79,7 +85,23 @@ public class DisruptorConfig {
         return disruptor.getRingBuffer();
     }
 
-    private static class LikeEventFactory implements com.lmax.disruptor.EventFactory<LikeEvent> {
+    @Bean(name = "messageRingBuffer")
+    public RingBuffer<MessageEvent> messageRingBuffer() {
+        Disruptor<MessageEvent> disruptor = new Disruptor<>(
+                new MessageEventFactory(),
+                2048,
+                DaemonThreadFactory.INSTANCE,
+                ProducerType.MULTI,
+                new BlockingWaitStrategy()
+        );
+
+        disruptor.handleEventsWith(messageEventHandler);
+        disruptor.start();
+
+        return disruptor.getRingBuffer();
+    }
+
+    private static class LikeEventFactory implements EventFactory<LikeEvent> {
         @Override
         public LikeEvent newInstance() {
             return LikeEvent.builder()
@@ -88,6 +110,20 @@ public class DisruptorConfig {
                     .type(null)
                     .liked(false)
                     .occurredTime(null)
+                    .build();
+        }
+    }
+
+    private static class MessageEventFactory implements EventFactory<MessageEvent> {
+        @Override
+        public MessageEvent newInstance() {
+            return MessageEvent.builder()
+                    .type(null)
+                    .senderId(null)
+                    .receiverId(null)
+                    .title(null)
+                    .content(null)
+                    .targetId(null)
                     .build();
         }
     }
