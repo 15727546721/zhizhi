@@ -1,9 +1,10 @@
 package cn.xu.domain.permission.service.impl;
 
 import cn.dev33.satoken.stp.StpUtil;
-import cn.xu.api.dto.common.PageResponse;
-import cn.xu.api.dto.permission.RoleAddOrUpdateRequest;
-import cn.xu.api.dto.permission.RoleMenuRequest;
+import cn.xu.api.web.model.dto.common.PageResponse;
+import cn.xu.api.web.model.dto.permission.RoleAddOrUpdateRequest;
+import cn.xu.api.web.model.dto.permission.RoleMenuRequest;
+import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.permission.model.entity.MenuEntity;
 import cn.xu.domain.permission.model.entity.MenuOptionsEntity;
 import cn.xu.domain.permission.model.entity.RoleEntity;
@@ -13,7 +14,6 @@ import cn.xu.domain.permission.model.vo.MenuTypeVO;
 import cn.xu.domain.permission.repository.IPermissionRepository;
 import cn.xu.domain.permission.service.IPermissionService;
 import cn.xu.exception.BusinessException;
-import cn.xu.infrastructure.common.ResponseCode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;

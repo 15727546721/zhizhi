@@ -18,7 +18,7 @@
         <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
     </resultMap>
 
-    <resultMap id="ArticleListResultMap" type="cn.xu.api.controller.web.article.ArticleListDTO">
+    <resultMap id="ArticleListResultMap" type="cn.xu.api.web.controller.article.ArticleListDTO">
         <id property="id" column="id"/>
         <result property="title" column="title"/>
         <result property="description" column="description"/>
@@ -93,8 +93,8 @@
         </foreach>
     </delete>
 
-    <select id="queryByPage" parameterType="cn.xu.api.dto.article.ArticleRequest"
-            resultType="cn.xu.api.dto.article.ArticlePageResponse">
+    <select id="queryByPage" parameterType="cn.xu.api.web.model.dto.article.ArticleRequest"
+            resultType="cn.xu.api.web.model.dto.article.ArticlePageResponse">
         SELECT
         a.id,
         a.title,
@@ -208,7 +208,7 @@
     </select>
 
     <!-- 文章列表响应结果映射 -->
-    <resultMap id="ArticlePageResponseMap" type="cn.xu.api.dto.article.ArticlePageResponse">
+    <resultMap id="ArticlePageResponseMap" type="cn.xu.api.web.model.dto.article.ArticlePageResponse">
         <id property="id" column="id"/>
         <result property="title" column="title"/>
         <result property="coverUrl" column="cover_url"/>

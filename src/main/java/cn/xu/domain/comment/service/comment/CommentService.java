@@ -1,10 +1,11 @@
 package cn.xu.domain.comment.service.comment;
 
-import cn.xu.api.controller.web.comment.request.CommentRequest;
-import cn.xu.api.dto.comment.CommentDTO;
-import cn.xu.api.dto.comment.CommentReplyDTO;
-import cn.xu.api.dto.common.PageRequest;
-import cn.xu.api.dto.common.PageResponse;
+import cn.xu.api.web.controller.comment.request.CommentRequest;
+import cn.xu.api.web.model.dto.comment.CommentDTO;
+import cn.xu.api.web.model.dto.comment.CommentReplyDTO;
+import cn.xu.api.web.model.dto.common.PageRequest;
+import cn.xu.api.web.model.dto.common.PageResponse;
+import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.comment.model.entity.CommentEntity;
 import cn.xu.domain.comment.model.valueobject.CommentType;
 import cn.xu.domain.comment.repository.ICommentRepository;
@@ -12,10 +13,10 @@ import cn.xu.domain.comment.service.ICommentService;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.service.IUserService;
 import cn.xu.exception.BusinessException;
-import cn.xu.infrastructure.common.ResponseCode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import javax.annotation.Resource;
 import java.util.*;
 import java.util.stream.Collectors;

@@ -1,8 +1,9 @@
 package cn.xu.domain.topic.service;
 
-import cn.xu.api.dto.common.PageRequest;
-import cn.xu.api.dto.topic.TopicResponse;
-import cn.xu.api.dto.topic.TopicUpdateRequest;
+import cn.xu.api.web.model.dto.common.PageRequest;
+import cn.xu.api.web.model.dto.topic.TopicResponse;
+import cn.xu.api.web.model.dto.topic.TopicUpdateRequest;
+import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.file.service.MinioService;
 import cn.xu.domain.topic.command.CreateTopicCommand;
 import cn.xu.domain.topic.command.TopicPageQuery;
@@ -11,7 +12,6 @@ import cn.xu.domain.topic.entity.Topic;
 import cn.xu.domain.topic.model.entity.TopicEntity;
 import cn.xu.domain.topic.repository.ITopicRepository;
 import cn.xu.exception.BusinessException;
-import cn.xu.infrastructure.common.ResponseCode;
 import cn.xu.infrastructure.persistent.repository.CommentRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

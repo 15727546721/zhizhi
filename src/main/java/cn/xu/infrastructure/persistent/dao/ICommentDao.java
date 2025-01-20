@@ -1,7 +1,7 @@
 package cn.xu.infrastructure.persistent.dao;
 
-import cn.xu.infrastructure.persistent.po.Comment;
 import cn.xu.domain.comment.model.entity.CommentEntity;
+import cn.xu.infrastructure.persistent.po.Comment;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 

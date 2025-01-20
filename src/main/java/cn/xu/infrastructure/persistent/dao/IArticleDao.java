@@ -1,8 +1,8 @@
 package cn.xu.infrastructure.persistent.dao;
 
-import cn.xu.api.controller.web.article.ArticleListDTO;
-import cn.xu.api.dto.article.ArticlePageResponse;
-import cn.xu.api.dto.article.ArticleRequest;
+import cn.xu.api.web.controller.article.ArticleListDTO;
+import cn.xu.api.web.model.dto.article.ArticlePageResponse;
+import cn.xu.api.web.model.dto.article.ArticleRequest;
 import cn.xu.domain.article.model.entity.ArticleRecommendOrNew;
 import cn.xu.infrastructure.persistent.po.Article;
 import org.apache.ibatis.annotations.Mapper;

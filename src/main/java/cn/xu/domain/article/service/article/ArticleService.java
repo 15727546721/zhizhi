@@ -1,9 +1,10 @@
 package cn.xu.domain.article.service.article;
 
-import cn.xu.api.controller.web.article.ArticleListDTO;
-import cn.xu.api.dto.article.ArticlePageResponse;
-import cn.xu.api.dto.article.ArticleRequest;
-import cn.xu.api.dto.common.PageResponse;
+import cn.xu.api.web.controller.article.ArticleListDTO;
+import cn.xu.api.web.model.dto.article.ArticlePageResponse;
+import cn.xu.api.web.model.dto.article.ArticleRequest;
+import cn.xu.api.web.model.dto.common.PageResponse;
+import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.article.model.entity.ArticleEntity;
 import cn.xu.domain.article.repository.IArticleRepository;
 import cn.xu.domain.article.repository.IArticleTagRepository;
@@ -11,7 +12,6 @@ import cn.xu.domain.article.repository.ITagRepository;
 import cn.xu.domain.article.service.IArticleService;
 import cn.xu.domain.file.service.MinioService;
 import cn.xu.exception.BusinessException;
-import cn.xu.infrastructure.common.ResponseCode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 

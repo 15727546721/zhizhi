@@ -1,8 +1,8 @@
 package cn.xu.infrastructure.persistent.repository;
 
-import cn.xu.api.controller.web.article.ArticleListDTO;
-import cn.xu.api.dto.article.ArticlePageResponse;
-import cn.xu.api.dto.article.ArticleRequest;
+import cn.xu.api.web.controller.article.ArticleListDTO;
+import cn.xu.api.web.model.dto.article.ArticlePageResponse;
+import cn.xu.api.web.model.dto.article.ArticleRequest;
 import cn.xu.domain.article.model.entity.ArticleEntity;
 import cn.xu.domain.article.model.entity.ArticleRecommendOrNew;
 import cn.xu.domain.article.repository.IArticleRepository;

@@ -1,9 +1,9 @@
 package cn.xu.exception;
 
 import cn.dev33.satoken.exception.NotLoginException;
-import cn.xu.api.dto.common.ResponseEntity;
+import cn.xu.api.web.model.dto.common.ResponseEntity;
+import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.user.constant.UserErrorCode;
-import cn.xu.infrastructure.common.ResponseCode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @Slf4j

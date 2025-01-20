@@ -1,7 +1,7 @@
 package cn.xu.domain.comment.model.valueobject;
 
+import cn.xu.application.common.ResponseCode;
 import cn.xu.exception.BusinessException;
-import cn.xu.infrastructure.common.ResponseCode;
 import lombok.Getter;
 
 /**
