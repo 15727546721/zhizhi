@@ -5,7 +5,7 @@ import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.permission.model.entity.MenuEntity;
 import cn.xu.domain.permission.model.entity.RoleEntity;
 import cn.xu.domain.permission.repository.IPermissionRepository;
-import cn.xu.exception.BusinessException;
+import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.persistent.dao.IMenuDao;
 import cn.xu.infrastructure.persistent.dao.IRoleDao;
 import cn.xu.infrastructure.persistent.po.Menu;

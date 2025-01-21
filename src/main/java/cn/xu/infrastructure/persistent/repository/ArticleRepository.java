@@ -1,8 +1,8 @@
 package cn.xu.infrastructure.persistent.repository;
 
-import cn.xu.api.web.controller.article.ArticleListDTO;
-import cn.xu.api.web.model.dto.article.ArticlePageResponse;
-import cn.xu.api.web.model.dto.article.ArticleRequest;
+import cn.xu.api.system.model.dto.article.ArticleRequest;
+import cn.xu.api.web.model.vo.article.ArticleListVO;
+import cn.xu.api.web.model.vo.article.ArticlePageVO;
 import cn.xu.domain.article.model.entity.ArticleEntity;
 import cn.xu.domain.article.model.entity.ArticleRecommendOrNew;
 import cn.xu.domain.article.repository.IArticleRepository;
@@ -45,9 +45,9 @@ public class ArticleRepository implements IArticleRepository {
     }
 
     @Override
-    public List<ArticlePageResponse> queryArticle(ArticleRequest articleRequest) {
+    public List<ArticlePageVO> queryArticle(ArticleRequest articleRequest) {
         articleRequest.setPageNo(articleRequest.getPageNo() - 1);
-        List<ArticlePageResponse> articles = articleDao.queryByPage(articleRequest);
+        List<ArticlePageVO> articles = articleDao.queryByPage(articleRequest);
         log.info("查询文章结果: {}", articles);
 
         return articles;
@@ -98,7 +98,7 @@ public class ArticleRepository implements IArticleRepository {
     }
 
     @Override
-    public List<ArticleListDTO> queryArticleByCategory(Long categoryId) {
+    public List<ArticleListVO> queryArticleByCategory(Long categoryId) {
         return articleDao.queryByCategory(categoryId);
     }
 

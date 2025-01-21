@@ -4,7 +4,7 @@ import cn.xu.domain.follow.model.entity.UserFollowEntity;
 import cn.xu.domain.follow.model.valueobject.FollowStatus;
 import cn.xu.domain.follow.repository.IUserFollowRepository;
 import cn.xu.domain.follow.service.IUserFollowService;
-import cn.xu.exception.BusinessException;
+import cn.xu.infrastructure.common.exception.BusinessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

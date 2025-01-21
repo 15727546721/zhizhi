@@ -1,7 +1,7 @@
 package cn.xu.domain.topic.entity;
 
 import cn.xu.domain.topic.constant.TopicErrorCode;
-import cn.xu.exception.BusinessException;
+import cn.xu.infrastructure.common.exception.BusinessException;
 import lombok.Builder;
 import lombok.Data;
 

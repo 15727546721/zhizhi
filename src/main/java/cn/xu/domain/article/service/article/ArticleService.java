@@ -1,9 +1,8 @@
 package cn.xu.domain.article.service.article;
 
-import cn.xu.api.web.controller.article.ArticleListDTO;
-import cn.xu.api.web.model.dto.article.ArticlePageResponse;
-import cn.xu.api.web.model.dto.article.ArticleRequest;
-import cn.xu.api.web.model.dto.common.PageResponse;
+import cn.xu.api.system.model.dto.article.ArticleRequest;
+import cn.xu.api.web.model.vo.article.ArticleListVO;
+import cn.xu.api.web.model.vo.article.ArticlePageVO;
 import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.article.model.entity.ArticleEntity;
 import cn.xu.domain.article.repository.IArticleRepository;
@@ -11,7 +10,8 @@ import cn.xu.domain.article.repository.IArticleTagRepository;
 import cn.xu.domain.article.repository.ITagRepository;
 import cn.xu.domain.article.service.IArticleService;
 import cn.xu.domain.file.service.MinioService;
-import cn.xu.exception.BusinessException;
+import cn.xu.infrastructure.common.exception.BusinessException;
+import cn.xu.infrastructure.common.response.PageResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -53,8 +53,8 @@ public class ArticleService implements IArticleService {
     }
 
     @Override
-    public PageResponse<List<ArticlePageResponse>> listArticle(ArticleRequest articleRequest) {
-        List<ArticlePageResponse> articles = articleRepository.queryArticle(articleRequest);
+    public PageResponse<List<ArticlePageVO>> listArticle(ArticleRequest articleRequest) {
+        List<ArticlePageVO> articles = articleRepository.queryArticle(articleRequest);
         return PageResponse.of(
                 articleRequest.getPageNo(),
                 articleRequest.getPageSize(),
@@ -84,17 +84,17 @@ public class ArticleService implements IArticleService {
     }
 
     @Override
-    public List<ArticleListDTO> getArticleByCategory(Long categoryId) {
+    public List<ArticleListVO> getArticleByCategory(Long categoryId) {
         return articleRepository.queryArticleByCategory(categoryId);
     }
 
     @Override
-    public List<ArticleListDTO> getHotArticles(int limit) {
+    public List<ArticleListVO> getHotArticles(int limit) {
         return null;
     }
 
     @Override
-    public List<ArticleListDTO> getUserLikedArticles(Long userId) {
+    public List<ArticleListVO> getUserLikedArticles(Long userId) {
         return null;
     }
 

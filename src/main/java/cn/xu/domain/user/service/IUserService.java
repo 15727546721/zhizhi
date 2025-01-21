@@ -1,11 +1,11 @@
 package cn.xu.domain.user.service;
 
-import cn.xu.api.web.controller.user.LoginRequest;
-import cn.xu.api.web.controller.user.RegisterRequest;
-import cn.xu.api.web.model.dto.common.PageRequest;
-import cn.xu.api.web.model.dto.user.UserRequest;
+import cn.xu.api.system.model.dto.user.UserRequest;
+import cn.xu.api.web.model.dto.user.LoginRequest;
+import cn.xu.api.web.model.dto.user.RegisterRequest;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.model.entity.UserInfoEntity;
+import cn.xu.infrastructure.common.request.PageRequest;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;

@@ -5,7 +5,7 @@ import cn.xu.domain.topic.command.CreateTopicCategoryCommand;
 import cn.xu.domain.topic.model.entity.TopicCategoryEntity;
 import cn.xu.domain.topic.repository.ITopicCategoryRepository;
 import cn.xu.domain.topic.service.ITopicCategoryService;
-import cn.xu.exception.BusinessException;
+import cn.xu.infrastructure.common.exception.BusinessException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

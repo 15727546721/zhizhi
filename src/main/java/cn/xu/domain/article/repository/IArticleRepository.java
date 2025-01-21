@@ -1,8 +1,8 @@
 package cn.xu.domain.article.repository;
 
-import cn.xu.api.web.controller.article.ArticleListDTO;
-import cn.xu.api.web.model.dto.article.ArticlePageResponse;
-import cn.xu.api.web.model.dto.article.ArticleRequest;
+import cn.xu.api.system.model.dto.article.ArticleRequest;
+import cn.xu.api.web.model.vo.article.ArticleListVO;
+import cn.xu.api.web.model.vo.article.ArticlePageVO;
 import cn.xu.domain.article.model.entity.ArticleEntity;
 import cn.xu.domain.article.model.entity.ArticleRecommendOrNew;
 
@@ -12,7 +12,7 @@ import java.util.Map;
 public interface IArticleRepository {
     Long save(ArticleEntity articleAggregate);
 
-    List<ArticlePageResponse> queryArticle(ArticleRequest articleRequest);
+    List<ArticlePageVO> queryArticle(ArticleRequest articleRequest);
 
     void deleteByIds(List<Long> articleIds);
 
@@ -22,7 +22,7 @@ public interface IArticleRepository {
 
     List<ArticleRecommendOrNew> queryArticleByPage();
 
-    List<ArticleListDTO> queryArticleByCategory(Long categoryId);
+    List<ArticleListVO> queryArticleByCategory(Long categoryId);
 
     /**
      * 更新文章点赞数

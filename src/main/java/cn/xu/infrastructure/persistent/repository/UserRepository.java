@@ -6,7 +6,7 @@ import cn.xu.domain.user.model.entity.UserInfoEntity;
 import cn.xu.domain.user.model.valobj.LoginFormVO;
 import cn.xu.domain.user.model.valueobject.Email;
 import cn.xu.domain.user.repository.IUserRepository;
-import cn.xu.exception.BusinessException;
+import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.persistent.dao.IRoleDao;
 import cn.xu.infrastructure.persistent.dao.IUserDao;
 import cn.xu.infrastructure.persistent.po.User;

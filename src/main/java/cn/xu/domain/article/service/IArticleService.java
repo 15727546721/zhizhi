@@ -1,10 +1,10 @@
 package cn.xu.domain.article.service;
 
-import cn.xu.api.web.controller.article.ArticleListDTO;
-import cn.xu.api.web.model.dto.article.ArticlePageResponse;
-import cn.xu.api.web.model.dto.article.ArticleRequest;
-import cn.xu.api.web.model.dto.common.PageResponse;
+import cn.xu.api.system.model.dto.article.ArticleRequest;
+import cn.xu.api.web.model.vo.article.ArticleListVO;
+import cn.xu.api.web.model.vo.article.ArticlePageVO;
 import cn.xu.domain.article.model.entity.ArticleEntity;
+import cn.xu.infrastructure.common.response.PageResponse;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -15,7 +15,7 @@ public interface IArticleService {
 
     String uploadCover(MultipartFile imageFile);
 
-    PageResponse<List<ArticlePageResponse>> listArticle(ArticleRequest articleRequest);
+    PageResponse<List<ArticlePageVO>> listArticle(ArticleRequest articleRequest);
 
     void deleteArticles(List<Long> articleIds);
 
@@ -23,7 +23,7 @@ public interface IArticleService {
 
     ArticleEntity getArticleById(Long id);
 
-    List<ArticleListDTO> getArticleByCategory(Long categoryId);
+    List<ArticleListVO> getArticleByCategory(Long categoryId);
 
     /**
      * 获取热门文章列表
@@ -31,7 +31,7 @@ public interface IArticleService {
      * @param limit 限制数量
      * @return 热门文章列表
      */
-    List<ArticleListDTO> getHotArticles(int limit);
+    List<ArticleListVO> getHotArticles(int limit);
 
     /**
      * 获取用户点赞的文章列表
@@ -39,7 +39,7 @@ public interface IArticleService {
      * @param userId 用户ID
      * @return 文章列表
      */
-    List<ArticleListDTO> getUserLikedArticles(Long userId);
+    List<ArticleListVO> getUserLikedArticles(Long userId);
 
     /**
      * 获取文章的点赞用户列表

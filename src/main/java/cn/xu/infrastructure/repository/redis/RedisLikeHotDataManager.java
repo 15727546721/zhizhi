@@ -1,7 +1,7 @@
 package cn.xu.infrastructure.repository.redis;
 
 import cn.xu.domain.like.repository.ILikeRepository;
-import cn.xu.infrastructure.general.config.HotDataProperties;
+import cn.xu.infrastructure.config.HotDataProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationStartedEvent;

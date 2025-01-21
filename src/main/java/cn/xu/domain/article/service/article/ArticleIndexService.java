@@ -2,7 +2,7 @@ package cn.xu.domain.article.service.article;
 
 import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.article.model.entity.ArticleEntity;
-import cn.xu.exception.BusinessException;
+import cn.xu.infrastructure.common.exception.BusinessException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.cn.smart.SmartChineseAnalyzer;

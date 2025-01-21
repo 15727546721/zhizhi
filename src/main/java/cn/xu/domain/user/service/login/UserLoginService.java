@@ -9,7 +9,7 @@ import cn.xu.domain.user.model.entity.UserInfoEntity;
 import cn.xu.domain.user.model.valobj.LoginFormVO;
 import cn.xu.domain.user.repository.IUserRepository;
 import cn.xu.domain.user.service.IUserLoginService;
-import cn.xu.exception.BusinessException;
+import cn.xu.infrastructure.common.exception.BusinessException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;

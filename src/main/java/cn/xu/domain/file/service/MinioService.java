@@ -2,7 +2,7 @@ package cn.xu.domain.file.service;
 
 
 import cn.xu.application.common.ResponseCode;
-import cn.xu.exception.BusinessException;
+import cn.xu.infrastructure.common.exception.BusinessException;
 import com.alibaba.fastjson2.JSONObject;
 import io.minio.*;
 import io.minio.errors.MinioException;

@@ -4,7 +4,7 @@ package cn.xu.infrastructure.persistent.repository;
 import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.article.model.entity.TagEntity;
 import cn.xu.domain.article.repository.ITagRepository;
-import cn.xu.exception.BusinessException;
+import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.persistent.dao.ITagDao;
 import cn.xu.infrastructure.persistent.po.ArticleTag;
 import lombok.extern.slf4j.Slf4j;

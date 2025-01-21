@@ -1,7 +1,7 @@
 package cn.xu.domain.user.model.valueobject;
 
 import cn.dev33.satoken.secure.SaSecureUtil;
-import cn.xu.exception.BusinessException;
+import cn.xu.infrastructure.common.exception.BusinessException;
 import lombok.Getter;
 
 @Getter

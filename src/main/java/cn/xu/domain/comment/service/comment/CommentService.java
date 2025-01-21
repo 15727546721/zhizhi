@@ -1,10 +1,8 @@
 package cn.xu.domain.comment.service.comment;
 
-import cn.xu.api.web.controller.comment.request.CommentRequest;
-import cn.xu.api.web.model.dto.comment.CommentDTO;
-import cn.xu.api.web.model.dto.comment.CommentReplyDTO;
-import cn.xu.api.web.model.dto.common.PageRequest;
-import cn.xu.api.web.model.dto.common.PageResponse;
+import cn.xu.api.system.model.vo.comment.CommentReplyVO;
+import cn.xu.api.web.model.dto.comment.CommentRequest;
+import cn.xu.api.web.model.vo.comment.CommentVO;
 import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.comment.model.entity.CommentEntity;
 import cn.xu.domain.comment.model.valueobject.CommentType;
@@ -12,7 +10,9 @@ import cn.xu.domain.comment.repository.ICommentRepository;
 import cn.xu.domain.comment.service.ICommentService;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.service.IUserService;
-import cn.xu.exception.BusinessException;
+import cn.xu.infrastructure.common.exception.BusinessException;
+import cn.xu.infrastructure.common.request.PageRequest;
+import cn.xu.infrastructure.common.response.PageResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -248,7 +248,7 @@ public class CommentService implements ICommentService {
      * @param request 评论请求参数
      * @return 分页评论列表
      */
-    public PageResponse<List<CommentDTO>> getRootCommentsWithUserByPage(CommentRequest request) {
+    public PageResponse<List<CommentVO>> getRootCommentsWithUserByPage(CommentRequest request) {
         try {
             log.info("分页获取一级评论列表 - request: {}", request);
             
@@ -279,9 +279,9 @@ public class CommentService implements ICommentService {
             Map<Long, UserEntity> userMap = userService.getBatchUserInfo(userIds);
             
             // 6. 转换为DTO
-            List<CommentDTO> commentDTOs = comments.stream()
+            List<CommentVO> commentVOS = comments.stream()
                     .map(comment -> {
-                        CommentDTO dto = convertToDTO(comment);
+                        CommentVO dto = convertToDTO(comment);
                         UserEntity user = userMap.get(comment.getUserId());
                         if (user != null) {
                             dto.setNickname(user.getNickname());
@@ -292,7 +292,7 @@ public class CommentService implements ICommentService {
                     .collect(Collectors.toList());
             
             // 7. 构建分页响应
-            return PageResponse.of(request.getPageNo(), request.getPageSize(), total, commentDTOs);
+            return PageResponse.of(request.getPageNo(), request.getPageSize(), total, commentVOS);
             
         } catch (Exception e) {
             log.error("分页获取一级评论列表失败 - request: {}", request, e);
@@ -307,7 +307,7 @@ public class CommentService implements ICommentService {
      * @param pageRequest 分页参数
      * @return 评论列表
      */
-    public List<CommentReplyDTO> getPagedRepliesWithUser(Long parentId, PageRequest pageRequest) {
+    public List<CommentReplyVO> getPagedRepliesWithUser(Long parentId, PageRequest pageRequest) {
         try {
             log.info("分页获取二级评论列表 - parentId: {}, pageRequest: {}", parentId, pageRequest);
             
@@ -336,7 +336,7 @@ public class CommentService implements ICommentService {
             // 5. 转换为DTO
             return replies.stream()
                     .map(reply -> {
-                        CommentReplyDTO dto = CommentReplyDTO.builder()
+                        CommentReplyVO dto = CommentReplyVO.builder()
                                 .id(reply.getId())
                                 .content(reply.getContent())
                                 .userId(reply.getUserId())
@@ -373,11 +373,11 @@ public class CommentService implements ICommentService {
     /**
      * 将评论实体转换为DTO
      */
-    private CommentDTO convertToDTO(CommentEntity entity) {
+    private CommentVO convertToDTO(CommentEntity entity) {
         if (entity == null) {
             return null;
         }
-        return CommentDTO.builder()
+        return CommentVO.builder()
                 .id(entity.getId())
                 .type(entity.getType())
                 .targetId(entity.getTargetId())

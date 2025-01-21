@@ -1,12 +1,12 @@
 package cn.xu.domain.permission.service;
 
-import cn.xu.api.web.model.dto.common.PageResponse;
 import cn.xu.api.web.model.dto.permission.RoleAddOrUpdateRequest;
 import cn.xu.api.web.model.dto.permission.RoleMenuRequest;
 import cn.xu.domain.permission.model.entity.MenuEntity;
 import cn.xu.domain.permission.model.entity.MenuOptionsEntity;
 import cn.xu.domain.permission.model.entity.RoleEntity;
 import cn.xu.domain.permission.model.entity.RouterEntity;
+import cn.xu.infrastructure.common.response.PageResponse;
 
 import java.util.List;
 
