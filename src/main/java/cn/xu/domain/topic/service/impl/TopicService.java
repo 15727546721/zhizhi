@@ -1,4 +1,4 @@
-package cn.xu.domain.topic.service;
+package cn.xu.domain.topic.service.impl;
 
 import cn.xu.api.web.model.dto.topic.TopicResponse;
 import cn.xu.api.web.model.dto.topic.TopicUpdateRequest;
@@ -10,6 +10,8 @@ import cn.xu.domain.topic.command.TopicUpdateCommand;
 import cn.xu.domain.topic.entity.Topic;
 import cn.xu.domain.topic.model.entity.TopicEntity;
 import cn.xu.domain.topic.repository.ITopicRepository;
+import cn.xu.domain.topic.service.ITopicCategoryService;
+import cn.xu.domain.topic.service.ITopicService;
 import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.common.request.PageRequest;
 import cn.xu.infrastructure.persistent.repository.CommentRepository;
@@ -24,7 +26,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service
-public class TopicService {
+public class TopicService implements ITopicService {
 
     @Resource
     private ITopicRepository topicRepository;
@@ -303,5 +305,21 @@ public class TopicService {
                 .createTime(topicEntity.getCreateTime())
                 .updateTime(topicEntity.getUpdateTime())
                 .build();
+    }
+
+    @Override
+    public Long getTopicAuthorId(Long topicId) {
+        try {
+            log.debug("[话题服务] 获取话题作者ID - topicId: {}", topicId);
+            TopicEntity topic = topicRepository.findById(topicId);
+            if (topic == null) {
+                log.warn("[话题服务] 话题不存在 - topicId: {}", topicId);
+                return null;
+            }
+            return topic.getUserId();
+        } catch (Exception e) {
+            log.error("[话题服务] 获取话题作者ID失败 - topicId: {}", topicId, e);
+            return null;
+        }
     }
 }

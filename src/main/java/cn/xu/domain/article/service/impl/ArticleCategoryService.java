@@ -1,4 +1,4 @@
-package cn.xu.domain.article.service.article;
+package cn.xu.domain.article.service.impl;
 
 import cn.xu.domain.article.repository.IArticleCategoryRepository;
 import cn.xu.domain.article.service.IArticleCategoryService;

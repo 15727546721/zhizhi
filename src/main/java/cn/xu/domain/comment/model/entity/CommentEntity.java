@@ -1,6 +1,7 @@
 package cn.xu.domain.comment.model.entity;
 
 import cn.xu.application.common.ResponseCode;
+import cn.xu.domain.comment.model.valueobject.CommentType;
 import cn.xu.infrastructure.common.exception.BusinessException;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -72,6 +73,27 @@ public class CommentEntity {
     private List<CommentEntity> children;
 
     /**
+     * 获取评论类型（枚举）
+     */
+    public CommentType getType() {
+        return type != null ? CommentType.of(type) : null;
+    }
+
+    /**
+     * 设置评论类型（枚举）
+     */
+    public void setType(CommentType type) {
+        this.type = type != null ? type.getValue() : null;
+    }
+
+    /**
+     * 设置评论类型（整数）
+     */
+    public void setType(Integer type) {
+        this.type = type;
+    }
+
+    /**
      * 验证评论数据
      */
     public void validate() {
@@ -90,6 +112,5 @@ public class CommentEntity {
         if (content.length() > 1000) {
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "评论内容不能超过1000字");
         }
-
     }
 } 

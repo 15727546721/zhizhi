@@ -10,7 +10,7 @@ import cn.xu.domain.article.service.IArticleCategoryService;
 import cn.xu.domain.article.service.IArticleService;
 import cn.xu.domain.article.service.IArticleTagService;
 import cn.xu.domain.article.service.ITagService;
-import cn.xu.domain.article.service.article.ArticleIndexService;
+import cn.xu.domain.article.service.impl.ArticleIndexService;
 import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.common.response.ResponseEntity;
 import io.swagger.v3.oas.annotations.Operation;

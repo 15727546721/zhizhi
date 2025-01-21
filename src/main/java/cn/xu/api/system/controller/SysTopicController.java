@@ -4,7 +4,7 @@ import cn.xu.api.web.model.dto.topic.TopicResponse;
 import cn.xu.api.web.model.dto.topic.TopicUpdateRequest;
 import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.topic.command.TopicPageQuery;
-import cn.xu.domain.topic.service.TopicService;
+import cn.xu.domain.topic.service.impl.TopicService;
 import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.common.request.PageRequest;
 import cn.xu.infrastructure.common.response.ResponseEntity;

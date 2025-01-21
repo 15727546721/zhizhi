@@ -203,7 +203,7 @@ public class CommentRepository implements ICommentRepository {
      * 分页查询一级评论列表
      *
      * @param type   评论类型（可选）
-     * @param userId 用户ID
+     * @param targetId 业务目标ID
      * @param offset 偏移量
      * @param limit  每页数量
      * @return 一级评论列表
@@ -260,21 +260,24 @@ public class CommentRepository implements ICommentRepository {
                 .build();
     }
 
+    /**
+     * 将评论实体转换为Comment
+     */
     private Comment convertToComment(CommentEntity entity) {
         if (entity == null) {
             return null;
         }
-        Comment comment = new Comment();
-        comment.setId(entity.getId());
-        comment.setType(entity.getType());
-        comment.setTargetId(entity.getTargetId());
-        comment.setParentId(entity.getParentId());
-        comment.setUserId(entity.getUserId());
-        comment.setReplyUserId(entity.getReplyUserId());
-        comment.setContent(entity.getContent());
-        comment.setCreateTime(entity.getCreateTime());
-        comment.setUpdateTime(entity.getUpdateTime());
-        return comment;
+        return Comment.builder()
+                .id(entity.getId())
+                .type(entity.getType() != null ? entity.getType().getValue() : null)
+                .targetId(entity.getTargetId())
+                .parentId(entity.getParentId())
+                .userId(entity.getUserId())
+                .replyUserId(entity.getReplyUserId())
+                .content(entity.getContent())
+                .createTime(entity.getCreateTime())
+                .updateTime(entity.getUpdateTime())
+                .build();
     }
 
     private CommentEntity convertToCommentEntity(Comment comment) {

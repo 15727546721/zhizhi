@@ -1,13 +1,14 @@
 package cn.xu.infrastructure.config;
 
 import cn.xu.domain.article.event.ArticleEventWrapper;
-import cn.xu.domain.article.service.article.ArticleDomainEventHandler;
+import cn.xu.domain.article.service.impl.ArticleDomainEventHandler;
 import cn.xu.domain.like.event.LikeEvent;
 import cn.xu.domain.like.event.LikeEventHandler;
 import cn.xu.domain.logging.event.OperationLogEvent;
 import cn.xu.domain.logging.event.factory.OperationLogEventFactory;
 import cn.xu.domain.logging.event.handler.OperationLogEventHandler;
-import cn.xu.domain.message.event.MessageEvent;
+import cn.xu.domain.message.event.BaseMessageEvent;
+import cn.xu.domain.message.event.SystemMessageEvent;
 import cn.xu.domain.message.event.handler.MessageEventHandler;
 import com.lmax.disruptor.BlockingWaitStrategy;
 import com.lmax.disruptor.EventFactory;
@@ -82,8 +83,8 @@ public class DisruptorConfig {
     }
 
     @Bean(name = "messageRingBuffer")
-    public RingBuffer<MessageEvent> messageRingBuffer() {
-        Disruptor<MessageEvent> disruptor = new Disruptor<>(
+    public RingBuffer<BaseMessageEvent> messageRingBuffer() {
+        Disruptor<BaseMessageEvent> disruptor = new Disruptor<>(
                 new MessageEventFactory(),
                 2048,
                 DaemonThreadFactory.INSTANCE,
@@ -110,17 +111,11 @@ public class DisruptorConfig {
         }
     }
 
-    private static class MessageEventFactory implements EventFactory<MessageEvent> {
+    private static class MessageEventFactory implements EventFactory<BaseMessageEvent> {
         @Override
-        public MessageEvent newInstance() {
-            return MessageEvent.builder()
-                    .type(null)
-                    .senderId(null)
-                    .receiverId(null)
-                    .title(null)
-                    .content(null)
-                    .targetId(null)
-                    .build();
+        public BaseMessageEvent newInstance() {
+            return SystemMessageEvent.builder()
+                    .build();  // 简化初始化，所有字段默认为null
         }
     }
 } 

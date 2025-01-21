@@ -2,7 +2,7 @@ package cn.xu.domain.article.event.strategy;
 
 import cn.xu.domain.article.event.ArticleEvent;
 import cn.xu.domain.article.model.entity.ArticleEntity;
-import cn.xu.domain.article.service.article.ArticleIndexService;
+import cn.xu.domain.article.service.impl.ArticleIndexService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 

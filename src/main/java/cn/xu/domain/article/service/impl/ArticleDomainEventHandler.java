@@ -1,4 +1,4 @@
-package cn.xu.domain.article.service.article;
+package cn.xu.domain.article.service.impl;
 
 import cn.xu.domain.article.event.ArticleEvent;
 import cn.xu.domain.article.event.ArticleEventWrapper;

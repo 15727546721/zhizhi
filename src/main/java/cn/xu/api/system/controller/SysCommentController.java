@@ -5,7 +5,7 @@ import cn.xu.api.web.model.dto.comment.CommentRequest;
 import cn.xu.api.web.model.vo.comment.CommentVO;
 import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.comment.model.entity.CommentEntity;
-import cn.xu.domain.comment.service.comment.CommentService;
+import cn.xu.domain.comment.service.impl.CommentService;
 import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.common.request.PageRequest;
 import cn.xu.infrastructure.common.response.PageResponse;

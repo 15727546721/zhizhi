@@ -7,7 +7,7 @@ import cn.xu.domain.topic.command.CreateTopicCommand;
 import cn.xu.domain.topic.entity.Topic;
 import cn.xu.domain.topic.model.entity.TopicCategoryEntity;
 import cn.xu.domain.topic.service.ITopicCategoryService;
-import cn.xu.domain.topic.service.TopicService;
+import cn.xu.domain.topic.service.impl.TopicService;
 import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.common.response.ResponseEntity;
 import io.swagger.v3.oas.annotations.Operation;

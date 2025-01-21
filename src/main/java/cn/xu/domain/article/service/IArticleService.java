@@ -21,8 +21,6 @@ public interface IArticleService {
 
     void updateArticle(ArticleEntity articleEntity);
 
-    ArticleEntity getArticleById(Long id);
-
     List<ArticleListVO> getArticleByCategory(Long categoryId);
 
     /**
@@ -64,4 +62,18 @@ public interface IArticleService {
      * @return 所有文章列表
      */
     List<ArticleEntity> getAllArticles();
+
+    /**
+     * 获取文章作者ID
+     * @param articleId 文章ID
+     * @return 作者ID，如果文章不存在则返回null
+     */
+    Long getArticleAuthorId(Long articleId);
+
+    /**
+     * 获取文章详细信息
+     * @param articleId 文章ID
+     * @return 文章实体，不存在则返回null
+     */
+    ArticleEntity getArticleById(Long articleId);
 }

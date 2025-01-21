@@ -25,12 +25,18 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * 用户服务实现类
+ * 负责用户相关的核心业务逻辑，包括用户信息的增删改查、认证授权等
+ *
+ * @author xu
+ */
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements IUserService {
@@ -43,43 +49,125 @@ public class UserServiceImpl implements IUserService {
     private IFileStorageService fileStorageService;
 
     @Override
+    public UserEntity getUserById(Long userId) {
+        if (userId == null) {
+            log.error("[用户服务] 获取用户信息失败：用户ID为空");
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "用户ID不能为空");
+        }
+
+        try {
+            log.info("[用户服务] 开始获取用户信息 - userId: {}", userId);
+            return userRepository.findById(userId)
+                    .orElse(null);
+        } catch (Exception e) {
+            log.error("[用户服务] 获取用户信息失败 - userId: {}", userId, e);
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "获取用户信息失败：" + e.getMessage());
+        }
+    }
+
+    @Override
     @Transactional
     public UserEntity register(RegisterRequest request) {
-        validateUsernameAndEmail(request.getUsername(), request.getEmail());
-
-        UserEntity user = createUserEntity(request);
-        return userRepository.save(user);
+        try {
+            log.info("[用户服务] 开始用户注册 - username: {}", request.getUsername());
+            
+            // 1. 验证用户名是否已存在
+            if (userRepository.existsByUsername(request.getUsername())) {
+                throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "用户名已存在");
+            }
+            
+            // 2. 创建用户实体
+            UserEntity user = UserEntity.builder()
+                    .username(request.getUsername())
+                    .password(SaSecureUtil.sha256(request.getPassword()))
+                    .nickname(request.getNickname())
+                    .createTime(LocalDateTime.now())
+                    .updateTime(LocalDateTime.now())
+                    .build();
+            
+            // 3. 保存用户
+            userRepository.save(user);
+            log.info("[用户服务] 用户注册成功 - userId: {}", user.getId());
+            
+            return user;
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("[用户服务] 用户注册失败 - username: {}", request.getUsername(), e);
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "注册失败：" + e.getMessage());
+        }
     }
 
     @Override
     public UserEntity login(LoginRequest request) {
-        UserEntity user = userRepository.findByEmail(new Email(request.getEmail()))
-                .filter(u -> validatePassword(u, request.getPassword()))
-                .orElseThrow(() -> new BusinessException("用户名或密码错误"));
-
-        StpUtil.login(user.getId());
-        return user;
+        try {
+            log.info("[用户服务] 用户登录请求 - email: {}", request.getEmail());
+            
+            // 1. 获取用户信息
+            UserEntity user = userRepository.findByEmail(new Email(request.getEmail()))
+                    .filter(u -> validatePassword(u, request.getPassword()))
+                    .orElseThrow(() -> new BusinessException(ResponseCode.UN_ERROR.getCode(), "用户名或密码错误"));
+            
+            log.info("[用户服务] 用户登录成功 - userId: {}", user.getId());
+            StpUtil.login(user.getId());
+            return user;
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("[用户服务] 用户登录失败 - email: {}", request.getEmail(), e);
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "登录失败：" + e.getMessage());
+        }
     }
 
     @Override
     public UserEntity getUserInfo(Long userId) {
-        return userRepository.findById(userId)
-                .orElseThrow(() -> new BusinessException("用户不存在"));
+        UserEntity user = getUserById(userId);
+        if (user == null) {
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "用户不存在");
+        }
+        return user;
     }
 
     @Override
     @Transactional
-    public UserEntity updateUserInfo(Long userId, String nickname, String avatar,
-                                     Integer gender, String region, String birthday,
-                                     String description) {
-        UserEntity user = getUserInfo(userId);
-        user.setNickname(nickname);
-        user.setAvatar(avatar);
-        user.setGender(gender);
-        user.setRegion(region);
-        user.setBirthday(birthday);
-        user.setDescription(description);
-        return userRepository.save(user);
+    public void updateUserInfo(UserInfoEntity userInfoEntity) {
+        try {
+            log.info("[用户服务] 开始更新用户信息 - userId: {}", userInfoEntity.getId());
+            
+            // 1. 获取当前用户
+            Long userId = StpUtil.getLoginIdAsLong();
+            UserEntity user = getUserInfo(userId);
+            
+            // 2. 更新用户信息
+            updateUserFields(user, userInfoEntity);
+            
+            // 3. 保存更新
+            userRepository.save(user);
+            log.info("[用户服务] 用户信息更新成功 - userId: {}", userId);
+            
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("[用户服务] 更新用户信息失败 - userInfo: {}", userInfoEntity, e);
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "更新用户信息失败：" + e.getMessage());
+        }
+    }
+
+    /**
+     * 更新用户字段信息
+     * 
+     * @param user 用户实体
+     * @param userInfo 用户信息实体
+     */
+    private void updateUserFields(UserEntity user, UserInfoEntity userInfo) {
+        user.setNickname(userInfo.getNickname());
+        user.setAvatar(userInfo.getAvatar());
+        user.setGender(userInfo.getGender());
+        user.setRegion(userInfo.getRegion());
+        user.setBirthday(userInfo.getBirthday());
+        user.setDescription(userInfo.getDescription());
+        user.setPhone(userInfo.getPhone());
+        user.setUpdateTime(LocalDateTime.now());
     }
 
     @Override
@@ -172,32 +260,18 @@ public class UserServiceImpl implements IUserService {
     }
 
     @Override
-    @Transactional
-    public void updateUserInfo(UserInfoEntity userInfoEntity) {
-        Long userId = StpUtil.getLoginIdAsLong();
-        UserEntity user = getUserInfo(userId);
-
-        user.setNickname(userInfoEntity.getNickname());
-        user.setAvatar(userInfoEntity.getAvatar());
-        user.setGender(userInfoEntity.getGender());
-        user.setPhone(userInfoEntity.getPhone());
-        user.setRegion(userInfoEntity.getRegion());
-        user.setBirthday(userInfoEntity.getBirthday());
-        user.setDescription(userInfoEntity.getDescription());
-
-        userRepository.save(user);
-    }
-
-    @Override
     @Transactional(rollbackFor = Exception.class)
     public String uploadAvatar(MultipartFile file) {
-        // 获取当前用户
-        UserEntity currentUser = getCurrentUser();
-        if (currentUser == null) {
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "用户未登录");
-        }
-
         try {
+            log.info("[用户服务] 开始上传用户头像 - fileName: {}, size: {}", 
+                    file.getOriginalFilename(), file.getSize());
+            
+            // 获取当前用户
+            UserEntity currentUser = getCurrentUser();
+            if (currentUser == null) {
+                throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "用户未登录");
+            }
+
             // 生成文件存储路径
             String fileName = String.format("avatar/%s/%s_%s", 
                 LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMM")),
@@ -225,9 +299,10 @@ public class UserServiceImpl implements IUserService {
                 }
             }
 
+            log.info("[用户服务] 用户头像上传成功 - url: {}", avatarUrl);
             return avatarUrl;
         } catch (Exception e) {
-            log.error("上传头像失败", e);
+            log.error("[用户服务] 上传用户头像失败", e);
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "上传头像失败：" + e.getMessage());
         }
     }
@@ -247,28 +322,35 @@ public class UserServiceImpl implements IUserService {
     @Override
     public Map<Long, UserEntity> getUserMapByIds(Set<Long> userIds) {
         if (userIds == null || userIds.isEmpty()) {
-            return new HashMap<>();
+            log.warn("[用户服务] 批量获取用户信息：用户ID集合为空");
+            return Collections.emptyMap();
         }
-        
-        // 批量查询用户信息
-        List<UserEntity> userList = userRepository.findByIds(userIds);
-        
-        // 转换为Map
-        return userList.stream()
-                .collect(Collectors.toMap(
-                        UserEntity::getId,
-                        user -> user,
-                        (existing, replacement) -> existing
-                ));
+
+        try {
+            log.info("[用户服务] 开始批量获取用户信息 - userIds: {}", userIds);
+            List<UserEntity> users = userRepository.findByIds(userIds);
+            
+            Map<Long, UserEntity> userMap = users.stream()
+                    .collect(Collectors.toMap(UserEntity::getId, user -> user));
+            
+            log.debug("[用户服务] 批量获取用户信息成功 - 请求数量: {}, 实际获取: {}", userIds.size(), users.size());
+            return userMap;
+        } catch (Exception e) {
+            log.error("[用户服务] 批量获取用户信息失败 - userIds: {}", userIds, e);
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "批量获取用户信息失败：" + e.getMessage());
+        }
     }
 
     @Override
     public Long getCurrentUserId() {
         try {
-            return StpUtil.getLoginIdAsLong();
+            // 从当前上下文获取用户ID的具体实现
+            Long userId = StpUtil.getLoginIdAsLong();
+            log.debug("[用户服务] 获取当前用户ID - userId: {}", userId);
+            return userId;
         } catch (Exception e) {
-            log.error("获取当前用户ID失败", e);
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "用户未登录");
+            log.error("[用户服务] 获取当前用户ID失败", e);
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "获取当前用户信息失败");
         }
     }
 
@@ -279,17 +361,6 @@ public class UserServiceImpl implements IUserService {
         if (userRepository.existsByEmail(new Email(email))) {
             throw new BusinessException("邮箱已被注册");
         }
-    }
-
-    private UserEntity createUserEntity(RegisterRequest request) {
-        return UserEntity.builder()
-                .username(request.getUsername())
-                .password(SaSecureUtil.sha256(request.getPassword()))
-                .email(request.getEmail())
-                .nickname(request.getUsername())
-                .phone(request.getPhone())
-                .status(0)
-                .build();
     }
 
     private boolean validatePassword(UserEntity user, String password) {

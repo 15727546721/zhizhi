@@ -3,7 +3,7 @@ package cn.xu.api.web.controller;
 
 import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.article.model.entity.TagEntity;
-import cn.xu.domain.article.service.article.TagService;
+import cn.xu.domain.article.service.impl.TagService;
 import cn.xu.infrastructure.common.response.ResponseEntity;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.GetMapping;

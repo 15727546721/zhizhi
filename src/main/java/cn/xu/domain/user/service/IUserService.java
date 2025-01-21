@@ -36,13 +36,6 @@ public interface IUserService {
     UserEntity getUserInfo(Long userId);
 
     /**
-     * 更新用户信息
-     */
-    UserEntity updateUserInfo(Long userId, String nickname, String avatar,
-                              Integer gender, String region, String birthday,
-                              String description);
-
-    /**
      * 修改密码
      */
     void changePassword(Long userId, String oldPassword, String newPassword);
@@ -106,4 +99,12 @@ public interface IUserService {
      * @return 用户信息Map, key为用户ID, value为用户信息
      */
     Map<Long, UserEntity> getUserMapByIds(Set<Long> userIds);
+
+    /**
+     * 根据用户ID获取用户信息
+     *
+     * @param userId 用户ID
+     * @return 用户实体，如果不存在则返回null
+     */
+    UserEntity getUserById(Long userId);
 }

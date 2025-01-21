@@ -1,18 +1,24 @@
-package cn.xu.domain.comment.service.comment;
+package cn.xu.domain.comment.service.impl;
 
 import cn.xu.api.system.model.vo.comment.CommentReplyVO;
 import cn.xu.api.web.model.dto.comment.CommentRequest;
 import cn.xu.api.web.model.vo.comment.CommentVO;
 import cn.xu.application.common.ResponseCode;
+import cn.xu.domain.article.service.IArticleService;
 import cn.xu.domain.comment.model.entity.CommentEntity;
 import cn.xu.domain.comment.model.valueobject.CommentType;
 import cn.xu.domain.comment.repository.ICommentRepository;
 import cn.xu.domain.comment.service.ICommentService;
+import cn.xu.domain.message.event.BaseMessageEvent;
+import cn.xu.domain.message.event.factory.MessageEventFactory;
+import cn.xu.domain.message.service.MessagePublisher;
+import cn.xu.domain.topic.service.ITopicService;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.service.IUserService;
 import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.common.request.PageRequest;
 import cn.xu.infrastructure.common.response.PageResponse;
+import cn.xu.infrastructure.persistent.po.Comment;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +26,9 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.annotation.Resource;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static cn.xu.domain.comment.model.valueobject.CommentType.ARTICLE;
+import static cn.xu.domain.comment.model.valueobject.CommentType.TOPIC;
 
 @Slf4j
 @Service
@@ -31,6 +40,18 @@ public class CommentService implements ICommentService {
     @Resource
     private IUserService userService;
 
+    @Resource
+    private IArticleService articleService;
+
+    @Resource
+    private ITopicService topicService;
+
+    @Resource
+    private MessagePublisher messagePublisher;
+
+    @Resource
+    private MessageEventFactory messageEventFactory;
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void saveComment(CommentRequest request) {
@@ -40,6 +61,10 @@ public class CommentService implements ICommentService {
 
             // 1. 获取当前用户
             Long currentUserId = userService.getCurrentUserId();
+            UserEntity currentUser = userService.getUserById(currentUserId);
+            if (currentUser == null) {
+                throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "用户信息不存在");
+            }
 
             // 2. 构建评论实体
             CommentEntity commentEntity = CommentEntity.builder()
@@ -54,16 +79,13 @@ public class CommentService implements ICommentService {
             // 3. 验证评论数据
             commentEntity.validate();
 
-            // 4. 如果是回复评论，验证父评论
+            // 4. 处理评论并发送消息
             if (request.getParentId() != null) {
-                CommentEntity parentComment = getCommentById(request.getParentId());
-                if (parentComment == null) {
-                    throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "回复的评论不存在");
-                }
-                // 确保回复的是一级评论
-                if (parentComment.getParentId() != null) {
-                    throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "只能回复一级评论");
-                }
+                // 回复评论的情况
+                handleReplyComment(commentEntity, currentUser);
+            } else {
+                // 一级评论的情况
+                handleRootComment(commentEntity, currentUser);
             }
 
             // 5. 保存评论
@@ -79,15 +101,161 @@ public class CommentService implements ICommentService {
         }
     }
 
+    /**
+     * 处理回复评论
+     */
+    private void handleReplyComment(CommentEntity comment, UserEntity currentUser) {
+        // 1. 获取父评论
+        CommentEntity parentComment = getCommentById(comment.getParentId());
+        if (parentComment == null) {
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "回复的评论不存在");
+        }
+
+        // 2. 确保回复的是一级评论
+        if (parentComment.getParentId() != null) {
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "只能回复一级评论");
+        }
+
+        // 3. 获取被回复用户信息
+        UserEntity replyToUser = userService.getUserById(parentComment.getUserId());
+        if (replyToUser == null) {
+            log.warn("被回复的用户不存在 - userId: {}", parentComment.getUserId());
+            return;
+        }
+
+        // 4. 发送消息通知被回复的用户
+        BaseMessageEvent event = messageEventFactory.createCommentEvent(
+                currentUser.getId(),
+                replyToUser.getId(),
+                String.format("用户 %s 回复了你的评论: %s",
+                    currentUser.getNickname(),
+                    comment.getContent()),
+                comment.getTargetId()
+        );
+        messagePublisher.publishMessage(event);
+    }
+
+    /**
+     * 处理一级评论
+     * 根据评论类型分别处理文章评论、话题评论等
+     */
+    private void handleRootComment(CommentEntity comment, UserEntity currentUser) {
+        log.debug("[评论服务] 开始处理一级评论 - type: {}, targetId: {}, userId: {}", 
+                comment.getType(), comment.getTargetId(), currentUser.getId());
+
+        if (CommentType.ARTICLE.equals(comment.getType())) {
+            handleArticleComment(comment, currentUser);
+        } else if (CommentType.TOPIC.equals(comment.getType())) {
+            handleTopicComment(comment, currentUser);
+        } else {
+            log.warn("[评论服务] 未知的评论类型 - type: {}", comment.getType());
+        }
+    }
+
+    /**
+     * 处理文章评论
+     */
+    private void handleArticleComment(CommentEntity comment, UserEntity currentUser) {
+        // 1. 获取文章作者ID
+        Long authorId = articleService.getArticleAuthorId(comment.getTargetId());
+        if (authorId == null) {
+            log.warn("[评论服务] 文章不存在或无法获取作者信息 - articleId: {}", comment.getTargetId());
+            return;
+        }
+
+        // 2. 获取文章作者信息
+        UserEntity author = userService.getUserById(authorId);
+        if (author == null) {
+            log.warn("[评论服务] 文章作者信息不存在 - authorId: {}", authorId);
+            return;
+        }
+
+        // 3. 如果评论者不是作者本人，才发送消息通知
+        if (!authorId.equals(currentUser.getId())) {
+            sendCommentNotification(currentUser, author, comment);
+        } else {
+            log.debug("[评论服务] 作者评论自己的文章，不发送通知 - authorId: {}", authorId);
+        }
+    }
+
+    /**
+     * 处理话题评论
+     */
+    private void handleTopicComment(CommentEntity comment, UserEntity currentUser) {
+        // 1. 获取话题作者ID
+        Long authorId = topicService.getTopicAuthorId(comment.getTargetId());
+        if (authorId == null) {
+            log.warn("[评论服务] 话题不存在或无法获取作者信息 - topicId: {}", comment.getTargetId());
+            return;
+        }
+
+        // 2. 获取话题作者信息
+        UserEntity author = userService.getUserById(authorId);
+        if (author == null) {
+            log.warn("[评论服务] 话题作者信息不存在 - authorId: {}", authorId);
+            return;
+        }
+
+        // 3. 如果评论者不是作者本人，才发送消息通知
+        if (!authorId.equals(currentUser.getId())) {
+            sendCommentNotification(currentUser, author, comment);
+        } else {
+            log.debug("[评论服务] 作者评论自己的话题，不发送通知 - authorId: {}", authorId);
+        }
+    }
+
+    /**
+     * 发送评论通知
+     */
+    private void sendCommentNotification(UserEntity fromUser, UserEntity toUser, CommentEntity comment) {
+        String content = String.format("用户 %s 评论了你的%s: %s",
+                fromUser.getNickname(),
+                getCommentTargetType(comment.getType()),
+                comment.getContent().length() > 50 ? comment.getContent().substring(0, 50) + "..." : comment.getContent());
+
+        BaseMessageEvent event = messageEventFactory.createCommentEvent(
+                fromUser.getId(),
+                toUser.getId(),
+                content,
+                comment.getTargetId()
+        );
+        messagePublisher.publishMessage(event);
+        log.debug("[评论服务] 已发送评论通知 - from: {}, to: {}", fromUser.getId(), toUser.getId());
+    }
+
+    /**
+     * 获取评论目标类型的描述
+     */
+    private String getCommentTargetType(CommentType type) {
+        if (type == null) {
+            return "内容";
+        }
+        switch (type) {
+            case ARTICLE:
+                return "文章";
+            case TOPIC:
+                return "话题";
+            default:
+                return "内容";
+        }
+    }
+
+    /**
+     * 获取一级评论列表
+     */
+    private List<CommentEntity> findRootComments(Long targetId, CommentType type) {
+        return commentRepository.findRootComments(targetId, type != null ? type.getValue() : null);
+    }
+
     @Override
     public List<CommentEntity> getPagedComments(CommentType type, Long targetId, Integer pageNum, Integer pageSize) {
         try {
             log.info("开始分页查询评论列表 - type: {}, targetId: {}, pageNum: {}, pageSize: {}", 
-                    type.getDescription(), targetId, pageNum, pageSize);
+                    type != null ? type.getDescription() : "null", targetId, pageNum, pageSize);
 
             // 1. 获取分页的一级评论
             List<CommentEntity> rootComments = commentRepository.findRootCommentsByPage(
-                    type.getValue(), targetId, (pageNum - 1) * pageSize, pageSize);
+                    type != null ? type.getValue() : null, targetId, (pageNum - 1) * pageSize, pageSize);
 
             if (rootComments.isEmpty()) {
                 return Collections.emptyList();
@@ -379,7 +547,27 @@ public class CommentService implements ICommentService {
         }
         return CommentVO.builder()
                 .id(entity.getId())
-                .type(entity.getType())
+                .type(entity.getType().getValue())
+                .targetId(entity.getTargetId())
+                .parentId(entity.getParentId())
+                .userId(entity.getUserId())
+                .replyUserId(entity.getReplyUserId())
+                .content(entity.getContent())
+                .createTime(entity.getCreateTime())
+                .updateTime(entity.getUpdateTime())
+                .build();
+    }
+
+    /**
+     * 将评论实体转换为Comment
+     */
+    private Comment convertToComment(CommentEntity entity) {
+        if (entity == null) {
+            return null;
+        }
+        return Comment.builder()
+                .id(entity.getId())
+                .type(entity.getType() != null ? entity.getType().getValue() : null)
                 .targetId(entity.getTargetId())
                 .parentId(entity.getParentId())
                 .userId(entity.getUserId())

@@ -1,4 +1,4 @@
-package cn.xu.domain.article.task;
+package cn.xu.application.task;
 
 import cn.xu.domain.article.repository.IArticleRepository;
 import lombok.extern.slf4j.Slf4j;

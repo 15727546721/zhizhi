@@ -1,22 +1,20 @@
 package cn.xu.domain.message.event.handler;
 
-import cn.xu.domain.message.event.MessageEvent;
+import cn.xu.domain.message.event.BaseMessageEvent;
 import cn.xu.domain.message.model.entity.MessageEntity;
 import cn.xu.domain.message.service.IMessageService;
 import com.lmax.disruptor.EventHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.util.Date;
-
 @Component
 @RequiredArgsConstructor
-public class MessageEventHandler implements EventHandler<MessageEvent> {
+public class MessageEventHandler implements EventHandler<BaseMessageEvent> {
     
     private final IMessageService messageService;
 
     @Override
-    public void onEvent(MessageEvent event, long sequence, boolean endOfBatch) {
+    public void onEvent(BaseMessageEvent event, long sequence, boolean endOfBatch) {
         MessageEntity message = MessageEntity.builder()
                 .type(event.getType())
                 .senderId(event.getSenderId())
@@ -25,8 +23,8 @@ public class MessageEventHandler implements EventHandler<MessageEvent> {
                 .content(event.getContent())
                 .targetId(event.getTargetId())
                 .isRead(false)
-                .createTime(new Date())
-                .updateTime(new Date())
+                .createTime(event.getOccurredTime())
+                .updateTime(event.getOccurredTime())
                 .build();
                 
         messageService.sendMessage(message);
