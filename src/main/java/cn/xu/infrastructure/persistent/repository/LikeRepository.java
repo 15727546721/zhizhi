@@ -1,10 +1,9 @@
 package cn.xu.infrastructure.persistent.repository;
 
-import cn.xu.domain.like.model.Like;
 import cn.xu.domain.like.model.LikeType;
 import cn.xu.domain.like.repository.ILikeRepository;
 import cn.xu.infrastructure.persistent.dao.ILikeDao;
-import cn.xu.infrastructure.persistent.po.LikePO;
+import cn.xu.infrastructure.persistent.po.Like;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
@@ -24,12 +23,12 @@ public class LikeRepository implements ILikeRepository {
     private final ILikeDao likeDao;
 
     @Override
-    public void save(Like like) {
+    public void save(cn.xu.domain.like.model.Like like) {
         try {
-            LikePO po = convertToPO(like);
+            Like po = convertToPO(like);
             if (like.isLiked()) {
                 // 如果记录不存在则插入，存在则更新
-                LikePO existingPO = likeDao.findByUserIdAndTargetIdAndType(
+                Like existingPO = likeDao.findByUserIdAndTargetIdAndType(
                         like.getUserId(), like.getTargetId(), like.getType().getCode());
                 if (existingPO == null) {
                     po.setCreateTime(LocalDateTime.now());
@@ -69,7 +68,7 @@ public class LikeRepository implements ILikeRepository {
     @Override
     public boolean isLiked(Long userId, Long targetId, LikeType type) {
         try {
-            LikePO po = likeDao.findByUserIdAndTargetIdAndType(userId, targetId, type.getCode());
+            Like po = likeDao.findByUserIdAndTargetIdAndType(userId, targetId, type.getCode());
             return po != null && po.getStatus() == 1;
         } catch (Exception e) {
             log.error("MySQL获取点赞状态失败: userId={}, targetId={}, type={}, error={}",
@@ -81,7 +80,7 @@ public class LikeRepository implements ILikeRepository {
     @Override
     public void delete(Long userId, Long targetId, LikeType type) {
         try {
-            LikePO po = likeDao.findByUserIdAndTargetIdAndType(userId, targetId, type.getCode());
+            Like po = likeDao.findByUserIdAndTargetIdAndType(userId, targetId, type.getCode());
             if (po != null) {
                 po.setStatus(0);
                 po.setUpdateTime(LocalDateTime.now());
@@ -108,9 +107,9 @@ public class LikeRepository implements ILikeRepository {
     }
 
     @Override
-    public Set<Like> getPageByType(LikeType type, Integer offset, Integer limit) {
+    public Set<cn.xu.domain.like.model.Like> getPageByType(LikeType type, Integer offset, Integer limit) {
         try {
-            Set<LikePO> pos = likeDao.getPageByType(type.getCode(), offset, limit);
+            Set<Like> pos = likeDao.getPageByType(type.getCode(), offset, limit);
             return pos.stream()
                     .map(this::convertToDomain)
                     .collect(Collectors.toSet());
@@ -143,8 +142,8 @@ public class LikeRepository implements ILikeRepository {
         log.debug("MySQL不需要实现缓存清理操作");
     }
 
-    private LikePO convertToPO(Like like) {
-        LikePO po = new LikePO();
+    private Like convertToPO(cn.xu.domain.like.model.Like like) {
+        Like po = new Like();
         po.setUserId(like.getUserId());
         po.setTargetId(like.getTargetId());
         po.setType(like.getType().getCode());
@@ -162,9 +161,9 @@ public class LikeRepository implements ILikeRepository {
         return po;
     }
 
-    private Like convertToDomain(LikePO po) {
+    private cn.xu.domain.like.model.Like convertToDomain(Like po) {
         // 创建Like对象，注意：这里会默认设置liked=true和当前时间
-        Like like = Like.create(po.getUserId(), po.getTargetId(), LikeType.fromCode(po.getType()));
+        cn.xu.domain.like.model.Like like = cn.xu.domain.like.model.Like.create(po.getUserId(), po.getTargetId(), LikeType.fromCode(po.getType()));
 
         // 设置ID
         like.setId(po.getId());

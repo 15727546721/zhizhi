@@ -3,11 +3,12 @@ package cn.xu.infrastructure.persistent.po;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Data
 @Accessors(chain = true)
-public class UserFollowPO {
+public class UserFollow implements Serializable {
     /**
      * 关注关系ID
      */

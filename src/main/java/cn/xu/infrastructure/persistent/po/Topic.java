@@ -17,7 +17,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class TopicPO {
+public class Topic {
     /**
      * 话题ID
      */

@@ -3,7 +3,7 @@ package cn.xu.domain.topic.service;
 import cn.xu.api.web.model.dto.topic.TopicResponse;
 import cn.xu.api.web.model.dto.topic.TopicUpdateRequest;
 import cn.xu.domain.topic.command.CreateTopicCommand;
-import cn.xu.domain.topic.entity.Topic;
+import cn.xu.domain.topic.model.entity.Topic;
 import cn.xu.infrastructure.common.request.PageRequest;
 
 import java.util.List;

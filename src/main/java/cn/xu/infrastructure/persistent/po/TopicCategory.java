@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class TopicCategoryPO {
+public class TopicCategory {
 
     /**
      * 分类ID

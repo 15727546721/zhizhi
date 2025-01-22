@@ -5,7 +5,7 @@ import cn.xu.domain.topic.model.entity.TopicCategoryEntity;
 import cn.xu.domain.topic.repository.ITopicCategoryRepository;
 import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.persistent.dao.ITopicCategoryDao;
-import cn.xu.infrastructure.persistent.po.TopicCategoryPO;
+import cn.xu.infrastructure.persistent.po.TopicCategory;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,7 +27,7 @@ public class TopicCategoryRepositoryImpl implements ITopicCategoryRepository {
     public Long save(TopicCategoryEntity categoryEntity) {
         try {
             log.info("保存话题分类: {}", categoryEntity);
-            TopicCategoryPO categoryPO = convertToTopicCategoryPO(categoryEntity);
+            TopicCategory categoryPO = convertToTopicCategoryPO(categoryEntity);
             int rows = topicCategoryDao.insert(categoryPO);
             if (rows <= 0) {
                 throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "保存话题分类失败");
@@ -44,7 +44,7 @@ public class TopicCategoryRepositoryImpl implements ITopicCategoryRepository {
     public void update(TopicCategoryEntity categoryEntity) {
         try {
             log.info("更新话题分类: {}", categoryEntity);
-            TopicCategoryPO categoryPO = convertToTopicCategoryPO(categoryEntity);
+            TopicCategory categoryPO = convertToTopicCategoryPO(categoryEntity);
             int rows = topicCategoryDao.update(categoryPO);
             if (rows <= 0) {
                 throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "更新话题分类失败");
@@ -74,7 +74,7 @@ public class TopicCategoryRepositoryImpl implements ITopicCategoryRepository {
     public TopicCategoryEntity findById(Long id) {
         try {
             log.info("查询话题分类: {}", id);
-            TopicCategoryPO categoryPO = topicCategoryDao.findById(id);
+            TopicCategory categoryPO = topicCategoryDao.findById(id);
             return categoryPO != null ? convertToTopicCategoryEntity(categoryPO) : null;
         } catch (Exception e) {
             log.error("查询话题分类失败: {}", id, e);
@@ -86,7 +86,7 @@ public class TopicCategoryRepositoryImpl implements ITopicCategoryRepository {
     public List<TopicCategoryEntity> findAll() {
         try {
             log.info("查询所有话题分类");
-            List<TopicCategoryPO> categoryPOs = topicCategoryDao.findAll();
+            List<TopicCategory> categoryPOs = topicCategoryDao.findAll();
             if (categoryPOs == null || categoryPOs.isEmpty()) {
                 return Collections.emptyList();
             }
@@ -103,7 +103,7 @@ public class TopicCategoryRepositoryImpl implements ITopicCategoryRepository {
     public TopicCategoryEntity findByName(String name) {
         try {
             log.info("根据名称查询话题分类: {}", name);
-            TopicCategoryPO categoryPO = topicCategoryDao.findByName(name);
+            TopicCategory categoryPO = topicCategoryDao.findByName(name);
             return categoryPO != null ? convertToTopicCategoryEntity(categoryPO) : null;
         } catch (Exception e) {
             log.error("根据名称查询话题分类失败: {}", name, e);
@@ -114,11 +114,11 @@ public class TopicCategoryRepositoryImpl implements ITopicCategoryRepository {
     /**
      * 将领域实体转换为PO对象
      */
-    private TopicCategoryPO convertToTopicCategoryPO(TopicCategoryEntity categoryEntity) {
+    private TopicCategory convertToTopicCategoryPO(TopicCategoryEntity categoryEntity) {
         if (categoryEntity == null) {
             return null;
         }
-        return TopicCategoryPO.builder()
+        return TopicCategory.builder()
                 .id(categoryEntity.getId())
                 .name(categoryEntity.getName())
                 .description(categoryEntity.getDescription())
@@ -131,7 +131,7 @@ public class TopicCategoryRepositoryImpl implements ITopicCategoryRepository {
     /**
      * 将PO对象转换为领域实体
      */
-    private TopicCategoryEntity convertToTopicCategoryEntity(TopicCategoryPO categoryPO) {
+    private TopicCategoryEntity convertToTopicCategoryEntity(TopicCategory categoryPO) {
         if (categoryPO == null) {
             return null;
         }

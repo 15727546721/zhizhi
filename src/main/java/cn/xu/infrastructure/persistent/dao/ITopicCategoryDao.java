@@ -1,6 +1,6 @@
 package cn.xu.infrastructure.persistent.dao;
 
-import cn.xu.infrastructure.persistent.po.TopicCategoryPO;
+import cn.xu.infrastructure.persistent.po.TopicCategory;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -17,7 +17,7 @@ public interface ITopicCategoryDao {
      * @param categoryPO 分类PO
      * @return 影响行数
      */
-    int insert(TopicCategoryPO categoryPO);
+    int insert(TopicCategory categoryPO);
 
     /**
      * 更新分类
@@ -25,7 +25,7 @@ public interface ITopicCategoryDao {
      * @param categoryPO 分类PO
      * @return 影响行数
      */
-    int update(TopicCategoryPO categoryPO);
+    int update(TopicCategory categoryPO);
 
     /**
      * 删除分类
@@ -41,14 +41,14 @@ public interface ITopicCategoryDao {
      * @param id 分类ID
      * @return 分类PO
      */
-    TopicCategoryPO findById(@Param("id") Long id);
+    TopicCategory findById(@Param("id") Long id);
 
     /**
      * 查询所有分类
      *
      * @return 分类PO列表
      */
-    List<TopicCategoryPO> findAll();
+    List<TopicCategory> findAll();
 
     /**
      * 根据名称查询分类
@@ -56,5 +56,5 @@ public interface ITopicCategoryDao {
      * @param name 分类名称
      * @return 分类PO
      */
-    TopicCategoryPO findByName(@Param("name") String name);
+    TopicCategory findByName(@Param("name") String name);
 } 

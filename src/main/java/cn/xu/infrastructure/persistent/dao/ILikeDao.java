@@ -1,6 +1,6 @@
 package cn.xu.infrastructure.persistent.dao;
 
-import cn.xu.infrastructure.persistent.po.LikePO;
+import cn.xu.infrastructure.persistent.po.Like;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -14,19 +14,19 @@ public interface ILikeDao {
     /**
      * 插入点赞记录
      */
-    void insert(LikePO po);
+    void insert(Like po);
 
     /**
      * 更新点赞记录
      */
-    void update(LikePO po);
+    void update(Like po);
 
     /**
      * 根据用户ID、目标ID和类型查询点赞记录
      */
-    LikePO findByUserIdAndTargetIdAndType(@Param("userId") Long userId,
-                                          @Param("targetId") Long targetId,
-                                          @Param("type") Integer type);
+    Like findByUserIdAndTargetIdAndType(@Param("userId") Long userId,
+                                        @Param("targetId") Long targetId,
+                                        @Param("type") Integer type);
 
     /**
      * 统计目标的点赞数量
@@ -43,9 +43,9 @@ public interface ILikeDao {
     /**
      * 分页获取指定类型的点赞记录
      */
-    Set<LikePO> getPageByType(@Param("type") Integer type,
-                              @Param("offset") Integer offset,
-                              @Param("limit") Integer limit);
+    Set<Like> getPageByType(@Param("type") Integer type,
+                            @Param("offset") Integer offset,
+                            @Param("limit") Integer limit);
 
     /**
      * 获取指定类型的点赞记录总数

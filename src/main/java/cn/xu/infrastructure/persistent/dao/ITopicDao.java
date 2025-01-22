@@ -1,6 +1,6 @@
 package cn.xu.infrastructure.persistent.dao;
 
-import cn.xu.infrastructure.persistent.po.TopicPO;
+import cn.xu.infrastructure.persistent.po.Topic;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -14,18 +14,18 @@ public interface ITopicDao {
     /**
      * 插入话题
      *
-     * @param topicPO 话题PO
+     * @param topic 话题PO
      * @return 影响行数
      */
-    int insert(TopicPO topicPO);
+    int insert(Topic topic);
 
     /**
      * 更新话题
      *
-     * @param topicPO 话题PO
+     * @param topic 话题PO
      * @return 影响行数
      */
-    int update(TopicPO topicPO);
+    int update(Topic topic);
 
     /**
      * 根据ID删除话题
@@ -49,14 +49,14 @@ public interface ITopicDao {
      * @param id 话题ID
      * @return 话题PO
      */
-    TopicPO findById(@Param("id") Long id);
+    Topic findById(@Param("id") Long id);
 
     /**
      * 查询所有话题
      *
      * @return 话题PO列表
      */
-    List<TopicPO> findAll();
+    List<Topic> findAll();
 
     /**
      * 查询热门话题
@@ -64,7 +64,7 @@ public interface ITopicDao {
      * @param limit 限制数量
      * @return 话题PO列表
      */
-    List<TopicPO> findHotTopics(@Param("limit") int limit);
+    List<Topic> findHotTopics(@Param("limit") int limit);
 
     /**
      * 根据分类ID查询话题列表
@@ -72,14 +72,14 @@ public interface ITopicDao {
      * @param categoryId 分类ID
      * @return 话题PO列表
      */
-    List<TopicPO> findByCategoryId(@Param("categoryId") Long categoryId);
+    List<Topic> findByCategoryId(@Param("categoryId") Long categoryId);
 
     /**
      * 查询未分类的话题
      *
      * @return 话题PO列表
      */
-    List<TopicPO> findWithoutCategory();
+    List<Topic> findWithoutCategory();
 
     /**
      * 分页查询话题列表
@@ -88,7 +88,7 @@ public interface ITopicDao {
      * @param limit  每页数量
      * @return 话题PO列表
      */
-    List<TopicPO> findByPage(@Param("offset") int offset, @Param("limit") int limit);
+    List<Topic> findByPage(@Param("offset") int offset, @Param("limit") int limit);
 
     /**
      * 获取话题总数

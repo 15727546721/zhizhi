@@ -4,7 +4,7 @@ import cn.xu.domain.follow.model.entity.UserFollowEntity;
 import cn.xu.domain.follow.model.valueobject.FollowStatus;
 import cn.xu.domain.follow.repository.IUserFollowRepository;
 import cn.xu.infrastructure.persistent.dao.IUserFollowDao;
-import cn.xu.infrastructure.persistent.po.UserFollowPO;
+import cn.xu.infrastructure.persistent.po.UserFollow;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Repository;
 
@@ -20,7 +20,7 @@ public class UserFollowRepository implements IUserFollowRepository {
 
     @Override
     public void save(UserFollowEntity entity) {
-        UserFollowPO po = convertToPO(entity);
+        UserFollow po = convertToPO(entity);
         userFollowDao.insert(po);
     }
 
@@ -31,7 +31,7 @@ public class UserFollowRepository implements IUserFollowRepository {
 
     @Override
     public UserFollowEntity getByFollowerAndFollowed(Long followerId, Long followedId) {
-        UserFollowPO po = userFollowDao.getByFollowerAndFollowed(followerId, followedId);
+        UserFollow po = userFollowDao.getByFollowerAndFollowed(followerId, followedId);
         return convertToEntity(po);
     }
 
@@ -59,17 +59,17 @@ public class UserFollowRepository implements IUserFollowRepository {
         return userFollowDao.countFollowers(followedId);
     }
 
-    private UserFollowPO convertToPO(UserFollowEntity entity) {
+    private UserFollow convertToPO(UserFollowEntity entity) {
         if (entity == null) {
             return null;
         }
-        UserFollowPO po = new UserFollowPO();
+        UserFollow po = new UserFollow();
         BeanUtils.copyProperties(entity, po);
         po.setStatus(entity.getStatus().getCode());
         return po;
     }
 
-    private UserFollowEntity convertToEntity(UserFollowPO po) {
+    private UserFollowEntity convertToEntity(UserFollow po) {
         if (po == null) {
             return null;
         }

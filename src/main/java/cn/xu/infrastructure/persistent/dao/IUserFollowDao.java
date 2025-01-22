@@ -1,6 +1,6 @@
 package cn.xu.infrastructure.persistent.dao;
 
-import cn.xu.infrastructure.persistent.po.UserFollowPO;
+import cn.xu.infrastructure.persistent.po.UserFollow;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -11,7 +11,7 @@ public interface IUserFollowDao {
     /**
      * 新增关注关系
      */
-    int insert(UserFollowPO userFollowPO);
+    int insert(UserFollow userFollow);
 
     /**
      * 更新关注状态
@@ -21,17 +21,17 @@ public interface IUserFollowDao {
     /**
      * 获取关注关系
      */
-    UserFollowPO getByFollowerAndFollowed(@Param("followerId") Long followerId, @Param("followedId") Long followedId);
+    UserFollow getByFollowerAndFollowed(@Param("followerId") Long followerId, @Param("followedId") Long followedId);
 
     /**
      * 获取用户的关注列表
      */
-    List<UserFollowPO> listByFollowerId(@Param("followerId") Long followerId);
+    List<UserFollow> listByFollowerId(@Param("followerId") Long followerId);
 
     /**
      * 获取用户的粉丝列表
      */
-    List<UserFollowPO> listByFollowedId(@Param("followedId") Long followedId);
+    List<UserFollow> listByFollowedId(@Param("followedId") Long followedId);
 
     /**
      * 统计用户关注数

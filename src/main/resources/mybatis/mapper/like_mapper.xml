@@ -6,12 +6,12 @@
         , user_id, target_id, type, status, create_time, update_time
     </sql>
 
-    <insert id="insert" parameterType="cn.xu.infrastructure.persistent.po.LikePO">
+    <insert id="insert" parameterType="cn.xu.infrastructure.persistent.po.Like">
         INSERT INTO `like` (user_id, target_id, type, status, create_time, update_time)
         VALUES (#{userId}, #{targetId}, #{type}, #{status}, #{createTime}, #{updateTime})
     </insert>
 
-    <update id="update" parameterType="cn.xu.infrastructure.persistent.po.LikePO">
+    <update id="update" parameterType="cn.xu.infrastructure.persistent.po.Like">
         UPDATE `like`
         <set>
             <if test="status != null">status = #{status},</if>
@@ -22,7 +22,7 @@
         AND type = #{type}
     </update>
 
-    <select id="findByUserIdAndTargetIdAndType" resultType="cn.xu.infrastructure.persistent.po.LikePO">
+    <select id="findByUserIdAndTargetIdAndType" resultType="cn.xu.infrastructure.persistent.po.Like">
         SELECT
         <include refid="Base_Column_List"/>
         FROM `like`
@@ -48,7 +48,7 @@
           AND status = 1
     </select>
 
-    <select id="getPageByType" resultType="cn.xu.infrastructure.persistent.po.LikePO">
+    <select id="getPageByType" resultType="cn.xu.infrastructure.persistent.po.Like">
         SELECT
         <include refid="Base_Column_List"/>
         FROM `like`

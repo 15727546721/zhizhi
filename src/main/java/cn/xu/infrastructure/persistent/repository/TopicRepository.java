@@ -3,7 +3,7 @@ package cn.xu.infrastructure.persistent.repository;
 import cn.xu.domain.topic.model.entity.TopicEntity;
 import cn.xu.domain.topic.repository.ITopicRepository;
 import cn.xu.infrastructure.persistent.dao.ITopicDao;
-import cn.xu.infrastructure.persistent.po.TopicPO;
+import cn.xu.infrastructure.persistent.po.Topic;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 
@@ -21,9 +21,9 @@ public class TopicRepository implements ITopicRepository {
 
     @Override
     public Long save(TopicEntity topicEntity) {
-        TopicPO topicPO = convertToTopicPO(topicEntity);
-        topicDao.insert(topicPO);
-        return topicPO.getId();
+        Topic topic = convertToTopicPO(topicEntity);
+        topicDao.insert(topic);
+        return topic.getId();
     }
 
     @Override
@@ -43,19 +43,19 @@ public class TopicRepository implements ITopicRepository {
 
     @Override
     public TopicEntity findById(Long id) {
-        TopicPO topicPO = topicDao.findById(id);
-        return topicPO != null ? convertToTopicEntity(topicPO) : null;
+        Topic topic = topicDao.findById(id);
+        return topic != null ? convertToTopicEntity(topic) : null;
     }
 
     @Override
     public List<TopicEntity> findAll() {
         try {
             log.info("查询所有话题列表");
-            List<TopicPO> topicPOs = topicDao.findAll();
-            if (topicPOs == null || topicPOs.isEmpty()) {
+            List<Topic> topics = topicDao.findAll();
+            if (topics == null || topics.isEmpty()) {
                 return Collections.emptyList();
             }
-            return topicPOs.stream()
+            return topics.stream()
                     .map(this::convertToTopicEntity)
                     .collect(Collectors.toList());
         } catch (Exception e) {
@@ -82,11 +82,11 @@ public class TopicRepository implements ITopicRepository {
     public List<TopicEntity> findByPage(int offset, int limit) {
         try {
             log.info("分页查询话题列表, offset: {}, limit: {}", offset, limit);
-            List<TopicPO> topicPOs = topicDao.findByPage(offset, limit);
-            if (topicPOs == null || topicPOs.isEmpty()) {
+            List<Topic> topics = topicDao.findByPage(offset, limit);
+            if (topics == null || topics.isEmpty()) {
                 return Collections.emptyList();
             }
-            return topicPOs.stream()
+            return topics.stream()
                     .map(this::convertToTopicEntity)
                     .collect(Collectors.toList());
         } catch (Exception e) {
@@ -108,12 +108,12 @@ public class TopicRepository implements ITopicRepository {
     /**
      * 将领域实体转换为PO对象
      */
-    private TopicPO convertToTopicPO(TopicEntity topicEntity) {
+    private Topic convertToTopicPO(TopicEntity topicEntity) {
         if (topicEntity == null) {
             return null;
         }
 
-        TopicPO topicPO = TopicPO.builder()
+        Topic topic = Topic.builder()
                 .id(topicEntity.getId())
                 .userId(topicEntity.getUserId())
                 .content(topicEntity.getContent())
@@ -124,27 +124,27 @@ public class TopicRepository implements ITopicRepository {
 
         // 设置图片列表
         if (topicEntity.getImages() != null && !topicEntity.getImages().isEmpty()) {
-            topicPO.setImageList(topicEntity.getImages());
+            topic.setImageList(topicEntity.getImages());
         }
-        return topicPO;
+        return topic;
     }
 
     /**
      * 将PO对象转换为领域实体
      */
-    private TopicEntity convertToTopicEntity(TopicPO topicPO) {
-        if (topicPO == null) {
+    private TopicEntity convertToTopicEntity(Topic topic) {
+        if (topic == null) {
             return null;
         }
 
         return TopicEntity.builder()
-                .id(topicPO.getId())
-                .userId(topicPO.getUserId())
-                .content(topicPO.getContent())
-                .images(topicPO.getImageList())  // 使用getImageList获取图片列表
-                .categoryId(topicPO.getCategoryId())
-                .createTime(topicPO.getCreateTime())
-                .updateTime(topicPO.getUpdateTime())
+                .id(topic.getId())
+                .userId(topic.getUserId())
+                .content(topic.getContent())
+                .images(topic.getImageList())  // 使用getImageList获取图片列表
+                .categoryId(topic.getCategoryId())
+                .createTime(topic.getCreateTime())
+                .updateTime(topic.getUpdateTime())
                 .build();
     }
 } 

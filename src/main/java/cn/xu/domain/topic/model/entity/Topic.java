@@ -1,4 +1,4 @@
-package cn.xu.domain.topic.entity;
+package cn.xu.domain.topic.model.entity;
 
 import cn.xu.domain.topic.constant.TopicErrorCode;
 import cn.xu.infrastructure.common.exception.BusinessException;

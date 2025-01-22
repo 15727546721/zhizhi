@@ -7,7 +7,7 @@ import cn.xu.domain.file.service.MinioService;
 import cn.xu.domain.topic.command.CreateTopicCommand;
 import cn.xu.domain.topic.command.TopicPageQuery;
 import cn.xu.domain.topic.command.TopicUpdateCommand;
-import cn.xu.domain.topic.entity.Topic;
+import cn.xu.domain.topic.model.entity.Topic;
 import cn.xu.domain.topic.model.entity.TopicEntity;
 import cn.xu.domain.topic.repository.ITopicRepository;
 import cn.xu.domain.topic.service.ITopicCategoryService;

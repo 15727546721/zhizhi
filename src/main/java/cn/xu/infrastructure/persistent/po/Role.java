@@ -3,11 +3,12 @@ package cn.xu.infrastructure.persistent.po;
 import lombok.Builder;
 import lombok.Data;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Data
 @Builder
-public class Role {
+public class Role implements Serializable {
     /**
      * 角色ID
      */

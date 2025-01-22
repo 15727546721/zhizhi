@@ -4,7 +4,7 @@ import cn.xu.api.web.model.vo.topic.TopicVO;
 import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.file.service.MinioService;
 import cn.xu.domain.topic.command.CreateTopicCommand;
-import cn.xu.domain.topic.entity.Topic;
+import cn.xu.domain.topic.model.entity.Topic;
 import cn.xu.domain.topic.model.entity.TopicCategoryEntity;
 import cn.xu.domain.topic.service.ITopicCategoryService;
 import cn.xu.domain.topic.service.impl.TopicService;
