@@ -66,6 +66,11 @@ public class UserServiceImpl implements IUserService {
     }
 
     @Override
+    public String getUsernameById(Long userId) {
+        return null;
+    }
+
+    @Override
     @Transactional
     public UserEntity register(RegisterRequest request) {
         try {

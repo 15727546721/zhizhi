@@ -107,4 +107,12 @@ public interface IUserService {
      * @return 用户实体，如果不存在则返回null
      */
     UserEntity getUserById(Long userId);
+
+    /**
+     * 根据用户ID获取用户名
+     *
+     * @param userId 用户ID
+     * @return 用户名
+     */
+    String getUsernameById(Long userId);
 }

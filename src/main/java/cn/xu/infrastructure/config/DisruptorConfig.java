@@ -10,18 +10,27 @@ import cn.xu.domain.logging.event.handler.OperationLogEventHandler;
 import cn.xu.domain.message.event.BaseMessageEvent;
 import cn.xu.domain.message.event.SystemMessageEvent;
 import cn.xu.domain.message.event.handler.MessageEventHandler;
+import cn.xu.domain.notification.event.NotificationEvent;
+import cn.xu.domain.notification.event.factory.NotificationEventFactory;
+//import cn.xu.domain.notification.handler.NotificationEventHandler;
+import cn.xu.domain.notification.handler.NotificationExceptionHandler;
 import com.lmax.disruptor.BlockingWaitStrategy;
 import com.lmax.disruptor.EventFactory;
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
 import com.lmax.disruptor.util.DaemonThreadFactory;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import javax.annotation.Resource;
 
+/**
+ * Disruptor配置类
+ */
 @Configuration
+@RequiredArgsConstructor
 public class DisruptorConfig {
 
     @Resource
@@ -35,6 +44,12 @@ public class DisruptorConfig {
 
     @Resource
     private MessageEventHandler messageEventHandler;
+
+//    @Resource
+//    private NotificationEventHandler notificationEventHandler;
+
+    @Resource
+    private NotificationExceptionHandler notificationExceptionHandler;
 
     @Bean
     public RingBuffer<LikeEvent> likeEventRingBuffer() {
@@ -97,6 +112,44 @@ public class DisruptorConfig {
 
         return disruptor.getRingBuffer();
     }
+
+    /**
+     * 通知事件Disruptor配置
+     * 使用更大的缓冲区和多生产者模式，提高并发处理能力
+     */
+    @Bean(name = "notificationDisruptor")
+    public Disruptor<NotificationEvent> notificationDisruptor() {
+        // 使用更大的缓冲区大小，2的次幂
+        int bufferSize = 2048;
+        
+        // 创建disruptor，使用自定义的事件工厂
+        Disruptor<NotificationEvent> disruptor = new Disruptor<>(
+                NotificationEventFactory.getInstance(),
+                bufferSize,
+                DaemonThreadFactory.INSTANCE,
+                ProducerType.MULTI,  // 使用多生产者模式
+                new BlockingWaitStrategy()  // 使用阻塞等待策略，保证消息不丢失
+        );
+
+        // 配置事件处理器
+        disruptor.setDefaultExceptionHandler(notificationExceptionHandler);
+//        disruptor.handleEventsWith(notificationEventHandler);
+
+        // 启动disruptor
+        disruptor.start();
+        
+        return disruptor;
+    }
+
+    /**
+     * 通知事件RingBuffer配置
+     * 用于生产通知事件
+     */
+    @Bean(name = "notificationRingBuffer")
+    public RingBuffer<NotificationEvent> notificationRingBuffer(Disruptor<NotificationEvent> notificationDisruptor) {
+        return notificationDisruptor.getRingBuffer();
+    }
+
 
     private static class LikeEventFactory implements EventFactory<LikeEvent> {
         @Override
