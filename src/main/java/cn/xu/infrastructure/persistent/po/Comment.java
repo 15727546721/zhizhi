@@ -1,9 +1,11 @@
 package cn.xu.infrastructure.persistent.po;
 
+import cn.xu.domain.comment.model.valueobject.CommentType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -13,6 +15,7 @@ import java.time.LocalDateTime;
  *
  * @TableName comment
  */
+@Slf4j
 @Data
 @Builder
 @NoArgsConstructor
@@ -63,4 +66,11 @@ public class Comment implements Serializable {
      */
     private LocalDateTime updateTime;
 
+    public CommentType getCommentType() {
+        return type != null ? CommentType.of(type) : null;
+    }
+
+    public void setCommentType(CommentType commentType) {
+        this.type = commentType != null ? commentType.getValue() : null;
+    }
 }

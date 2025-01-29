@@ -27,9 +27,6 @@ import javax.annotation.Resource;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static cn.xu.domain.comment.model.valueobject.CommentType.ARTICLE;
-import static cn.xu.domain.comment.model.valueobject.CommentType.TOPIC;
-
 @Slf4j
 @Service
 public class CommentService implements ICommentService {
@@ -68,7 +65,7 @@ public class CommentService implements ICommentService {
 
             // 2. 构建评论实体
             CommentEntity commentEntity = CommentEntity.builder()
-                    .type(request.getType())
+                    .type(CommentType.of(request.getType()))
                     .targetId(request.getTargetId())
                     .parentId(request.getParentId())
                     .userId(currentUserId)

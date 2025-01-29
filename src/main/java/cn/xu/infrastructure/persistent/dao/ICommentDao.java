@@ -1,6 +1,5 @@
 package cn.xu.infrastructure.persistent.dao;
 
-import cn.xu.domain.comment.model.entity.CommentEntity;
 import cn.xu.infrastructure.persistent.po.Comment;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -109,7 +108,7 @@ public interface ICommentDao {
      * @param id 评论ID
      * @return 评论实体
      */
-    CommentEntity selectById(@Param("id") Long id);
+    Comment selectById(@Param("id") Long id);
 
     /**
      * 根据父评论ID删除所有子评论

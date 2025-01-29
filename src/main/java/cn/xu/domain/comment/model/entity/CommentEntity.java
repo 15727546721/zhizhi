@@ -25,7 +25,7 @@ public class CommentEntity {
     /**
      * 评论类型，如1-文章；2-话题
      */
-    private Integer type;
+    private CommentType type;
 
     /**
      * 评论来源的标识符
@@ -71,27 +71,6 @@ public class CommentEntity {
      * 子评论列表
      */
     private List<CommentEntity> children;
-
-    /**
-     * 获取评论类型（枚举）
-     */
-    public CommentType getType() {
-        return type != null ? CommentType.of(type) : null;
-    }
-
-    /**
-     * 设置评论类型（枚举）
-     */
-    public void setType(CommentType type) {
-        this.type = type != null ? type.getValue() : null;
-    }
-
-    /**
-     * 设置评论类型（整数）
-     */
-    public void setType(Integer type) {
-        this.type = type;
-    }
 
     /**
      * 验证评论数据

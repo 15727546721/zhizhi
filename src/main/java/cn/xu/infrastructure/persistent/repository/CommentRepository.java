@@ -2,6 +2,7 @@ package cn.xu.infrastructure.persistent.repository;
 
 import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.comment.model.entity.CommentEntity;
+import cn.xu.domain.comment.model.valueobject.CommentType;
 import cn.xu.domain.comment.repository.ICommentRepository;
 import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.persistent.dao.ICommentDao;
@@ -60,7 +61,8 @@ public class CommentRepository implements ICommentRepository {
     public CommentEntity findById(Long id) {
         try {
             log.info("查询评论 - id: {}", id);
-            return commentDao.selectById(id);
+            Comment comment = commentDao.selectById(id);
+            return convertToEntity(comment);
         } catch (Exception e) {
             log.error("查询评论失败 - id: {}", id, e);
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "查询评论失败：" + e.getMessage());
@@ -247,10 +249,9 @@ public class CommentRepository implements ICommentRepository {
         if (comment == null) {
             return null;
         }
-        return CommentEntity.builder()
+        CommentEntity entity = CommentEntity.builder()
                 .id(comment.getId())
                 .userId(comment.getUserId())
-                .type(comment.getType())
                 .targetId(comment.getTargetId())
                 .content(comment.getContent())
                 .parentId(comment.getParentId())
@@ -258,6 +259,12 @@ public class CommentRepository implements ICommentRepository {
                 .createTime(comment.getCreateTime())
                 .updateTime(comment.getUpdateTime())
                 .build();
+        
+        if (comment.getType() != null) {
+            entity.setType(CommentType.of(comment.getType()));
+        }
+        
+        return entity;
     }
 
     /**
@@ -281,20 +288,7 @@ public class CommentRepository implements ICommentRepository {
     }
 
     private CommentEntity convertToCommentEntity(Comment comment) {
-        if (comment == null) {
-            return null;
-        }
-        return CommentEntity.builder()
-                .id(comment.getId())
-                .type(comment.getType())
-                .targetId(comment.getTargetId())
-                .parentId(comment.getParentId())
-                .userId(comment.getUserId())
-                .replyUserId(comment.getReplyUserId())
-                .content(comment.getContent())
-                .createTime(comment.getCreateTime())
-                .updateTime(comment.getUpdateTime())
-                .build();
+        return convertToEntity(comment);
     }
 
     @Override
