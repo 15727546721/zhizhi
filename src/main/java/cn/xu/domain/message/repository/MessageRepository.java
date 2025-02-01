@@ -1,6 +1,7 @@
 package cn.xu.domain.message.repository;
 
 import cn.xu.domain.message.model.Message;
+
 import java.util.List;
 
 /**

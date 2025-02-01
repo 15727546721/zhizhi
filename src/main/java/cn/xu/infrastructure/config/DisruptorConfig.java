@@ -12,7 +12,6 @@ import cn.xu.domain.message.event.SystemMessageEvent;
 import cn.xu.domain.message.event.handler.MessageEventHandler;
 import cn.xu.domain.notification.event.NotificationEvent;
 import cn.xu.domain.notification.event.factory.NotificationEventFactory;
-//import cn.xu.domain.notification.handler.NotificationEventHandler;
 import cn.xu.domain.notification.handler.NotificationExceptionHandler;
 import com.lmax.disruptor.BlockingWaitStrategy;
 import com.lmax.disruptor.EventFactory;

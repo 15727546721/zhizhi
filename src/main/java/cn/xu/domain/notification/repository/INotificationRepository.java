@@ -2,7 +2,6 @@ package cn.xu.domain.notification.repository;
 
 import cn.xu.domain.notification.model.aggregate.NotificationAggregate;
 import cn.xu.domain.notification.model.valueobject.NotificationType;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;

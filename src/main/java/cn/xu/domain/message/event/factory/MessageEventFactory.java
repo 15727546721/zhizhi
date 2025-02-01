@@ -1,6 +1,9 @@
 package cn.xu.domain.message.event.factory;
 
-import cn.xu.domain.message.event.*;
+import cn.xu.domain.message.event.BaseMessageEvent;
+import cn.xu.domain.message.event.CommentMessageEvent;
+import cn.xu.domain.message.event.LikeMessageEvent;
+import cn.xu.domain.message.event.SystemMessageEvent;
 import org.springframework.stereotype.Component;
 
 @Component

@@ -1,7 +1,10 @@
 package cn.xu.domain.notification.model.aggregate;
 
 import cn.xu.domain.notification.model.entity.NotificationEntity;
-import cn.xu.domain.notification.model.valueobject.*;
+import cn.xu.domain.notification.model.valueobject.BusinessType;
+import cn.xu.domain.notification.model.valueobject.NotificationSender;
+import cn.xu.domain.notification.model.valueobject.NotificationType;
+import cn.xu.domain.notification.model.valueobject.SenderType;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 

@@ -1,7 +1,7 @@
 package cn.xu.domain.notification.factory;
 
 import cn.xu.domain.notification.model.aggregate.NotificationAggregate;
-import cn.xu.domain.notification.model.template.*;
+import cn.xu.domain.notification.model.template.AbstractNotificationTemplate;
 import cn.xu.domain.notification.model.template.LikeNotificationTemplate;
 import cn.xu.domain.notification.model.template.impl.*;
 import cn.xu.domain.notification.model.valueobject.BusinessType;

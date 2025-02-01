@@ -1,8 +1,8 @@
 package cn.xu.domain.notification.service;
 
 import cn.xu.domain.notification.model.aggregate.NotificationAggregate;
-import cn.xu.domain.notification.model.valueobject.NotificationType;
 import cn.xu.domain.notification.model.template.AbstractNotificationTemplate;
+import cn.xu.domain.notification.model.valueobject.NotificationType;
 
 import java.util.List;
 

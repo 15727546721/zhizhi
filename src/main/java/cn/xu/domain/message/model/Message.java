@@ -2,6 +2,7 @@ package cn.xu.domain.message.model;
 
 import lombok.Data;
 import lombok.experimental.Accessors;
+
 import java.time.LocalDateTime;
 
 /**

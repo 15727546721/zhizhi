@@ -2,12 +2,9 @@ package cn.xu.infrastructure.persistent.repository;
 
 import cn.xu.domain.notification.model.aggregate.NotificationAggregate;
 import cn.xu.domain.notification.model.entity.NotificationEntity;
-import cn.xu.domain.notification.model.valueobject.BusinessType;
 import cn.xu.domain.notification.model.valueobject.NotificationType;
-import cn.xu.domain.notification.model.valueobject.SenderType;
 import cn.xu.domain.notification.repository.INotificationRepository;
 import cn.xu.infrastructure.persistent.dao.INotificationDao;
-import com.alibaba.fastjson.JSON;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
@@ -17,7 +14,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 

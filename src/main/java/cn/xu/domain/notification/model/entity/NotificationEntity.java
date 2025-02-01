@@ -1,7 +1,7 @@
 package cn.xu.domain.notification.model.entity;
 
-import cn.xu.domain.notification.model.valueobject.NotificationType;
 import cn.xu.domain.notification.model.valueobject.BusinessType;
+import cn.xu.domain.notification.model.valueobject.NotificationType;
 import cn.xu.domain.notification.model.valueobject.SenderType;
 import lombok.Builder;
 import lombok.Data;

@@ -1,8 +1,8 @@
 package cn.xu.domain.notification.service.impl;
 
 import cn.xu.domain.notification.model.aggregate.NotificationAggregate;
-import cn.xu.domain.notification.model.valueobject.NotificationType;
 import cn.xu.domain.notification.model.template.AbstractNotificationTemplate;
+import cn.xu.domain.notification.model.valueobject.NotificationType;
 import cn.xu.domain.notification.repository.INotificationRepository;
 import cn.xu.domain.notification.service.INotificationService;
 import cn.xu.domain.user.model.entity.UserEntity;
