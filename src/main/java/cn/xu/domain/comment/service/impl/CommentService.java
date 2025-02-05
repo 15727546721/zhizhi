@@ -9,9 +9,11 @@ import cn.xu.domain.comment.model.entity.CommentEntity;
 import cn.xu.domain.comment.model.valueobject.CommentType;
 import cn.xu.domain.comment.repository.ICommentRepository;
 import cn.xu.domain.comment.service.ICommentService;
-import cn.xu.domain.message.event.BaseMessageEvent;
 import cn.xu.domain.message.event.factory.MessageEventFactory;
 import cn.xu.domain.message.service.MessagePublisher;
+import cn.xu.domain.notification.event.publisher.NotificationEventPublisher;
+import cn.xu.domain.notification.factory.NotificationFactory;
+import cn.xu.domain.notification.model.aggregate.NotificationAggregate;
 import cn.xu.domain.topic.service.ITopicService;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.service.IUserService;
@@ -42,6 +44,12 @@ public class CommentService implements ICommentService {
 
     @Resource
     private ITopicService topicService;
+
+    @Resource
+    private NotificationEventPublisher notificationEventPublisher;
+
+    @Resource
+    private NotificationFactory notificationFactory;
 
     @Resource
     private MessagePublisher messagePublisher;
@@ -120,16 +128,15 @@ public class CommentService implements ICommentService {
             return;
         }
 
-        // 4. 发送消息通知被回复的用户
-        BaseMessageEvent event = messageEventFactory.createCommentEvent(
-                currentUser.getId(),
-                replyToUser.getId(),
-                String.format("用户 %s 回复了你的评论: %s",
-                    currentUser.getNickname(),
-                    comment.getContent()),
-                comment.getTargetId()
+        // 4. 发送通知
+        NotificationAggregate notification = notificationFactory.createReplyNotification(
+            comment.getId(),
+            currentUser.getId(),
+            replyToUser.getId(),
+            comment.getContent(),
+            parentComment.getId()
         );
-        messagePublisher.publishMessage(event);
+        notificationEventPublisher.publish(notification);
     }
 
     /**
@@ -205,18 +212,14 @@ public class CommentService implements ICommentService {
      * 发送评论通知
      */
     private void sendCommentNotification(UserEntity fromUser, UserEntity toUser, CommentEntity comment) {
-        String content = String.format("用户 %s 评论了你的%s: %s",
-                fromUser.getNickname(),
-                getCommentTargetType(comment.getType()),
-                comment.getContent().length() > 50 ? comment.getContent().substring(0, 50) + "..." : comment.getContent());
-
-        BaseMessageEvent event = messageEventFactory.createCommentEvent(
-                fromUser.getId(),
-                toUser.getId(),
-                content,
-                comment.getTargetId()
+        NotificationAggregate notification = notificationFactory.createCommentNotification(
+            comment.getId(),
+            fromUser.getId(),
+            toUser.getId(),
+            comment.getContent(),
+            comment.getTargetId()
         );
-        messagePublisher.publishMessage(event);
+        notificationEventPublisher.publish(notification);
         log.debug("[评论服务] 已发送评论通知 - from: {}, to: {}", fromUser.getId(), toUser.getId());
     }
 

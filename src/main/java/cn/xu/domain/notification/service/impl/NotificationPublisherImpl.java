@@ -58,7 +58,12 @@ public class NotificationPublisherImpl implements NotificationPublisher {
         try {
             String senderName = userService.getUsernameById(senderId);
             NotificationAggregate notification = notificationFactory.createCommentNotification(
-                    senderId, userId, articleId, content, senderName);
+                    articleId,  // commentId
+                    senderId,
+                    userId,    // receiverId
+                    content,
+                    articleId
+            );
             notificationService.sendNotification(notification);
         } catch (Exception e) {
             log.error("发送评论通知失败: senderId={}, userId={}", senderId, userId, e);
@@ -70,7 +75,12 @@ public class NotificationPublisherImpl implements NotificationPublisher {
         try {
             String senderName = userService.getUsernameById(senderId);
             NotificationAggregate notification = notificationFactory.createReplyNotification(
-                    senderId, userId, commentId, content, senderName);
+                    commentId,  // replyId
+                    senderId,
+                    userId,    // receiverId
+                    content,
+                    commentId  // parentCommentId
+            );
             notificationService.sendNotification(notification);
         } catch (Exception e) {
             log.error("发送回复通知失败: senderId={}, userId={}", senderId, userId, e);

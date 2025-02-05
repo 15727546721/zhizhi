@@ -5,7 +5,6 @@ import cn.xu.domain.notification.model.valueobject.NotificationType;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
  * 通知仓储接口
@@ -25,7 +24,7 @@ public interface INotificationRepository {
     /**
      * 根据ID查询通知
      */
-    Optional<NotificationAggregate> findById(Long id);
+    NotificationAggregate findById(Long id);
     
     /**
      * 根据用户ID和类型分页查询通知
@@ -66,4 +65,14 @@ public interface INotificationRepository {
      * 检查通知是否存在
      */
     boolean exists(Long id);
+
+    /**
+     * 根据接收者ID分页查询通知，按创建时间降序
+     */
+    List<NotificationAggregate> findByReceiverIdOrderByCreatedTimeDesc(Long receiverId, int offset, int limit);
+
+    /**
+     * 统计接收者未读通知数量
+     */
+    long countByReceiverIdAndReadFalse(Long receiverId);
 } 

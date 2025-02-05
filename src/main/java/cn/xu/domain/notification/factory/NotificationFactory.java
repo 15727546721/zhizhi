@@ -64,43 +64,57 @@ public class NotificationFactory {
     /**
      * 创建评论通知
      */
-    public NotificationAggregate createCommentNotification(Long senderId, Long userId, Long articleId, String content, String senderName) {
+    public NotificationAggregate createCommentNotification(
+            Long commentId,
+            Long senderId,
+            Long receiverId,
+            String commentContent,
+            Long articleId) {
+            
         Map<String, Object> extraInfo = new HashMap<>();
-        extraInfo.put("senderName", senderName);
+        extraInfo.put("commentId", commentId);
+        extraInfo.put("articleId", articleId);
         
         return NotificationAggregate.builder()
-                .type(NotificationType.COMMENT)
-                .receiverId(userId)
-                .senderId(senderId)
-                .senderType(SenderType.USER)
-                .content(content)
-                .businessType(BusinessType.ARTICLE)
-                .businessId(articleId)
-                .extraInfo(extraInfo)
-                .read(false)
-                .status(true)
-                .build();
+            .type(NotificationType.COMMENT)
+            .senderId(senderId)
+            .senderType(SenderType.USER)
+            .receiverId(receiverId)
+            .content("评论了你的文章：" + commentContent)
+            .businessType(BusinessType.ARTICLE)
+            .businessId(articleId)
+            .extraInfo(extraInfo)
+            .read(false)
+            .status(true)
+            .build();
     }
 
     /**
      * 创建回复通知
      */
-    public NotificationAggregate createReplyNotification(Long senderId, Long userId, Long commentId, String content, String senderName) {
+    public NotificationAggregate createReplyNotification(
+            Long replyId,
+            Long senderId,
+            Long receiverId,
+            String replyContent,
+            Long parentCommentId) {
+            
         Map<String, Object> extraInfo = new HashMap<>();
-        extraInfo.put("senderName", senderName);
+        extraInfo.put("replyId", replyId);
+        extraInfo.put("parentCommentId", parentCommentId);
         
         return NotificationAggregate.builder()
-                .type(NotificationType.REPLY)
-                .receiverId(userId)
-                .senderId(senderId)
-                .senderType(SenderType.USER)
-                .content(content)
-                .businessType(BusinessType.COMMENT)
-                .businessId(commentId)
-                .extraInfo(extraInfo)
-                .read(false)
-                .status(true)
-                .build();
+            .type(NotificationType.REPLY)
+            .senderId(senderId)
+            .senderType(SenderType.USER)
+            .receiverId(receiverId)
+            .content("回复了你的评论：" + replyContent)
+            .businessType(BusinessType.COMMENT)
+            .businessId(parentCommentId)
+            .extraInfo(extraInfo)
+            .read(false)
+            .status(true)
+            .build();
     }
 
     /**

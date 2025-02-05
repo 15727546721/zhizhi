@@ -5,7 +5,10 @@ import cn.xu.domain.notification.model.valueobject.BusinessType;
 import cn.xu.domain.notification.model.valueobject.NotificationSender;
 import cn.xu.domain.notification.model.valueobject.NotificationType;
 import cn.xu.domain.notification.model.valueobject.SenderType;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
@@ -19,18 +22,14 @@ import java.util.Map;
  * @date 2024/03/20
  */
 @Slf4j
-@Getter
-@Builder
+@Data
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @AllArgsConstructor
 public class NotificationAggregate {
     
-    /**
-     * 通知实体
-     */
     private NotificationEntity notification;
     private NotificationSender sender;
-    
+
     private NotificationAggregate(NotificationEntity notification) {
         this.notification = notification;
         this.sender = NotificationSender.of(
@@ -41,105 +40,115 @@ public class NotificationAggregate {
         );
     }
 
-    // Builder类
-    public static class Builder {
+    public static NotificationAggregate from(NotificationEntity entity) {
+        return new NotificationAggregate(entity);
+    }
+    
+    public static NotificationAggregateBuilder builder() {
+        return new NotificationAggregateBuilder();
+    }
+    
+    public static class NotificationAggregateBuilder {
+        private Long id;
+        private NotificationType type;
         private Long senderId;
+        private SenderType senderType;
         private Long receiverId;
         private String title;
         private String content;
-        private NotificationType type;
         private BusinessType businessType;
         private Long businessId;
-        private SenderType senderType;
-        private Map<String, Object> extraInfo = new HashMap<>();
-        private boolean read = false;
-        private boolean status = true;
-
-        public Builder senderId(Long senderId) {
-            this.senderId = senderId;
+        private Map<String, Object> extraInfo;
+        private Boolean read;
+        private Boolean status;
+        private LocalDateTime createdTime;
+        
+        NotificationAggregateBuilder() {
+        }
+        
+        public NotificationAggregateBuilder id(Long id) {
+            this.id = id;
             return this;
         }
-
-        public Builder receiverId(Long receiverId) {
-            this.receiverId = receiverId;
-            return this;
-        }
-
-        public Builder title(String title) {
-            this.title = title;
-            return this;
-        }
-
-        public Builder content(String content) {
-            this.content = content;
-            return this;
-        }
-
-        public Builder type(NotificationType type) {
+        
+        public NotificationAggregateBuilder type(NotificationType type) {
             this.type = type;
             return this;
         }
-
-        public Builder businessType(BusinessType businessType) {
-            this.businessType = businessType;
+        
+        public NotificationAggregateBuilder senderId(Long senderId) {
+            this.senderId = senderId;
             return this;
         }
-
-        public Builder businessId(Long businessId) {
-            this.businessId = businessId;
-            return this;
-        }
-
-        public Builder senderType(SenderType senderType) {
+        
+        public NotificationAggregateBuilder senderType(SenderType senderType) {
             this.senderType = senderType;
             return this;
         }
-
-        public Builder extraInfo(Map<String, Object> extraInfo) {
-            if (extraInfo != null) {
-                this.extraInfo.putAll(extraInfo);
-            }
+        
+        public NotificationAggregateBuilder receiverId(Long receiverId) {
+            this.receiverId = receiverId;
             return this;
         }
-
-        public Builder read(boolean read) {
+        
+        public NotificationAggregateBuilder title(String title) {
+            this.title = title;
+            return this;
+        }
+        
+        public NotificationAggregateBuilder content(String content) {
+            this.content = content;
+            return this;
+        }
+        
+        public NotificationAggregateBuilder businessType(BusinessType businessType) {
+            this.businessType = businessType;
+            return this;
+        }
+        
+        public NotificationAggregateBuilder businessId(Long businessId) {
+            this.businessId = businessId;
+            return this;
+        }
+        
+        public NotificationAggregateBuilder extraInfo(Map<String, Object> extraInfo) {
+            this.extraInfo = extraInfo;
+            return this;
+        }
+        
+        public NotificationAggregateBuilder read(Boolean read) {
             this.read = read;
             return this;
         }
-
-        public Builder status(boolean status) {
+        
+        public NotificationAggregateBuilder status(Boolean status) {
             this.status = status;
             return this;
         }
-
+        
+        public NotificationAggregateBuilder createdTime(LocalDateTime createdTime) {
+            this.createdTime = createdTime;
+            return this;
+        }
+        
         public NotificationAggregate build() {
-            NotificationEntity entity = NotificationEntity.builder()
-                    .senderId(senderId)
-                    .receiverId(receiverId)
-                    .title(title)
-                    .content(content)
-                    .type(type)
-                    .businessType(businessType)
-                    .businessId(businessId)
-                    .senderType(senderType)
-                    .extraInfo(new HashMap<>(extraInfo))
-                    .read(read)
-                    .status(status)
-                    .createdTime(LocalDateTime.now())
-                    .updatedTime(LocalDateTime.now())
-                    .build();
-            
-            entity.validate();
+            NotificationEntity entity = new NotificationEntity();
+            entity.setId(this.id);
+            entity.setType(this.type);
+            entity.setSenderId(this.senderId);
+            entity.setSenderType(this.senderType);
+            entity.setReceiverId(this.receiverId);
+            entity.setTitle(this.title);
+            entity.setContent(this.content);
+            entity.setBusinessType(this.businessType);
+            entity.setBusinessId(this.businessId);
+            entity.setExtraInfo(this.extraInfo != null ? this.extraInfo : new HashMap<>());
+            entity.setRead(this.read != null ? this.read : false);
+            entity.setStatus(this.status != null ? this.status : true);
+            entity.setCreatedTime(this.createdTime != null ? this.createdTime : LocalDateTime.now());
+            entity.setUpdatedTime(LocalDateTime.now());
             return new NotificationAggregate(entity);
         }
-    }
-
-    public static Builder builder() {
-        return new Builder();
-    }
-    
-    public static NotificationAggregate from(NotificationEntity entity) {
-        return new NotificationAggregate(entity);
     }
     
     public Long getId() {

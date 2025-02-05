@@ -3,7 +3,7 @@
 <mapper namespace="cn.xu.infrastructure.persistent.dao.ICommentDao">
     <resultMap id="BaseResultMap" type="cn.xu.infrastructure.persistent.po.Comment">
         <id column="id" property="id" jdbcType="BIGINT"/>
-        <result column="type" property="type" jdbcType="INTEGER" typeHandler="cn.xu.infrastructure.persistent.handler.CommentTypeHandler"/>
+        <result column="type" property="type" jdbcType="INTEGER"/>
         <result column="target_id" property="targetId" jdbcType="BIGINT"/>
         <result column="parent_id" property="parentId" jdbcType="BIGINT"/>
         <result column="user_id" property="userId" jdbcType="BIGINT"/>

@@ -14,7 +14,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 
 @Slf4j
 @Service
@@ -44,9 +43,8 @@ public class NotificationServiceImpl implements INotificationService {
     @Override
     @Transactional
     public void markAsRead(Long notificationId) {
-        Optional<NotificationAggregate> optionalNotification = notificationRepository.findById(notificationId);
-        if (optionalNotification.isPresent()) {
-            NotificationAggregate notification = optionalNotification.get();
+        NotificationAggregate notification = notificationRepository.findById(notificationId);
+        if (notification != null) {
             notification.markAsRead();
             notificationRepository.save(notification);
         }
@@ -61,9 +59,8 @@ public class NotificationServiceImpl implements INotificationService {
     @Override
     @Transactional
     public void deleteNotification(Long notificationId) {
-        Optional<NotificationAggregate> optionalNotification = notificationRepository.findById(notificationId);
-        if (optionalNotification.isPresent()) {
-            NotificationAggregate notification = optionalNotification.get();
+        NotificationAggregate notification = notificationRepository.findById(notificationId);
+        if (notification != null) {
             notification.markAsDeleted();
             notificationRepository.save(notification);
         }

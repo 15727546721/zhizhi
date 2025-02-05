@@ -87,4 +87,24 @@ public class NotificationEvent {
         event.setCreatedTime(aggregate.getNotification().getCreatedTime());
         return event;
     }
+
+    /**
+     * 将通知事件转换为通知聚合根
+     */
+    public NotificationAggregate toAggregate() {
+        return NotificationAggregate.builder()
+            .id(this.notificationId)
+            .type(this.type)
+            .senderId(this.senderId)
+            .senderType(this.senderType)
+            .receiverId(this.receiverId)
+            .content(this.content)
+            .businessType(this.businessType)
+            .businessId(this.businessId)
+            .extraInfo(this.extraInfo)
+            .createdTime(this.createdTime)
+            .read(false)
+            .status(true)
+            .build();
+    }
 } 

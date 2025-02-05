@@ -18,6 +18,11 @@ spring:
     multipart:
       max-file-size: 10MB
       max-request-size: 10MB
+  datasource:
+    url: jdbc:mysql://localhost:3306/zhizhi?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
 
 # 热点数据配置
 hot-data:
@@ -47,3 +52,10 @@ lucene:
   index:
 #    path: /data/lucene/article
     path: D:/data/lucene/article # lucene 索引存放的位置
+
+mybatis:
+  type-handlers-package: cn.xu.infrastructure.persistent.handler
+  configuration:
+    map-underscore-to-camel-case: true
+    default-enum-type-handler: org.apache.ibatis.type.EnumTypeHandler
+  mapper-locations: classpath:mapper/*.xml

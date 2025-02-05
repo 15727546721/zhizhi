@@ -6,7 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * 抽象通知处理器
- * 定义通知处理的基本框架
+ * 定义通知处理的模板方法
  */
 @Slf4j
 public abstract class AbstractNotificationHandler {
@@ -24,13 +24,20 @@ public abstract class AbstractNotificationHandler {
     /**
      * 处理通知事件
      */
-    public void handle(NotificationEvent event) {
-        if (supports(event.getType())) {
+    public final void handle(NotificationEvent event) {
+        try {
+            // 1. 检查是否支持该类型的通知
+            if (!supports(event.getType())) {
+                log.debug("[通知服务] 不支持的通知类型: {}", event.getType());
+                return;
+            }
+
+            // 2. 执行具体的处理逻辑
             doHandle(event);
-        } else if (nextHandler != null) {
-            nextHandler.handle(event);
-        } else {
-            log.warn("[通知服务] 未找到合适的处理器: type={}", event.getType());
+            
+        } catch (Exception e) {
+            log.error("[通知服务] 处理通知失败: type={}, error={}", event.getType(), e.getMessage(), e);
+            throw e;
         }
     }
     

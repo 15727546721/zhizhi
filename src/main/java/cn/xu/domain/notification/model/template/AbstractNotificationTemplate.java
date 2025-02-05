@@ -1,7 +1,6 @@
 package cn.xu.domain.notification.model.template;
 
 import cn.xu.domain.notification.model.aggregate.NotificationAggregate;
-import cn.xu.domain.notification.model.entity.NotificationEntity;
 import cn.xu.domain.notification.model.valueobject.BusinessType;
 import cn.xu.domain.notification.model.valueobject.NotificationType;
 import cn.xu.domain.notification.model.valueobject.SenderType;
@@ -94,7 +93,7 @@ public abstract class AbstractNotificationTemplate {
      * @return 通知聚合根
      */
     protected NotificationAggregate createNotification() {
-        NotificationEntity entity = NotificationEntity.builder()
+        return NotificationAggregate.builder()
                 .type(getType())
                 .senderId(getSenderId())
                 .senderType(getSenderType())
@@ -106,10 +105,7 @@ public abstract class AbstractNotificationTemplate {
                 .read(false)
                 .status(true)
                 .createdTime(LocalDateTime.now())
-                .updatedTime(LocalDateTime.now())
                 .build();
-
-        return NotificationAggregate.from(entity);
     }
 
     /**
