@@ -1,4 +1,4 @@
-package cn.xu.api.web.model.request.notification;
+package cn.xu.api.web.model.dto.notification;
 
 import cn.xu.domain.notification.model.valueobject.NotificationType;
 import cn.xu.infrastructure.common.request.PageRequest;

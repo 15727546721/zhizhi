@@ -1,7 +1,7 @@
 package cn.xu.api.web.controller;
 
 import cn.dev33.satoken.stp.StpUtil;
-import cn.xu.api.web.model.request.notification.NotificationRequest;
+import cn.xu.api.web.model.dto.notification.NotificationRequest;
 import cn.xu.api.web.model.vo.notification.NotificationVO;
 import cn.xu.domain.notification.model.aggregate.NotificationAggregate;
 import cn.xu.domain.notification.service.INotificationService;

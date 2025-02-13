@@ -1,6 +1,5 @@
 package cn.xu.infrastructure.config;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
@@ -32,17 +31,11 @@ public class JacksonConfig {
 
     @Bean
     @Primary
-    public ObjectMapper objectMapper() {
-        // 初始化一个 ObjectMapper 对象，用于自定义 Jackson 的行为
+    public ObjectMapper jacksonObjectMapper() {
         ObjectMapper objectMapper = new ObjectMapper();
 
-        // 忽略未知字段（前端有传入某个字段，但是后端未定义接受该字段值，则一律忽略掉）
-        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-
-        // JavaTimeModule 用于指定序列化和反序列化规则
+        // 配置 Java 8 时间类型序列化
         JavaTimeModule javaTimeModule = new JavaTimeModule();
-
-        // 支持 LocalDateTime、LocalDate、LocalTime
         javaTimeModule.addSerializer(LocalDateTime.class, new LocalDateTimeSerializer(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
         javaTimeModule.addDeserializer(LocalDateTime.class, new LocalDateTimeDeserializer(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
         javaTimeModule.addSerializer(LocalDate.class, new LocalDateSerializer(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
@@ -52,27 +45,15 @@ public class JacksonConfig {
 
         objectMapper.registerModule(javaTimeModule);
 
+        // 处理 Long 类型精度丢失
+        SimpleModule simpleModule = new SimpleModule();
+        simpleModule.addSerializer(Long.class, ToStringSerializer.instance);
+        simpleModule.addSerializer(Long.TYPE, ToStringSerializer.instance);
+        objectMapper.registerModule(simpleModule);
+
         // 设置时区
         objectMapper.setTimeZone(TimeZone.getTimeZone("Asia/Shanghai"));
 
-
-        // 设置凡是为 null 的字段，返参中均不返回，请根据项目组约定是否开启
-        // objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-        log.info("JacksonConfig init success");
-        return objectMapper;
-    }
-
-    /**
-     * 添加 Long 转 json 精度丢失的配置
-     */
-    @Bean
-    public ObjectMapper jacksonObjectMapper(Jackson2ObjectMapperBuilder builder) {
-        ObjectMapper objectMapper = builder.createXmlMapper(false).build();
-        SimpleModule module = new SimpleModule();
-        module.addSerializer(Long.class, ToStringSerializer.instance);
-        module.addSerializer(Long.TYPE, ToStringSerializer.instance);
-        objectMapper.registerModule(module);
         return objectMapper;
     }
 }
-

@@ -44,9 +44,6 @@ public class DisruptorConfig {
     @Resource
     private MessageEventHandler messageEventHandler;
 
-//    @Resource
-//    private NotificationEventHandler notificationEventHandler;
-
     @Resource
     private NotificationExceptionHandler notificationExceptionHandler;
 
