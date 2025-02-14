@@ -1,6 +1,5 @@
-package cn.xu.domain.article.service.impl;
+package cn.xu.domain.article.event;
 
-import cn.xu.domain.article.event.*;
 import cn.xu.domain.article.model.entity.ArticleEntity;
 import com.lmax.disruptor.RingBuffer;
 import lombok.extern.slf4j.Slf4j;
@@ -12,11 +11,11 @@ import org.springframework.stereotype.Service;
  */
 @Slf4j
 @Service
-public class ArticleDomainEventPublisher {
+public class ArticleEventPublisher {
     
     private final RingBuffer<ArticleEventWrapper> eventRingBuffer;
     
-    public ArticleDomainEventPublisher(RingBuffer<ArticleEventWrapper> eventRingBuffer) {
+    public ArticleEventPublisher(RingBuffer<ArticleEventWrapper> eventRingBuffer) {
         this.eventRingBuffer = eventRingBuffer;
     }
     

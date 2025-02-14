@@ -11,7 +11,7 @@ import cn.xu.domain.article.model.entity.ArticleEntity;
 import cn.xu.domain.article.model.entity.CategoryEntity;
 import cn.xu.domain.article.model.entity.TagEntity;
 import cn.xu.domain.article.service.*;
-import cn.xu.domain.article.service.impl.ArticleDomainEventPublisher;
+import cn.xu.domain.article.event.ArticleEventPublisher;
 import cn.xu.domain.article.service.impl.ArticleIndexService;
 import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.common.response.PageResponse;
@@ -49,7 +49,7 @@ public class SysArticleController {
     @Resource
     private ArticleIndexService articleIndexService;
     @Resource
-    private ArticleDomainEventPublisher eventPublisher;
+    private ArticleEventPublisher eventPublisher;
 
     @PostMapping("/uploadCover")
     public ResponseEntity<String> uploadCover(@RequestPart("file") MultipartFile file) {

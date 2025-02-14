@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.annotation.Resource;
 import java.time.LocalDateTime;
 
 /**
@@ -19,11 +20,12 @@ import java.time.LocalDateTime;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class LikeServiceImpl implements LikeService {
 
-    private final LikeDomainService likeDomainService;
-    private final RingBuffer<LikeEvent> likeEventRingBuffer;
+    @Resource
+    private LikeDomainService likeDomainService;
+    @Resource
+    private RingBuffer<LikeEvent> likeEventRingBuffer;
 
     @Override
     @Transactional
