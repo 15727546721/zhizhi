@@ -144,6 +144,11 @@ public class UserRepository implements IUserRepository {
         return roleDao.selectRolesByUserid(userId);
     }
 
+    @Override
+    public String getNicknameById(Long userId) {
+        return userDao.selectById(userId).getNickname();
+    }
+
     private UserEntity convertToUserEntity(User user) {
         if (user == null) {
             return null;

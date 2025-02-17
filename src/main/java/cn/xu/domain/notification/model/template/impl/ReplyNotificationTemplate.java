@@ -9,13 +9,13 @@ public class ReplyNotificationTemplate extends AbstractNotificationTemplate {
     
     private final Long businessId;
     private final String replyContent;
-    private final BusinessType businessType;
+    private final BusinessType notificationBusinessType;
     
-    public ReplyNotificationTemplate(Long senderId, Long receiverId, BusinessType businessType, 
+    public ReplyNotificationTemplate(Long senderId, Long receiverId, BusinessType notificationBusinessType,
             Long businessId, String senderName, String replyContent) {
         this.senderId = senderId;
         this.receiverId = receiverId;
-        this.businessType = businessType;
+        this.notificationBusinessType = notificationBusinessType;
         this.businessId = businessId;
         this.senderName = senderName;
         this.replyContent = replyContent;
@@ -24,7 +24,7 @@ public class ReplyNotificationTemplate extends AbstractNotificationTemplate {
     @Override
     protected void prepareNotificationData() {
         super.prepareNotificationData();
-        this.content = senderName + "回复了你的" + businessType.getDescription() + "：" + replyContent;
+        this.content = senderName + "回复了你的" + notificationBusinessType.getDescription() + "：" + replyContent;
         addExtraInfo("replyContent", replyContent);
     }
     
@@ -35,7 +35,7 @@ public class ReplyNotificationTemplate extends AbstractNotificationTemplate {
     
     @Override
     public BusinessType getBusinessType() {
-        return businessType;
+        return notificationBusinessType;
     }
     
     @Override
@@ -69,7 +69,7 @@ public class ReplyNotificationTemplate extends AbstractNotificationTemplate {
         if (businessId == null) {
             throw new IllegalArgumentException("业务ID不能为空");
         }
-        if (businessType == null) {
+        if (notificationBusinessType == null) {
             throw new IllegalArgumentException("业务类型不能为空");
         }
         if (replyContent == null || replyContent.trim().isEmpty()) {

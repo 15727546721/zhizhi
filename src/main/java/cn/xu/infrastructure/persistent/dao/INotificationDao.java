@@ -1,6 +1,7 @@
 package cn.xu.infrastructure.persistent.dao;
 
 import cn.xu.domain.notification.model.entity.NotificationEntity;
+import cn.xu.infrastructure.persistent.po.Notification;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -15,12 +16,7 @@ public interface INotificationDao {
     /**
      * 保存通知
      */
-    void insert(NotificationEntity notification);
-    
-    /**
-     * 批量保存通知
-     */
-    void batchInsert(@Param("notifications") List<NotificationEntity> notifications);
+    void insert(Notification notification);
     
     /**
      * 更新通知

@@ -11,25 +11,25 @@ public interface NotificationPublisher {
     /**
      * 发送点赞通知
      */
-    void publishLikeNotification(Long senderId, Long userId, Long businessId, BusinessType businessType);
+    void publishLikeNotification(Long senderId, Long userId, Long businessId, BusinessType notificationBusinessType);
 
     /**
      * 发送收藏通知
      */
-    void publishFavoriteNotification(Long senderId, Long userId, Long articleId);
+    void publishFavoriteNotification(Long senderId, Long userId, Long articleId, BusinessType notificationBusinessType);
 
     /**
      * 发送评论通知
      */
-    void publishCommentNotification(Long senderId, Long userId, Long articleId, String content);
+    void publishCommentNotification(Long senderId, Long userId, Long articleId, String content, BusinessType notificationBusinessType);
 
     /**
      * 发送回复通知
      */
-    void publishReplyNotification(Long senderId, Long userId, Long commentId, String content);
+    void publishReplyNotification(Long senderId, Long userId, Long commentId, String content, BusinessType notificationBusinessType);
 
     /**
      * 发送关注通知
      */
-    void publishFollowNotification(Long senderId, Long userId);
+    void publishFollowNotification(Long senderId, Long userId, BusinessType notificationBusinessType);
 } 

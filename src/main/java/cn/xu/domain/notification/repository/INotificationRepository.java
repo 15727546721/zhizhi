@@ -17,11 +17,6 @@ public interface INotificationRepository {
     NotificationAggregate save(NotificationAggregate notification);
     
     /**
-     * 批量保存通知
-     */
-    List<NotificationAggregate> saveAll(List<NotificationAggregate> notifications);
-    
-    /**
      * 根据ID查询通知
      */
     NotificationAggregate findById(Long id);

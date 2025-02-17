@@ -8,8 +8,6 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -31,17 +29,5 @@ public class NotificationProcessService {
             throw e;
         }
     }
-    
-    @Async
-    @Transactional
-    public void processBatchNotificationsAsync(List<NotificationAggregate> notifications) {
-        try {
-            // 批量保存通知到数据库
-            notificationRepository.saveAll(notifications);
-            log.info("批量通知已保存到数据库: count={}", notifications.size());
-        } catch (Exception e) {
-            log.error("批量处理通知失败: count={}", notifications.size(), e);
-            throw e;
-        }
-    }
+
 } 

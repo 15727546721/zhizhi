@@ -1,90 +1,85 @@
 package cn.xu.infrastructure.persistent.po;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
-/**
- * 通知表持久化对象
- *
- * @author xuhh
- * @date 2024/03/20
- */
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class Notification {
-    
     /**
-     * 通知ID
+     * 主键ID
      */
     private Long id;
-    
+
     /**
-     * 通知类型：1-系统通知 2-点赞通知 3-收藏通知 4-评论通知 5-关注通知 6-回复通知
+     * 通知类型：1-系统通知 2-点赞通知 3-收藏通知 4-评论通知  5-回复通知 6-关注通知
      */
     private Integer type;
-    
+
     /**
-     * 接收用户ID
-     */
-    private Long receiverId;
-    
-    /**
-     * 发送者ID（系统通知时为空）
+     * 发送者ID
      */
     private Long senderId;
-    
+
     /**
      * 发送者类型：1-系统 2-用户
      */
     private Integer senderType;
-    
+
     /**
-     * 通知标题
+     * 接收者ID
+     */
+    private Long receiverId;
+
+    /**
+     * 标题
      */
     private String title;
-    
+
     /**
-     * 通知内容
+     * 内容
      */
     private String content;
-    
+
     /**
-     * 业务类型：1-文章 2-评论 3-用户
+     * 业务类型：1-文章 2-话题 3-用户
      */
-    private Integer businessType;
-    
+    private Integer notificationBusinessType;
+
     /**
      * 业务ID
      */
     private Long businessId;
-    
+
     /**
-     * 额外参数JSON格式
+     * 额外信息（JSON格式）
      */
-    private String extra;
-    
-    /**
-     * 状态：1-有效 2-已删除
-     */
-    private Integer status;
-    
+    private Map<String, Object> extraInfo;
+
     /**
      * 是否已读：0-未读 1-已读
      */
-    private Boolean isRead;
-    
+    private Integer read;
+
     /**
-     * 阅读时间
+     * 状态：1-有效 0-已删除
      */
-    private LocalDateTime readTime;
-    
+    private Integer status;
+
     /**
      * 创建时间
      */
-    private LocalDateTime createTime;
-    
+    private LocalDateTime createdTime;
+
     /**
      * 更新时间
      */
-    private LocalDateTime updateTime;
+    private LocalDateTime updatedTime;
 } 

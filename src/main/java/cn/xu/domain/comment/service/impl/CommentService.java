@@ -9,11 +9,11 @@ import cn.xu.domain.comment.model.entity.CommentEntity;
 import cn.xu.domain.comment.model.valueobject.CommentType;
 import cn.xu.domain.comment.repository.ICommentRepository;
 import cn.xu.domain.comment.service.ICommentService;
-import cn.xu.domain.message.event.factory.MessageEventFactory;
-import cn.xu.domain.message.service.MessagePublisher;
 import cn.xu.domain.notification.event.publisher.NotificationEventPublisher;
 import cn.xu.domain.notification.factory.NotificationFactory;
 import cn.xu.domain.notification.model.aggregate.NotificationAggregate;
+import cn.xu.domain.notification.model.valueobject.BusinessType;
+import cn.xu.domain.notification.service.INotificationService;
 import cn.xu.domain.topic.service.ITopicService;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.service.IUserService;
@@ -52,16 +52,13 @@ public class CommentService implements ICommentService {
     private NotificationFactory notificationFactory;
 
     @Resource
-    private MessagePublisher messagePublisher;
-
-    @Resource
-    private MessageEventFactory messageEventFactory;
+    private INotificationService notificationService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void saveComment(CommentRequest request) {
         try {
-            log.info("开始保存评论 - type: {}, targetId: {}, parentId: {}", 
+            log.info("开始保存评论 - type: {}, targetId: {}, parentId: {}",
                     request.getType(), request.getTargetId(), request.getParentId());
 
             // 1. 获取当前用户
@@ -91,6 +88,7 @@ public class CommentService implements ICommentService {
             } else {
                 // 一级评论的情况
                 handleRootComment(commentEntity, currentUser);
+                // 通知业务类型作者被评论了
             }
 
             // 5. 保存评论
@@ -130,11 +128,12 @@ public class CommentService implements ICommentService {
 
         // 4. 发送通知
         NotificationAggregate notification = notificationFactory.createReplyNotification(
-            comment.getId(),
-            currentUser.getId(),
-            replyToUser.getId(),
-            comment.getContent(),
-            parentComment.getId()
+                comment.getId(),
+                currentUser.getId(),
+                replyToUser.getId(),
+                comment.getContent(),
+                parentComment.getId(),
+                BusinessType.getType(parentComment.getType().getValue())
         );
         notificationEventPublisher.publish(notification);
     }
@@ -144,7 +143,7 @@ public class CommentService implements ICommentService {
      * 根据评论类型分别处理文章评论、话题评论等
      */
     private void handleRootComment(CommentEntity comment, UserEntity currentUser) {
-        log.debug("[评论服务] 开始处理一级评论 - type: {}, targetId: {}, userId: {}", 
+        log.debug("[评论服务] 开始处理一级评论 - type: {}, targetId: {}, userId: {}",
                 comment.getType(), comment.getTargetId(), currentUser.getId());
 
         if (CommentType.ARTICLE.equals(comment.getType())) {
@@ -213,11 +212,12 @@ public class CommentService implements ICommentService {
      */
     private void sendCommentNotification(UserEntity fromUser, UserEntity toUser, CommentEntity comment) {
         NotificationAggregate notification = notificationFactory.createCommentNotification(
-            comment.getId(),
-            fromUser.getId(),
-            toUser.getId(),
-            comment.getContent(),
-            comment.getTargetId()
+                comment.getId(),
+                fromUser.getId(),
+                toUser.getId(),
+                comment.getContent(),
+                comment.getTargetId(),
+                BusinessType.getType(comment.getType().getValue())
         );
         notificationEventPublisher.publish(notification);
         log.debug("[评论服务] 已发送评论通知 - from: {}, to: {}", fromUser.getId(), toUser.getId());
@@ -250,7 +250,7 @@ public class CommentService implements ICommentService {
     @Override
     public List<CommentEntity> getPagedComments(CommentType type, Long targetId, Integer pageNum, Integer pageSize) {
         try {
-            log.info("开始分页查询评论列表 - type: {}, targetId: {}, pageNum: {}, pageSize: {}", 
+            log.info("开始分页查询评论列表 - type: {}, targetId: {}, pageNum: {}, pageSize: {}",
                     type != null ? type.getDescription() : "null", targetId, pageNum, pageSize);
 
             // 1. 获取分页的一级评论
@@ -280,7 +280,7 @@ public class CommentService implements ICommentService {
                 comment.setChildren(commentReplies);
             });
 
-            log.info("分页查询评论列表完成 - 一级评论数: {}, 总回复数: {}", 
+            log.info("分页查询评论列表完成 - 一级评论数: {}, 总回复数: {}",
                     rootComments.size(), replies.size());
 
             return rootComments;
@@ -419,33 +419,33 @@ public class CommentService implements ICommentService {
     public PageResponse<List<CommentVO>> getRootCommentsWithUserByPage(CommentRequest request) {
         try {
             log.info("分页获取一级评论列表 - request: {}", request);
-            
+
             // 1. 获取总记录数
             long total = commentRepository.countRootComments(request.getType(), null);
-            
+
             // 2. 如果没有记录，直接返回空列表
             if (total == 0) {
                 return PageResponse.of(request.getPageNo(), request.getPageSize(), 0L, new ArrayList<>());
             }
-            
+
             // 3. 计算分页参数
             int offset = (request.getPageNo() - 1) * request.getPageSize();
             int limit = request.getPageSize();
-            
+
             // 4. 获取评论列表
             List<CommentEntity> comments = commentRepository.findRootCommentsByPage(
-                request.getType(), 
-                null, 
-                offset, 
-                limit
+                    request.getType(),
+                    null,
+                    offset,
+                    limit
             );
-            
+
             // 5. 获取用户信息
             Set<Long> userIds = comments.stream()
                     .map(CommentEntity::getUserId)
                     .collect(Collectors.toSet());
             Map<Long, UserEntity> userMap = userService.getBatchUserInfo(userIds);
-            
+
             // 6. 转换为DTO
             List<CommentVO> commentVOS = comments.stream()
                     .map(comment -> {
@@ -458,10 +458,10 @@ public class CommentService implements ICommentService {
                         return dto;
                     })
                     .collect(Collectors.toList());
-            
+
             // 7. 构建分页响应
             return PageResponse.of(request.getPageNo(), request.getPageSize(), total, commentVOS);
-            
+
         } catch (Exception e) {
             log.error("分页获取一级评论列表失败 - request: {}", request, e);
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "获取评论列表失败：" + e.getMessage());
@@ -478,17 +478,17 @@ public class CommentService implements ICommentService {
     public List<CommentReplyVO> getPagedRepliesWithUser(Long parentId, PageRequest pageRequest) {
         try {
             log.info("分页获取二级评论列表 - parentId: {}, pageRequest: {}", parentId, pageRequest);
-            
+
             // 1. 计算分页参数
             int offset = (pageRequest.getPageNo() - 1) * pageRequest.getPageSize();
             int limit = pageRequest.getPageSize();
-            
+
             // 2. 获取评论列表
             List<CommentEntity> replies = commentRepository.findRepliesByPage(parentId, offset, limit);
             if (replies.isEmpty()) {
                 return new ArrayList<>();
             }
-            
+
             // 3. 收集所有需要查询的用户ID
             Set<Long> userIds = new HashSet<>();
             replies.forEach(reply -> {
@@ -497,10 +497,10 @@ public class CommentService implements ICommentService {
                     userIds.add(reply.getReplyUserId());
                 }
             });
-            
+
             // 4. 获取用户信息
             Map<Long, UserEntity> userMap = userService.getBatchUserInfo(userIds);
-            
+
             // 5. 转换为DTO
             return replies.stream()
                     .map(reply -> {
@@ -511,14 +511,14 @@ public class CommentService implements ICommentService {
                                 .replyUserId(reply.getReplyUserId())
                                 .createTime(reply.getCreateTime())
                                 .build();
-                        
+
                         // 设置评论用户信息
                         UserEntity user = userMap.get(reply.getUserId());
                         if (user != null) {
                             dto.setNickName(user.getNickname());
                             dto.setAvatar(user.getAvatar());
                         }
-                        
+
                         // 设置被回复用户信息
                         if (reply.getReplyUserId() != null) {
                             UserEntity replyUser = userMap.get(reply.getReplyUserId());
@@ -527,11 +527,11 @@ public class CommentService implements ICommentService {
                                 dto.setReplyAvatar(replyUser.getAvatar());
                             }
                         }
-                        
+
                         return dto;
                     })
                     .collect(Collectors.toList());
-            
+
         } catch (Exception e) {
             log.error("分页获取二级评论列表失败 - parentId: {}", parentId, e);
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "获取回复列表失败：" + e.getMessage());

@@ -9,24 +9,22 @@ import lombok.Getter;
 /**
  * 评论通知模板
  *
- * @author xuhh
- * @date 2024/03/20
  */
 @Getter
 public class CommentNotificationTemplate extends AbstractNotificationTemplate {
 
     private final Long senderId;
     private final Long receiverId;
-    private final BusinessType businessType;
+    private final BusinessType notificationBusinessType;
     private final Long businessId;
     private final String senderName;
     private final String commentContent;
 
-    public CommentNotificationTemplate(Long senderId, Long receiverId, BusinessType businessType, Long businessId, 
-                                     String senderName, String commentContent) {
+    public CommentNotificationTemplate(Long senderId, Long receiverId, BusinessType notificationBusinessType, Long businessId,
+                                       String senderName, String commentContent) {
         this.senderId = senderId;
         this.receiverId = receiverId;
-        this.businessType = businessType;
+        this.notificationBusinessType = notificationBusinessType;
         this.businessId = businessId;
         this.senderName = senderName;
         this.commentContent = commentContent;
@@ -39,7 +37,7 @@ public class CommentNotificationTemplate extends AbstractNotificationTemplate {
 
     @Override
     public BusinessType getBusinessType() {
-        return businessType;
+        return notificationBusinessType;
     }
 
     @Override
@@ -65,7 +63,7 @@ public class CommentNotificationTemplate extends AbstractNotificationTemplate {
     @Override
     protected void prepareNotificationData() {
         super.prepareNotificationData();
-        this.content = String.format("%s评论了你的%s：%s", senderName, businessType.getDescription(), commentContent);
+        this.content = String.format("%s评论了你的%s：%s", senderName, BusinessType.ARTICLE.getDescription(), commentContent);
     }
 
     @Override
@@ -76,7 +74,7 @@ public class CommentNotificationTemplate extends AbstractNotificationTemplate {
         if (receiverId == null) {
             throw new IllegalArgumentException("接收者ID不能为空");
         }
-        if (businessType == null) {
+        if (notificationBusinessType == null) {
             throw new IllegalArgumentException("业务类型不能为空");
         }
         if (businessId == null) {

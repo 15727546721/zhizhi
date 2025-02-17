@@ -9,8 +9,6 @@ import java.util.List;
 /**
  * 评论服务接口
  *
- * @author xuhongzu
- * @date 2024/03/16
  */
 public interface ICommentService {
     /**

@@ -9,8 +9,6 @@ import lombok.Getter;
 /**
  * 关注通知模板
  *
- * @author xuhh
- * @date 2024/03/20
  */
 @Getter
 public class FollowNotificationTemplate extends AbstractNotificationTemplate {

@@ -7,10 +7,21 @@ public enum SenderType {
     /**
      * 系统
      */
-    SYSTEM,
-    
+    SYSTEM(1),
+
     /**
      * 用户
      */
-    USER
-} 
+    USER(2);
+
+    private final Integer value;
+
+    // 私有构造函数
+    SenderType(Integer value) {
+        this.value = value;
+    }
+
+    public Integer getValue() {
+        return value;
+    }
+}

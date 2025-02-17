@@ -4,23 +4,22 @@ import cn.xu.domain.notification.model.aggregate.NotificationAggregate;
 import cn.xu.domain.notification.model.entity.NotificationEntity;
 import cn.xu.domain.notification.model.valueobject.NotificationType;
 import cn.xu.domain.notification.repository.INotificationRepository;
+import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.persistent.dao.INotificationDao;
+import cn.xu.infrastructure.persistent.po.Notification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 /**
  * 通知仓储实现类
- * 
- * @author xuhh
- * @date 2024/03/20
+ *
  */
 @Slf4j
 @Repository
@@ -34,7 +33,7 @@ public class NotificationRepository implements INotificationRepository {
      *
      * @param aggregate 通知聚合根
      * @return 保存后的通知聚合根
-     * @throws RuntimeException 保存失败时抛出
+     * @throws BusinessException 保存失败时抛出
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -44,24 +43,34 @@ public class NotificationRepository implements INotificationRepository {
             // 验证实体有效性
             entity.validate();
             
-            LocalDateTime now = LocalDateTime.now();
             if (entity.getId() == null) {
                 log.info("[通知服务] 开始新增通知, receiverId={}, type={}", entity.getReceiverId(), entity.getType());
-                entity.setCreatedTime(now);
-                entity.setUpdatedTime(now);
                 entity.setStatus(true); // 设置为有效状态
-                notificationDao.insert(entity);
+                notificationDao.insert(
+                        Notification.builder()
+                               .receiverId(entity.getReceiverId())
+                               .senderId(entity.getSenderId())
+                               .senderType(entity.getSenderType().getValue())
+                               .type(entity.getType().getValue())
+                               .title(entity.getTitle())
+                               .content(entity.getContent())
+                               .notificationBusinessType(entity.getNotificationBusinessType().getValue())
+                               .businessId(entity.getBusinessId())
+                               .extraInfo(entity.getExtraInfo())
+                               .read(0)
+                               .status(0)
+                                .build()
+                );
                 log.info("[通知服务] 新增通知成功, id={}", entity.getId());
             } else {
                 log.info("[通知服务] 开始更新通知, id={}", entity.getId());
-                entity.setUpdatedTime(now);
                 notificationDao.update(entity);
                 log.info("[通知服务] 更新通知成功");
             }
             return NotificationAggregate.from(entity);
         } catch (Exception e) {
             log.error("[通知服务] 保存通知失败", e);
-            throw new RuntimeException("保存通知失败", e);
+            throw new BusinessException("保存通知失败");
         }
     }
 
@@ -70,7 +79,7 @@ public class NotificationRepository implements INotificationRepository {
      *
      * @param id 通知ID
      * @return 通知聚合根
-     * @throws RuntimeException 查询失败时抛出
+     * @throws BusinessException 查询失败时抛出
      */
     @Override
     public NotificationAggregate findById(Long id) {
@@ -79,13 +88,13 @@ public class NotificationRepository implements INotificationRepository {
             NotificationEntity entity = notificationDao.selectById(id);
             if (entity == null) {
                 log.info("[通知服务] 通知不存在, id={}", id);
-                throw new RuntimeException("通知不存在");
+                throw new BusinessException("通知不存在");
             }
             log.info("[通知服务] 查询通知成功");
             return NotificationAggregate.from(entity);
         } catch (Exception e) {
             log.error("[通知服务] 查询通知失败, id={}", id, e);
-            throw new RuntimeException("查询通知失败", e);
+            throw new BusinessException("查询通知失败");
         }
     }
 
@@ -96,7 +105,7 @@ public class NotificationRepository implements INotificationRepository {
      * @param type 通知类型
      * @param pageable 分页信息
      * @return 通知聚合根列表
-     * @throws RuntimeException 查询失败时抛出
+     * @throws BusinessException 查询失败时抛出
      */
     @Override
     public List<NotificationAggregate> findByUserIdAndType(Long userId, NotificationType type, Pageable pageable) {
@@ -113,7 +122,7 @@ public class NotificationRepository implements INotificationRepository {
                     .collect(Collectors.toList());
         } catch (Exception e) {
             log.error("[通知服务] 查询用户通知失败, userId={}, type={}", userId, type, e);
-            throw new RuntimeException("查询用户通知失败", e);
+            throw new BusinessException("查询用户通知失败");
         }
     }
 
@@ -122,7 +131,7 @@ public class NotificationRepository implements INotificationRepository {
      *
      * @param userId 用户ID
      * @return 未读通知数量
-     * @throws RuntimeException 统计失败时抛出
+     * @throws BusinessException 统计失败时抛出
      */
     @Override
     public long countByUserIdAndIsReadFalse(Long userId) {
@@ -133,7 +142,7 @@ public class NotificationRepository implements INotificationRepository {
             return count;
         } catch (Exception e) {
             log.error("[通知服务] 统计用户未读通知数量失败, userId={}", userId, e);
-            throw new RuntimeException("统计用户未读通知数量失败", e);
+            throw new BusinessException("统计用户未读通知数量失败");
         }
     }
 
@@ -141,7 +150,7 @@ public class NotificationRepository implements INotificationRepository {
      * 将指定通知标记为已读
      *
      * @param notificationId 通知ID
-     * @throws RuntimeException 标记失败时抛出
+     * @throws BusinessException 标记失败时抛出
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -152,7 +161,7 @@ public class NotificationRepository implements INotificationRepository {
             log.info("[通知服务] 标记已读成功");
         } catch (Exception e) {
             log.error("[通知服务] 标记通知为已读失败, notificationId={}", notificationId, e);
-            throw new RuntimeException("标记通知为已读失败", e);
+            throw new BusinessException("标记通知为已读失败");
         }
     }
 
@@ -164,7 +173,7 @@ public class NotificationRepository implements INotificationRepository {
      * @param offset 偏移量
      * @param limit 限制数量
      * @return 通知聚合根列表
-     * @throws RuntimeException 查询失败时抛出
+     * @throws BusinessException 查询失败时抛出
      */
     @Override
     public List<NotificationAggregate> findByUserIdAndType(Long userId, NotificationType type, int offset, int limit) {
@@ -181,7 +190,7 @@ public class NotificationRepository implements INotificationRepository {
                     .collect(Collectors.toList());
         } catch (Exception e) {
             log.error("[通知服务] 查询用户通知失败, userId={}, type={}", userId, type, e);
-            throw new RuntimeException("查询用户通知失败", e);
+            throw new BusinessException("查询用户通知失败");
         }
     }
 
@@ -190,7 +199,7 @@ public class NotificationRepository implements INotificationRepository {
      *
      * @param userId 用户ID
      * @return 未读通知数量
-     * @throws RuntimeException 统计失败时抛出
+     * @throws BusinessException 统计失败时抛出
      */
     @Override
     public long countUnreadByUserId(Long userId) {
@@ -201,7 +210,7 @@ public class NotificationRepository implements INotificationRepository {
             return count;
         } catch (Exception e) {
             log.error("[通知服务] 统计用户未读通知数量失败, userId={}", userId, e);
-            throw new RuntimeException("统计用户未读通知数量失败", e);
+            throw new BusinessException("统计用户未读通知数量失败");
         }
     }
 
@@ -209,7 +218,7 @@ public class NotificationRepository implements INotificationRepository {
      * 将用户所有未读通知标记为已读
      *
      * @param userId 用户ID
-     * @throws RuntimeException 标记失败时抛出
+     * @throws BusinessException 标记失败时抛出
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -220,7 +229,7 @@ public class NotificationRepository implements INotificationRepository {
             log.info("[通知服务] 标记全部已读成功");
         } catch (Exception e) {
             log.error("[通知服务] 标记用户通知为已读失败, userId={}", userId, e);
-            throw new RuntimeException("标记用户通知为已读失败", e);
+            throw new BusinessException("标记用户通知为已读失败");
         }
     }
 
@@ -228,7 +237,7 @@ public class NotificationRepository implements INotificationRepository {
      * 删除通知
      *
      * @param notificationId 通知ID
-     * @throws RuntimeException 删除失败时抛出
+     * @throws BusinessException 删除失败时抛出
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -239,44 +248,7 @@ public class NotificationRepository implements INotificationRepository {
             log.info("[通知服务] 删除通知成功");
         } catch (Exception e) {
             log.error("[通知服务] 删除通知失败, notificationId={}", notificationId, e);
-            throw new RuntimeException("删除通知失败", e);
-        }
-    }
-
-    /**
-     * 批量保存通知
-     *
-     * @param notifications 通知聚合根列表
-     * @return 保存后的通知聚合根列表
-     * @throws RuntimeException 保存失败时抛出
-     */
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public List<NotificationAggregate> saveAll(List<NotificationAggregate> notifications) {
-        if (notifications == null || notifications.isEmpty()) {
-            log.warn("[通知服务] 批量保存通知列表为空");
-            return Collections.emptyList();
-        }
-        
-        try {
-            log.info("[通知服务] 开始批量保存{}条通知", notifications.size());
-            List<NotificationEntity> entities = notifications.stream()
-                    .map(NotificationAggregate::getNotification)
-                    .peek(entity -> {
-                        entity.validate();
-                        LocalDateTime now = LocalDateTime.now();
-                        entity.setCreatedTime(now);
-                        entity.setUpdatedTime(now);
-                        entity.setStatus(true); // 设置为有效状态
-                    })
-                    .collect(Collectors.toList());
-            
-            notificationDao.batchInsert(entities);
-            log.info("[通知服务] 批量保存通知成功");
-            return notifications;
-        } catch (Exception e) {
-            log.error("[通知服务] 批量保存通知失败", e);
-            throw new RuntimeException("批量保存通知失败", e);
+            throw new BusinessException("删除通知失败");
         }
     }
 
@@ -285,7 +257,7 @@ public class NotificationRepository implements INotificationRepository {
      *
      * @param id 通知ID
      * @return 是否存在
-     * @throws RuntimeException 检查失败时抛出
+     * @throws BusinessException 检查失败时抛出
      */
     @Override
     public boolean exists(Long id) {
@@ -296,7 +268,7 @@ public class NotificationRepository implements INotificationRepository {
             return exists;
         } catch (Exception e) {
             log.error("[通知服务] 检查通知是否存在失败, id={}", id, e);
-            throw new RuntimeException("检查通知是否存在失败", e);
+            throw new BusinessException("检查通知是否存在失败");
         }
     }
 

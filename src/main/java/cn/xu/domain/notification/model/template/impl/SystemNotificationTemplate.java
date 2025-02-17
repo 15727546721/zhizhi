@@ -42,7 +42,7 @@ public class SystemNotificationTemplate extends AbstractNotificationTemplate {
     
     @Override
     public BusinessType getBusinessType() {
-        return null; // 系统通知没有业务类型
+        return BusinessType.SYSTEM;
     }
     
     @Override

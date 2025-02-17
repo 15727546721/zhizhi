@@ -1,9 +1,9 @@
 package cn.xu.infrastructure.config;
 
 import cn.xu.domain.article.event.ArticleEvent;
+import cn.xu.domain.article.event.ArticleEventHandler;
 import cn.xu.domain.article.event.ArticleEventWrapper;
 import cn.xu.domain.article.event.factory.ArticleEventFactory;
-import cn.xu.domain.article.event.ArticleEventHandler;
 import cn.xu.domain.like.event.LikeEvent;
 import cn.xu.domain.like.event.LikeEventHandler;
 import cn.xu.domain.like.event.factory.LikeEventFactory;
@@ -114,7 +114,7 @@ public class DisruptorConfig {
     }
 
     /**
-     * 消息事件RingBuffer配置
+     * 私信事件RingBuffer配置
      * @return
      */
     @Bean(name = "messageRingBuffer")
@@ -134,11 +134,10 @@ public class DisruptorConfig {
     }
 
     /**
-     * 通知事件Disruptor配置
-     * 使用更大的缓冲区和多生产者模式，提高并发处理能力
+     * 通知事件RingBuffer配置更大的缓冲区和多生产者模式，提高并发处理能力
      */
     @Bean(name = "notificationDisruptor")
-    public Disruptor<NotificationEvent> notificationDisruptor() {
+    public RingBuffer<NotificationEvent> notificationDisruptor() {
         // 使用更大的缓冲区大小，2的次幂
         int bufferSize = 2048;
 
@@ -157,7 +156,7 @@ public class DisruptorConfig {
         // 启动disruptor
         disruptor.start();
 
-        return disruptor;
+        return disruptor.getRingBuffer();
     }
 
 }

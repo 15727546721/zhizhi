@@ -38,7 +38,7 @@ public class NotificationVO {
     private String content;
 
     @Schema(description = "业务类型")
-    private BusinessType businessType;
+    private BusinessType notificationBusinessType;
 
     @Schema(description = "业务ID")
     private Long businessId;
@@ -63,7 +63,7 @@ public class NotificationVO {
         vo.setSenderType(aggregate.getNotification().getSenderType());
         vo.setTitle(aggregate.getTitle());
         vo.setContent(aggregate.getContent());
-        vo.setBusinessType(aggregate.getBusinessType());
+        vo.setNotificationBusinessType(aggregate.getBusinessType());
         vo.setBusinessId(aggregate.getBusinessId());
         vo.setExtraInfo(aggregate.getExtraInfo());
         vo.setRead(aggregate.isRead());

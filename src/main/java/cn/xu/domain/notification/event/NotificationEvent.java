@@ -4,6 +4,8 @@ import cn.xu.domain.notification.model.aggregate.NotificationAggregate;
 import cn.xu.domain.notification.model.valueobject.BusinessType;
 import cn.xu.domain.notification.model.valueobject.NotificationType;
 import cn.xu.domain.notification.model.valueobject.SenderType;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -14,11 +16,11 @@ import java.util.Map;
  * 通知事件基类
  * 用于在领域内传递通知相关的事件信息
  *
- * @author xuhh
- * @date 2024/03/21
  */
 @Data
+@Builder
 @NoArgsConstructor
+@AllArgsConstructor
 public class NotificationEvent {
     /**
      * 通知ID
@@ -53,7 +55,7 @@ public class NotificationEvent {
     /**
      * 业务类型
      */
-    private BusinessType businessType;
+    private BusinessType notificationBusinessType;
     
     /**
      * 业务ID
@@ -74,18 +76,19 @@ public class NotificationEvent {
      * 从通知聚合根创建事件
      */
     public static NotificationEvent from(NotificationAggregate aggregate) {
-        NotificationEvent event = new NotificationEvent();
-        event.setNotificationId(aggregate.getNotification().getId());
-        event.setType(aggregate.getNotification().getType());
-        event.setSenderId(aggregate.getNotification().getSenderId());
-        event.setSenderType(aggregate.getNotification().getSenderType());
-        event.setReceiverId(aggregate.getNotification().getReceiverId());
-        event.setContent(aggregate.getNotification().getContent());
-        event.setBusinessType(aggregate.getNotification().getBusinessType());
-        event.setBusinessId(aggregate.getNotification().getBusinessId());
-        event.setExtraInfo(aggregate.getNotification().getExtraInfo());
-        event.setCreatedTime(aggregate.getNotification().getCreatedTime());
-        return event;
+
+        return NotificationEvent.builder()
+                .notificationId(aggregate.getNotification().getId())
+                .type(aggregate.getNotification().getType())
+                .senderId(aggregate.getNotification().getSenderId())
+                .senderType(aggregate.getNotification().getSenderType())
+                .receiverId(aggregate.getNotification().getReceiverId())
+                .content(aggregate.getNotification().getContent())
+                .notificationBusinessType(aggregate.getNotification().getNotificationBusinessType())
+                .businessId(aggregate.getNotification().getBusinessId())
+                .extraInfo(aggregate.getNotification().getExtraInfo())
+                .createdTime(aggregate.getNotification().getCreatedTime())
+                .build();
     }
 
     /**
@@ -99,7 +102,7 @@ public class NotificationEvent {
             .senderType(this.senderType)
             .receiverId(this.receiverId)
             .content(this.content)
-            .businessType(this.businessType)
+            .businessType(this.notificationBusinessType)
             .businessId(this.businessId)
             .extraInfo(this.extraInfo)
             .createdTime(this.createdTime)

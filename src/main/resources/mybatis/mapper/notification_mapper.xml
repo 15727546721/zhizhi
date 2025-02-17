@@ -31,8 +31,8 @@
             business_id, extra, status, is_read, read_time, create_time, update_time
         ) VALUES (
             #{type}, #{receiverId}, #{senderId}, #{senderType}, #{title}, #{content},
-            #{businessType}, #{businessId}, #{extra}, #{status}, #{isRead},
-            #{readTime}, #{createTime}, #{updateTime}
+            #{notificationBusinessType}, #{businessId}, #{extra}, #{status}, #{isRead},
+            #{readTime}, now(), now()
         )
     </insert>
 
@@ -45,13 +45,13 @@
             <if test="senderType != null">sender_type = #{senderType},</if>
             <if test="title != null">title = #{title},</if>
             <if test="content != null">content = #{content},</if>
-            <if test="businessType != null">business_type = #{businessType},</if>
+            <if test="notificationBusinessType != null">business_type = #{notificationBusinessType},</if>
             <if test="businessId != null">business_id = #{businessId},</if>
             <if test="extra != null">extra = #{extra},</if>
             <if test="status != null">status = #{status},</if>
             <if test="isRead != null">is_read = #{isRead},</if>
             <if test="readTime != null">read_time = #{readTime},</if>
-            <if test="updateTime != null">update_time = #{updateTime}</if>
+            <if test="updateTime != null">update_time = now()</if>
         </set>
         WHERE id = #{id}
     </update>

@@ -3,9 +3,10 @@ package cn.xu.domain.notification.event.publisher;
 import cn.xu.domain.notification.event.NotificationEvent;
 import cn.xu.domain.notification.model.aggregate.NotificationAggregate;
 import com.lmax.disruptor.RingBuffer;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+
+import javax.annotation.Resource;
 
 /**
  * 通知事件发布器
@@ -13,10 +14,10 @@ import org.springframework.stereotype.Component;
  */
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class NotificationEventPublisher {
 
-    private final RingBuffer<NotificationEvent> notificationRingBuffer;
+    @Resource
+    private RingBuffer<NotificationEvent> notificationRingBuffer;
 
     /**
      * 发布通知事件
@@ -35,7 +36,7 @@ public class NotificationEventPublisher {
             event.setSenderType(notification.getNotification().getSenderType());
             event.setReceiverId(notification.getNotification().getReceiverId());
             event.setContent(notification.getNotification().getContent());
-            event.setBusinessType(notification.getNotification().getBusinessType());
+            event.setNotificationBusinessType(notification.getNotification().getNotificationBusinessType());
             event.setBusinessId(notification.getNotification().getBusinessId());
             event.setExtraInfo(notification.getNotification().getExtraInfo());
             event.setCreatedTime(notification.getNotification().getCreatedTime());

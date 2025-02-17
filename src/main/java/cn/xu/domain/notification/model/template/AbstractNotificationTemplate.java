@@ -14,8 +14,6 @@ import java.util.Map;
  * 通知模板抽象类
  * 使用模板方法模式规范化通知的构建和发送流程
  *
- * @author xuhh
- * @date 2024/03/20
  */
 @Getter
 public abstract class AbstractNotificationTemplate {

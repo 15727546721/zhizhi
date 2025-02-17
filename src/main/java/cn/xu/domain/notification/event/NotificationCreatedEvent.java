@@ -6,8 +6,6 @@ import lombok.Getter;
 /**
  * 通知创建事件
  *
- * @author xuhh
- * @date 2024/03/21
  */
 @Getter
 public class NotificationCreatedEvent extends NotificationEvent {
@@ -23,7 +21,7 @@ public class NotificationCreatedEvent extends NotificationEvent {
         event.setSenderType(baseEvent.getSenderType());
         event.setReceiverId(baseEvent.getReceiverId());
         event.setContent(baseEvent.getContent());
-        event.setBusinessType(baseEvent.getBusinessType());
+        event.setNotificationBusinessType(baseEvent.getNotificationBusinessType());
         event.setBusinessId(baseEvent.getBusinessId());
         event.setExtraInfo(baseEvent.getExtraInfo());
         event.setCreatedTime(baseEvent.getCreatedTime());

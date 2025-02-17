@@ -35,7 +35,6 @@ import java.util.stream.Collectors;
  * 用户服务实现类
  * 负责用户相关的核心业务逻辑，包括用户信息的增删改查、认证授权等
  *
- * @author xu
  */
 @Service
 @RequiredArgsConstructor
@@ -66,8 +65,8 @@ public class UserServiceImpl implements IUserService {
     }
 
     @Override
-    public String getUsernameById(Long userId) {
-        return null;
+    public String getNicknameById(Long userId) {
+        return userRepository.getNicknameById(userId);
     }
 
     @Override

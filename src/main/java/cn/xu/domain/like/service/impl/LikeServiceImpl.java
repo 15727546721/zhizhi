@@ -6,7 +6,6 @@ import cn.xu.domain.like.model.LikeType;
 import cn.xu.domain.like.service.LikeDomainService;
 import cn.xu.domain.like.service.LikeService;
 import com.lmax.disruptor.RingBuffer;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

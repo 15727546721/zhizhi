@@ -8,8 +8,6 @@ import java.time.LocalDateTime;
 /**
  * 通知已读事件
  *
- * @author xuhh
- * @date 2024/03/21
  */
 @Getter
 public class NotificationReadEvent extends NotificationEvent {
@@ -30,7 +28,7 @@ public class NotificationReadEvent extends NotificationEvent {
         event.setSenderType(baseEvent.getSenderType());
         event.setReceiverId(baseEvent.getReceiverId());
         event.setContent(baseEvent.getContent());
-        event.setBusinessType(baseEvent.getBusinessType());
+        event.setNotificationBusinessType(baseEvent.getNotificationBusinessType());
         event.setBusinessId(baseEvent.getBusinessId());
         event.setExtraInfo(baseEvent.getExtraInfo());
         event.setCreatedTime(baseEvent.getCreatedTime());

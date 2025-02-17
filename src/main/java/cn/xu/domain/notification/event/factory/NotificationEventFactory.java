@@ -9,8 +9,6 @@ import lombok.NoArgsConstructor;
  * 通知事件工厂
  * 用于创建通知事件实例
  *
- * @author xuhh
- * @date 2024/03/21
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class NotificationEventFactory implements EventFactory<NotificationEvent> {

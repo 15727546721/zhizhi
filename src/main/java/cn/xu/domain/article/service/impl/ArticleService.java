@@ -24,7 +24,6 @@ import java.util.List;
  * 文章服务实现类
  * 负责文章的创建、修改、删除、查询等核心业务逻辑
  *
- * @author xu
  */
 @Service
 public class ArticleService implements IArticleService {

@@ -12,8 +12,6 @@ import org.springframework.stereotype.Component;
 /**
  * 通知模板工厂
  *
- * @author xuhh
- * @date 2024/03/20
  */
 @Component
 @RequiredArgsConstructor
@@ -32,24 +30,24 @@ public class NotificationTemplateFactory {
     /**
      * 创建点赞通知
      */
-    public NotificationAggregate createLikeNotification(Long senderId, Long receiverId, BusinessType businessType, Long businessId, String senderName) {
-        AbstractNotificationTemplate template = new LikeNotificationTemplate(senderId, receiverId, businessType, businessId, senderName);
+    public NotificationAggregate createLikeNotification(Long senderId, Long receiverId, BusinessType notificationBusinessType, Long businessId, String senderName) {
+        AbstractNotificationTemplate template = new LikeNotificationTemplate(senderId, receiverId, notificationBusinessType, businessId, senderName);
         return template.build();
     }
 
     /**
      * 创建收藏通知
      */
-    public NotificationAggregate createFavoriteNotification(Long senderId, Long receiverId, BusinessType businessType, Long businessId, String senderName) {
-        AbstractNotificationTemplate template = new FavoriteNotificationTemplate(senderId, receiverId, businessType, businessId, senderName);
+    public NotificationAggregate createFavoriteNotification(Long senderId, Long receiverId, BusinessType notificationBusinessType, Long businessId, String senderName) {
+        AbstractNotificationTemplate template = new FavoriteNotificationTemplate(senderId, receiverId, notificationBusinessType, businessId, senderName);
         return template.build();
     }
 
     /**
      * 创建评论通知
      */
-    public NotificationAggregate createCommentNotification(Long senderId, Long receiverId, BusinessType businessType, Long businessId, String senderName, String commentContent) {
-        AbstractNotificationTemplate template = new CommentNotificationTemplate(senderId, receiverId, businessType, businessId, senderName, commentContent);
+    public NotificationAggregate createCommentNotification(Long senderId, Long receiverId, BusinessType notificationBusinessType, Long businessId, String senderName, String commentContent) {
+        AbstractNotificationTemplate template = new CommentNotificationTemplate(senderId, receiverId, notificationBusinessType, businessId, senderName, commentContent);
         return template.build();
     }
 
@@ -64,8 +62,8 @@ public class NotificationTemplateFactory {
     /**
      * 创建回复通知
      */
-    public NotificationAggregate createReplyNotification(Long senderId, Long receiverId, BusinessType businessType, Long businessId, String senderName, String replyContent) {
-        AbstractNotificationTemplate template = new ReplyNotificationTemplate(senderId, receiverId, businessType, businessId, senderName, replyContent);
+    public NotificationAggregate createReplyNotification(Long senderId, Long receiverId, BusinessType notificationBusinessType, Long businessId, String senderName, String replyContent) {
+        AbstractNotificationTemplate template = new ReplyNotificationTemplate(senderId, receiverId, notificationBusinessType, businessId, senderName, replyContent);
         return template.build();
     }
 } 

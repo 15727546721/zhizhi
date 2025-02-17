@@ -57,7 +57,7 @@ public class NotificationEntity {
     /**
      * 业务类型
      */
-    private BusinessType businessType;
+    private BusinessType notificationBusinessType;
     
     /**
      * 业务ID
@@ -80,7 +80,7 @@ public class NotificationEntity {
     private LocalDateTime readTime;
     
     /**
-     * 是否有效
+     * 状态：1-有效 2-已删除
      */
     private Boolean status;
     
@@ -120,7 +120,7 @@ public class NotificationEntity {
         if (SenderType.USER.equals(senderType) && senderId == null) {
             throw new IllegalArgumentException("用户类型的发送者ID不能为空");
         }
-        if (businessType != null && businessId == null) {
+        if (notificationBusinessType != null && businessId == null) {
             throw new IllegalArgumentException("业务类型存在时，业务ID不能为空");
         }
         if (type == NotificationType.SYSTEM && (title == null || title.trim().isEmpty())) {

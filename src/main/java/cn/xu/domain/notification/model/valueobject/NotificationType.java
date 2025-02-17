@@ -3,11 +3,6 @@ package cn.xu.domain.notification.model.valueobject;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.stream.Collectors;
-
 /**
  * 通知类型值对象
  * 定义所有可能的通知类型及其与业务类型的关联
@@ -18,82 +13,36 @@ public enum NotificationType {
     /**
      * 系统通知
      */
-    SYSTEM("系统通知", null),
+    SYSTEM("系统通知"),
     
     /**
      * 点赞通知
      */
-    LIKE("点赞通知", createBusinessTypeSet(BusinessType.ARTICLE, BusinessType.COMMENT, BusinessType.REPLY, BusinessType.TOPIC)),
+    LIKE("点赞通知"),
     
     /**
      * 评论通知
      */
-    COMMENT("评论通知", createBusinessTypeSet(BusinessType.ARTICLE, BusinessType.TOPIC)),
+    COMMENT("评论通知"),
     
     /**
      * 回复通知
      */
-    REPLY("回复通知", createBusinessTypeSet(BusinessType.COMMENT)),
+    REPLY("回复通知"),
     
     /**
      * 收藏通知
      */
-    FAVORITE("收藏通知", createBusinessTypeSet(BusinessType.ARTICLE, BusinessType.TOPIC)),
+    FAVORITE("收藏通知"),
     
     /**
      * 关注通知
      */
-    FOLLOW("关注通知", createBusinessTypeSet(BusinessType.USER));
+    FOLLOW("关注通知");
 
     private final String description;
-    private final Set<BusinessType> supportedBusinessTypes;
 
-    /**
-     * 创建不可变的BusinessType集合
-     */
-    private static Set<BusinessType> createBusinessTypeSet(BusinessType... types) {
-        Set<BusinessType> set = new HashSet<>();
-        Collections.addAll(set, types);
-        return Collections.unmodifiableSet(set);
-    }
 
-    /**
-     * 检查是否支持指定的业务类型
-     */
-    public boolean supportsBusinessType(BusinessType businessType) {
-        return supportedBusinessTypes.contains(businessType);
-    }
-
-    /**
-     * 获取支持此通知类型的所有业务类型
-     */
-    public Set<BusinessType> getSupportedBusinessTypes() {
-        return supportedBusinessTypes;
-    }
-
-    /**
-     * 验证通知类型和业务类型的组合是否有效
-     */
-    public void validateBusinessType(BusinessType businessType) {
-        if (businessType != null && !supportsBusinessType(businessType)) {
-            throw new IllegalArgumentException(String.format(
-                "通知类型 %s 不支持业务类型 %s。支持的业务类型: %s",
-                this.description,
-                businessType.getDescription(),
-                supportedBusinessTypes.stream()
-                    .map(BusinessType::getDescription)
-                    .collect(Collectors.joining(", "))
-            ));
-        }
-    }
-
-    /**
-     * 获取通知内容模板
-     */
-    public String getContentTemplate(BusinessType businessType) {
-        validateBusinessType(businessType);
-        return businessType.getActionDescription(this);
-    }
 
     /**
      * 检查是否需要业务ID

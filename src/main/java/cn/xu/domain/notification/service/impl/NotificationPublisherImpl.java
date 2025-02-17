@@ -30,11 +30,11 @@ public class NotificationPublisherImpl implements NotificationPublisher {
     }
 
     @Override
-    public void publishLikeNotification(Long senderId, Long userId, Long businessId, BusinessType businessType) {
+    public void publishLikeNotification(Long senderId, Long userId, Long businessId, BusinessType notificationBusinessType) {
         try {
-            String senderName = userService.getUsernameById(senderId);
+            String senderName = userService.getNicknameById(senderId);
             NotificationAggregate notification = notificationFactory.createLikeNotification(
-                    senderId, userId, businessId, businessType, senderName);
+                    senderId, userId, businessId, notificationBusinessType, senderName);
             notificationService.sendNotification(notification);
         } catch (Exception e) {
             log.error("发送点赞通知失败: senderId={}, userId={}", senderId, userId, e);
@@ -42,9 +42,9 @@ public class NotificationPublisherImpl implements NotificationPublisher {
     }
 
     @Override
-    public void publishFavoriteNotification(Long senderId, Long userId, Long articleId) {
+    public void publishFavoriteNotification(Long senderId, Long userId, Long articleId, BusinessType notificationBusinessType) {
         try {
-            String senderName = userService.getUsernameById(senderId);
+            String senderName = userService.getNicknameById(senderId);
             NotificationAggregate notification = notificationFactory.createFavoriteNotification(
                     senderId, userId, articleId, senderName);
             notificationService.sendNotification(notification);
@@ -54,15 +54,16 @@ public class NotificationPublisherImpl implements NotificationPublisher {
     }
 
     @Override
-    public void publishCommentNotification(Long senderId, Long userId, Long articleId, String content) {
+    public void publishCommentNotification(Long senderId, Long userId, Long articleId, String content, BusinessType notificationBusinessType) {
         try {
-            String senderName = userService.getUsernameById(senderId);
+            String senderName = userService.getNicknameById(senderId);
             NotificationAggregate notification = notificationFactory.createCommentNotification(
                     articleId,  // commentId
                     senderId,
                     userId,    // receiverId
                     content,
-                    articleId
+                    articleId,
+                    notificationBusinessType
             );
             notificationService.sendNotification(notification);
         } catch (Exception e) {
@@ -71,15 +72,16 @@ public class NotificationPublisherImpl implements NotificationPublisher {
     }
 
     @Override
-    public void publishReplyNotification(Long senderId, Long userId, Long commentId, String content) {
+    public void publishReplyNotification(Long senderId, Long userId, Long commentId, String content, BusinessType notificationBusinessType) {
         try {
-            String senderName = userService.getUsernameById(senderId);
+            String senderName = userService.getNicknameById(senderId);
             NotificationAggregate notification = notificationFactory.createReplyNotification(
                     commentId,  // replyId
                     senderId,
                     userId,    // receiverId
                     content,
-                    commentId  // parentCommentId
+                    commentId,  // parentCommentId
+                    notificationBusinessType
             );
             notificationService.sendNotification(notification);
         } catch (Exception e) {
@@ -88,11 +90,11 @@ public class NotificationPublisherImpl implements NotificationPublisher {
     }
 
     @Override
-    public void publishFollowNotification(Long senderId, Long userId) {
+    public void publishFollowNotification(Long senderId, Long userId, BusinessType notificationBusinessType) {
         try {
-            String senderName = userService.getUsernameById(senderId);
+            String senderName = userService.getNicknameById(senderId);
             NotificationAggregate notification = notificationFactory.createFollowNotification(
-                    senderId, userId, senderName);
+                    senderId, userId, senderName, notificationBusinessType);
             notificationService.sendNotification(notification);
         } catch (Exception e) {
             log.error("发送关注通知失败: senderId={}, userId={}", senderId, userId, e);

@@ -18,17 +18,17 @@ public class NotificationContent {
     private final String title;
     private final String content;
     private final NotificationType type;
-    private final BusinessType businessType;
+    private final BusinessType notificationBusinessType;
     private final Long businessId;
     private final Map<String, Object> extra;
 
-    public static NotificationContent of(String title, String content, NotificationType type, 
-            BusinessType businessType, Long businessId, Map<String, Object> extra) {
+    public static NotificationContent of(String title, String content, NotificationType type,
+                                         BusinessType notificationBusinessType, Long businessId, Map<String, Object> extra) {
         return NotificationContent.builder()
                 .title(title)
                 .content(content)
                 .type(type)
-                .businessType(businessType)
+                .notificationBusinessType(notificationBusinessType)
                 .businessId(businessId)
                 .extra(extra)
                 .build();

@@ -8,8 +8,6 @@ import lombok.Getter;
 /**
  * 点赞通知模板
  *
- * @author xuhh
- * @date 2024/03/20
  */
 @Getter
 public class LikeNotificationTemplate extends AbstractNotificationTemplate {
@@ -27,7 +25,7 @@ public class LikeNotificationTemplate extends AbstractNotificationTemplate {
     /**
      * 业务类型
      */
-    private final BusinessType businessType;
+    private final BusinessType notificationBusinessType;
 
     /**
      * 业务ID
@@ -44,14 +42,14 @@ public class LikeNotificationTemplate extends AbstractNotificationTemplate {
      *
      * @param senderId 发送者ID
      * @param receiverId 接收者ID
-     * @param businessType 业务类型
+     * @param notificationBusinessType 业务类型
      * @param businessId 业务ID
      * @param senderName 发送者名称
      */
-    public LikeNotificationTemplate(Long senderId, Long receiverId, BusinessType businessType, Long businessId, String senderName) {
+    public LikeNotificationTemplate(Long senderId, Long receiverId, BusinessType notificationBusinessType, Long businessId, String senderName) {
         this.senderId = senderId;
         this.receiverId = receiverId;
-        this.businessType = businessType;
+        this.notificationBusinessType = notificationBusinessType;
         this.businessId = businessId;
         this.senderName = senderName;
     }
@@ -63,7 +61,8 @@ public class LikeNotificationTemplate extends AbstractNotificationTemplate {
 
     @Override
     public BusinessType getBusinessType() {
-        return businessType;
+        return notificationBusinessType;
+
     }
 
     @Override
@@ -79,7 +78,7 @@ public class LikeNotificationTemplate extends AbstractNotificationTemplate {
     @Override
     protected void prepareNotificationData() {
         super.prepareNotificationData();
-        this.content = String.format("%s赞了你的%s", senderName, businessType.getDescription());
+        this.content = String.format("%s赞了你的%s", senderName, notificationBusinessType.getDescription());
     }
 
     @Override
@@ -90,7 +89,7 @@ public class LikeNotificationTemplate extends AbstractNotificationTemplate {
         if (receiverId == null) {
             throw new IllegalArgumentException("接收者ID不能为空");
         }
-        if (businessType == null) {
+        if (notificationBusinessType == null) {
             throw new IllegalArgumentException("业务类型不能为空");
         }
         if (businessId == null) {

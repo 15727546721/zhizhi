@@ -72,4 +72,11 @@ public interface IUserRepository {
      * 根据用户ID查询角色列表
      */
     List<String> findRolesByUserId(Long userId);
+
+    /**
+     * 根据用户ID查询用户名
+     * @param userId
+     * @return
+     */
+    String getNicknameById(Long userId);
 }

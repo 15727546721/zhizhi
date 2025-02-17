@@ -1,6 +1,6 @@
 package cn.xu.infrastructure.persistent.dao;
 
-import cn.xu.infrastructure.persistent.po.NotificationPO;
+import cn.xu.infrastructure.persistent.po.Notification;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -14,14 +14,14 @@ public interface NotificationDao {
      *
      * @param notification 要插入的通知
      */
-    void insert(NotificationPO notification);
+    void insert(Notification notification);
 
     /**
      * 更新数据库中的一条通知。
      *
      * @param notification 要更新的通知
      */
-    void update(NotificationPO notification);
+    void update(Notification notification);
 
     /**
      * 根据ID查找通知。
@@ -29,7 +29,7 @@ public interface NotificationDao {
      * @param id 通知的ID
      * @return 指定ID的通知
      */
-    NotificationPO findById(@Param("id") Long id);
+    Notification findById(@Param("id") Long id);
 
     /**
      * 根据接收者ID查找通知，按创建时间降序排列。
@@ -39,7 +39,7 @@ public interface NotificationDao {
      * @param limit 返回的最大结果数
      * @return 指定接收者的通知列表
      */
-    List<NotificationPO> findByReceiverIdOrderByCreatedTimeDesc(
+    List<Notification> findByReceiverIdOrderByCreatedTimeDesc(
             @Param("receiverId") Long receiverId,
             @Param("offset") Integer offset,
             @Param("limit") Integer limit);

@@ -114,5 +114,5 @@ public interface IUserService {
      * @param userId 用户ID
      * @return 用户名
      */
-    String getUsernameById(Long userId);
+    String getNicknameById(Long userId);
 }

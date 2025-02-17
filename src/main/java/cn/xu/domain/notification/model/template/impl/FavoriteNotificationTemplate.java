@@ -9,22 +9,20 @@ import lombok.Getter;
 /**
  * 收藏通知模板
  *
- * @author xuhh
- * @date 2024/03/20
  */
 @Getter
 public class FavoriteNotificationTemplate extends AbstractNotificationTemplate {
 
     private final Long senderId;
     private final Long receiverId;
-    private final BusinessType businessType;
+    private final BusinessType notificationBusinessType;
     private final Long businessId;
     private final String senderName;
 
-    public FavoriteNotificationTemplate(Long senderId, Long receiverId, BusinessType businessType, Long businessId, String senderName) {
+    public FavoriteNotificationTemplate(Long senderId, Long receiverId, BusinessType notificationBusinessType, Long businessId, String senderName) {
         this.senderId = senderId;
         this.receiverId = receiverId;
-        this.businessType = businessType;
+        this.notificationBusinessType = notificationBusinessType;
         this.businessId = businessId;
         this.senderName = senderName;
     }
@@ -36,7 +34,7 @@ public class FavoriteNotificationTemplate extends AbstractNotificationTemplate {
 
     @Override
     public BusinessType getBusinessType() {
-        return businessType;
+        return notificationBusinessType;
     }
 
     @Override
@@ -62,7 +60,7 @@ public class FavoriteNotificationTemplate extends AbstractNotificationTemplate {
     @Override
     protected void prepareNotificationData() {
         super.prepareNotificationData();
-        this.content = String.format("%s收藏了你的%s", senderName, businessType.getDescription());
+        this.content = String.format("%s收藏了你的%s", senderName, notificationBusinessType.getDescription());
     }
 
     @Override
@@ -73,7 +71,7 @@ public class FavoriteNotificationTemplate extends AbstractNotificationTemplate {
         if (receiverId == null) {
             throw new IllegalArgumentException("接收者ID不能为空");
         }
-        if (businessType == null) {
+        if (notificationBusinessType == null) {
             throw new IllegalArgumentException("业务类型不能为空");
         }
         if (businessId == null) {

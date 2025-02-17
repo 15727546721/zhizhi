@@ -4,7 +4,6 @@ import cn.xu.domain.like.model.Like;
 import cn.xu.domain.like.model.LikeType;
 import cn.xu.domain.like.repository.ILikeRepository;
 import cn.xu.domain.like.service.LikeDomainService;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 

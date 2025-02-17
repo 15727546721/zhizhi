@@ -7,22 +7,22 @@ import cn.xu.domain.notification.model.valueobject.SenderType;
 
 public class LikeNotificationTemplate extends AbstractNotificationTemplate {
     
-    private final BusinessType businessType;
+    private final BusinessType notificationBusinessType;
     private final Long businessId;
     
-    public LikeNotificationTemplate(Long senderId, Long receiverId, Long businessId, 
-            BusinessType businessType, String senderName) {
+    public LikeNotificationTemplate(Long senderId, Long receiverId, Long businessId,
+                                    BusinessType notificationBusinessType, String senderName) {
         this.senderId = senderId;
         this.receiverId = receiverId;
         this.businessId = businessId;
-        this.businessType = businessType;
+        this.notificationBusinessType = notificationBusinessType;
         this.senderName = senderName;
     }
     
     @Override
     protected void prepareNotificationData() {
         super.prepareNotificationData();
-        this.content = senderName + "赞了你的" + businessType.getDescription();
+        this.content = senderName + "赞了你的" + notificationBusinessType.getDescription();
     }
     
     @Override
@@ -32,7 +32,7 @@ public class LikeNotificationTemplate extends AbstractNotificationTemplate {
     
     @Override
     public BusinessType getBusinessType() {
-        return businessType;
+        return notificationBusinessType;
     }
     
     @Override
@@ -66,7 +66,7 @@ public class LikeNotificationTemplate extends AbstractNotificationTemplate {
         if (businessId == null) {
             throw new IllegalArgumentException("业务ID不能为空");
         }
-        if (businessType == null) {
+        if (notificationBusinessType == null) {
             throw new IllegalArgumentException("业务类型不能为空");
         }
         if (senderName == null || senderName.trim().isEmpty()) {

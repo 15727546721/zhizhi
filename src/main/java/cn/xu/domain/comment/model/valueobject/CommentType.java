@@ -33,15 +33,18 @@ public enum CommentType {
         throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "无效的评论类型：" + value);
     }
 
-    public static boolean isValid(Integer value) {
+    public static Integer getCommentType(Integer value) {
         if (value == null) {
-            return false;
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "评论类型不能为空");
         }
+
         for (CommentType type : CommentType.values()) {
             if (type.getValue().equals(value)) {
-                return true;
+                return type.getValue();
             }
         }
-        return false;
+        // 如果循环结束都没有找到匹配的值，则在这里抛出异常
+        throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "无效的评论类型：" + value);
     }
+
 } 
