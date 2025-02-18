@@ -3,7 +3,6 @@ package cn.xu.domain.notification.event;
 import cn.xu.domain.notification.model.aggregate.NotificationAggregate;
 import cn.xu.domain.notification.model.valueobject.BusinessType;
 import cn.xu.domain.notification.model.valueobject.NotificationType;
-import cn.xu.domain.notification.model.valueobject.SenderType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,7 +14,6 @@ import java.util.Map;
 /**
  * 通知事件基类
  * 用于在领域内传递通知相关的事件信息
- *
  */
 @Data
 @Builder
@@ -26,51 +24,46 @@ public class NotificationEvent {
      * 通知ID
      */
     private Long notificationId;
-    
+
     /**
      * 通知类型
      */
     private NotificationType type;
-    
+
     /**
      * 发送者ID
      */
     private Long senderId;
-    
-    /**
-     * 发送者类型
-     */
-    private SenderType senderType;
-    
+
     /**
      * 接收者ID
      */
     private Long receiverId;
-    
+
     /**
      * 通知内容
      */
     private String content;
-    
+
     /**
      * 业务类型
      */
     private BusinessType notificationBusinessType;
-    
+
     /**
      * 业务ID
      */
     private Long businessId;
-    
+
     /**
      * 额外信息
      */
     private Map<String, Object> extraInfo;
-    
+
     /**
      * 创建时间
      */
-    private LocalDateTime createdTime;
+    private LocalDateTime createTime;
 
     /**
      * 从通知聚合根创建事件
@@ -81,13 +74,11 @@ public class NotificationEvent {
                 .notificationId(aggregate.getNotification().getId())
                 .type(aggregate.getNotification().getType())
                 .senderId(aggregate.getNotification().getSenderId())
-                .senderType(aggregate.getNotification().getSenderType())
                 .receiverId(aggregate.getNotification().getReceiverId())
                 .content(aggregate.getNotification().getContent())
                 .notificationBusinessType(aggregate.getNotification().getNotificationBusinessType())
                 .businessId(aggregate.getNotification().getBusinessId())
-                .extraInfo(aggregate.getNotification().getExtraInfo())
-                .createdTime(aggregate.getNotification().getCreatedTime())
+                .createTime(aggregate.getNotification().getCreateTime())
                 .build();
     }
 
@@ -96,18 +87,16 @@ public class NotificationEvent {
      */
     public NotificationAggregate toAggregate() {
         return NotificationAggregate.builder()
-            .id(this.notificationId)
-            .type(this.type)
-            .senderId(this.senderId)
-            .senderType(this.senderType)
-            .receiverId(this.receiverId)
-            .content(this.content)
-            .businessType(this.notificationBusinessType)
-            .businessId(this.businessId)
-            .extraInfo(this.extraInfo)
-            .createdTime(this.createdTime)
-            .read(false)
-            .status(true)
-            .build();
+                .id(this.notificationId)
+                .type(this.type)
+                .senderId(this.senderId)
+                .receiverId(this.receiverId)
+                .content(this.content)
+                .businessType(this.notificationBusinessType)
+                .businessId(this.businessId)
+                .createdTime(this.createTime)
+                .read(false)
+                .status(true)
+                .build();
     }
 } 

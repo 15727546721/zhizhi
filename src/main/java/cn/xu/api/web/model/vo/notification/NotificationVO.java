@@ -3,7 +3,6 @@ package cn.xu.api.web.model.vo.notification;
 import cn.xu.domain.notification.model.aggregate.NotificationAggregate;
 import cn.xu.domain.notification.model.valueobject.BusinessType;
 import cn.xu.domain.notification.model.valueobject.NotificationType;
-import cn.xu.domain.notification.model.valueobject.SenderType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -21,9 +20,6 @@ public class NotificationVO {
 
     @Schema(description = "发送者ID")
     private Long senderId;
-
-    @Schema(description = "发送者类型")
-    private SenderType senderType;
 
     @Schema(description = "发送者名称")
     private String senderName;
@@ -60,22 +56,13 @@ public class NotificationVO {
         vo.setId(aggregate.getId());
         vo.setType(aggregate.getType());
         vo.setSenderId(aggregate.getSenderId());
-        vo.setSenderType(aggregate.getNotification().getSenderType());
         vo.setTitle(aggregate.getTitle());
         vo.setContent(aggregate.getContent());
         vo.setNotificationBusinessType(aggregate.getBusinessType());
         vo.setBusinessId(aggregate.getBusinessId());
-        vo.setExtraInfo(aggregate.getExtraInfo());
         vo.setRead(aggregate.isRead());
-        vo.setCreatedTime(aggregate.getCreatedTime());
-        vo.setUpdatedTime(aggregate.getNotification().getUpdatedTime());
-
-        // 从extraInfo中获取发送者信息
-        Map<String, Object> extraInfo = aggregate.getExtraInfo();
-        if (extraInfo != null) {
-            vo.setSenderName((String) extraInfo.get("senderName"));
-            vo.setSenderAvatar((String) extraInfo.get("senderAvatar"));
-        }
+        vo.setCreatedTime(aggregate.getCreateTime());
+        vo.setUpdatedTime(aggregate.getNotification().getUpdateTime());
 
         return vo;
     }

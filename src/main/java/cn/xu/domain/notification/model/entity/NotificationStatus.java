@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @Getter
 @Builder
 public class NotificationStatus {
-    
+
     private final Boolean isRead;
     private final LocalDateTime readTime;
     private final LocalDateTime createTime;
@@ -51,6 +51,7 @@ public class NotificationStatus {
 
     /**
      * 检查通知是否可读
+     *
      * @return 是否可读
      */
     public boolean isReadable() {
@@ -59,6 +60,7 @@ public class NotificationStatus {
 
     /**
      * 检查通知是否可删除
+     *
      * @return 是否可删除
      */
     public boolean isDeletable() {

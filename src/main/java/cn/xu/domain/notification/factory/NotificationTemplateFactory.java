@@ -11,12 +11,11 @@ import org.springframework.stereotype.Component;
 
 /**
  * 通知模板工厂
- *
  */
 @Component
 @RequiredArgsConstructor
 public class NotificationTemplateFactory {
-    
+
     private final IUserService userService;
 
     /**

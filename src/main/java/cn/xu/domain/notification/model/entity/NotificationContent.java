@@ -14,7 +14,7 @@ import java.util.Map;
 @Getter
 @Builder
 public class NotificationContent {
-    
+
     private final String title;
     private final String content;
     private final NotificationType type;
@@ -36,10 +36,11 @@ public class NotificationContent {
 
     /**
      * 验证通知内容是否有效
+     *
      * @return 是否有效
      */
     public boolean isValid() {
-        return title != null && !title.isEmpty() 
+        return title != null && !title.isEmpty()
                 && content != null && !content.isEmpty()
                 && type != null;
     }

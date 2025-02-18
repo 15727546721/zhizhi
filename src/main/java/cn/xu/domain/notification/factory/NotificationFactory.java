@@ -3,7 +3,6 @@ package cn.xu.domain.notification.factory;
 import cn.xu.domain.notification.model.aggregate.NotificationAggregate;
 import cn.xu.domain.notification.model.valueobject.BusinessType;
 import cn.xu.domain.notification.model.valueobject.NotificationType;
-import cn.xu.domain.notification.model.valueobject.SenderType;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
@@ -30,11 +29,9 @@ public class NotificationFactory {
                 .type(NotificationType.LIKE)
                 .receiverId(userId)
                 .senderId(senderId)
-                .senderType(SenderType.USER)
                 .content(senderName + "赞了你的" + notificationBusinessType.getDescription())
                 .businessType(notificationBusinessType)
                 .businessId(businessId)
-                .extraInfo(extraInfo)
                 .read(false)
                 .status(true)
                 .build();
@@ -51,11 +48,9 @@ public class NotificationFactory {
                 .type(NotificationType.FAVORITE)
                 .receiverId(userId)
                 .senderId(senderId)
-                .senderType(SenderType.USER)
                 .content(senderName + "收藏了你的文章")
                 .businessType(BusinessType.ARTICLE)
                 .businessId(articleId)
-                .extraInfo(extraInfo)
                 .read(false)
                 .status(true)
                 .build();
@@ -70,7 +65,7 @@ public class NotificationFactory {
             Long receiverId,
             String commentContent,
             Long articleId,
-    BusinessType notificationBusinessType) {
+            BusinessType notificationBusinessType) {
 
         Map<String, Object> extraInfo = new HashMap<>();
         extraInfo.put("commentId", commentId);
@@ -79,12 +74,10 @@ public class NotificationFactory {
         return NotificationAggregate.builder()
                 .type(NotificationType.COMMENT)
                 .senderId(senderId)
-                .senderType(SenderType.USER)
                 .receiverId(receiverId)
                 .content("评论了你的文章：" + commentContent)
                 .businessType(notificationBusinessType)
                 .businessId(articleId)
-                .extraInfo(extraInfo)
                 .read(false)
                 .status(true)
                 .build();
@@ -100,20 +93,18 @@ public class NotificationFactory {
             String replyContent,
             Long parentCommentId,
             BusinessType notificationBusinessType) {
-            
+
         Map<String, Object> extraInfo = new HashMap<>();
         extraInfo.put("replyId", replyId);
         extraInfo.put("parentCommentId", parentCommentId);
-        
+
         return NotificationAggregate.builder()
                 .type(NotificationType.REPLY)
                 .senderId(senderId)
-                .senderType(SenderType.USER)
                 .receiverId(receiverId)
                 .content("回复了你的评论：" + replyContent)
                 .businessType(notificationBusinessType)
                 .businessId(parentCommentId)
-                .extraInfo(extraInfo)
                 .read(false)
                 .status(true)
                 .build();
@@ -126,7 +117,7 @@ public class NotificationFactory {
             Long senderId,
             Long userId,
             String senderName,
-    BusinessType notificationBusinessType) {
+            BusinessType notificationBusinessType) {
         Map<String, Object> extraInfo = new HashMap<>();
         extraInfo.put("senderName", senderName);
 
@@ -134,11 +125,9 @@ public class NotificationFactory {
                 .type(NotificationType.FOLLOW)
                 .receiverId(userId)
                 .senderId(senderId)
-                .senderType(SenderType.USER)
                 .content(senderName + "关注了你")
                 .businessType(notificationBusinessType)
                 .businessId(userId)
-                .extraInfo(extraInfo)
                 .read(false)
                 .status(true)
                 .build();

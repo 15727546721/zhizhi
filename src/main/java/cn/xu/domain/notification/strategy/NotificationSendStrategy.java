@@ -1,6 +1,6 @@
 package cn.xu.domain.notification.strategy;
 
-import cn.xu.domain.notification.model.aggregate.NotificationAggregate;
+import cn.xu.domain.notification.model.entity.NotificationEntity;
 
 /**
  * 通知发送策略接口
@@ -9,7 +9,7 @@ public interface NotificationSendStrategy {
     /**
      * 发送通知
      */
-    void send(NotificationAggregate notification);
+    void send(NotificationEntity notification);
 
     /**
      * 获取策略类型

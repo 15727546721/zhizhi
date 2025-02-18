@@ -1,18 +1,16 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="cn.xu.infrastructure.persistent.dao.INotificationDao">
-    
+
     <resultMap id="notificationMap" type="cn.xu.infrastructure.persistent.po.Notification">
         <id column="id" property="id"/>
         <result column="type" property="type"/>
         <result column="receiver_id" property="receiverId"/>
         <result column="sender_id" property="senderId"/>
-        <result column="sender_type" property="senderType"/>
         <result column="title" property="title"/>
         <result column="content" property="content"/>
-        <result column="business_type" property="businessType"/>
+        <result column="business_type" property="notificationBusinessType"/>
         <result column="business_id" property="businessId"/>
-        <result column="extra" property="extra"/>
         <result column="status" property="status"/>
         <result column="is_read" property="isRead"/>
         <result column="read_time" property="readTime"/>
@@ -21,19 +19,18 @@
     </resultMap>
 
     <sql id="Base_Column_List">
-        id, type, receiver_id, sender_id, sender_type, title, content, business_type, business_id,
-        extra, status, is_read, read_time, create_time, update_time
+        id
+        , type, receiver_id, sender_id, sender_type, title, content, business_type, business_id,
+        status, is_read, read_time, create_time, update_time
     </sql>
 
-    <insert id="insert" parameterType="cn.xu.infrastructure.persistent.po.Notification" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO notification (
-            type, receiver_id, sender_id, sender_type, title, content, business_type,
-            business_id, extra, status, is_read, read_time, create_time, update_time
-        ) VALUES (
-            #{type}, #{receiverId}, #{senderId}, #{senderType}, #{title}, #{content},
-            #{notificationBusinessType}, #{businessId}, #{extra}, #{status}, #{isRead},
-            #{readTime}, now(), now()
-        )
+    <insert id="insert" parameterType="cn.xu.infrastructure.persistent.po.Notification" useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO notification (type, receiver_id, sender_id, title, content, business_type,
+                                  business_id, status, is_read, read_time, create_time, update_time)
+        VALUES (#{type}, #{receiverId}, #{senderId}, #{title}, #{content},
+                #{notificationBusinessType}, #{businessId}, #{status}, #{isRead},
+                #{readTime}, now(), now())
     </insert>
 
     <update id="update" parameterType="cn.xu.infrastructure.persistent.po.Notification">
@@ -42,12 +39,10 @@
             <if test="type != null">type = #{type},</if>
             <if test="receiverId != null">receiver_id = #{receiverId},</if>
             <if test="senderId != null">sender_id = #{senderId},</if>
-            <if test="senderType != null">sender_type = #{senderType},</if>
             <if test="title != null">title = #{title},</if>
             <if test="content != null">content = #{content},</if>
             <if test="notificationBusinessType != null">business_type = #{notificationBusinessType},</if>
             <if test="businessId != null">business_id = #{businessId},</if>
-            <if test="extra != null">extra = #{extra},</if>
             <if test="status != null">status = #{status},</if>
             <if test="isRead != null">is_read = #{isRead},</if>
             <if test="readTime != null">read_time = #{readTime},</if>
@@ -55,15 +50,22 @@
         </set>
         WHERE id = #{id}
     </update>
+    <delete id="deleteById">
+        DELETE
+        FROM notification
+        WHERE id = #{id}
+    </delete>
 
     <select id="selectById" resultMap="notificationMap">
-        SELECT <include refid="Base_Column_List"/>
+        SELECT
+        <include refid="Base_Column_List"/>
         FROM notification
         WHERE id = #{id} AND status = 1
     </select>
 
-    <select id="selectByreceiverId" resultMap="notificationMap">
-        SELECT <include refid="Base_Column_List"/>
+    <select id="selectByReceiverId" resultMap="notificationMap">
+        SELECT
+        <include refid="Base_Column_List"/>
         FROM notification
         WHERE receiver_id = #{receiverId}
         AND status = 1
@@ -78,34 +80,33 @@
         SELECT COUNT(*)
         FROM notification
         WHERE receiver_id = #{receiverId}
-        AND is_read = 0
-        AND status = 1
+          AND is_read = 0
+          AND status = 1
     </select>
 
     <update id="markAsRead">
         UPDATE notification
-        SET is_read = 1,
-            read_time = NOW(),
+        SET is_read     = 1,
+            read_time   = NOW(),
             update_time = NOW()
         WHERE id = #{id}
-        AND status = 1
+          AND status = 1
     </update>
 
     <update id="markAllAsRead">
         UPDATE notification
-        SET is_read = 1,
-            read_time = NOW(),
+        SET is_read     = 1,
+            read_time   = NOW(),
             update_time = NOW()
         WHERE receiver_id = #{receiverId}
-        AND is_read = 0
-        AND status = 1
+          AND is_read = 0
+          AND status = 1
     </update>
 
     <select id="exists" resultType="boolean">
         SELECT COUNT(1)
         FROM notification
         WHERE id = #{id}
-        AND status = 1
-        LIMIT 1
+          AND status = 1 LIMIT 1
     </select>
 </mapper> 

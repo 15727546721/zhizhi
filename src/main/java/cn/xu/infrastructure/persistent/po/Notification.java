@@ -19,7 +19,7 @@ public class Notification {
     private Long id;
 
     /**
-     * 通知类型：1-系统通知 2-点赞通知 3-收藏通知 4-评论通知  5-回复通知 6-关注通知
+     * 通知类型：0-系统通知 1-点赞通知 2-收藏通知 3-评论通知 4-回复通知 5-关注通知
      */
     private Integer type;
 
@@ -27,11 +27,6 @@ public class Notification {
      * 发送者ID
      */
     private Long senderId;
-
-    /**
-     * 发送者类型：1-系统 2-用户
-     */
-    private Integer senderType;
 
     /**
      * 接收者ID
@@ -49,7 +44,7 @@ public class Notification {
     private String content;
 
     /**
-     * 业务类型：1-文章 2-话题 3-用户
+     * 业务类型：0-系统 1-文章 2-话题 3-用户
      */
     private Integer notificationBusinessType;
 
@@ -59,14 +54,9 @@ public class Notification {
     private Long businessId;
 
     /**
-     * 额外信息（JSON格式）
-     */
-    private Map<String, Object> extraInfo;
-
-    /**
      * 是否已读：0-未读 1-已读
      */
-    private Integer read;
+    private Integer isRead;
 
     /**
      * 状态：1-有效 0-已删除
@@ -74,12 +64,17 @@ public class Notification {
     private Integer status;
 
     /**
+     * 阅读时间
+     */
+    private LocalDateTime readTime;
+
+    /**
      * 创建时间
      */
-    private LocalDateTime createdTime;
+    private LocalDateTime createTime;
 
     /**
      * 更新时间
      */
-    private LocalDateTime updatedTime;
+    private LocalDateTime updateTime;
 } 

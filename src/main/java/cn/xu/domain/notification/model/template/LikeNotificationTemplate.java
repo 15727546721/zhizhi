@@ -2,12 +2,11 @@ package cn.xu.domain.notification.model.template;
 
 import cn.xu.domain.notification.model.valueobject.BusinessType;
 import cn.xu.domain.notification.model.valueobject.NotificationType;
-import cn.xu.domain.notification.model.valueobject.SenderType;
+import cn.xu.infrastructure.common.exception.BusinessException;
 import lombok.Getter;
 
 /**
  * 点赞通知模板
- *
  */
 @Getter
 public class LikeNotificationTemplate extends AbstractNotificationTemplate {
@@ -40,11 +39,11 @@ public class LikeNotificationTemplate extends AbstractNotificationTemplate {
     /**
      * 构造函数
      *
-     * @param senderId 发送者ID
-     * @param receiverId 接收者ID
+     * @param senderId                 发送者ID
+     * @param receiverId               接收者ID
      * @param notificationBusinessType 业务类型
-     * @param businessId 业务ID
-     * @param senderName 发送者名称
+     * @param businessId               业务ID
+     * @param senderName               发送者名称
      */
     public LikeNotificationTemplate(Long senderId, Long receiverId, BusinessType notificationBusinessType, Long businessId, String senderName) {
         this.senderId = senderId;
@@ -71,32 +70,21 @@ public class LikeNotificationTemplate extends AbstractNotificationTemplate {
     }
 
     @Override
-    public SenderType getSenderType() {
-        return SenderType.USER;
-    }
-
-    @Override
-    protected void prepareNotificationData() {
-        super.prepareNotificationData();
-        this.content = String.format("%s赞了你的%s", senderName, notificationBusinessType.getDescription());
-    }
-
-    @Override
     public void validate() {
         if (senderId == null) {
-            throw new IllegalArgumentException("发送者ID不能为空");
+            throw new BusinessException("发送者ID不能为空");
         }
         if (receiverId == null) {
-            throw new IllegalArgumentException("接收者ID不能为空");
+            throw new BusinessException("接收者ID不能为空");
         }
         if (notificationBusinessType == null) {
-            throw new IllegalArgumentException("业务类型不能为空");
+            throw new BusinessException("业务类型不能为空");
         }
         if (businessId == null) {
-            throw new IllegalArgumentException("业务ID不能为空");
+            throw new BusinessException("业务ID不能为空");
         }
         if (senderName == null || senderName.trim().isEmpty()) {
-            throw new IllegalArgumentException("发送者名称不能为空");
+            throw new BusinessException("发送者名称不能为空");
         }
     }
 

@@ -88,7 +88,6 @@ public class CommentService implements ICommentService {
             } else {
                 // 一级评论的情况
                 handleRootComment(commentEntity, currentUser);
-                // 通知业务类型作者被评论了
             }
 
             // 5. 保存评论

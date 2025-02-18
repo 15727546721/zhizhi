@@ -3,17 +3,13 @@ package cn.xu.domain.notification.model.template;
 import cn.xu.domain.notification.model.aggregate.NotificationAggregate;
 import cn.xu.domain.notification.model.valueobject.BusinessType;
 import cn.xu.domain.notification.model.valueobject.NotificationType;
-import cn.xu.domain.notification.model.valueobject.SenderType;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * 通知模板抽象类
  * 使用模板方法模式规范化通知的构建和发送流程
- *
  */
 @Getter
 public abstract class AbstractNotificationTemplate {
@@ -21,7 +17,6 @@ public abstract class AbstractNotificationTemplate {
     protected Long receiverId;
     protected String senderName;
     protected String content;
-    protected Map<String, Object> extraInfo = new HashMap<>();
 
     protected AbstractNotificationTemplate() {
     }
@@ -32,7 +27,6 @@ public abstract class AbstractNotificationTemplate {
      */
     public final NotificationAggregate build() {
         validate();
-        prepareNotificationData();
         return createNotification();
     }
 
@@ -58,13 +52,6 @@ public abstract class AbstractNotificationTemplate {
     public abstract Long getBusinessId();
 
     /**
-     * 获取发送者类型
-     *
-     * @return 发送者类型
-     */
-    public abstract SenderType getSenderType();
-
-    /**
      * 获取发送者ID
      *
      * @return 发送者ID
@@ -78,12 +65,6 @@ public abstract class AbstractNotificationTemplate {
      */
     public abstract Long getReceiverId();
 
-    /**
-     * 准备通知数据
-     */
-    protected void prepareNotificationData() {
-        // 子类可以覆盖此方法以准备特定的通知数据
-    }
 
     /**
      * 创建通知实体
@@ -94,12 +75,10 @@ public abstract class AbstractNotificationTemplate {
         return NotificationAggregate.builder()
                 .type(getType())
                 .senderId(getSenderId())
-                .senderType(getSenderType())
                 .receiverId(getReceiverId())
                 .content(content)
                 .businessType(getBusinessType())
                 .businessId(getBusinessId())
-                .extraInfo(new HashMap<>(extraInfo))
                 .read(false)
                 .status(true)
                 .createdTime(LocalDateTime.now())
@@ -112,15 +91,6 @@ public abstract class AbstractNotificationTemplate {
      */
     protected void customizeNotification(NotificationAggregate notification) {
         // 默认实现为空
-    }
-
-    /**
-     * 添加额外信息
-     */
-    protected void addExtraInfo(String key, Object value) {
-        if (key != null && value != null) {
-            this.extraInfo.put(key, value);
-        }
     }
 
     /**

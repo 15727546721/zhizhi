@@ -19,7 +19,6 @@ import java.util.stream.Collectors;
 
 /**
  * 通知仓储实现类
- *
  */
 @Slf4j
 @Repository
@@ -31,34 +30,32 @@ public class NotificationRepository implements INotificationRepository {
     /**
      * 保存通知
      *
-     * @param aggregate 通知聚合根
+     * @param entity 通知实体
      * @return 保存后的通知聚合根
      * @throws BusinessException 保存失败时抛出
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public NotificationAggregate save(NotificationAggregate aggregate) {
+    public NotificationAggregate save(NotificationEntity entity) {
         try {
-            NotificationEntity entity = aggregate.getNotification();
             // 验证实体有效性
             entity.validate();
-            
+
             if (entity.getId() == null) {
                 log.info("[通知服务] 开始新增通知, receiverId={}, type={}", entity.getReceiverId(), entity.getType());
                 entity.setStatus(true); // 设置为有效状态
                 notificationDao.insert(
                         Notification.builder()
-                               .receiverId(entity.getReceiverId())
-                               .senderId(entity.getSenderId())
-                               .senderType(entity.getSenderType().getValue())
-                               .type(entity.getType().getValue())
-                               .title(entity.getTitle())
-                               .content(entity.getContent())
-                               .notificationBusinessType(entity.getNotificationBusinessType().getValue())
-                               .businessId(entity.getBusinessId())
-                               .extraInfo(entity.getExtraInfo())
-                               .read(0)
-                               .status(0)
+                                .receiverId(entity.getReceiverId())
+                                .senderId(entity.getSenderId())
+                                .type(entity.getType().getValue())
+                                .title(entity.getTitle())
+                                .content(entity.getContent())
+                                .notificationBusinessType(entity.getNotificationBusinessType().getValue())
+                                .businessId(entity.getBusinessId())
+                                .isRead(0)
+                                .status(0)
+                                .createTime(entity.getCreateTime())
                                 .build()
                 );
                 log.info("[通知服务] 新增通知成功, id={}", entity.getId());
@@ -82,7 +79,7 @@ public class NotificationRepository implements INotificationRepository {
      * @throws BusinessException 查询失败时抛出
      */
     @Override
-    public NotificationAggregate findById(Long id) {
+    public NotificationEntity findById(Long id) {
         try {
             log.info("[通知服务] 开始查询通知, id={}", id);
             NotificationEntity entity = notificationDao.selectById(id);
@@ -91,7 +88,7 @@ public class NotificationRepository implements INotificationRepository {
                 throw new BusinessException("通知不存在");
             }
             log.info("[通知服务] 查询通知成功");
-            return NotificationAggregate.from(entity);
+            return entity;
         } catch (Exception e) {
             log.error("[通知服务] 查询通知失败, id={}", id, e);
             throw new BusinessException("查询通知失败");
@@ -101,8 +98,8 @@ public class NotificationRepository implements INotificationRepository {
     /**
      * 根据用户ID和类型分页查询通知
      *
-     * @param userId 用户ID
-     * @param type 通知类型
+     * @param userId   用户ID
+     * @param type     通知类型
      * @param pageable 分页信息
      * @return 通知聚合根列表
      * @throws BusinessException 查询失败时抛出
@@ -169,9 +166,9 @@ public class NotificationRepository implements INotificationRepository {
      * 根据用户ID和通知类型分页查询通知
      *
      * @param userId 用户ID
-     * @param type 通知类型
+     * @param type   通知类型
      * @param offset 偏移量
-     * @param limit 限制数量
+     * @param limit  限制数量
      * @return 通知聚合根列表
      * @throws BusinessException 查询失败时抛出
      */
@@ -276,8 +273,8 @@ public class NotificationRepository implements INotificationRepository {
      * 根据接收者ID分页查询通知，按创建时间降序
      *
      * @param receiverId 接收者ID
-     * @param offset 偏移量
-     * @param limit 限制数量
+     * @param offset     偏移量
+     * @param limit      限制数量
      * @return 通知聚合根列表
      */
     @Override

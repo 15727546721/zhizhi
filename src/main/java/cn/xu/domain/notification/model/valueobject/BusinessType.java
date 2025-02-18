@@ -20,6 +20,7 @@ public enum BusinessType {
         this.value = value;
         this.description = description;
     }
+
     public static BusinessType getType(int type) {
         for (BusinessType businessType : BusinessType.values()) {
             if (businessType.getValue() == type) {

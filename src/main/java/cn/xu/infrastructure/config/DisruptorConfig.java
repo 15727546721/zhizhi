@@ -14,8 +14,8 @@ import cn.xu.domain.message.event.BaseMessageEvent;
 import cn.xu.domain.message.event.factory.MessageEventFactory;
 import cn.xu.domain.message.event.handler.MessageEventHandler;
 import cn.xu.domain.notification.event.NotificationEvent;
+import cn.xu.domain.notification.event.NotificationEventHandler;
 import cn.xu.domain.notification.event.factory.NotificationEventFactory;
-import cn.xu.domain.notification.handler.NotificationExceptionHandler;
 import com.lmax.disruptor.BlockingWaitStrategy;
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.dsl.Disruptor;
@@ -47,7 +47,7 @@ public class DisruptorConfig {
     private MessageEventHandler messageEventHandler;
 
     @Resource
-    private NotificationExceptionHandler notificationExceptionHandler;
+    private NotificationEventHandler notificationEventHandler;
 
     @Bean
     public RingBuffer<LikeEvent> likeEventRingBuffer() {
@@ -151,7 +151,7 @@ public class DisruptorConfig {
         );
 
         // 配置事件处理器
-        disruptor.setDefaultExceptionHandler(notificationExceptionHandler);
+        disruptor.handleEventsWith(notificationEventHandler);
 
         // 启动disruptor
         disruptor.start();

@@ -4,17 +4,13 @@ import cn.xu.domain.notification.model.entity.NotificationEntity;
 import cn.xu.domain.notification.model.valueobject.BusinessType;
 import cn.xu.domain.notification.model.valueobject.NotificationSender;
 import cn.xu.domain.notification.model.valueobject.NotificationType;
-import cn.xu.domain.notification.model.valueobject.SenderType;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * 通知聚合根
- *
  */
 @Slf4j
 @Data
@@ -24,37 +20,26 @@ import java.util.Map;
 public class NotificationAggregate {
 
     private NotificationEntity notification;
+    @Getter
     private NotificationSender sender;
 
     private NotificationAggregate(NotificationEntity notification) {
         this.notification = notification;
-        this.sender = NotificationSender.of(
-                notification.getSenderId(),
-                notification.getSenderType(),
-                (String) notification.getExtraInfo().get("senderName"),
-                (String) notification.getExtraInfo().get("senderAvatar")
-        );
     }
 
     public static NotificationAggregate from(NotificationEntity entity) {
         return new NotificationAggregate(entity);
     }
 
-    public static NotificationAggregateBuilder builder() {
-        return new NotificationAggregateBuilder();
-    }
-
     public static class NotificationAggregateBuilder {
         private Long id;
         private NotificationType type;
         private Long senderId;
-        private SenderType senderType;
         private Long receiverId;
         private String title;
         private String content;
         private BusinessType notificationBusinessType;
         private Long businessId;
-        private Map<String, Object> extraInfo;
         private Boolean read;
         private Boolean status;
         private LocalDateTime createdTime;
@@ -74,11 +59,6 @@ public class NotificationAggregate {
 
         public NotificationAggregateBuilder senderId(Long senderId) {
             this.senderId = senderId;
-            return this;
-        }
-
-        public NotificationAggregateBuilder senderType(SenderType senderType) {
-            this.senderType = senderType;
             return this;
         }
 
@@ -107,11 +87,6 @@ public class NotificationAggregate {
             return this;
         }
 
-        public NotificationAggregateBuilder extraInfo(Map<String, Object> extraInfo) {
-            this.extraInfo = extraInfo;
-            return this;
-        }
-
         public NotificationAggregateBuilder read(Boolean read) {
             this.read = read;
             return this;
@@ -132,17 +107,15 @@ public class NotificationAggregate {
                     .id(this.id)
                     .type(this.type)
                     .senderId(this.senderId)
-                    .senderType(this.senderType)
                     .receiverId(this.receiverId)
                     .title(this.title)
                     .content(this.content)
                     .notificationBusinessType(this.notificationBusinessType)
                     .businessId(this.businessId)
-                    .extraInfo(this.extraInfo != null ? this.extraInfo : new HashMap<>())
                     .read(this.read != null ? this.read : false)
                     .status(this.status != null ? this.status : true)
-                    .createdTime(this.createdTime != null ? this.createdTime : LocalDateTime.now())
-                    .updatedTime(LocalDateTime.now())
+                    .createTime(this.createdTime != null ? this.createdTime : LocalDateTime.now())
+                    .updateTime(LocalDateTime.now())
                     .build());
         }
     }
@@ -153,7 +126,7 @@ public class NotificationAggregate {
 
     public void markAsRead() {
         notification.setRead(true);
-        notification.setUpdatedTime(LocalDateTime.now());
+        notification.setUpdateTime(LocalDateTime.now());
     }
 
     public boolean isRead() {
@@ -194,12 +167,8 @@ public class NotificationAggregate {
         return notification.getContent();
     }
 
-    public Map<String, Object> getExtraInfo() {
-        return notification.getExtraInfo();
-    }
-
-    public LocalDateTime getCreatedTime() {
-        return notification.getCreatedTime();
+    public LocalDateTime getCreateTime() {
+        return notification.getCreateTime();
     }
 
     // 领域行为：标记为删除
@@ -208,7 +177,7 @@ public class NotificationAggregate {
             return;
         }
         this.notification.setStatus(false);
-        this.notification.setUpdatedTime(LocalDateTime.now());
+        this.notification.setUpdateTime(LocalDateTime.now());
     }
 
     // 领域行为：更新通知内容
@@ -217,7 +186,7 @@ public class NotificationAggregate {
             throw new IllegalArgumentException("通知内容不能为空");
         }
         this.notification.setContent(newContent.trim());
-        this.notification.setUpdatedTime(LocalDateTime.now());
+        this.notification.setUpdateTime(LocalDateTime.now());
     }
 
     public void setContent(String content) {
@@ -225,19 +194,7 @@ public class NotificationAggregate {
             throw new IllegalArgumentException("通知内容不能为空");
         }
         this.notification.setContent(content.trim());
-        this.notification.setUpdatedTime(LocalDateTime.now());
-    }
-
-    // 领域行为：添加额外信息
-    public void addExtraInfo(String key, Object value) {
-        if (key == null || key.trim().isEmpty()) {
-            throw new IllegalArgumentException("额外信息的键不能为空");
-        }
-        if (this.notification.getExtraInfo() == null) {
-            throw new IllegalStateException("额外信息Map未初始化");
-        }
-        this.notification.getExtraInfo().put(key, value);
-        this.notification.setUpdatedTime(LocalDateTime.now());
+        this.notification.setUpdateTime(LocalDateTime.now());
     }
 
     // 领域行为：检查是否属于指定用户
@@ -245,18 +202,12 @@ public class NotificationAggregate {
         return this.notification.getReceiverId() != null && this.notification.getReceiverId().equals(userId);
     }
 
-    // 领域行为：检查是否是系统通知
-    public boolean isSystemNotification() {
-        return NotificationType.SYSTEM.equals(this.notification.getType()) &&
-                SenderType.SYSTEM.equals(this.notification.getSenderType());
-    }
-
     // 领域行为：检查是否已过期（例如7天后自动过期）
     public boolean isExpired() {
-        if (this.notification.getCreatedTime() == null) {
+        if (this.notification.getCreateTime() == null) {
             return false;
         }
-        return this.notification.getCreatedTime().plusDays(7).isBefore(LocalDateTime.now());
+        return this.notification.getCreateTime().plusDays(7).isBefore(LocalDateTime.now());
     }
 
     // 不变量检查
@@ -269,7 +220,6 @@ public class NotificationAggregate {
         return builder()
                 .type(NotificationType.SYSTEM)
                 .receiverId(userId)
-                .senderType(SenderType.SYSTEM)
                 .title(title)
                 .content(content)
                 .read(false)
@@ -283,7 +233,6 @@ public class NotificationAggregate {
                 .type(NotificationType.LIKE)
                 .receiverId(userId)
                 .senderId(senderId)
-                .senderType(SenderType.USER)
                 .content("赞了你的" + notificationBusinessType.getDescription())
                 .businessType(notificationBusinessType)
                 .businessId(businessId)
@@ -298,7 +247,6 @@ public class NotificationAggregate {
                 .type(NotificationType.COMMENT)
                 .receiverId(userId)
                 .senderId(senderId)
-                .senderType(SenderType.USER)
                 .content(content)
                 .businessType(notificationBusinessType)
                 .businessId(articleId)
@@ -313,7 +261,6 @@ public class NotificationAggregate {
                 .type(NotificationType.FOLLOW)
                 .receiverId(userId)
                 .senderId(senderId)
-                .senderType(SenderType.USER)
                 .content("关注了你")
                 .businessType(notificationBusinessType.USER)
                 .businessId(userId)
@@ -322,16 +269,10 @@ public class NotificationAggregate {
                 .build();
     }
 
-    public NotificationSender getSender() {
-        return sender;
-    }
-
     public void updateSender(NotificationSender sender) {
         this.sender = sender;
         this.notification.setSenderId(sender.getSenderId());
-        this.notification.setSenderType(sender.getSenderType());
-        this.notification.getExtraInfo().put("senderName", sender.getSenderName());
-        this.notification.getExtraInfo().put("senderAvatar", sender.getSenderAvatar());
-        this.notification.setUpdatedTime(LocalDateTime.now());
+        // 移除了与 extraInfo 相关的字段
+        this.notification.setUpdateTime(LocalDateTime.now());
     }
-} 
+}
