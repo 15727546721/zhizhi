@@ -51,7 +51,7 @@ public class NotificationEntity {
     /**
      * 业务类型
      */
-    private BusinessType notificationBusinessType;
+    private BusinessType businessType;
 
     /**
      * 业务ID
@@ -103,7 +103,7 @@ public class NotificationEntity {
         if (content == null || content.trim().isEmpty()) {
             throw new BusinessException("通知内容不能为空");
         }
-        if (notificationBusinessType != null && businessId == null) {
+        if (businessType != null && businessId == null) {
             throw new BusinessException("业务类型存在时，业务ID不能为空");
         }
         if (type == NotificationType.SYSTEM && (title == null || title.trim().isEmpty())) {

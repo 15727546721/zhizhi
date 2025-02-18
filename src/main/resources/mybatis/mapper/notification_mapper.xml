@@ -9,7 +9,7 @@
         <result column="sender_id" property="senderId"/>
         <result column="title" property="title"/>
         <result column="content" property="content"/>
-        <result column="business_type" property="notificationBusinessType"/>
+        <result column="business_type" property="businessType"/>
         <result column="business_id" property="businessId"/>
         <result column="status" property="status"/>
         <result column="is_read" property="isRead"/>
@@ -29,7 +29,7 @@
         INSERT INTO notification (type, receiver_id, sender_id, title, content, business_type,
                                   business_id, status, is_read, read_time, create_time, update_time)
         VALUES (#{type}, #{receiverId}, #{senderId}, #{title}, #{content},
-                #{notificationBusinessType}, #{businessId}, #{status}, #{isRead},
+                #{businessType}, #{businessId}, #{status}, #{isRead},
                 #{readTime}, now(), now())
     </insert>
 
@@ -41,7 +41,7 @@
             <if test="senderId != null">sender_id = #{senderId},</if>
             <if test="title != null">title = #{title},</if>
             <if test="content != null">content = #{content},</if>
-            <if test="notificationBusinessType != null">business_type = #{notificationBusinessType},</if>
+            <if test="businessType != null">business_type = #{businessType},</if>
             <if test="businessId != null">business_id = #{businessId},</if>
             <if test="status != null">status = #{status},</if>
             <if test="isRead != null">is_read = #{isRead},</if>
@@ -108,5 +108,12 @@
         FROM notification
         WHERE id = #{id}
           AND status = 1 LIMIT 1
+    </select>
+    <select id="countUnreadByReceiverId" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM notification
+        WHERE receiver_id = #{receiverId}
+          AND is_read = 0
+          AND status = 1
     </select>
 </mapper> 

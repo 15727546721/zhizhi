@@ -43,8 +43,8 @@ public enum CommentType {
                 return type.getValue();
             }
         }
-        // 如果循环结束都没有找到匹配的值，则在这里抛出异常
-        throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "无效的评论类型：" + value);
+        // 如果循环结束都没有找到匹配的值
+        return null;
     }
 
 } 

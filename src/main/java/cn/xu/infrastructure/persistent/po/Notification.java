@@ -46,7 +46,7 @@ public class Notification {
     /**
      * 业务类型：0-系统 1-文章 2-话题 3-用户
      */
-    private Integer notificationBusinessType;
+    private Integer businessType;
 
     /**
      * 业务ID

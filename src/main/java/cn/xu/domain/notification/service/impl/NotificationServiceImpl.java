@@ -19,7 +19,6 @@ import java.util.List;
 public class NotificationServiceImpl implements INotificationService {
 
     private final INotificationRepository notificationRepository;
-    private final IUserService userService;
 
     @Override
     @Transactional(readOnly = true)

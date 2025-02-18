@@ -51,7 +51,7 @@ public class NotificationRepository implements INotificationRepository {
                                 .type(entity.getType().getValue())
                                 .title(entity.getTitle())
                                 .content(entity.getContent())
-                                .notificationBusinessType(entity.getNotificationBusinessType().getValue())
+                                .businessType(entity.getBusinessType().getValue())
                                 .businessId(entity.getBusinessId())
                                 .isRead(0)
                                 .status(0)
@@ -212,8 +212,8 @@ public class NotificationRepository implements INotificationRepository {
     }
 
     /**
-     * 将用户所有未读通知标记为已读
      *
+     * 将用户所有未读通知标记为已读
      * @param userId 用户ID
      * @throws BusinessException 标记失败时抛出
      */

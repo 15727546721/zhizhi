@@ -22,17 +22,16 @@ public class NotificationEventHandler implements EventHandler<NotificationEvent>
     @Override
     public void onEvent(NotificationEvent event, long sequence, boolean endOfBatch) {
         log.info("[通知服务] NotificationEventHandler received event: {}", event);
+
         NotificationEntity notificationEntity = NotificationEntity.builder()
-                .id(event.getNotificationId())
                 .type(event.getType())
                 .senderId(event.getSenderId())
                 .receiverId(event.getReceiverId())
                 .content(event.getContent())
-                .notificationBusinessType(event.getNotificationBusinessType())
+                .businessType(event.getBusinessType())
                 .businessId(event.getBusinessId())
                 .createTime(event.getCreateTime())
                 .build();
-
 
         notificationRepository.save(notificationEntity);
     }

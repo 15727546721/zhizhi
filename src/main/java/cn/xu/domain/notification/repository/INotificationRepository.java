@@ -38,7 +38,7 @@ public interface INotificationRepository {
     long countByUserIdAndIsReadFalse(Long userId);
 
     /**
-     * 统计用户未读通知数量
+     * 统计用户各个类型未读通知数量
      */
     long countUnreadByUserId(Long userId);
 

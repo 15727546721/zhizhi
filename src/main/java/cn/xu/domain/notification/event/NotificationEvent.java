@@ -1,6 +1,5 @@
 package cn.xu.domain.notification.event;
 
-import cn.xu.domain.notification.model.aggregate.NotificationAggregate;
 import cn.xu.domain.notification.model.valueobject.BusinessType;
 import cn.xu.domain.notification.model.valueobject.NotificationType;
 import lombok.AllArgsConstructor;
@@ -9,7 +8,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.Map;
 
 /**
  * 通知事件基类
@@ -20,10 +18,6 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 public class NotificationEvent {
-    /**
-     * 通知ID
-     */
-    private Long notificationId;
 
     /**
      * 通知类型
@@ -48,7 +42,7 @@ public class NotificationEvent {
     /**
      * 业务类型
      */
-    private BusinessType notificationBusinessType;
+    private BusinessType businessType;
 
     /**
      * 业务ID
@@ -56,47 +50,8 @@ public class NotificationEvent {
     private Long businessId;
 
     /**
-     * 额外信息
-     */
-    private Map<String, Object> extraInfo;
-
-    /**
      * 创建时间
      */
     private LocalDateTime createTime;
 
-    /**
-     * 从通知聚合根创建事件
-     */
-    public static NotificationEvent from(NotificationAggregate aggregate) {
-
-        return NotificationEvent.builder()
-                .notificationId(aggregate.getNotification().getId())
-                .type(aggregate.getNotification().getType())
-                .senderId(aggregate.getNotification().getSenderId())
-                .receiverId(aggregate.getNotification().getReceiverId())
-                .content(aggregate.getNotification().getContent())
-                .notificationBusinessType(aggregate.getNotification().getNotificationBusinessType())
-                .businessId(aggregate.getNotification().getBusinessId())
-                .createTime(aggregate.getNotification().getCreateTime())
-                .build();
-    }
-
-    /**
-     * 将通知事件转换为通知聚合根
-     */
-    public NotificationAggregate toAggregate() {
-        return NotificationAggregate.builder()
-                .id(this.notificationId)
-                .type(this.type)
-                .senderId(this.senderId)
-                .receiverId(this.receiverId)
-                .content(this.content)
-                .businessType(this.notificationBusinessType)
-                .businessId(this.businessId)
-                .createdTime(this.createTime)
-                .read(false)
-                .status(true)
-                .build();
-    }
 } 

@@ -9,11 +9,10 @@ import cn.xu.domain.comment.model.entity.CommentEntity;
 import cn.xu.domain.comment.model.valueobject.CommentType;
 import cn.xu.domain.comment.repository.ICommentRepository;
 import cn.xu.domain.comment.service.ICommentService;
+import cn.xu.domain.notification.event.NotificationEvent;
 import cn.xu.domain.notification.event.publisher.NotificationEventPublisher;
-import cn.xu.domain.notification.factory.NotificationFactory;
-import cn.xu.domain.notification.model.aggregate.NotificationAggregate;
 import cn.xu.domain.notification.model.valueobject.BusinessType;
-import cn.xu.domain.notification.service.INotificationService;
+import cn.xu.domain.notification.model.valueobject.NotificationType;
 import cn.xu.domain.topic.service.ITopicService;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.service.IUserService;
@@ -48,11 +47,6 @@ public class CommentService implements ICommentService {
     @Resource
     private NotificationEventPublisher notificationEventPublisher;
 
-    @Resource
-    private NotificationFactory notificationFactory;
-
-    @Resource
-    private INotificationService notificationService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -81,7 +75,12 @@ public class CommentService implements ICommentService {
             // 3. 验证评论数据
             commentEntity.validate();
 
-            // 4. 处理评论并发送消息
+            // 4. 保存评论
+            Long commentId = commentRepository.save(commentEntity);
+            log.info("保存评论成功 - commentId: {}", commentId);
+            commentEntity.setId(commentId);
+
+            // 5. 处理评论并发送消息
             if (request.getParentId() != null) {
                 // 回复评论的情况
                 handleReplyComment(commentEntity, currentUser);
@@ -89,10 +88,6 @@ public class CommentService implements ICommentService {
                 // 一级评论的情况
                 handleRootComment(commentEntity, currentUser);
             }
-
-            // 5. 保存评论
-            commentRepository.save(commentEntity);
-            log.info("保存评论成功 - commentId: {}", commentEntity.getId());
 
         } catch (BusinessException e) {
             log.error("保存评论失败 - error: {}", e.getMessage());
@@ -126,15 +121,14 @@ public class CommentService implements ICommentService {
         }
 
         // 4. 发送通知
-        NotificationAggregate notification = notificationFactory.createReplyNotification(
-                comment.getId(),
-                currentUser.getId(),
-                replyToUser.getId(),
-                comment.getContent(),
-                parentComment.getId(),
-                BusinessType.getType(parentComment.getType().getValue())
-        );
-        notificationEventPublisher.publish(notification);
+        notificationEventPublisher.publishEvent(NotificationEvent.builder()
+                .type(NotificationType.REPLY)
+                .senderId(currentUser.getId())
+                .receiverId(replyToUser.getId())
+                .businessId(comment.getId())
+                .businessType(BusinessType.getType(parentComment.getType().getValue()))
+                .content(comment.getContent())
+                .build());
     }
 
     /**
@@ -145,80 +139,57 @@ public class CommentService implements ICommentService {
         log.debug("[评论服务] 开始处理一级评论 - type: {}, targetId: {}, userId: {}",
                 comment.getType(), comment.getTargetId(), currentUser.getId());
 
-        if (CommentType.ARTICLE.equals(comment.getType())) {
-            handleArticleComment(comment, currentUser);
-        } else if (CommentType.TOPIC.equals(comment.getType())) {
-            handleTopicComment(comment, currentUser);
-        } else {
+        // 根据评论类型处理评论
+        if (CommentType.getCommentType(comment.getType().getValue()) == null) {
             log.warn("[评论服务] 未知的评论类型 - type: {}", comment.getType());
         }
+        handleComment(comment, currentUser);
     }
 
     /**
      * 处理文章评论
      */
-    private void handleArticleComment(CommentEntity comment, UserEntity currentUser) {
-        // 1. 获取文章作者ID
-        Long authorId = articleService.getArticleAuthorId(comment.getTargetId());
+    private void handleComment(CommentEntity comment, UserEntity currentUser) {
+        Long authorId = null;
+        if (comment.getType().equals(CommentType.ARTICLE)) {
+            authorId = articleService.getArticleAuthorId(comment.getTargetId());
+        } else if (comment.getType().equals(CommentType.TOPIC)) {
+            authorId = topicService.getTopicAuthorId(comment.getTargetId());
+        }
+
         if (authorId == null) {
-            log.warn("[评论服务] 文章不存在或无法获取作者信息 - articleId: {}", comment.getTargetId());
+            log.warn("[评论服务] 无法获取作者信息 - targetId: {}", comment.getTargetId());
             return;
         }
 
-        // 2. 获取文章作者信息
         UserEntity author = userService.getUserById(authorId);
         if (author == null) {
-            log.warn("[评论服务] 文章作者信息不存在 - authorId: {}", authorId);
+            log.warn("[评论服务] 作者信息不存在 - authorId: {}", authorId);
             return;
         }
 
-        // 3. 如果评论者不是作者本人，才发送消息通知
+        // 如果评论者不是作者本人，才发送消息通知
         if (!authorId.equals(currentUser.getId())) {
             sendCommentNotification(currentUser, author, comment);
         } else {
-            log.debug("[评论服务] 作者评论自己的文章，不发送通知 - authorId: {}", authorId);
+            log.debug("[评论服务] 作者评论自己的内容，不发送通知 - authorId: {}", authorId);
         }
     }
 
-    /**
-     * 处理话题评论
-     */
-    private void handleTopicComment(CommentEntity comment, UserEntity currentUser) {
-        // 1. 获取话题作者ID
-        Long authorId = topicService.getTopicAuthorId(comment.getTargetId());
-        if (authorId == null) {
-            log.warn("[评论服务] 话题不存在或无法获取作者信息 - topicId: {}", comment.getTargetId());
-            return;
-        }
-
-        // 2. 获取话题作者信息
-        UserEntity author = userService.getUserById(authorId);
-        if (author == null) {
-            log.warn("[评论服务] 话题作者信息不存在 - authorId: {}", authorId);
-            return;
-        }
-
-        // 3. 如果评论者不是作者本人，才发送消息通知
-        if (!authorId.equals(currentUser.getId())) {
-            sendCommentNotification(currentUser, author, comment);
-        } else {
-            log.debug("[评论服务] 作者评论自己的话题，不发送通知 - authorId: {}", authorId);
-        }
-    }
 
     /**
      * 发送评论通知
      */
     private void sendCommentNotification(UserEntity fromUser, UserEntity toUser, CommentEntity comment) {
-        NotificationAggregate notification = notificationFactory.createCommentNotification(
-                comment.getId(),
-                fromUser.getId(),
-                toUser.getId(),
-                comment.getContent(),
-                comment.getTargetId(),
-                BusinessType.getType(comment.getType().getValue())
-        );
-        notificationEventPublisher.publish(notification);
+
+        notificationEventPublisher.publishEvent(NotificationEvent.builder()
+                .type(NotificationType.COMMENT)
+                .senderId(fromUser.getId())
+                .receiverId(toUser.getId())
+                .businessId(comment.getId())
+                .businessType(BusinessType.getType(comment.getType().getValue()))
+                .content(comment.getContent())
+                .build());
         log.debug("[评论服务] 已发送评论通知 - from: {}, to: {}", fromUser.getId(), toUser.getId());
     }
 

@@ -4,6 +4,7 @@ import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.api.web.model.dto.notification.NotificationRequest;
 import cn.xu.api.web.model.vo.notification.NotificationVO;
 import cn.xu.domain.notification.model.aggregate.NotificationAggregate;
+import cn.xu.domain.notification.model.valueobject.NotificationType;
 import cn.xu.domain.notification.service.INotificationService;
 import cn.xu.infrastructure.common.response.PageResponse;
 import cn.xu.infrastructure.common.response.ResponseEntity;
@@ -75,6 +76,29 @@ public class NotificationController {
                     .build();
         }
     }
+
+//    @GetMapping("/unread/list/count")
+//    @Operation(summary = "获取未读各个通知数量")
+//    public ResponseEntity<List<Long>> getUnreadListCount() {
+//        try {
+//            Long currentUserId = StpUtil.getLoginIdAsLong();
+//            List<NotificationType> types = NotificationType.values();
+//            List<Long> counts = types.stream()
+//                    .map(type -> notificationService.getUnreadCount(currentUserId, type))
+//                    .collect(Collectors.toList());
+//            return ResponseEntity.<List<Long>>builder()
+//                    .code(20000)
+//                    .info("获取未读各个通知数量成功")
+//                    .data(counts)
+//                    .build();
+//        } catch (Exception e) {
+//            log.error("获取未读各个通知数量失败", e);
+//            return ResponseEntity.<List<Long>>builder()
+//                    .code(20001)
+//                    .info("获取未读各个通知数量失败：" + e.getMessage())
+//                    .build();
+//        }
+//    }
 
     @PutMapping("/{notificationId}/read")
     @Operation(summary = "标记通知为已读")

@@ -38,7 +38,7 @@ public class NotificationAggregate {
         private Long receiverId;
         private String title;
         private String content;
-        private BusinessType notificationBusinessType;
+        private BusinessType businessType;
         private Long businessId;
         private Boolean read;
         private Boolean status;
@@ -78,7 +78,7 @@ public class NotificationAggregate {
         }
 
         public NotificationAggregateBuilder businessType(BusinessType notificationBusinessType) {
-            this.notificationBusinessType = notificationBusinessType;
+            this.businessType = notificationBusinessType;
             return this;
         }
 
@@ -110,7 +110,7 @@ public class NotificationAggregate {
                     .receiverId(this.receiverId)
                     .title(this.title)
                     .content(this.content)
-                    .notificationBusinessType(this.notificationBusinessType)
+                    .businessType(this.businessType)
                     .businessId(this.businessId)
                     .read(this.read != null ? this.read : false)
                     .status(this.status != null ? this.status : true)
@@ -152,7 +152,7 @@ public class NotificationAggregate {
     }
 
     public BusinessType getBusinessType() {
-        return notification.getNotificationBusinessType();
+        return notification.getBusinessType();
     }
 
     public Long getBusinessId() {
