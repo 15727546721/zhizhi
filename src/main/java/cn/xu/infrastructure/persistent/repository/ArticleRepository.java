@@ -39,8 +39,10 @@ public class ArticleRepository implements IArticleRepository {
                 .description(articleEntity.getDescription())
                 .content(articleEntity.getContent())
                 .coverUrl(articleEntity.getCoverUrl())
+                .status(articleEntity.getStatus().getValue())
                 .build();
-        articleDao.insert(article); //插入后得到的id值会赋给article的id属性
+        //插入后得到的id值会赋给article的id属性
+        articleDao.insert(article);
         return article.getId();
     }
 
@@ -98,8 +100,8 @@ public class ArticleRepository implements IArticleRepository {
     }
 
     @Override
-    public List<ArticleListVO> queryArticleByCategory(Long categoryId) {
-        return articleDao.queryByCategory(categoryId);
+    public List<ArticleListVO> queryArticleByCategoryId(Long categoryId) {
+        return articleDao.queryByCategoryId(categoryId);
     }
 
     @Override
@@ -118,6 +120,16 @@ public class ArticleRepository implements IArticleRepository {
         return articles.stream()
                 .map(this::convert)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ArticleListVO> queryArticleByUserId(Long userId) {
+        return articleDao.queryByUserId(userId);
+    }
+
+    @Override
+    public void updateArticleStatus(Integer status, Long id) {
+        articleDao.updateStatus(status, id);
     }
 
     private ArticleEntity convert(Article article) {

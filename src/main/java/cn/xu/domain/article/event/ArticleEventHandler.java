@@ -2,7 +2,7 @@ package cn.xu.domain.article.event;
 
 import cn.xu.domain.article.event.factory.ArticleEventStrategyFactory;
 import cn.xu.domain.article.event.strategy.ArticleEventStrategy;
-import cn.xu.domain.article.service.impl.ArticleIndexService;
+import cn.xu.domain.article.service.search.ArticleIndexService;
 import com.lmax.disruptor.EventHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

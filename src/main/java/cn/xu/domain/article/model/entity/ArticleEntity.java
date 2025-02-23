@@ -1,5 +1,6 @@
 package cn.xu.domain.article.model.entity;
 
+import cn.xu.domain.article.model.valobj.ArticleStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,6 +22,7 @@ public class ArticleEntity {
     private Long viewCount;
     private Long collectCount;
     private Long likeCount;
+    private ArticleStatus status;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 }

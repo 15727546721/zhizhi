@@ -4,33 +4,14 @@ import lombok.Getter;
 
 @Getter
 public enum ArticleStatus {
-    DRAFT("草稿"),
-    PUBLISHED("已发布"),
-    ARCHIVED("已归档");
-    
+    DRAFT(0, "草稿"),
+    PUBLISHED(1,"已发布"),
+    ;
+    private final Integer value;
     private final String description;
     
-    ArticleStatus(String description) {
+    ArticleStatus(Integer value, String description) {
+        this.value = value;
         this.description = description;
-    }
-    
-    public boolean canPublish() {
-        return this == DRAFT;
-    }
-    
-    public boolean canArchive() {
-        return this == PUBLISHED;
-    }
-    
-    public boolean isDraft() {
-        return this == DRAFT;
-    }
-    
-    public boolean isPublished() {
-        return this == PUBLISHED;
-    }
-    
-    public boolean isArchived() {
-        return this == ARCHIVED;
     }
 } 

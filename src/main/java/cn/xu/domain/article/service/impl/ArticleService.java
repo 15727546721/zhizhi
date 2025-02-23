@@ -5,6 +5,7 @@ import cn.xu.api.web.model.vo.article.ArticleListVO;
 import cn.xu.api.web.model.vo.article.ArticlePageVO;
 import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.article.model.entity.ArticleEntity;
+import cn.xu.domain.article.model.valobj.ArticleStatus;
 import cn.xu.domain.article.repository.IArticleRepository;
 import cn.xu.domain.article.repository.IArticleTagRepository;
 import cn.xu.domain.article.repository.ITagRepository;
@@ -12,6 +13,7 @@ import cn.xu.domain.article.service.IArticleService;
 import cn.xu.domain.file.service.MinioService;
 import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.common.response.PageResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -25,10 +27,9 @@ import java.util.List;
  * 负责文章的创建、修改、删除、查询等核心业务逻辑
  *
  */
+@Slf4j
 @Service
 public class ArticleService implements IArticleService {
-
-    private static final Logger log = LoggerFactory.getLogger(ArticleService.class);
 
     @Resource
     private IArticleRepository articleRepository; // 文章仓储
@@ -55,6 +56,23 @@ public class ArticleService implements IArticleService {
         } catch (Exception e) {
             log.error("[文章服务] 创建文章失败 - title: {}", articleEntity.getTitle(), e);
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "创建文章失败：" + e.getMessage());
+        }
+    }
+
+    @Override
+    public Long createArticleDraft(ArticleEntity articleEntity) {
+        try {
+            log.info("[文章服务] 开始创建文章草稿 - title: {}, userId: {}",
+                    articleEntity.getTitle(), articleEntity.getUserId());
+
+            // 保存文章
+            Long articleId = articleRepository.save(articleEntity);
+            log.info("[文章服务] 文章草稿创建成功 - articleId: {}", articleId);
+
+            return articleId;
+        } catch (Exception e) {
+            log.error("[文章服务] 创建文章草稿失败 - title: {}", articleEntity.getTitle(), e);
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "创建文章草稿失败：" + e.getMessage());
         }
     }
 
@@ -86,7 +104,7 @@ public class ArticleService implements IArticleService {
             
             List<ArticlePageVO> articles = articleRepository.queryArticle(articleRequest);
             
-            log.debug("[文章服务] 分页查询文章列表成功 - 获取数量: {}", articles.size());
+            log.info("[文章服务] 分页查询文章列表成功 - 获取数量: {}", articles.size());
             return PageResponse.of(
                     articleRequest.getPageNo(),
                     articleRequest.getPageSize(),
@@ -144,7 +162,7 @@ public class ArticleService implements IArticleService {
                 return null;
             }
             
-            log.debug("[文章服务] 获取文章详情成功 - articleId: {}, title: {}", 
+            log.info("[文章服务] 获取文章详情成功 - articleId: {}, title: {}",
                     articleId, article.getTitle());
             return article;
         } catch (Exception e) {
@@ -154,11 +172,41 @@ public class ArticleService implements IArticleService {
     }
 
     @Override
-    public List<ArticleListVO> getArticleByCategory(Long categoryId) {
+    public List<ArticleListVO> getArticlesByUserId(Long userId) {
+        log.info("[文章服务] 开始获取用户文章列表 - userId: {}", userId);
+        return articleRepository.queryArticleByUserId(userId);
+    }
+
+    @Override
+    public void publishArticle(Long id, Long userId) {
+        try {
+            log.info("[文章服务] 开始发布文章 - articleId: {}, userId: {}", id, userId);
+            ArticleEntity article = articleRepository.findById(id);
+            if (article == null) {
+                log.error("[文章服务] 文章不存在 - articleId: {}", id);
+                throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "文章不存在");
+            }
+            if (article.getUserId() == null || !article.getUserId().equals(userId)) {
+                log.error("[文章服务] 文章作者ID不匹配 - articleId: {}, userId: {}", id, userId);
+                throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "文章作者ID不匹配");
+            }
+            if (article.getStatus().equals(ArticleStatus.PUBLISHED)) {
+                log.warn("[文章服务] 文章已发布 - articleId: {}", id);
+                return;
+            }
+
+            articleRepository.updateArticleStatus(ArticleStatus.PUBLISHED.getValue(), id);
+            log.info("[文章服务] 文章发布成功 - articleId: {}", id);
+        } catch (Exception e) {
+        }
+    }
+
+    @Override
+    public List<ArticleListVO> getArticleByCategoryId(Long categoryId) {
         try {
             log.info("[文章服务] 开始获取分类文章列表 - categoryId: {}", categoryId);
-            List<ArticleListVO> articles = articleRepository.queryArticleByCategory(categoryId);
-            log.debug("[文章服务] 获取分类文章列表成功 - categoryId: {}, size: {}", 
+            List<ArticleListVO> articles = articleRepository.queryArticleByCategoryId(categoryId);
+            log.info("[文章服务] 获取分类文章列表成功 - categoryId: {}, size: {}",
                     categoryId, articles.size());
             return articles;
         } catch (Exception e) {
@@ -213,7 +261,7 @@ public class ArticleService implements IArticleService {
                 throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "文章数据异常");
             }
             
-            log.debug("[文章服务] 获取文章作者ID成功 - articleId: {}, authorId: {}", 
+            log.info("[文章服务] 获取文章作者ID成功 - articleId: {}, authorId: {}",
                     articleId, article.getUserId());
             return article.getUserId();
         } catch (BusinessException e) {

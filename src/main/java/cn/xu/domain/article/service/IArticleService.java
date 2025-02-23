@@ -11,17 +11,52 @@ import java.util.List;
 
 public interface IArticleService {
 
+    /**
+     * 创建文章
+     * @param articleEntity
+     * @return
+     */
     Long createArticle(ArticleEntity articleEntity);
 
+    /**
+     * 保存文章草稿
+     * @param articleEntity
+     * @return
+     */
+    Long createArticleDraft(ArticleEntity articleEntity);
+
+    /**
+     * 上传文章封面
+     * @param imageFile
+     * @return
+     */
     String uploadCover(MultipartFile imageFile);
 
+    /**
+     * 获取文章列表
+     * @param articleRequest
+     * @return
+     */
     PageResponse<List<ArticlePageVO>> listArticle(ArticleRequest articleRequest);
 
+    /**
+     * 删除文章
+     * @param articleIds
+     */
     void deleteArticles(List<Long> articleIds);
 
+    /**
+     * 更新文章
+     * @param articleEntity
+     */
     void updateArticle(ArticleEntity articleEntity);
 
-    List<ArticleListVO> getArticleByCategory(Long categoryId);
+    /**
+     * 根据分类ID获取文章列表
+     * @param categoryId
+     * @return
+     */
+    List<ArticleListVO> getArticleByCategoryId(Long categoryId);
 
     /**
      * 获取热门文章列表
@@ -76,4 +111,13 @@ public interface IArticleService {
      * @return 文章实体，不存在则返回null
      */
     ArticleEntity getArticleById(Long articleId);
+
+    List<ArticleListVO> getArticlesByUserId(Long userId);
+
+    /**
+     * 发布文章（把草稿发布为正式文章）
+     * @param id
+     * @param userId
+     */
+    void publishArticle(Long id, Long userId);
 }

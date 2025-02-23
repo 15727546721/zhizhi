@@ -1,7 +1,7 @@
 package cn.xu.domain.article.event.strategy;
 
 import cn.xu.domain.article.event.ArticleEvent;
-import cn.xu.domain.article.service.impl.ArticleIndexService;
+import cn.xu.domain.article.service.search.ArticleIndexService;
 
 /**
  * 文章事件处理策略接口

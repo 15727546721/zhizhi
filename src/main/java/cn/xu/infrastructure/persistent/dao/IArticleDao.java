@@ -24,7 +24,7 @@ public interface IArticleDao {
 
     List<ArticleRecommendOrNew> queryArticleByPage(@Param("page") int page, @Param("size") int size);
 
-    List<ArticleListVO> queryByCategory(Long categoryId);
+    List<ArticleListVO> queryByCategoryId(Long categoryId);
 
     /**
      * 获取所有文章
@@ -32,4 +32,20 @@ public interface IArticleDao {
      * @return 所有文章列表
      */
     List<Article> findAll();
+
+    /**
+     * 根据用户id获取文章列表
+     *
+     * @param userId
+     * @return
+     */
+    List<ArticleListVO> queryByUserId(@Param("userId") Long userId);
+
+    /**
+     * 根据文章id更改文章状态
+     *
+     * @param status
+     * @param id
+     */
+    void updateStatus(@Param("status") Integer status, @Param("id") Long id);
 }

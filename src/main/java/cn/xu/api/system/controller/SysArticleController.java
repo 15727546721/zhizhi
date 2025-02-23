@@ -12,7 +12,7 @@ import cn.xu.domain.article.model.entity.ArticleEntity;
 import cn.xu.domain.article.model.entity.CategoryEntity;
 import cn.xu.domain.article.model.entity.TagEntity;
 import cn.xu.domain.article.service.*;
-import cn.xu.domain.article.service.impl.ArticleIndexService;
+import cn.xu.domain.article.service.search.ArticleIndexService;
 import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.common.response.PageResponse;
 import cn.xu.infrastructure.common.response.ResponseEntity;

@@ -6,11 +6,13 @@ import cn.xu.api.web.model.dto.article.PublishArticleRequest;
 import cn.xu.api.web.model.vo.article.ArticleListVO;
 import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.article.model.entity.ArticleEntity;
+import cn.xu.domain.article.model.valobj.ArticleStatus;
 import cn.xu.domain.article.service.IArticleCategoryService;
 import cn.xu.domain.article.service.IArticleService;
 import cn.xu.domain.article.service.IArticleTagService;
 import cn.xu.domain.article.service.ITagService;
-import cn.xu.domain.article.service.impl.ArticleIndexService;
+import cn.xu.domain.article.service.search.ArticleIndexService;
+import cn.xu.domain.user.service.IUserService;
 import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.common.response.ResponseEntity;
 import io.swagger.v3.oas.annotations.Operation;
@@ -41,6 +43,8 @@ public class ArticleController {
     private TransactionTemplate transactionTemplate;
     @Resource
     private ArticleIndexService articleIndexService;
+    @Resource
+    private IUserService userService;
 
     @GetMapping("/category")
     @Operation(summary = "通过分类获取文章列表")
@@ -49,7 +53,7 @@ public class ArticleController {
         if (categoryId == null || categoryId == 0) {
             categoryId = null;
         }
-        List<ArticleListVO> articleEntityList = articleService.getArticleByCategory(categoryId);
+        List<ArticleListVO> articleEntityList = articleService.getArticleByCategoryId(categoryId);
         return ResponseEntity.<List<ArticleListVO>>builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .data(articleEntityList)
@@ -84,6 +88,7 @@ public class ArticleController {
                         .content(publishArticleRequest.getContent())
                         .description(publishArticleRequest.getDescription())
                         .userId(userId) // 当前登录用户ID
+                        .status(ArticleStatus.PUBLISHED)
                         .build());
                 //2. 保存文章分类
                 articleCategoryService.saveArticleCategory(articleId, publishArticleRequest.getCategoryId());
@@ -109,6 +114,75 @@ public class ArticleController {
                 .code(ResponseCode.SUCCESS.getCode())
                 .info("文章发布成功")
                 .build();
+    }
+
+    @PostMapping("/saveDraft")
+    @Operation(summary = "保存文章草稿")
+    public ResponseEntity saveArticleDraft(@RequestBody PublishArticleRequest publishArticleRequest) {
+        log.info("保存文章草稿，文章内容：{}", publishArticleRequest);
+        Long userId = StpUtil.getLoginIdAsLong();
+        transactionTemplate.execute(status -> {
+            // 事务开始
+            try {
+                //1. 保存文章，并将状态设置为草稿
+                Long articleId = articleService.createArticleDraft(ArticleEntity.builder()
+                        .title(publishArticleRequest.getTitle())
+                        .coverUrl(publishArticleRequest.getCoverUrl())
+                        .content(publishArticleRequest.getContent())
+                        .description(publishArticleRequest.getDescription())
+                        .userId(userId) // 当前登录用户ID
+                        .status(ArticleStatus.DRAFT) // 设置文章状态为草稿
+                        .build());
+                //2. 保存文章分类
+                articleCategoryService.saveArticleCategory(articleId, publishArticleRequest.getCategoryId());
+                //3. 保存文章标签
+                if (publishArticleRequest.getTagIds() == null || publishArticleRequest.getTagIds().isEmpty()) {
+                    throw new BusinessException(ResponseCode.NULL_PARAMETER.getCode(), "标签不能为空");
+                }
+                if (publishArticleRequest.getTagIds().size() > 3) {
+                    throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "标签不能超过3个");
+                }
+                articleTagService.saveArticleTag(articleId, publishArticleRequest.getTagIds());
+                // 事务提交
+                return 1;
+            } catch (Exception e) {
+                // 事务回滚
+                status.setRollbackOnly();
+                log.error("保存文章草稿失败", e);
+                throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "保存文章草稿失败");
+            }
+        });
+        log.info("文章草稿保存成功");
+        return ResponseEntity.builder()
+                .code(ResponseCode.SUCCESS.getCode())
+                .info("文章草稿保存成功")
+                .build();
+    }
+
+    @PostMapping("/publish/{id}")
+    @Operation(summary = "把草稿设置为已发布")
+    public ResponseEntity publishArticle(@PathVariable("id") Long id, @RequestParam("status") Integer status) {
+        log.info("把草稿设置为已发布，文章ID：{}", id);
+        if (status == null || status != 1) {
+            return ResponseEntity.builder()
+                    .code(ResponseCode.ILLEGAL_PARAMETER.getCode())
+                    .info("非法参数")
+                    .build();
+        }
+        Long userId = StpUtil.getLoginIdAsLong();
+        try {
+            articleService.publishArticle(id, userId);
+            return ResponseEntity.builder()
+                    .code(ResponseCode.SUCCESS.getCode())
+                    .info("文章发布成功")
+                    .build();
+        } catch (Exception e) {
+            log.error("文章发布失败", e);
+            return ResponseEntity.builder()
+                    .code(ResponseCode.UN_ERROR.getCode())
+                    .info("文章发布失败")
+                    .build();
+        }
     }
 
     @GetMapping("/hot")
@@ -169,4 +243,16 @@ public class ArticleController {
         }
     }
 
+    @GetMapping("/user/articles")
+    @Operation(summary = "根据用户ID查询发布的文章列表")
+    public ResponseEntity<List<ArticleListVO>> getArticlesByUserId() {
+        Long userId = userService.getCurrentUserId();
+
+        log.info("根据用户ID查询发布的文章列表，用户ID：{}", userId);
+        List<ArticleListVO> articles = articleService.getArticlesByUserId(userId);
+        return ResponseEntity.<List<ArticleListVO>>builder()
+                .code(ResponseCode.SUCCESS.getCode())
+                .data(articles)
+                .build();
+    }
 }

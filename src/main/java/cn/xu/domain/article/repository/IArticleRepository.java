@@ -22,7 +22,7 @@ public interface IArticleRepository {
 
     List<ArticleRecommendOrNew> queryArticleByPage();
 
-    List<ArticleListVO> queryArticleByCategory(Long categoryId);
+    List<ArticleListVO> queryArticleByCategoryId(Long categoryId);
 
     /**
      * 更新文章点赞数
@@ -45,4 +45,14 @@ public interface IArticleRepository {
      * @return 所有文章列表
      */
     List<ArticleEntity> findAll();
+
+    List<ArticleListVO> queryArticleByUserId(Long userId);
+
+    /**
+     * 更新文章状态
+     *
+     * @param status 状态值
+     * @param id 文章ID
+     */
+    void updateArticleStatus(Integer status, Long id);
 }

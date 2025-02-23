@@ -1,7 +1,8 @@
-package cn.xu.domain.article.service.impl;
+package cn.xu.domain.article.service.search;
 
 import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.article.model.entity.ArticleEntity;
+import cn.xu.domain.article.service.impl.ArticleService;
 import cn.xu.infrastructure.common.exception.BusinessException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.lucene.analysis.Analyzer;

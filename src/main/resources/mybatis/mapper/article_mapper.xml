@@ -14,6 +14,8 @@
         <result property="viewCount" column="view_count" jdbcType="BIGINT"/>
         <result property="collectCount" column="collect_count" jdbcType="BIGINT"/>
         <result property="likeCount" column="like_count" jdbcType="BIGINT"/>
+        <result property="status" column="status" jdbcType="INTEGER"/>
+        <result property="publishTime" column="publish_time" jdbcType="TIMESTAMP"/>
         <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
         <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
     </resultMap>
@@ -34,7 +36,7 @@
         </collection>
     </resultMap>
 
-    <select id="queryByCategory" parameterType="java.lang.Long" resultMap="ArticleListResultMap">
+    <select id="queryByCategoryId" parameterType="java.lang.Long" resultMap="ArticleListResultMap">
         SELECT DISTINCT
         a.id,
         a.title,
@@ -68,9 +70,9 @@
     <insert id="insert" parameterType="cn.xu.infrastructure.persistent.po.Article" useGeneratedKeys="true"
             keyProperty="id">
         INSERT INTO article (title, description, content, cover_url, user_id,
-                             view_count, collect_count, like_count, create_time, update_time)
+                             view_count, collect_count, like_count, status, publish_time, create_time, update_time)
         VALUES (#{title}, #{description}, #{content}, #{coverUrl}, #{userId},
-                #{viewCount}, #{collectCount}, #{likeCount}, now(), now())
+                #{viewCount}, #{collectCount}, #{likeCount}, #{status}, now(), now(), now())
     </insert>
     <update id="update">
         UPDATE article
@@ -83,6 +85,11 @@
             collect_count = #{collectCount},
             like_count    = #{likeCount},
             update_time   = now()
+        WHERE id = #{id}
+    </update>
+    <update id="updateStatus">
+        UPDATE article
+        SET status = #{status}
         WHERE id = #{id}
     </update>
 
@@ -235,5 +242,27 @@
                update_time
         FROM article
         ORDER BY create_time DESC
+    </select>
+    <select id="queryByUserId" parameterType="java.lang.Long" resultMap="ArticleListResultMap">
+        SELECT DISTINCT
+        a.id,
+        a.title,
+        a.description,
+        a.cover_url,
+        a.user_id,
+        a.view_count,
+        a.like_count,
+        a.create_time,
+        u.nickname,
+        t.name as tag_name,
+        t.name
+        FROM article as a
+        JOIN user as u ON a.user_id = u.id
+        LEFT JOIN article_tag_relation as at ON a.id = at.article_id
+        LEFT JOIN article_tag as t ON at.tag_id = t.id
+        <if test="userId != null">
+            JOIN article_category_relation as ac ON a.id = ac.article_id
+            WHERE ac.userId = #{userId}
+        </if>
     </select>
 </mapper>
