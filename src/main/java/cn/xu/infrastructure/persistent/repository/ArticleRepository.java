@@ -90,6 +90,7 @@ public class ArticleRepository implements IArticleRepository {
                 .description(articleEntity.getDescription())
                 .content(articleEntity.getContent())
                 .coverUrl(articleEntity.getCoverUrl())
+                .status(articleEntity.getStatus().getValue())
                 .build();
         articleDao.update(article);
     }
@@ -115,6 +116,14 @@ public class ArticleRepository implements IArticleRepository {
     }
 
     @Override
+    public List<ArticleEntity> findAllPublishedArticles() {
+        List<Article> articles = articleDao.findAllPublishedArticles();
+        return articles.stream()
+                .map(this::convert)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public List<ArticleEntity> findAll() {
         List<Article> articles = articleDao.findAll();
         return articles.stream()
@@ -130,6 +139,17 @@ public class ArticleRepository implements IArticleRepository {
     @Override
     public void updateArticleStatus(Integer status, Long id) {
         articleDao.updateStatus(status, id);
+    }
+
+    @Override
+    public List<ArticleListVO> queryDraftArticleListByUserId(Long userId) {
+        return articleDao.queryDraftArticleListByUserId(userId);
+    }
+
+    @Override
+    public void deleteById(Long id) {
+        log.info("Deleting article by ID: {}", id);
+        articleDao.deleteById(id);
     }
 
     private ArticleEntity convert(Article article) {

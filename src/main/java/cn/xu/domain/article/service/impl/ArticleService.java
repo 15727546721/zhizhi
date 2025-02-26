@@ -14,8 +14,6 @@ import cn.xu.domain.file.service.MinioService;
 import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.common.response.PageResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -25,7 +23,6 @@ import java.util.List;
 /**
  * 文章服务实现类
  * 负责文章的创建、修改、删除、查询等核心业务逻辑
- *
  */
 @Slf4j
 @Service
@@ -45,13 +42,13 @@ public class ArticleService implements IArticleService {
     @Override
     public Long createArticle(ArticleEntity articleEntity) {
         try {
-            log.info("[文章服务] 开始创建文章 - title: {}, userId: {}", 
+            log.info("[文章服务] 开始创建文章 - title: {}, userId: {}",
                     articleEntity.getTitle(), articleEntity.getUserId());
-            
+
             // 保存文章
             Long articleId = articleRepository.save(articleEntity);
             log.info("[文章服务] 文章创建成功 - articleId: {}", articleId);
-            
+
             return articleId;
         } catch (Exception e) {
             log.error("[文章服务] 创建文章失败 - title: {}", articleEntity.getTitle(), e);
@@ -60,16 +57,21 @@ public class ArticleService implements IArticleService {
     }
 
     @Override
-    public Long createArticleDraft(ArticleEntity articleEntity) {
+    public Long createOrUpdateArticleDraft(ArticleEntity articleEntity) {
         try {
             log.info("[文章服务] 开始创建文章草稿 - title: {}, userId: {}",
                     articleEntity.getTitle(), articleEntity.getUserId());
-
-            // 保存文章
-            Long articleId = articleRepository.save(articleEntity);
-            log.info("[文章服务] 文章草稿创建成功 - articleId: {}", articleId);
-
-            return articleId;
+            if (articleEntity.getId() == null) {
+                // 保存文章
+                Long articleId = articleRepository.save(articleEntity);
+                log.info("[文章服务] 文章草稿创建成功 - articleId: {}", articleId);
+                return articleId;
+            } else {
+                // 更新文章
+                articleRepository.update(articleEntity);
+                log.info("[文章服务] 文章草稿更新成功 - articleId: {}", articleEntity.getId());
+                return articleEntity.getId();
+            }
         } catch (Exception e) {
             log.error("[文章服务] 创建文章草稿失败 - title: {}", articleEntity.getTitle(), e);
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "创建文章草稿失败：" + e.getMessage());
@@ -79,15 +81,15 @@ public class ArticleService implements IArticleService {
     @Override
     public String uploadCover(MultipartFile imageFile) {
         try {
-            log.info("[文章服务] 开始上传文章封面 - fileName: {}, size: {}", 
+            log.info("[文章服务] 开始上传文章封面 - fileName: {}, size: {}",
                     imageFile.getOriginalFilename(), imageFile.getSize());
-            
+
             String uploadFileUrl = minioService.uploadFile(imageFile, null);
             if (uploadFileUrl == null) {
                 log.error("[文章服务] 上传文章封面失败 - 上传服务返回空URL");
                 throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "上传封面失败");
             }
-            
+
             log.info("[文章服务] 文章封面上传成功 - url: {}", uploadFileUrl);
             return uploadFileUrl;
         } catch (Exception e) {
@@ -99,11 +101,11 @@ public class ArticleService implements IArticleService {
     @Override
     public PageResponse<List<ArticlePageVO>> listArticle(ArticleRequest articleRequest) {
         try {
-            log.info("[文章服务] 开始分页查询文章列表 - pageNo: {}, pageSize: {}", 
+            log.info("[文章服务] 开始分页查询文章列表 - pageNo: {}, pageSize: {}",
                     articleRequest.getPageNo(), articleRequest.getPageSize());
-            
+
             List<ArticlePageVO> articles = articleRepository.queryArticle(articleRequest);
-            
+
             log.info("[文章服务] 分页查询文章列表成功 - 获取数量: {}", articles.size());
             return PageResponse.of(
                     articleRequest.getPageNo(),
@@ -156,12 +158,12 @@ public class ArticleService implements IArticleService {
         try {
             log.info("[文章服务] 开始获取文章详情 - articleId: {}", articleId);
             ArticleEntity article = articleRepository.findById(articleId);
-            
+
             if (article == null) {
                 log.warn("[文章服务] 文章不存在 - articleId: {}", articleId);
                 return null;
             }
-            
+
             log.info("[文章服务] 获取文章详情成功 - articleId: {}, title: {}",
                     articleId, article.getTitle());
             return article;
@@ -178,10 +180,11 @@ public class ArticleService implements IArticleService {
     }
 
     @Override
-    public void publishArticle(Long id, Long userId) {
+    public void publishArticle(ArticleEntity articleEntity, Long userId) {
+        Long id = articleEntity.getId();
         try {
             log.info("[文章服务] 开始发布文章 - articleId: {}, userId: {}", id, userId);
-            ArticleEntity article = articleRepository.findById(id);
+            ArticleEntity article = articleRepository.findById(articleEntity.getId());
             if (article == null) {
                 log.error("[文章服务] 文章不存在 - articleId: {}", id);
                 throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "文章不存在");
@@ -195,9 +198,46 @@ public class ArticleService implements IArticleService {
                 return;
             }
 
-            articleRepository.updateArticleStatus(ArticleStatus.PUBLISHED.getValue(), id);
+            articleRepository.update(articleEntity);
             log.info("[文章服务] 文章发布成功 - articleId: {}", id);
         } catch (Exception e) {
+            log.error("[文章服务] 发布文章失败 - articleId: {}, userId: {}", id, userId, e);
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "发布文章失败：" + e.getMessage());
+        }
+    }
+
+    @Override
+    public List<ArticleListVO> getDraftArticleList(Long userId) {
+        try {
+            log.info("[文章服务] 开始获取草稿文章列表 - userId: {}", userId);
+            List<ArticleListVO> articles = articleRepository.queryDraftArticleListByUserId(userId);
+            log.info("[文章服务] 获取草稿文章列表成功 - userId: {}, size: {}",
+                    userId, articles.size());
+            return articles;
+        } catch (Exception e) {
+            log.error("[文章服务] 获取草稿文章列表失败 - userId: {}", userId, e);
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "获取草稿文章列表失败：" + e.getMessage());
+        }
+    }
+
+    @Override
+    public void deleteArticle(Long id, Long userId) {
+        try {
+            log.info("[文章服务] 开始删除文章 - articleId: {}, userId: {}", id, userId);
+            ArticleEntity article = articleRepository.findById(id);
+            if (article == null) {
+                log.warn("[文章服务] 文章不存在 - articleId: {}", id);
+                return;
+            }
+            if (article.getUserId() == null || !article.getUserId().equals(userId)) {
+                log.error("[文章服务] 文章作者ID不匹配 - articleId: {}, userId: {}", id, userId);
+                throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "文章作者ID不匹配");
+            }
+            articleRepository.deleteById(id);
+            log.info("[文章服务] 删除文章成功 - articleId: {}", id);
+        } catch (Exception e) {
+            log.error("[文章服务] 删除文章失败 - articleId: {}, userId: {}", id, userId, e);
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "删除文章失败：" + e.getMessage());
         }
     }
 
@@ -236,6 +276,11 @@ public class ArticleService implements IArticleService {
     }
 
     @Override
+    public List<ArticleEntity> getAllPublishedArticles() {
+        return articleRepository.findAllPublishedArticles();
+    }
+
+    @Override
     public List<ArticleEntity> getAllArticles() {
         return articleRepository.findAll();
     }
@@ -250,17 +295,17 @@ public class ArticleService implements IArticleService {
         try {
             log.info("[文章服务] 开始获取文章作者ID - articleId: {}", articleId);
             ArticleEntity article = articleRepository.findById(articleId);
-            
+
             if (article == null) {
                 log.warn("[文章服务] 文章不存在 - articleId: {}", articleId);
                 return null;
             }
-            
+
             if (article.getUserId() == null) {
                 log.error("[文章服务] 文章数据异常，作者ID为空 - articleId: {}", articleId);
                 throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "文章数据异常");
             }
-            
+
             log.info("[文章服务] 获取文章作者ID成功 - articleId: {}, authorId: {}",
                     articleId, article.getUserId());
             return article.getUserId();

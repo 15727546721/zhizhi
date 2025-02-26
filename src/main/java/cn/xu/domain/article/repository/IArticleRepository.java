@@ -40,6 +40,11 @@ public interface IArticleRepository {
     void batchUpdateArticleLikeCount(Map<Long, Long> likeCounts);
 
     /**
+     * 获取所有已发布文章
+     */
+    List<ArticleEntity> findAllPublishedArticles();
+
+    /**
      * 获取所有文章
      *
      * @return 所有文章列表
@@ -55,4 +60,19 @@ public interface IArticleRepository {
      * @param id 文章ID
      */
     void updateArticleStatus(Integer status, Long id);
+
+    /**
+     * 查询草稿箱文章列表
+     *
+     * @param userId
+     * @return
+     */
+    List<ArticleListVO> queryDraftArticleListByUserId(Long userId);
+
+    /**
+     * 删除文章
+     *
+     * @param id
+     */
+    void deleteById(Long id);
 }

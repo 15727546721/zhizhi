@@ -28,6 +28,7 @@
         <result property="viewCount" column="view_count"/>
         <result property="likeCount" column="like_count"/>
         <result property="createTime" column="create_time"/>
+        <result property="publishTime" column="publish_time"/>
         <result property="nickname" column="nickname"/>
 
         <!-- 映射 Tag 集合 -->
@@ -46,16 +47,19 @@
         a.view_count,
         a.like_count,
         a.create_time,
+        a.publish_time,
         u.nickname,
-        t.name as tag_name,
         t.name
-        FROM article as a
-        JOIN user as u ON a.user_id = u.id
-        LEFT JOIN article_tag_relation as at ON a.id = at.article_id
-        LEFT JOIN article_tag as t ON at.tag_id = t.id
+        FROM article a
+        JOIN user u ON a.user_id = u.id
         <if test="categoryId != null">
-            JOIN article_category_relation as ac ON a.id = ac.article_id
-            WHERE ac.category_id = #{categoryId}
+            JOIN article_category_relation ac ON a.id = ac.article_id
+        </if>
+        LEFT JOIN article_tag_relation at ON a.id = at.article_id
+        LEFT JOIN article_tag t ON at.tag_id = t.id
+        WHERE a.status = 1
+        <if test="categoryId != null">
+            AND ac.category_id = #{categoryId}
         </if>
     </select>
 
@@ -84,6 +88,8 @@
             view_count    = #{viewCount},
             collect_count = #{collectCount},
             like_count    = #{likeCount},
+            status        = #{status},
+            publish_time  = now(),
             update_time   = now()
         WHERE id = #{id}
     </update>
@@ -98,6 +104,10 @@
         <foreach collection="articleIds" item="id" open="(" separator="," close=")">
             #{id}
         </foreach>
+    </delete>
+
+    <delete id="deleteById">
+        DELETE FROM article WHERE id = #{id}
     </delete>
 
     <select id="queryByPage" parameterType="cn.xu.api.system.model.dto.article.ArticleRequest"
@@ -228,6 +238,23 @@
         <result property="updateTime" column="update_time"/>
     </resultMap>
 
+    <select id="findAllPublishedArticles" resultType="cn.xu.infrastructure.persistent.po.Article">
+        SELECT id,
+               title,
+               description,
+               content,
+               cover_url,
+               user_id,
+               view_count,
+               collect_count,
+               like_count,
+               create_time,
+               update_time
+        FROM article
+        WHERE status = 1
+        ORDER BY create_time DESC
+    </select>
+
     <select id="findAll" resultType="cn.xu.infrastructure.persistent.po.Article">
         SELECT id,
                title,
@@ -243,26 +270,48 @@
         FROM article
         ORDER BY create_time DESC
     </select>
+    <!-- 查询已发布的文章列表 -->
     <select id="queryByUserId" parameterType="java.lang.Long" resultMap="ArticleListResultMap">
         SELECT DISTINCT
-        a.id,
-        a.title,
-        a.description,
-        a.cover_url,
-        a.user_id,
-        a.view_count,
-        a.like_count,
-        a.create_time,
-        u.nickname,
-        t.name as tag_name,
-        t.name
-        FROM article as a
-        JOIN user as u ON a.user_id = u.id
-        LEFT JOIN article_tag_relation as at ON a.id = at.article_id
-        LEFT JOIN article_tag as t ON at.tag_id = t.id
-        <if test="userId != null">
-            JOIN article_category_relation as ac ON a.id = ac.article_id
-            WHERE ac.userId = #{userId}
-        </if>
+            a.id,
+            a.title,
+            a.description,
+            a.cover_url,
+            a.user_id,
+            a.view_count,
+            a.like_count,
+            a.create_time,
+            a.publish_time,
+            u.nickname,
+            t.name
+        FROM article a
+                 JOIN user u ON a.user_id = u.id
+                 LEFT JOIN article_tag_relation at ON a.id = at.article_id
+            LEFT JOIN article_tag t ON at.tag_id = t.id
+        WHERE a.status = 1
+          AND a.user_id = #{userId}
     </select>
+
+    <!-- 查询草稿状态的文章列表 -->
+    <select id="queryDraftArticleListByUserId" parameterType="java.lang.Long" resultMap="ArticleListResultMap">
+        SELECT DISTINCT
+            a.id,
+            a.title,
+            a.description,
+            a.cover_url,
+            a.user_id,
+            a.view_count,
+            a.like_count,
+            a.create_time,
+            a.publish_time,
+            u.nickname,
+            t.name
+        FROM article a
+                 JOIN user u ON a.user_id = u.id
+                 LEFT JOIN article_tag_relation at ON a.id = at.article_id
+            LEFT JOIN article_tag t ON at.tag_id = t.id
+        WHERE a.status = 0
+          AND a.user_id = #{userId}
+    </select>
+
 </mapper>

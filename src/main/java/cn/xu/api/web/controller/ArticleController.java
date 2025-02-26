@@ -2,7 +2,8 @@ package cn.xu.api.web.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.stp.StpUtil;
-import cn.xu.api.web.model.dto.article.PublishArticleRequest;
+import cn.xu.api.web.model.dto.article.DraftRequest;
+import cn.xu.api.web.model.dto.article.PublishOrDraftArticleRequest;
 import cn.xu.api.web.model.vo.article.ArticleListVO;
 import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.article.model.entity.ArticleEntity;
@@ -10,9 +11,9 @@ import cn.xu.domain.article.model.valobj.ArticleStatus;
 import cn.xu.domain.article.service.IArticleCategoryService;
 import cn.xu.domain.article.service.IArticleService;
 import cn.xu.domain.article.service.IArticleTagService;
-import cn.xu.domain.article.service.ITagService;
 import cn.xu.domain.article.service.search.ArticleIndexService;
 import cn.xu.domain.user.service.IUserService;
+import cn.xu.infrastructure.common.annotation.ApiOperationLog;
 import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.common.response.ResponseEntity;
 import io.swagger.v3.oas.annotations.Operation;
@@ -37,8 +38,6 @@ public class ArticleController {
     private IArticleCategoryService articleCategoryService;
     @Resource
     private IArticleTagService articleTagService;
-    @Resource
-    private ITagService tagService;
     @Resource
     private TransactionTemplate transactionTemplate;
     @Resource
@@ -73,10 +72,10 @@ public class ArticleController {
                 .build();
     }
 
-    @PostMapping("/publish")
-    @Operation(summary = "发布文章")
-    public ResponseEntity pushArticle(@RequestBody PublishArticleRequest publishArticleRequest) {
-        log.info("发布文章，文章内容：{}", publishArticleRequest);
+    @PostMapping("/create")
+    @Operation(summary = "创建文章")
+    @ApiOperationLog(description = "创建文章")
+    public ResponseEntity createArticle(@RequestBody PublishOrDraftArticleRequest publishArticleRequest) {
         Long userId = StpUtil.getLoginIdAsLong();
         transactionTemplate.execute(status -> {
             // 事务开始
@@ -109,30 +108,35 @@ public class ArticleController {
                 throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "文章发布失败");
             }
         });
-        log.info("文章发布成功");
-        return ResponseEntity.builder()
+        log.info("文章创建成功");
+        return ResponseEntity.<Long>builder()
                 .code(ResponseCode.SUCCESS.getCode())
-                .info("文章发布成功")
+                .info("文章创建成功")
                 .build();
     }
 
-    @PostMapping("/saveDraft")
-    @Operation(summary = "保存文章草稿")
-    public ResponseEntity saveArticleDraft(@RequestBody PublishArticleRequest publishArticleRequest) {
-        log.info("保存文章草稿，文章内容：{}", publishArticleRequest);
+    @PostMapping("/publish")
+    @Operation(summary = "发布文章")
+    public ResponseEntity pushArticle(@RequestBody PublishOrDraftArticleRequest publishArticleRequest) {
+        log.info("发布文章，文章内容：{}", publishArticleRequest);
+        if (publishArticleRequest != null && publishArticleRequest.getId() != null) {
+            throw new BusinessException(ResponseCode.NULL_PARAMETER.getCode(), "文章ID不能为空");
+        }
         Long userId = StpUtil.getLoginIdAsLong();
         transactionTemplate.execute(status -> {
             // 事务开始
             try {
-                //1. 保存文章，并将状态设置为草稿
-                Long articleId = articleService.createArticleDraft(ArticleEntity.builder()
+                Long articleId = publishArticleRequest.getId();
+                //1. 保存文章
+                articleService.publishArticle(ArticleEntity.builder()
+                        .id(publishArticleRequest.getId())
                         .title(publishArticleRequest.getTitle())
                         .coverUrl(publishArticleRequest.getCoverUrl())
                         .content(publishArticleRequest.getContent())
                         .description(publishArticleRequest.getDescription())
                         .userId(userId) // 当前登录用户ID
-                        .status(ArticleStatus.DRAFT) // 设置文章状态为草稿
-                        .build());
+                        .status(ArticleStatus.PUBLISHED)
+                        .build(), userId);
                 //2. 保存文章分类
                 articleCategoryService.saveArticleCategory(articleId, publishArticleRequest.getCategoryId());
                 //3. 保存文章标签
@@ -148,10 +152,30 @@ public class ArticleController {
             } catch (Exception e) {
                 // 事务回滚
                 status.setRollbackOnly();
-                log.error("保存文章草稿失败", e);
-                throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "保存文章草稿失败");
+                log.error("文章发布失败", e);
+                throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "文章发布失败");
             }
         });
+        log.info("文章发布成功");
+        return ResponseEntity.<Long>builder()
+                .code(ResponseCode.SUCCESS.getCode())
+                .info("文章发布成功")
+                .build();
+    }
+
+    @PostMapping("/saveDraft")
+    @Operation(summary = "保存文章草稿")
+    public ResponseEntity saveArticleDraft(@RequestBody DraftRequest draftRequest) {
+        log.info("保存文章草稿，文章内容：{}", draftRequest);
+        Long userId = StpUtil.getLoginIdAsLong();
+        //1. 保存文章，并将状态设置为草稿
+        Long articleId = articleService.createOrUpdateArticleDraft(ArticleEntity.builder()
+                .id(draftRequest.getId())
+                .title(draftRequest.getTitle())
+                .content(draftRequest.getContent())
+                .userId(userId)
+                .status(ArticleStatus.DRAFT)
+                .build());
         log.info("文章草稿保存成功");
         return ResponseEntity.builder()
                 .code(ResponseCode.SUCCESS.getCode())
@@ -159,30 +183,29 @@ public class ArticleController {
                 .build();
     }
 
-    @PostMapping("/publish/{id}")
-    @Operation(summary = "把草稿设置为已发布")
-    public ResponseEntity publishArticle(@PathVariable("id") Long id, @RequestParam("status") Integer status) {
-        log.info("把草稿设置为已发布，文章ID：{}", id);
-        if (status == null || status != 1) {
-            return ResponseEntity.builder()
-                    .code(ResponseCode.ILLEGAL_PARAMETER.getCode())
-                    .info("非法参数")
-                    .build();
-        }
+    @GetMapping("/draft/list")
+    @Operation(summary = "获取用户文章草稿列表")
+    @SaCheckLogin
+    public ResponseEntity<List<ArticleListVO>> getDraftArticles() {
         Long userId = StpUtil.getLoginIdAsLong();
-        try {
-            articleService.publishArticle(id, userId);
-            return ResponseEntity.builder()
-                    .code(ResponseCode.SUCCESS.getCode())
-                    .info("文章发布成功")
-                    .build();
-        } catch (Exception e) {
-            log.error("文章发布失败", e);
-            return ResponseEntity.builder()
-                    .code(ResponseCode.UN_ERROR.getCode())
-                    .info("文章发布失败")
-                    .build();
-        }
+        List<ArticleListVO> draftArticles = articleService.getDraftArticleList(userId);
+        return ResponseEntity.<List<ArticleListVO>>builder()
+                .code(ResponseCode.SUCCESS.getCode())
+                .data(draftArticles)
+                .build();
+    }
+
+    @GetMapping("/draft/{id}")
+    @Operation(summary = "删除文章草稿")
+    @SaCheckLogin
+    public ResponseEntity deleteDraftArticle(@PathVariable("id") Long id) {
+        log.info("删除文章草稿，文章ID：{}", id);
+        Long userId = StpUtil.getLoginIdAsLong();
+        articleService.deleteArticle(id, userId);
+        return ResponseEntity.builder()
+                .code(ResponseCode.SUCCESS.getCode())
+                .info("文章草稿删除成功")
+                .build();
     }
 
     @GetMapping("/hot")
@@ -223,23 +246,23 @@ public class ArticleController {
         try {
             if (StringUtils.isBlank(title)) {
                 return ResponseEntity.<List<ArticleEntity>>builder()
-                    .code(ResponseCode.ILLEGAL_PARAMETER.getCode())
-                    .info("搜索关键词不能为空")
-                    .build();
+                        .code(ResponseCode.ILLEGAL_PARAMETER.getCode())
+                        .info("搜索关键词不能为空")
+                        .build();
             }
 
             List<ArticleEntity> articles = articleIndexService.searchArticles(title);
             return ResponseEntity.<List<ArticleEntity>>builder()
-                .data(articles)
-                .code(ResponseCode.SUCCESS.getCode())
-                .info("搜索成功")
-                .build();
+                    .data(articles)
+                    .code(ResponseCode.SUCCESS.getCode())
+                    .info("搜索成功")
+                    .build();
         } catch (Exception e) {
             log.error("文章搜索失败: {}", e.getMessage(), e);
             return ResponseEntity.<List<ArticleEntity>>builder()
-                .code(ResponseCode.UN_ERROR.getCode())
-                .info("搜索失败")
-                .build();
+                    .code(ResponseCode.UN_ERROR.getCode())
+                    .info("搜索失败")
+                    .build();
         }
     }
 

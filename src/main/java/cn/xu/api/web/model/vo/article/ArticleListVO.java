@@ -2,7 +2,7 @@ package cn.xu.api.web.model.vo.article;
 
 import lombok.Data;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -12,7 +12,8 @@ public class ArticleListVO {
     private String coverUrl;
     private String description;
     private String nickname;
-    private Date createTime;
+    private LocalDateTime createTime;
+    private LocalDateTime publishTime;
     private long viewCount;
     private long likeCount;
     private List<String> tagNameList;

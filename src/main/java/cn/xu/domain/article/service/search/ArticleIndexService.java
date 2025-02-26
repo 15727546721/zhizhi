@@ -186,7 +186,7 @@ public class ArticleIndexService {
                 writer.deleteAll();
                 
                 // 重新创建索引
-                List<ArticleEntity> articles = articleService.getAllArticles();
+                List<ArticleEntity> articles = articleService.getAllPublishedArticles();
                 log.info("获取到所有文章数量: {}", articles.size());
                 for (ArticleEntity article : articles) {
                     Document doc = createDocument(article);

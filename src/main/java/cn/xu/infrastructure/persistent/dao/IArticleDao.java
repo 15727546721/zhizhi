@@ -27,6 +27,11 @@ public interface IArticleDao {
     List<ArticleListVO> queryByCategoryId(Long categoryId);
 
     /**
+     * 获取所有已发布的文章
+     */
+    List<Article> findAllPublishedArticles();
+
+    /**
      * 获取所有文章
      *
      * @return 所有文章列表
@@ -48,4 +53,21 @@ public interface IArticleDao {
      * @param id
      */
     void updateStatus(@Param("status") Integer status, @Param("id") Long id);
+
+    /**
+     * 根据用户id获取草稿箱文章列表
+     *
+     * @param userId
+     * @return
+     */
+    List<ArticleListVO> queryDraftArticleListByUserId(Long userId);
+
+    /**
+     * 删除文章
+     *
+     * @param id
+     */
+    void deleteById(Long id);
+
+
 }

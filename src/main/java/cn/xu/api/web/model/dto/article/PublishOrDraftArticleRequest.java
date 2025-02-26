@@ -7,8 +7,10 @@ import java.util.List;
 
 @Data
 @Schema(description = "发布文章请求")
-public class PublishArticleRequest {
-    
+public class PublishOrDraftArticleRequest {
+    @Schema(description = "文章ID")
+    private Long id;
+
     @Schema(description = "文章标题")
     private String title;
     
@@ -26,4 +28,7 @@ public class PublishArticleRequest {
     
     @Schema(description = "标签ID列表")
     private List<Long> tagIds;
-} 
+
+    @Schema(description = "文章状态，0表示草稿，1表示发布")
+    private Integer status;
+}

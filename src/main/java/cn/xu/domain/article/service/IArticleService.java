@@ -13,6 +13,7 @@ public interface IArticleService {
 
     /**
      * 创建文章
+     *
      * @param articleEntity
      * @return
      */
@@ -20,13 +21,15 @@ public interface IArticleService {
 
     /**
      * 保存文章草稿
+     *
      * @param articleEntity
      * @return
      */
-    Long createArticleDraft(ArticleEntity articleEntity);
+    Long createOrUpdateArticleDraft(ArticleEntity articleEntity);
 
     /**
      * 上传文章封面
+     *
      * @param imageFile
      * @return
      */
@@ -34,6 +37,7 @@ public interface IArticleService {
 
     /**
      * 获取文章列表
+     *
      * @param articleRequest
      * @return
      */
@@ -41,18 +45,21 @@ public interface IArticleService {
 
     /**
      * 删除文章
+     *
      * @param articleIds
      */
     void deleteArticles(List<Long> articleIds);
 
     /**
      * 更新文章
+     *
      * @param articleEntity
      */
     void updateArticle(ArticleEntity articleEntity);
 
     /**
      * 根据分类ID获取文章列表
+     *
      * @param categoryId
      * @return
      */
@@ -92,6 +99,11 @@ public interface IArticleService {
     boolean isArticleLiked(Long articleId, Long userId);
 
     /**
+     * 获取全部文章（已发布）
+     */
+    List<ArticleEntity> getAllPublishedArticles();
+
+    /**
      * 获取所有文章，用于重建索引
      *
      * @return 所有文章列表
@@ -100,6 +112,7 @@ public interface IArticleService {
 
     /**
      * 获取文章作者ID
+     *
      * @param articleId 文章ID
      * @return 作者ID，如果文章不存在则返回null
      */
@@ -107,6 +120,7 @@ public interface IArticleService {
 
     /**
      * 获取文章详细信息
+     *
      * @param articleId 文章ID
      * @return 文章实体，不存在则返回null
      */
@@ -116,8 +130,25 @@ public interface IArticleService {
 
     /**
      * 发布文章（把草稿发布为正式文章）
-     * @param id
+     *
+     * @param articleEntity
      * @param userId
      */
-    void publishArticle(Long id, Long userId);
+    void publishArticle(ArticleEntity articleEntity, Long userId);
+
+    /**
+     * 获取文章草稿列表
+     *
+     * @param userId
+     * @return
+     */
+    List<ArticleListVO> getDraftArticleList(Long userId);
+
+    /**
+     * 删除文章
+     *
+     * @param id     文章ID
+     * @param userId 用户ID
+     */
+    void deleteArticle(Long id, Long userId);
 }
