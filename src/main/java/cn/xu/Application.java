@@ -18,7 +18,7 @@ public class Application {
     public static void main(String[] args) {
         ConfigurableApplicationContext application = SpringApplication.run(Application.class);
         Environment env = application.getEnvironment();
-        String ip = "localhost";
+        String ip = "127.0.0.1";
         try {
             ip = InetAddress.getLocalHost().getHostAddress();
         } catch (UnknownHostException e) {

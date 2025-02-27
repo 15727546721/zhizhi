@@ -28,9 +28,6 @@ public class MinioConfig {
     @Value("${minio.bucketName}")
     private String bucketName;
 
-    // 新增配置项
-    private long maxFileSize = 10 * 1024 * 1024; // 默认最大10MB
-    private List<String> allowedIps; // 允许访问的IP列表
 
     @Bean
     public MinioClient minioClient() {
