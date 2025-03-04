@@ -1,52 +1,67 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="cn.xu.infrastructure.persistent.dao.ILikeDao">
+    <sql id="Base_Column_List">
+        id
+        , user_id, target_id, type, status, create_time, update_time
+    </sql>
 
-    <!-- 插入点赞记录 -->
-    <insert id="insertArticleLikeRecord">
-        INSERT INTO `like` (user_id, target_id, type, value, created_time, updated_time)
-        VALUES (#{userId}, #{articleId}, #{type}, #{value}, NOW(), NOW()) ON DUPLICATE KEY
-        UPDATE
-            value = #{value},
-            updated_time = NOW()
+    <insert id="insert" parameterType="cn.xu.infrastructure.persistent.po.Like">
+        INSERT INTO `like` (user_id, target_id, type, status, create_time, update_time)
+        VALUES (#{userId}, #{targetId}, #{type}, #{status}, #{createTime}, #{updateTime})
     </insert>
 
-    <!-- 批量更新文章点赞数 -->
-    <update id="batchUpdateArticleLikeCount">
-        <foreach collection="likeCounts" item="count" index="articleId" separator=";">
-            UPDATE article
-            SET like_count = #{count},
-            updated_time = NOW()
-            WHERE id = #{articleId}
-        </foreach>
+    <update id="update" parameterType="cn.xu.infrastructure.persistent.po.Like">
+        UPDATE `like`
+        <set>
+            <if test="status != null">status = #{status},</if>
+            update_time = #{updateTime}
+        </set>
+        WHERE user_id = #{userId}
+        AND target_id = #{targetId}
+        AND type = #{type}
     </update>
 
-    <!-- 获取用户点赞的文章列表 -->
-    <select id="getUserLikedArticles" resultType="java.lang.Long">
-        SELECT target_id
+    <select id="findByUserIdAndTargetIdAndType" resultType="cn.xu.infrastructure.persistent.po.Like">
+        SELECT
+        <include refid="Base_Column_List"/>
         FROM `like`
         WHERE user_id = #{userId}
-          AND type = 1
-          AND value = 1
-        ORDER BY created_time DESC
+        AND target_id = #{targetId}
+        AND type = #{type}
+        LIMIT 1
     </select>
 
-    <!-- 获取文章的点赞用户列表 -->
-    <select id="getArticleLikedUsers" resultType="java.lang.Long">
+    <select id="countByTargetIdAndType" resultType="java.lang.Long">
+        SELECT COUNT(1)
+        FROM `like`
+        WHERE target_id = #{targetId}
+          AND type = #{type}
+          AND status = 1
+    </select>
+
+    <select id="getLikedUserIds" resultType="java.lang.Long">
         SELECT user_id
         FROM `like`
-        WHERE target_id = #{articleId}
-          AND type = 1
-          AND value = 1
-        ORDER BY created_time DESC
+        WHERE target_id = #{targetId}
+          AND type = #{type}
+          AND status = 1
     </select>
 
-    <!-- 获取热门文章列表 -->
-    <select id="getHotArticlesByLikes" resultType="java.lang.Long">
-        SELECT id
-        FROM article
-        WHERE status = 1
-        ORDER BY like_count DESC
-            LIMIT #{limit}
+    <select id="getPageByType" resultType="cn.xu.infrastructure.persistent.po.Like">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM `like`
+        WHERE type = #{type}
+        AND status = 1
+        ORDER BY id ASC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="countByType" resultType="java.lang.Long">
+        SELECT COUNT(1)
+        FROM `like`
+        WHERE type = #{type}
+          AND status = 1
     </select>
 </mapper>

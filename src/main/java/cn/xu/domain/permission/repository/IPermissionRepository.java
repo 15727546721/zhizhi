@@ -13,8 +13,22 @@ public interface IPermissionRepository {
 
     MenuEntity selectMenuById(Long id);
 
-    List<RoleEntity> selectRolePage(String name, int page, int size);
+    /**
+     * 分页查询角色列表
+     *
+     * @param name   角色名称（模糊查询）
+     * @param offset 偏移量
+     * @param size   每页数量
+     * @return 角色列表
+     */
+    List<RoleEntity> selectRolePage(String name, int offset, int size);
 
+    /**
+     * 查询角色总数
+     *
+     * @param name 角色名称（模糊查询）
+     * @return 总数
+     */
     long countRole(String name);
 
     Long selectRoleIdByUserId(long userId);
@@ -52,4 +66,12 @@ public interface IPermissionRepository {
      * @return
      */
     List<String> findPermissionsByUserid(Long userId);
+
+    /**
+     * 检查角色编码是否存在
+     *
+     * @param code 角色编码
+     * @return 是否存在
+     */
+    boolean existsByCode(String code);
 }

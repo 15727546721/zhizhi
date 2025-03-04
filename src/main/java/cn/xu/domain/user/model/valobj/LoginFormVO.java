@@ -1,15 +1,20 @@
 package cn.xu.domain.user.model.valobj;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class LoginFormVO {
-    private Long id;
+    /**
+     * 用户名
+     */
     private String username;
-    private String password;
 
-    public LoginFormVO(String username, String password) {
-        this.username = username;
-        this.password = password;
-    }
+    /**
+     * 密码
+     */
+    private String password;
 }

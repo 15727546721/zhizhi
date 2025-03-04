@@ -1,16 +1,25 @@
 package cn.xu.infrastructure.persistent.po;
 
+import cn.xu.domain.comment.model.valueobject.CommentType;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.Serializable;
-import java.util.Date;
+import java.time.LocalDateTime;
 
 /**
  * 评论表，用于存储用户评论及其相关信息
  *
  * @TableName comment
  */
+@Slf4j
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class Comment implements Serializable {
     /**
      * 评论ID
@@ -40,7 +49,7 @@ public class Comment implements Serializable {
     /**
      * 回复的用户ID，若为回复评论则存在
      */
-    private Long replyToUserId;
+    private Long replyUserId;
 
     /**
      * 评论的具体内容
@@ -50,11 +59,18 @@ public class Comment implements Serializable {
     /**
      * 创建时间
      */
-    private Date createTime;
+    private LocalDateTime createTime;
 
     /**
      * 更新时间
      */
-    private Date updateTime;
+    private LocalDateTime updateTime;
 
+    public CommentType getCommentType() {
+        return type != null ? CommentType.of(type) : null;
+    }
+
+    public void setCommentType(CommentType commentType) {
+        this.type = commentType != null ? commentType.getValue() : null;
+    }
 }

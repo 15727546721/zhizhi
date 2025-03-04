@@ -1,8 +1,8 @@
 package cn.xu.infrastructure.persistent.repository;
 
-import cn.xu.api.controller.web.article.ArticleListDTO;
-import cn.xu.api.dto.article.ArticlePageResponse;
-import cn.xu.api.dto.article.ArticleRequest;
+import cn.xu.api.system.model.dto.article.ArticleRequest;
+import cn.xu.api.web.model.vo.article.ArticleListVO;
+import cn.xu.api.web.model.vo.article.ArticlePageVO;
 import cn.xu.domain.article.model.entity.ArticleEntity;
 import cn.xu.domain.article.model.entity.ArticleRecommendOrNew;
 import cn.xu.domain.article.repository.IArticleRepository;
@@ -39,15 +39,17 @@ public class ArticleRepository implements IArticleRepository {
                 .description(articleEntity.getDescription())
                 .content(articleEntity.getContent())
                 .coverUrl(articleEntity.getCoverUrl())
+                .status(articleEntity.getStatus().getValue())
                 .build();
-        articleDao.insert(article); //插入后得到的id值会赋给article的id属性
+        //插入后得到的id值会赋给article的id属性
+        articleDao.insert(article);
         return article.getId();
     }
 
     @Override
-    public List<ArticlePageResponse> queryArticle(ArticleRequest articleRequest) {
-        articleRequest.setPage(articleRequest.getPage() - 1);
-        List<ArticlePageResponse> articles = articleDao.queryByPage(articleRequest);
+    public List<ArticlePageVO> queryArticle(ArticleRequest articleRequest) {
+        articleRequest.setPageNo(articleRequest.getPageNo() - 1);
+        List<ArticlePageVO> articles = articleDao.queryByPage(articleRequest);
         log.info("查询文章结果: {}", articles);
 
         return articles;
@@ -88,6 +90,7 @@ public class ArticleRepository implements IArticleRepository {
                 .description(articleEntity.getDescription())
                 .content(articleEntity.getContent())
                 .coverUrl(articleEntity.getCoverUrl())
+                .status(articleEntity.getStatus().getValue())
                 .build();
         articleDao.update(article);
     }
@@ -98,8 +101,8 @@ public class ArticleRepository implements IArticleRepository {
     }
 
     @Override
-    public List<ArticleListDTO> queryArticleByCategory(Long categoryId) {
-        return articleDao.queryByCategory(categoryId);
+    public List<ArticleListVO> queryArticleByCategoryId(Long categoryId) {
+        return articleDao.queryByCategoryId(categoryId);
     }
 
     @Override
@@ -112,6 +115,43 @@ public class ArticleRepository implements IArticleRepository {
 
     }
 
+    @Override
+    public List<ArticleEntity> findAllPublishedArticles() {
+        List<Article> articles = articleDao.findAllPublishedArticles();
+        return articles.stream()
+                .map(this::convert)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ArticleEntity> findAll() {
+        List<Article> articles = articleDao.findAll();
+        return articles.stream()
+                .map(this::convert)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ArticleListVO> queryArticleByUserId(Long userId) {
+        return articleDao.queryByUserId(userId);
+    }
+
+    @Override
+    public void updateArticleStatus(Integer status, Long id) {
+        articleDao.updateStatus(status, id);
+    }
+
+    @Override
+    public List<ArticleListVO> queryDraftArticleListByUserId(Long userId) {
+        return articleDao.queryDraftArticleListByUserId(userId);
+    }
+
+    @Override
+    public void deleteById(Long id) {
+        log.info("Deleting article by ID: {}", id);
+        articleDao.deleteById(id);
+    }
+
     private ArticleEntity convert(Article article) {
         return ArticleEntity.builder()
                 .id(article.getId())
@@ -119,18 +159,13 @@ public class ArticleRepository implements IArticleRepository {
                 .description(article.getDescription())
                 .content(article.getContent())
                 .coverUrl(article.getCoverUrl())
+                .userId(article.getUserId())
+                .createTime(article.getCreateTime())
+                .updateTime(article.getUpdateTime())
+                .viewCount(article.getViewCount())
+                .likeCount(article.getLikeCount())
+                .collectCount(article.getCollectCount())
                 .build();
     }
 
-    private List<ArticleEntity> convert(List<Article> articles) {
-        return articles.stream()
-                .map(article -> ArticleEntity.builder()
-                        .id(article.getId())
-                        .title(article.getTitle())
-                        .description(article.getDescription())
-                        .content(article.getContent())
-                        .coverUrl(article.getCoverUrl())
-                        .build())
-                .collect(Collectors.toList());
-    }
 }

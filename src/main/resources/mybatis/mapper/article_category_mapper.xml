@@ -15,7 +15,7 @@
     <sql id="Base_Column_List">
         id
         ,`name`,description,
-        parent_id,created_time,updated_time
+        parent_id,create_time,update_time
     </sql>
 
     <insert id="insert" parameterType="cn.xu.infrastructure.persistent.po.ArticleCategory">
@@ -51,5 +51,9 @@
         from article_category c
                  inner join article_category_relation ac on c.id = ac.category_id
         where ac.article_id = #{articleId}
+    </select>
+    <select id="selectCategoryPage" resultMap="BaseResultMap">
+        select id, name, create_time, update_time
+        from article_category limit #{offset}, #{pageSize}
     </select>
 </mapper>

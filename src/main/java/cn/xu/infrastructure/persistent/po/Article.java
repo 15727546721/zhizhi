@@ -63,6 +63,16 @@ public class Article implements Serializable {
     private Long likeCount;
 
     /**
+     * 文章状态：0-草稿，1-已发布
+     */
+    private Integer status;
+
+    /**
+     * 发布时间
+     */
+    private LocalDateTime publishTime;
+
+    /**
      * 创建时间
      */
     private LocalDateTime createTime;

@@ -1,10 +1,11 @@
 package cn.xu.infrastructure.persistent.repository;
 
-import cn.xu.common.Constants;
+
+import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.permission.model.entity.MenuEntity;
 import cn.xu.domain.permission.model.entity.RoleEntity;
 import cn.xu.domain.permission.repository.IPermissionRepository;
-import cn.xu.exception.AppException;
+import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.persistent.dao.IMenuDao;
 import cn.xu.infrastructure.persistent.dao.IRoleDao;
 import cn.xu.infrastructure.persistent.po.Menu;
@@ -52,11 +53,12 @@ public class PermissionRepository implements IPermissionRepository {
 
     @Override
     public List<RoleEntity> selectRolePage(String name, int page, int size) {
-        List<Role> roleList = roleDao.selectRolePage(name, (page - 1) * size, size);
-        List<RoleEntity> roleEntityList = roleList.stream()
+        int offset = Math.max(0, (page - 1) * size);
+
+        List<Role> roleList = roleDao.selectRolePage(name, offset, size);
+        return roleList.stream()
                 .map(this::convert)
                 .collect(Collectors.toList());
-        return roleEntityList;
     }
 
     @Override
@@ -101,13 +103,13 @@ public class PermissionRepository implements IPermissionRepository {
         Role role = Role.builder()
                 .name(roleEntity.getName())
                 .code(roleEntity.getCode())
-                .desc(roleEntity.getDesc())
+                .remark(roleEntity.getRemark())
                 .build();
         try {
             roleDao.insertRole(role);
         } catch (Exception e) {
             log.error("新增角色失败", e);
-            throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "新增角色失败");
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "新增角色失败");
         }
     }
 
@@ -118,11 +120,11 @@ public class PermissionRepository implements IPermissionRepository {
                     .id(roleEntity.getId())
                     .name(roleEntity.getName())
                     .code(roleEntity.getCode())
-                    .desc(roleEntity.getDesc())
+                    .remark(roleEntity.getRemark())
                     .build());
         } catch (Exception e) {
             log.error("更新角色失败", e);
-            throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "更新角色失败");
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "更新角色失败");
         }
     }
 
@@ -138,7 +140,7 @@ public class PermissionRepository implements IPermissionRepository {
                 status.setRollbackOnly();
                 // 处理异常
                 log.error("删除角色失败", e);
-                throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "删除角色失败");
+                throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "删除角色失败");
             }
         });
     }
@@ -202,6 +204,11 @@ public class PermissionRepository implements IPermissionRepository {
         return menuDao.findPermissionsByUserid(userId);
     }
 
+    @Override
+    public boolean existsByCode(String code) {
+        return roleDao.countByCode(code) > 0;
+    }
+
     private MenuEntity convert(Menu menu) {
         if (menu == null) {
             return null;
@@ -215,7 +222,7 @@ public class PermissionRepository implements IPermissionRepository {
                 .sort(menu.getSort())
                 .icon(menu.getIcon())
                 .type(menu.getType())
-                .createdTime(menu.getCreatedTime())
+                .createTime(menu.getCreateTime())
                 .updateTime(menu.getUpdateTime())
                 .redirect(menu.getRedirect())
                 .name(menu.getName())
@@ -233,7 +240,9 @@ public class PermissionRepository implements IPermissionRepository {
                 .id(role.getId())
                 .code(role.getCode())
                 .name(role.getName())
-                .desc(role.getDesc())
+                .remark(role.getRemark())
+                .createTime(role.getCreateTime())
+                .updateTime(role.getUpdateTime())
                 .build();
     }
 }

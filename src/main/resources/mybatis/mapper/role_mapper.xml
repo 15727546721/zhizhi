@@ -6,67 +6,35 @@
 
     <resultMap id="BaseResultMap" type="cn.xu.infrastructure.persistent.po.Role">
         <id property="id" column="id" jdbcType="BIGINT"/>
-        <result property="name" column="name" jdbcType="VARCHAR"/>
         <result property="code" column="code" jdbcType="VARCHAR"/>
-        <result property="desc" column="desc" jdbcType="VARCHAR"/>
+        <result property="name" column="name" jdbcType="VARCHAR"/>
+        <result property="remark" column="remark" jdbcType="VARCHAR"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
     </resultMap>
-    <insert id="insertRoleMenu">
-        INSERT INTO role_menu (role_id, menu_id) values
-        <foreach collection="menuIds" item="menuId" index="index" separator=",">
-            (#{roleId}, #{menuId})
-        </foreach>
-    </insert>
-    <insert id="insertRole">
-        INSERT INTO role (code, name, `desc`)
-        VALUES (#{code}, #{name}, #{desc})
-    </insert>
-    <update id="updateRole">
-        UPDATE role
-        SET code   = #{code},
-            name   = #{name},
-            `desc` = #{desc}
-        WHERE id = #{id}
-    </update>
-    <delete id="deleteRoleMenuByRoleId">
-        DELETE
-        FROM role_menu
-        WHERE role_id = #{roleId}
-    </delete>
-    <delete id="deleteRoleByIds" parameterType="java.util.List">
-        DELETE FROM role
-        WHERE id IN
-        <foreach collection="ids" item="id" index="index" separator="," open="(" close=")">
-            #{id}
-        </foreach>
 
-    </delete>
-    <delete id="deleteRoleMenuByRoleIds">
-        DELETE FROM role_menu
-        WHERE role_id IN
-        <foreach collection="roleIds" item="roleId" index="index" separator="," open="(" close=")">
-            #{roleId}
-        </foreach>
-    </delete>
-
+    <!-- 根据用户ID查询角色列表 -->
     <select id="selectRolesByUserid" resultType="java.lang.String">
-        SELECT name
-        FROM user
-                 JOIN user_role ON user.id = user_role.user_id
-                 JOIN role ON user_role.role_id = role.id
-        WHERE user.id = #{userId}
+        SELECT r.name
+        FROM role r
+                 INNER JOIN user_role ur ON r.id = ur.role_id
+        WHERE ur.user_id = #{userId}
     </select>
 
+    <!-- 分页查询角色列表 -->
     <select id="selectRolePage" resultMap="BaseResultMap">
-        SELECT id, name, code, `desc`
+        SELECT id, code, name, remark, create_time, update_time
         FROM role
         <where>
             <if test="name != null and name != ''">
                 AND name LIKE CONCAT('%', #{name}, '%')
             </if>
         </where>
-        LIMIT #{page}, #{size}
+        ORDER BY create_time DESC
+        LIMIT #{offset}, #{pageSize}
     </select>
 
+    <!-- 查询角色总数 -->
     <select id="countRole" resultType="java.lang.Long">
         SELECT COUNT(*)
         FROM role
@@ -76,21 +44,83 @@
             </if>
         </where>
     </select>
+
+    <!-- 根据用户ID查询角色ID -->
     <select id="selectRoleIdByUserId" resultType="java.lang.Long">
         SELECT role_id
         FROM user_role
         WHERE user_id = #{userId}
     </select>
+
+    <!-- 根据角色ID查询菜单ID列表 -->
     <select id="selectMenuIdByRoleMenu" resultType="java.lang.Long">
         SELECT menu_id
         FROM role_menu
         WHERE role_id = #{roleId}
+        ORDER BY menu_id
     </select>
-    <select id="selectRoleById" resultType="cn.xu.infrastructure.persistent.po.Role">
-        SELECT id, code, name
+
+    <!-- 根据角色ID查询角色信息 -->
+    <select id="selectRoleById" resultMap="BaseResultMap">
+        SELECT id, code, name, remark, create_time, update_time
         FROM role
         WHERE id = #{roleId}
     </select>
 
+    <!-- 删除角色的菜单权限 -->
+    <delete id="deleteRoleMenuByRoleId">
+        DELETE
+        FROM role_menu
+        WHERE role_id = #{roleId}
+    </delete>
+
+    <!-- 批量插入角色的菜单权限 -->
+    <insert id="insertRoleMenu">
+        INSERT INTO role_menu (role_id, menu_id) VALUES
+        <foreach collection="menuIds" item="menuId" separator=",">
+            (#{roleId}, #{menuId})
+        </foreach>
+    </insert>
+
+    <!-- 新增角色 -->
+    <insert id="insertRole" parameterType="cn.xu.infrastructure.persistent.po.Role">
+        INSERT INTO role (code, name, remark, create_time, update_time)
+        VALUES (#{code}, #{name}, #{remark}, NOW(), NOW())
+    </insert>
+
+    <!-- 更新角色 -->
+    <update id="updateRole" parameterType="cn.xu.infrastructure.persistent.po.Role">
+        UPDATE role
+        SET code        = #{code},
+            name        = #{name},
+            remark      = #{remark},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 批量删除角色 -->
+    <delete id="deleteRoleByIds">
+        DELETE FROM role
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <!-- 批量删除角色的菜单权限 -->
+    <delete id="deleteRoleMenuByRoleIds">
+        DELETE FROM role_menu
+        WHERE role_id IN
+        <foreach collection="roleIds" item="roleId" open="(" separator="," close=")">
+            #{roleId}
+        </foreach>
+    </delete>
+
+    <!-- 检查角色编码是否存在 -->
+    <select id="countByCode" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM role
+        WHERE code = #{code}
+    </select>
 
 </mapper>

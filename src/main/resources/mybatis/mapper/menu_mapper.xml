@@ -13,7 +13,7 @@
         <result property="sort" column="sort" jdbcType="INTEGER"/>
         <result property="icon" column="icon" jdbcType="VARCHAR"/>
         <result property="type" column="type" jdbcType="VARCHAR"/>
-        <result property="createdTime" column="created_time" jdbcType="TIMESTAMP"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
         <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
         <result property="redirect" column="redirect" jdbcType="VARCHAR"/>
         <result property="name" column="name" jdbcType="VARCHAR"/>
@@ -23,31 +23,31 @@
 
     <sql id="Base_Column_List">
         id
-        , parent_id, path, component, title, sort, icon, type, created_time, update_time, redirect, name, hidden, perm
+        , parent_id, path, component, title, sort, icon, type, create_time, update_time, redirect, name, hidden, perm
     </sql>
     <insert id="addMenu" parameterType="cn.xu.infrastructure.persistent.po.Menu">
         INSERT INTO menu (
         <include refid="Base_Column_List"/>
         ) VALUES (
-        #{id}, #{parentId}, #{path}, #{component}, #{title}, #{sort}, #{icon}, #{type}, #{createdTime}, #{updateTime},
+        #{id}, #{parentId}, #{path}, #{component}, #{title}, #{sort}, #{icon}, #{type}, #{createTime}, #{updateTime},
         #{redirect}, #{name}, #{hidden}, #{perm}
         )
     </insert>
     <update id="updateMenu" parameterType="cn.xu.infrastructure.persistent.po.Menu">
         update menu
-        set parent_id    = #{parentId},
-            path         = #{path},
-            component    = #{component},
-            title        = #{title},
-            sort         = #{sort},
-            icon         = #{icon},
-            type         = #{type},
-            created_time = #{createdTime},
-            update_time  = #{updateTime},
-            redirect     = #{redirect},
-            name         = #{name},
-            hidden       = #{hidden},
-            perm         = #{perm}
+        set parent_id   = #{parentId},
+            path        = #{path},
+            component   = #{component},
+            title       = #{title},
+            sort        = #{sort},
+            icon        = #{icon},
+            type        = #{type},
+            create_time = #{createTime},
+            update_time = #{updateTime},
+            redirect    = #{redirect},
+            name        = #{name},
+            hidden      = #{hidden},
+            perm        = #{perm}
         WHERE id = #{id}
     </update>
     <delete id="deleteMenu">

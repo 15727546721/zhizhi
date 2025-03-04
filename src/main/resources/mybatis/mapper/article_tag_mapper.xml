@@ -60,5 +60,10 @@
         WHERE at.article_id = #{articleId}
     </select>
 
+    <!-- 分页查询标签列表 -->
+    <select id="selectTagPage" resultMap="BaseResultMap">
+        SELECT id, name, create_time, update_time
+        FROM article_tag LIMIT #{offset}, #{pageSize}
+    </select>
 
 </mapper>

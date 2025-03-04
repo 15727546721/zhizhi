@@ -5,22 +5,26 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.Set;
+import java.time.LocalDateTime;
+import java.util.List;
 
-/**
- * 用户信息
- */
-@AllArgsConstructor
-@NoArgsConstructor
-@Builder
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class UserInfoEntity {
     private Long id;
     private String username;
-    private String password;
-    private String nickname;
-    private Set<String> roles;
     private String email;
+    private String nickname;
     private String avatar;
-    private String status;
+    private Integer gender;
+    private String phone;
+    private String region;
+    private String birthday;
+    private String description;
+    private Integer status;
+    private LocalDateTime createTime;
+    private LocalDateTime updateTime;
+    private List<String> roles;
 }

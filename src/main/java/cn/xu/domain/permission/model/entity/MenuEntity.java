@@ -56,7 +56,7 @@ public class MenuEntity {
     /**
      * 创建时间
      */
-    private Date createdTime;
+    private Date createTime;
 
     /**
      * 更新时间

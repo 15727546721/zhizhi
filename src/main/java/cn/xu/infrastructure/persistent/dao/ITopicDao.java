@@ -1,0 +1,99 @@
+package cn.xu.infrastructure.persistent.dao;
+
+import cn.xu.infrastructure.persistent.po.Topic;
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+
+import java.util.List;
+
+/**
+ * 话题数据访问接口
+ */
+@Mapper
+public interface ITopicDao {
+    /**
+     * 插入话题
+     *
+     * @param topic 话题PO
+     * @return 影响行数
+     */
+    int insert(Topic topic);
+
+    /**
+     * 更新话题
+     *
+     * @param topic 话题PO
+     * @return 影响行数
+     */
+    int update(Topic topic);
+
+    /**
+     * 根据ID删除话题
+     *
+     * @param id 话题ID
+     * @return 影响行数
+     */
+    int deleteById(@Param("id") Long id);
+
+    /**
+     * 批量删除话题
+     *
+     * @param ids 话题ID列表
+     * @return 影响行数
+     */
+    int deleteByIds(@Param("ids") List<Long> ids);
+
+    /**
+     * 根据ID查询话题
+     *
+     * @param id 话题ID
+     * @return 话题PO
+     */
+    Topic findById(@Param("id") Long id);
+
+    /**
+     * 查询所有话题
+     *
+     * @return 话题PO列表
+     */
+    List<Topic> findAll();
+
+    /**
+     * 查询热门话题
+     *
+     * @param limit 限制数量
+     * @return 话题PO列表
+     */
+    List<Topic> findHotTopics(@Param("limit") int limit);
+
+    /**
+     * 根据分类ID查询话题列表
+     *
+     * @param categoryId 分类ID
+     * @return 话题PO列表
+     */
+    List<Topic> findByCategoryId(@Param("categoryId") Long categoryId);
+
+    /**
+     * 查询未分类的话题
+     *
+     * @return 话题PO列表
+     */
+    List<Topic> findWithoutCategory();
+
+    /**
+     * 分页查询话题列表
+     *
+     * @param offset 偏移量
+     * @param limit  每页数量
+     * @return 话题PO列表
+     */
+    List<Topic> findByPage(@Param("offset") int offset, @Param("limit") int limit);
+
+    /**
+     * 获取话题总数
+     *
+     * @return 话题总数
+     */
+    Long count();
+} 

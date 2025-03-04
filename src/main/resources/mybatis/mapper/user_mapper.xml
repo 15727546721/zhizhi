@@ -1,168 +1,158 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="cn.xu.infrastructure.persistent.dao.IUserDao">
-
-    <resultMap id="BaseResultMap" type="cn.xu.infrastructure.persistent.po.User">
-        <id property="id" column="id" jdbcType="BIGINT"/>
-        <result property="username" column="username" jdbcType="VARCHAR"/>
-        <result property="password" column="password" jdbcType="VARCHAR"/>
-        <result property="email" column="email" jdbcType="VARCHAR"/>
-        <result property="nickname" column="nickname" jdbcType="VARCHAR"/>
-        <result property="avatar" column="avatar" jdbcType="VARCHAR"/>
-        <result property="status" column="status" jdbcType="INTEGER"/>
-        <result property="description" column="description" jdbcType="VARCHAR"/>
-        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
-        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    <resultMap id="userMap" type="cn.xu.infrastructure.persistent.po.User">
+        <id column="id" property="id"/>
+        <result column="username" property="username"/>
+        <result column="password" property="password"/>
+        <result column="email" property="email"/>
+        <result column="nickname" property="nickname"/>
+        <result column="avatar" property="avatar"/>
+        <result column="gender" property="gender"/>
+        <result column="phone" property="phone"/>
+        <result column="region" property="region"/>
+        <result column="birthday" property="birthday"/>
+        <result column="description" property="description"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
     </resultMap>
 
-    <insert id="insertUser" parameterType="cn.xu.domain.user.model.entity.UserEntity">
-        insert into user (id, username, password, email, nickname, avatar, status, create_time, update_time)
-        values (#{user.id}, #{user.username}, #{user.password}, #{user.email}, #{user.nickname}, #{user.avatar},
-        #{user.status}, now(), now())
-        <selectKey resultType="java.lang.Long" keyProperty="id" order="AFTER">
-            select LAST_INSERT_ID()
-        </selectKey>
+    <sql id="Base_Column_List">
+        id
+        , username, password, email, nickname, avatar, gender, phone, region, birthday, description, status, create_time, update_time
+    </sql>
+
+    <insert id="insert" parameterType="cn.xu.infrastructure.persistent.po.User" useGeneratedKeys="true"
+            keyProperty="id">
+        INSERT INTO user (username, password, email, nickname, avatar, gender, phone, region, birthday, description,
+                          status)
+        VALUES (#{username}, #{password}, #{email}, #{nickname}, #{avatar}, #{gender}, #{phone}, #{region}, #{birthday},
+                #{description}, #{status})
     </insert>
-    <insert id="register" parameterType="cn.xu.api.controller.web.user.RegisterRequest">
-        insert into user (password, email, nickname, status, create_time, update_time)
-        values (#{password}, #{email}, #{nickname}, #{status}, now(), now())
-    </insert>
-    <update id="updateUser" parameterType="cn.xu.domain.user.model.entity.UserEntity">
-        update user
-        set username=username,
-            email=email,
-            nickname=nickname,
-            avatar=avatar,
-            status=status,
-            update_time=now()
-        where id = id
+
+    <update id="update" parameterType="cn.xu.infrastructure.persistent.po.User">
+        UPDATE user
+        <set>
+            <if test="username != null">username = #{username},</if>
+            <if test="password != null">password = #{password},</if>
+            <if test="email != null">email = #{email},</if>
+            <if test="nickname != null">nickname = #{nickname},</if>
+            <if test="avatar != null">avatar = #{avatar},</if>
+            <if test="gender != null">gender = #{gender},</if>
+            <if test="phone != null">phone = #{phone},</if>
+            <if test="region != null">region = #{region},</if>
+            <if test="birthday != null">birthday = #{birthday},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="status != null">status = #{status},</if>
+            update_time = CURRENT_TIMESTAMP
+        </set>
+        WHERE id = #{id}
     </update>
-    <update id="updatePassword" parameterType="cn.xu.domain.user.model.entity.UserEntity">
-        update user
-        set password   = #{newPassword},
-            update_time=now()
-        where id = id
-          and password = #{oldPassword}
-    </update>
-    <update id="updateUserInfo" parameterType="cn.xu.domain.user.model.entity.UserEntity">
-        update user
-        set nickname    = #{nickname},
-            email       = #{email},
-            avatar      = #{avatar},
-            update_time = now()
-        where id = #{id}
-    </update>
-    <update id="updateAvatar">
-        update user
-        set avatar      = #{avatar},
-            update_time = now()
-        where id = #{userId}
-    </update>
-    <delete id="deleteUser" parameterType="java.lang.Long">
-        delete
-        from user
-        where id = #{userId}
+
+    <select id="selectById" resultMap="userMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM user
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectByUsername" resultMap="userMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM user
+        WHERE username = #{username}
+    </select>
+
+    <select id="selectByEmail" resultMap="userMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM user
+        WHERE email = #{email}
+    </select>
+
+    <select id="countByUsername" resultType="int">
+        SELECT COUNT(*)
+        FROM user
+        WHERE username = #{username}
+    </select>
+
+    <select id="countByEmail" resultType="int">
+        SELECT COUNT(*)
+        FROM user
+        WHERE email = #{email}
+    </select>
+
+    <select id="selectByPage" resultMap="userMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM user
+        ORDER BY id DESC
+        LIMIT #{offset}, #{size}
+    </select>
+
+    <delete id="deleteById">
+        DELETE
+        FROM user
+        WHERE id = #{id}
     </delete>
 
-    <select id="selectUserByUserName" resultType="cn.xu.domain.user.model.valobj.LoginFormVO">
-        select id, username, password
-        from user
-        where username = #{username}
-    </select>
-    <select id="selectUserById" resultMap="BaseResultMap">
-        select id,
-               username,
-               password,
-               email,
-               nickname,
-               avatar,
-               status,
-               created_time,
-               updated_time
-        from user
-        where id = #{userId}
+    <select id="selectByIds" resultMap="userMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM user
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
     </select>
 
-
-    <!-- 定义resultMap来映射用户信息及其角色 -->
-    <resultMap id="userInfoWithRolesMap" type="cn.xu.domain.user.model.entity.UserInfoEntity">
-        <id property="id" column="id"/>
-        <result property="username" column="username"/>
-        <result property="password" column="password"/>
-        <result property="nickname" column="nickname"/>
-        <result property="email" column="email"/>
-        <result property="avatar" column="avatar"/>
-        <result property="status" column="status"/>
-        <!-- 使用collection标签的子标签collection来处理角色集合 -->
-        <collection property="roles" ofType="string">
-            <constructor>
-                <arg column="code"/>
-            </constructor>
-        </collection>
-    </resultMap>
-
-    <!-- SQL查询，使用JOIN来联接user表和role表 -->
-    <select id="selectUserInfoById" resultMap="userInfoWithRolesMap">
+    <!-- 根据用户ID查询用户信息和角色 -->
+    <select id="getUserInfoWithRoles" resultType="cn.xu.domain.user.model.entity.UserInfoEntity">
         SELECT u.id,
                u.username,
-               u.password,
-               u.nickname,
-               u.email,
-               u.avatar,
-               u.status,
-               r.code
-        FROM user u
-                 LEFT JOIN user_role ur ON u.id = ur.user_id
-                 LEFT JOIN role r ON ur.role_id = r.id
-        where u.id = #{userId}
-    </select>
-
-    <select id="selectUserByPage" resultMap="BaseResultMap">
-        SELECT u.id,
-               u.username,
-               u.email,
                u.nickname,
                u.avatar,
+               u.email,
+               u.phone,
                u.status,
                u.create_time,
-               u.update_time
-        FROM user u LIMIT #{page}, #{size}
-    </select>
-    <select id="selectUserInfoByUserId" resultType="cn.xu.domain.user.model.entity.UserInfoEntity">
-        SELECT u.id,
-               u.username,
-               u.password,
-               u.nickname,
-               u.email,
-               u.avatar,
-               u.status,
-               r.code
+               u.update_time,
+               GROUP_CONCAT(DISTINCT r.name ORDER BY r.name SEPARATOR ',') as roles
         FROM user u
                  LEFT JOIN user_role ur ON u.id = ur.user_id
                  LEFT JOIN role r ON ur.role_id = r.id
         WHERE u.id = #{userId}
-    </select>
-    <select id="findUserLoginByEmailAndPassword" resultType="cn.xu.domain.user.model.entity.UserEntity">
-        select *
-        from user
-        where email = #{email}
-          and password = #{password}
+        GROUP BY u.id
     </select>
 
-    <select id="findUserByIds" resultType="cn.xu.domain.user.model.entity.UserEntity">
-        SELECT * FROM user
-        WHERE
-        <choose>
-            <when test="userIds != null and userIds.size() > 0">
-                id IN
-                <foreach collection="userIds" item="userId" open="(" separator="," close=")">
-                    #{userId}
-                </foreach>
-            </when>
-            <otherwise>
-                1=0 <!-- 这是一个确保不返回任何结果的方式 -->
-            </otherwise>
-        </choose>
+    <!-- 根据用户名查询用户信息和角色 -->
+    <select id="getUserInfoWithRolesByUsername" resultType="cn.xu.domain.user.model.entity.UserInfoEntity">
+        SELECT u.id,
+               u.username,
+               u.nickname,
+               u.avatar,
+               u.email,
+               u.phone,
+               u.status,
+               u.create_time,
+               u.update_time,
+               GROUP_CONCAT(DISTINCT r.name ORDER BY r.name SEPARATOR ',') as roles
+        FROM user u
+                 LEFT JOIN user_role ur ON u.id = ur.user_id
+                 LEFT JOIN role r ON ur.role_id = r.id
+        WHERE u.username = #{username}
+        GROUP BY u.id
     </select>
 
+    <!-- 批量查询用户信息 -->
+    <select id="findByIds" resultMap="userMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM user
+        WHERE id IN
+        <foreach collection="userIds" item="userId" open="(" separator="," close=")">
+            #{userId}
+        </foreach>
+    </select>
 </mapper>

@@ -1,9 +1,6 @@
 package cn.xu.infrastructure.persistent.dao;
 
-import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.model.entity.UserInfoEntity;
-import cn.xu.domain.user.model.entity.UserPasswordEntity;
-import cn.xu.domain.user.model.valobj.LoginFormVO;
 import cn.xu.infrastructure.persistent.po.User;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -13,47 +10,71 @@ import java.util.Set;
 
 @Mapper
 public interface IUserDao {
-
-    LoginFormVO selectUserByUserName(@Param("username") String username);
-
-    UserEntity selectUserById(@Param("userId") Long userId);
-
-    UserInfoEntity selectUserInfoById(@Param("userId") Long userId);
-
-    List<User> selectUserByPage(@Param("page") int page, @Param("size") int size);
-
-    List<User> selectAdminByPage(@Param("page") int page, @Param("size") int size);
-
-    Long insertUser(@Param("user") User user);
-
-    int updateUser(@Param("user") User user);
-
-    int deleteUser(@Param("userId") Long userId);
-
-    void updatePassword(UserPasswordEntity userPasswordEntity);
-
-    UserInfoEntity selectUserInfoByUserId(@Param("userId") Long id);
-
-    void updateUserInfo(UserInfoEntity userInfoEntity);
-
-    void updateAvatar(@Param("userId") Long id, @Param("avatar") String avatar);
-
-    void register(User user);
+    /**
+     * 插入用户
+     */
+    void insert(User user);
 
     /**
-     * 根据邮箱和密码查询用户
-     *
-     * @param email
-     * @param password
-     * @return 用户ID
+     * 更新用户
      */
-    UserEntity findUserLoginByEmailAndPassword(@Param("email") String email, @Param("password") String password);
+    void update(User user);
 
     /**
-     * 根据用户ID集合查询用户列表
-     *
-     * @param userIds
-     * @return 用户列表
+     * 根据ID查询用户
      */
-    List<UserEntity> findUserByIds(@Param("userIds") Set<Long> userIds);
+    User selectById(Long id);
+
+    /**
+     * 根据用户名查询用户
+     */
+    User selectByUsername(String username);
+
+    /**
+     * 根据邮箱查询用户
+     */
+    User selectByEmail(String email);
+
+    /**
+     * 统计用户名数量
+     */
+    int countByUsername(String username);
+
+    /**
+     * 统计邮箱数量
+     */
+    int countByEmail(String email);
+
+    /**
+     * 分页查询用户
+     */
+    List<User> selectByPage(int offset, int size);
+
+    /**
+     * 根据ID删除用户
+     */
+    void deleteById(Long id);
+
+    /**
+     * 批量查询用户
+     */
+    List<User> selectByIds(Set<Long> ids);
+
+    /**
+     * 根据用户ID查询用户信息和角色
+     */
+    UserInfoEntity getUserInfoWithRoles(@Param("userId") Long userId);
+
+    /**
+     * 根据用户名查询用户信息和角色
+     */
+    UserInfoEntity getUserInfoWithRolesByUsername(@Param("username") String username);
+
+    /**
+     * 批量查询用户信息
+     *
+     * @param userIds 用户ID集合
+     * @return 用户信息列表
+     */
+    List<User> findByIds(@Param("userIds") Set<Long> userIds);
 }

@@ -1,35 +1,26 @@
 package cn.xu.infrastructure.persistent.repository;
 
-import cn.dev33.satoken.secure.SaSecureUtil;
-import cn.xu.api.controller.web.user.RegisterRequest;
-import cn.xu.common.Constants;
+import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.model.entity.UserInfoEntity;
-import cn.xu.domain.user.model.entity.UserPasswordEntity;
-import cn.xu.domain.user.model.entity.UserRoleEntity;
 import cn.xu.domain.user.model.valobj.LoginFormVO;
+import cn.xu.domain.user.model.valueobject.Email;
 import cn.xu.domain.user.repository.IUserRepository;
-import cn.xu.exception.AppException;
+import cn.xu.infrastructure.common.exception.BusinessException;
+import cn.xu.infrastructure.persistent.dao.IRoleDao;
 import cn.xu.infrastructure.persistent.dao.IUserDao;
-import cn.xu.infrastructure.persistent.dao.IUserRoleDao;
 import cn.xu.infrastructure.persistent.po.User;
-import cn.xu.infrastructure.persistent.po.UserRole;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
-
-/**
- * 用户仓储服务
- */
 @Slf4j
 @Repository
 public class UserRepository implements IUserRepository {
@@ -38,161 +29,180 @@ public class UserRepository implements IUserRepository {
     private IUserDao userDao;
 
     @Resource
-    private IUserRoleDao userRoleDao;
-
-    @Resource
     private TransactionTemplate transactionTemplate;
 
+    @Resource
+    private IRoleDao roleDao;
+
     @Override
-    public LoginFormVO findUserByUsername(String username) {
-        if (StringUtils.isEmpty(username)) {
-            throw new AppException(Constants.ResponseCode.NULL_PARAMETER.getCode()
-                    , Constants.ResponseCode.NULL_PARAMETER.getInfo());
+    public UserEntity save(UserEntity user) {
+        User userPO = convertToUserPO(user);
+        if (user.getId() == null) {
+            userDao.insert(userPO);
+        } else {
+            userDao.update(userPO);
         }
-        return userDao.selectUserByUserName(username);
+        return convertToUserEntity(userPO);
     }
 
     @Override
-    public UserEntity findUserById(Long userId) {
-
-        return userDao.selectUserById(userId);
+    public Optional<UserEntity> findById(Long id) {
+        return Optional.ofNullable(convertToUserEntity(userDao.selectById(id)));
     }
 
     @Override
-    public UserInfoEntity findUserInfoById(Long userId) {
-
-        return userDao.selectUserInfoById(userId);
+    public Optional<UserEntity> findByUsername(String username) {
+        return Optional.ofNullable(convertToUserEntity(userDao.selectByUsername(username)));
     }
 
     @Override
-    public List<UserEntity> findUserByPage(int page, int size) {
-        List<User> userList = userDao.selectUserByPage((page - 1) * size, size);
-        log.info("findUserByPage: " + userList);
+    public Optional<UserEntity> findByEmail(Email email) {
+        return Optional.ofNullable(convertToUserEntity(userDao.selectByEmail(email.getValue())));
+    }
 
-        return userList.stream()
+    @Override
+    public boolean existsByUsername(String username) {
+        return userDao.countByUsername(username) > 0;
+    }
+
+    @Override
+    public boolean existsByEmail(Email email) {
+        return userDao.countByEmail(email.getValue()) > 0;
+    }
+
+    @Override
+    public List<UserEntity> findAll(Integer page, Integer size) {
+        int offset = (page - 1) * size;
+        return userDao.selectByPage(offset, size).stream()
                 .map(this::convertToUserEntity)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public void saveUser(UserRoleEntity userRoleEntity) {
-        User user = User.builder()
-                .username(userRoleEntity.getUsername())
-                .password(userRoleEntity.getPassword())
-                .email(userRoleEntity.getEmail())
-                .status(userRoleEntity.getStatus())
-                .nickname(userRoleEntity.getNickname())
-                .avatar(userRoleEntity.getAvatar())
-                .build();
+    public void deleteById(Long id) {
         transactionTemplate.execute(status -> {
             try {
-                Long userId = userDao.insertUser(user);
-                userRoleDao.insert(UserRole.builder()
-                        .userId(userId)
-                        .roleId(userRoleEntity.getRoleId())
-                        .build());
-                return null; // 没有异常则返回 null
+                userDao.deleteById(id);
+                return null;
             } catch (Exception e) {
-                // 记录错误日志
-                log.error("添加用户失败: {}", userRoleEntity, e);
-                // 标记事务为回滚
+                log.error("删除用户失败, 用户ID: " + id, e);
                 status.setRollbackOnly();
-                // 抛出异常以确保事务回滚
-                throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "添加用户失败");
+                throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "删除用户失败");
             }
         });
     }
 
     @Override
-    public int updateUser(UserEntity userEntity) {
-        User user = User.builder()
-                .username(userEntity.getUsername())
-                .password(SaSecureUtil.sha256(userEntity.getPassword()))
-                .email(userEntity.getEmail())
-                .status(userEntity.getStatus())
-                .nickname(userEntity.getNickname())
-                .avatar(userEntity.getAvatar()) // 如果有新的头像，设置它
+    public List<UserEntity> findByIds(Set<Long> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+        
+        // 调用DAO层查询
+        List<User> users = userDao.findByIds(userIds);
+        
+        // 转换为领域实体
+        return users.stream()
+                .map(this::convertToEntity)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public UserInfoEntity findUserInfoById(Long userId) {
+        User user = userDao.selectById(userId);
+        if (user == null) {
+            return null;
+        }
+        return UserInfoEntity.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .nickname(user.getNickname())
+                .avatar(user.getAvatar())
+                .gender(user.getGender())
+                .phone(user.getPhone())
+                .region(user.getRegion())
+                .birthday(user.getBirthday())
+                .description(user.getDescription())
+                .status(user.getStatus())
+                .createTime(user.getCreateTime())
+                .updateTime(user.getUpdateTime())
                 .build();
-        int result = userDao.updateUser(user);
-        return result;
     }
 
     @Override
-    public void deleteUser(Long userId) {
-        transactionTemplate.execute(status -> {
-            try {
-                // 删除用户角色关联记录
-                userRoleDao.deleteUserRoleByUserId(userId);
-                // 删除用户记录
-                userDao.deleteUser(userId);
-                return null; // 没有异常则返回 null
-            } catch (Exception e) {
-                // 记录错误日志
-                log.error("删除用户失败, 用户ID: " + userId, e);
-                // 标记事务为回滚
-                status.setRollbackOnly();
-                // 抛出异常以确保事务回滚
-                throw new AppException(Constants.ResponseCode.UN_ERROR.getCode(), "删除用户失败");
-            }
-        });
+    public LoginFormVO findUserByUsername(String username) {
+        User user = userDao.selectByUsername(username);
+        if (user == null) {
+            return null;
+        }
+        return new LoginFormVO(user.getUsername(), user.getPassword());
     }
 
     @Override
-    public void updatePassword(UserPasswordEntity userPasswordEntity) {
-        userDao.updatePassword(userPasswordEntity);
+    public List<String> findRolesByUserId(Long userId) {
+        return roleDao.selectRolesByUserid(userId);
     }
 
     @Override
-    public UserInfoEntity findUserInfoByUserId(Long id) {
-
-        return userDao.selectUserInfoByUserId(id);
+    public String getNicknameById(Long userId) {
+        return userDao.selectById(userId).getNickname();
     }
-
-    @Override
-    public void updateUserInfo(UserInfoEntity userInfoEntity) {
-        userDao.updateUserInfo(userInfoEntity);
-    }
-
-    @Override
-    public void updateAvatar(Long id, String avatar) {
-        userDao.updateAvatar(id, avatar);
-    }
-
-    @Override
-    public void register(RegisterRequest registerRequest) {
-        User user = User.builder()
-                .nickname(registerRequest.getNickname())
-                .password(SaSecureUtil.sha256(registerRequest.getPassword()))
-                .email(registerRequest.getEmail())
-                .status(Constants.UserStatus.NORMAL.getCode())
-                .build();
-        userDao.register(user);
-    }
-
-    @Override
-    public UserEntity findUserLoginByEmailAndPassword(String email, String password) {
-        return userDao.findUserLoginByEmailAndPassword(email, password);
-    }
-
-    @Override
-    public Map<Long, UserEntity> findUserByIds(Set<Long> userIds) {
-        //collect(Collectors.toMap(...))：使用 Collectors.toMap 方法将流中的元素收集到一个 Map 中。
-        //UserEntity::getId：作为 Map 的键（即用户 ID）。
-        //Function.identity()：作为 Map 的值（即原始的 UserEntity 对象）。
-        return userDao.findUserByIds(userIds).stream()
-                .collect(Collectors.toMap(UserEntity::getId, Function.identity()));
-    }
-
 
     private UserEntity convertToUserEntity(User user) {
+        if (user == null) {
+            return null;
+        }
         return UserEntity.builder()
                 .id(user.getId())
                 .username(user.getUsername())
                 .password(user.getPassword())
+                .email(user.getEmail())
+                .nickname(user.getNickname())
+                .avatar(user.getAvatar())
+                .gender(user.getGender())
+                .phone(user.getPhone())
+                .region(user.getRegion())
+                .birthday(user.getBirthday())
+                .status(user.getStatus())
+                .description(user.getDescription())
+                .createTime(user.getCreateTime())
+                .updateTime(user.getUpdateTime())
+                .build();
+    }
+
+    private User convertToUserPO(UserEntity user) {
+        return User.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .password(user.getPassword())
+                .email(user.getEmail())
+                .nickname(user.getNickname())
+                .avatar(user.getAvatar())
+                .gender(user.getGender())
+                .phone(user.getPhone())
+                .region(user.getRegion())
+                .birthday(user.getBirthday())
+                .status(user.getStatus())
+                .description(user.getDescription())
+                .createTime(user.getCreateTime())
+                .updateTime(user.getUpdateTime())
+                .build();
+    }
+
+    /**
+     * PO转换为领域实体
+     */
+    private UserEntity convertToEntity(User user) {
+        if (user == null) {
+            return null;
+        }
+        return UserEntity.builder()
+                .id(user.getId())
+                .username(user.getUsername())
                 .nickname(user.getNickname())
                 .email(user.getEmail())
                 .avatar(user.getAvatar())
-                .status(user.getStatus())
                 .createTime(user.getCreateTime())
                 .updateTime(user.getUpdateTime())
                 .build();

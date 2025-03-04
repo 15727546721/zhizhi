@@ -3,3 +3,44 @@ spring:
     name: zhizhi-app
   profiles:
     active: dev
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+# 热点数据配置
+hot-data:
+  items:
+    # 热门文章的点赞数据
+    - targetId: 1
+      type: ARTICLE
+      needWarmup: true
+      needRebuild: true
+    - targetId: 2
+      type: ARTICLE
+      needWarmup: true
+      needRebuild: true
+    # 热门话题的点赞数据
+    - targetId: 1
+      type: TOPIC
+      needWarmup: true
+      needRebuild: true
+
+upload:
+  article:
+    cover:
+      path: ${user.home}/zhizhi/upload/article/cover/
+      url-prefix: /upload/article/cover/
+
+lucene:
+  index:
+#    path: /data/lucene/article
+    path: D:/data/lucene/article # lucene 索引存放的位置
+
+mybatis:
+  type-handlers-package: cn.xu.infrastructure.persistent.handler
+  configuration:
+    map-underscore-to-camel-case: true
+    default-enum-type-handler: org.apache.ibatis.type.EnumTypeHandler
+  mapper-locations: classpath:mapper/*.xml
