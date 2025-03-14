@@ -9,12 +9,6 @@ import com.lmax.disruptor.EventFactory;
 public class LikeEventFactory implements EventFactory<LikeEvent> {
     @Override
     public LikeEvent newInstance() {
-         return LikeEvent.builder()
-                .userId(null)
-                .targetId(null)
-                .type(null)
-                .liked(false)
-                .occurredTime(null)
-                .build();
+         return new LikeEvent();
     }
 }

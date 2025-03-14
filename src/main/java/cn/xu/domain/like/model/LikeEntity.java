@@ -1,23 +1,17 @@
-package cn.xu.infrastructure.persistent.po;
+package cn.xu.domain.like.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.io.Serializable;
 import java.time.LocalDateTime;
 
-/**
- * 点赞持久化对象
- *
- * @TableName like
- */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Like implements Serializable {
+public class LikeEntity {
     /**
      * 点赞ID
      */

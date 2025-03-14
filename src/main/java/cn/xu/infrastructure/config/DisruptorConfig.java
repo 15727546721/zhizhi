@@ -6,7 +6,6 @@ import cn.xu.domain.article.event.ArticleEventWrapper;
 import cn.xu.domain.article.event.factory.ArticleEventFactory;
 import cn.xu.domain.like.event.LikeEvent;
 import cn.xu.domain.like.event.LikeEventHandler;
-import cn.xu.domain.like.event.factory.LikeEventFactory;
 import cn.xu.domain.logging.event.OperationLogEvent;
 import cn.xu.domain.logging.event.factory.OperationLogEventFactory;
 import cn.xu.domain.logging.event.handler.OperationLogEventHandler;
@@ -17,6 +16,7 @@ import cn.xu.domain.notification.event.NotificationEvent;
 import cn.xu.domain.notification.event.NotificationEventHandler;
 import cn.xu.domain.notification.event.factory.NotificationEventFactory;
 import com.lmax.disruptor.BlockingWaitStrategy;
+import com.lmax.disruptor.EventFactory;
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.lmax.disruptor.dsl.ProducerType;
@@ -26,6 +26,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import javax.annotation.Resource;
+import java.util.concurrent.Executors;
 
 /**
  * Disruptor配置类
@@ -50,19 +51,28 @@ public class DisruptorConfig {
     private NotificationEventHandler notificationEventHandler;
 
     @Bean
-    public RingBuffer<LikeEvent> likeEventRingBuffer() {
+    public RingBuffer<LikeEvent> likeRingBuffer() {
+        // 定义事件工厂
+        EventFactory<LikeEvent> factory = LikeEvent::new;
+
+        // 环形缓冲区大小（必须是2的幂）
+        int bufferSize = 1024;
+
+        // 创建Disruptor（使用阻塞等待策略）
         Disruptor<LikeEvent> disruptor = new Disruptor<>(
-                new LikeEventFactory(),
-                1024,
-                DaemonThreadFactory.INSTANCE
+                factory,
+                bufferSize,
+                Executors.defaultThreadFactory(),
+                ProducerType.MULTI,  // 多生产者模式
+                new BlockingWaitStrategy()
         );
 
-        // 配置事件处理器
-        disruptor.handleEventsWith(likeEventHandler);
-        // 启动disruptor线程
+        // 设置事件处理器
+        disruptor.handleEventsWith(new LikeEventHandler());
+
+        // 启动Disruptor
         disruptor.start();
 
-        // 获取ringbuffer环，用于接取生产者生产的事件
         return disruptor.getRingBuffer();
     }
 

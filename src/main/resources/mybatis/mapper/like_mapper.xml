@@ -7,15 +7,14 @@
     </sql>
 
     <insert id="insert" parameterType="cn.xu.infrastructure.persistent.po.Like">
-        INSERT INTO `like` (user_id, target_id, type, status, create_time, update_time)
-        VALUES (#{userId}, #{targetId}, #{type}, #{status}, #{createTime}, #{updateTime})
+        INSERT INTO `like` (user_id, target_id, type, status, create_time)
+        VALUES (#{userId}, #{targetId}, #{type}, #{status}, #{createTime}
     </insert>
 
     <update id="update" parameterType="cn.xu.infrastructure.persistent.po.Like">
         UPDATE `like`
         <set>
             <if test="status != null">status = #{status},</if>
-            update_time = #{updateTime}
         </set>
         WHERE user_id = #{userId}
         AND target_id = #{targetId}
@@ -32,36 +31,4 @@
         LIMIT 1
     </select>
 
-    <select id="countByTargetIdAndType" resultType="java.lang.Long">
-        SELECT COUNT(1)
-        FROM `like`
-        WHERE target_id = #{targetId}
-          AND type = #{type}
-          AND status = 1
-    </select>
-
-    <select id="getLikedUserIds" resultType="java.lang.Long">
-        SELECT user_id
-        FROM `like`
-        WHERE target_id = #{targetId}
-          AND type = #{type}
-          AND status = 1
-    </select>
-
-    <select id="getPageByType" resultType="cn.xu.infrastructure.persistent.po.Like">
-        SELECT
-        <include refid="Base_Column_List"/>
-        FROM `like`
-        WHERE type = #{type}
-        AND status = 1
-        ORDER BY id ASC
-        LIMIT #{offset}, #{limit}
-    </select>
-
-    <select id="countByType" resultType="java.lang.Long">
-        SELECT COUNT(1)
-        FROM `like`
-        WHERE type = #{type}
-          AND status = 1
-    </select>
 </mapper>

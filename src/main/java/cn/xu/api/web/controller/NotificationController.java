@@ -4,7 +4,6 @@ import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.api.web.model.dto.notification.NotificationRequest;
 import cn.xu.api.web.model.vo.notification.NotificationVO;
 import cn.xu.domain.notification.model.aggregate.NotificationAggregate;
-import cn.xu.domain.notification.model.valueobject.NotificationType;
 import cn.xu.domain.notification.service.INotificationService;
 import cn.xu.infrastructure.common.response.PageResponse;
 import cn.xu.infrastructure.common.response.ResponseEntity;

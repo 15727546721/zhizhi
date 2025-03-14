@@ -19,6 +19,6 @@ public class LikeEvent {
     private Long userId;
     private Long targetId;
     private LikeType type;
-    private boolean liked;
-    private LocalDateTime occurredTime;
+    private Boolean status;
+    private LocalDateTime createTime;
 }
