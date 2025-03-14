@@ -25,4 +25,8 @@ public interface ILikeDao {
     Like findByUserIdAndTargetIdAndType(@Param("userId") Long userId,
                                         @Param("type") Integer type,
                                         @Param("targetId") Long targetId);
+
+    Integer findStatus(@Param("userId") Long userId,
+                       @Param("type") Integer type,
+                       @Param("targetId") Long targetId);
 }

@@ -46,8 +46,8 @@ public class UserRepository implements IUserRepository {
     }
 
     @Override
-    public Optional<UserEntity> findById(Long id) {
-        return Optional.ofNullable(convertToUserEntity(userDao.selectById(id)));
+    public UserEntity findById(Long id) {
+        return convertToUserEntity(userDao.selectById(id));
     }
 
     @Override

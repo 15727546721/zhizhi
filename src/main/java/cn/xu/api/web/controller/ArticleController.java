@@ -4,14 +4,18 @@ import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.api.web.model.dto.article.DraftRequest;
 import cn.xu.api.web.model.dto.article.PublishOrDraftArticleRequest;
+import cn.xu.api.web.model.vo.article.ArticleDetailVO;
 import cn.xu.api.web.model.vo.article.ArticleListVO;
 import cn.xu.application.common.ResponseCode;
+import cn.xu.domain.article.model.aggregate.ArticleAndAuthorAggregate;
 import cn.xu.domain.article.model.entity.ArticleEntity;
+import cn.xu.domain.article.model.entity.CategoryEntity;
+import cn.xu.domain.article.model.entity.TagEntity;
 import cn.xu.domain.article.model.valobj.ArticleStatus;
-import cn.xu.domain.article.service.IArticleCategoryService;
-import cn.xu.domain.article.service.IArticleService;
-import cn.xu.domain.article.service.IArticleTagService;
+import cn.xu.domain.article.service.*;
 import cn.xu.domain.article.service.search.ArticleIndexService;
+import cn.xu.domain.like.model.LikeType;
+import cn.xu.domain.like.service.ILikeService;
 import cn.xu.domain.user.service.IUserService;
 import cn.xu.infrastructure.common.annotation.ApiOperationLog;
 import cn.xu.infrastructure.common.exception.BusinessException;
@@ -25,6 +29,7 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RequestMapping("api/article")
 @RestController
@@ -39,11 +44,17 @@ public class ArticleController {
     @Resource
     private IArticleTagService articleTagService;
     @Resource
+    private ITagService tagService;
+    @Resource
+    private ICategoryService categoryService;
+    @Resource
     private TransactionTemplate transactionTemplate;
     @Resource
     private ArticleIndexService articleIndexService;
     @Resource
     private IUserService userService;
+    @Resource
+    private ILikeService likeService;
 
     @GetMapping("/category")
     @Operation(summary = "通过分类获取文章列表")
@@ -62,13 +73,25 @@ public class ArticleController {
 
     @GetMapping("/{id}")
     @Operation(summary = "获取文章详情")
-    public ResponseEntity<ArticleEntity> getArticleDetail(@PathVariable("id") Long id) {
+    public ResponseEntity<ArticleDetailVO> getArticleDetail(@PathVariable("id") Long id) {
         log.info("获取文章详情，文章ID：{}", id);
-        ArticleEntity articleById = articleService.getArticleById(id);
-        log.info("文章详情：{}", articleById);
-        return ResponseEntity.<ArticleEntity>builder()
+
+        ArticleAndAuthorAggregate article = articleService.getArticleDetailById(id);
+        CategoryEntity category = categoryService.getCategoryByArticleId(id);
+        List<TagEntity> tag = tagService.getTagsByArticleId(id);
+        boolean checkStatus = likeService.checkStatus(article.getArticle().getUserId(),
+                LikeType.ARTICLE.getValue(),
+                article.getArticle().getId());
+
+        return ResponseEntity.<ArticleDetailVO>builder()
                 .code(ResponseCode.SUCCESS.getCode())
-                .data(articleById)
+                .info("文章获取成功")
+                .data(ArticleDetailVO.builder()
+                        .articleAndAuthorAggregate(article)
+                        .categoryName(category.getName())
+                        .tags(tag.stream().map(TagEntity::getName).collect(Collectors.toList()))
+                        .isLiked(checkStatus)
+                        .build())
                 .build();
     }
 

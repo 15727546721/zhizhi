@@ -4,15 +4,17 @@ import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.api.system.model.dto.article.ArticleRequest;
 import cn.xu.api.system.model.dto.article.CreateArticleRequest;
 import cn.xu.api.system.model.dto.article.PublishArticleRequest;
-import cn.xu.api.system.model.vo.ArticleDetailsVO;
+import cn.xu.api.system.model.vo.SysArticleDetailVO;
 import cn.xu.api.web.model.vo.article.ArticlePageVO;
 import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.article.event.ArticleEventPublisher;
+import cn.xu.domain.article.model.aggregate.ArticleAndAuthorAggregate;
 import cn.xu.domain.article.model.entity.ArticleEntity;
 import cn.xu.domain.article.model.entity.CategoryEntity;
 import cn.xu.domain.article.model.entity.TagEntity;
 import cn.xu.domain.article.service.*;
 import cn.xu.domain.article.service.search.ArticleIndexService;
+import cn.xu.domain.like.service.ILikeService;
 import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.common.response.PageResponse;
 import cn.xu.infrastructure.common.response.ResponseEntity;
@@ -50,6 +52,8 @@ public class SysArticleController {
     private ArticleIndexService articleIndexService;
     @Resource
     private ArticleEventPublisher eventPublisher;
+    @Resource
+    private ILikeService likeService;
 
     @PostMapping("/uploadCover")
     public ResponseEntity<String> uploadCover(@RequestPart("file") MultipartFile file) {
@@ -204,29 +208,25 @@ public class SysArticleController {
      * @return
      */
     @GetMapping("info/{id}")
-    public ResponseEntity<ArticleDetailsVO> getArticle(@PathVariable("id") Long id) {
+    public ResponseEntity<SysArticleDetailVO> getArticle(@PathVariable("id") Long id) {
         log.info("文章详情获取参数: id={}", id);
         if (id == null) {
             throw new BusinessException(ResponseCode.NULL_PARAMETER.getCode(), "文章ID不能为空");
         }
-        ArticleEntity article = articleService.getArticleById(id);
+        ArticleAndAuthorAggregate article = articleService.getArticleDetailById(id);
         CategoryEntity category = categoryService.getCategoryByArticleId(id);
         List<TagEntity> tag = tagService.getTagsByArticleId(id);
-        ArticleDetailsVO articleDetailsVO = ArticleDetailsVO.builder()
-                .id(article.getId())
-                .title(article.getTitle())
-                .content(article.getContent())
-                .coverUrl(article.getCoverUrl())
-                .description(article.getDescription())
-                .categoryId(category == null ? null : category.getId())
-                .tagIds(tag.isEmpty() ? null : tag.stream().map(TagEntity::getId).collect(Collectors.toList()))
-                .build();
-        log.info("文章详情获取结果: {}", articleDetailsVO);
-        return ResponseEntity.<ArticleDetailsVO>builder()
-                .data(articleDetailsVO)
+
+        return ResponseEntity.<SysArticleDetailVO>builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .info("文章获取成功")
+                .data(SysArticleDetailVO.builder()
+                        .articleAndAuthorAggregate(article)
+                        .categoryName(category.getName())
+                        .tags(tag.stream().map(TagEntity::getName).collect(Collectors.toList()))
+                        .build())
                 .build();
+
     }
 
     @GetMapping("/search")

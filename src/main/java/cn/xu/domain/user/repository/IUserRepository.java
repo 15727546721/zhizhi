@@ -18,7 +18,7 @@ public interface IUserRepository {
     /**
      * 根据用户ID查找用户
      */
-    Optional<UserEntity> findById(Long id);
+    UserEntity findById(Long id);
 
     /**
      * 根据用户名查找用户

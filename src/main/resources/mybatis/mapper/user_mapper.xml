@@ -12,11 +12,17 @@
         <result column="phone" property="phone"/>
         <result column="region" property="region"/>
         <result column="birthday" property="birthday"/>
-        <result column="description" property="description"/>
         <result column="status" property="status"/>
+        <result column="description" property="description"/>
+        <result column="follow_count" property="followCount"/>
+        <result column="fans_count" property="fansCount"/>
+        <result column="like_count" property="likeCount"/>
+        <result column="last_login_time" property="lastLoginTime"/>
+        <result column="last_login_ip" property="lastLoginIp"/>
         <result column="create_time" property="createTime"/>
         <result column="update_time" property="updateTime"/>
     </resultMap>
+
 
     <sql id="Base_Column_List">
         id

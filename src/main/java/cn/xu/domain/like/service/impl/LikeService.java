@@ -4,6 +4,7 @@ import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.like.LuaScriptLoader;
 import cn.xu.domain.like.event.LikeEvent;
 import cn.xu.domain.like.model.LikeType;
+import cn.xu.domain.like.repository.ILikeRepository;
 import cn.xu.domain.like.service.ILikeService;
 import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.common.utils.RedisKeys;
@@ -25,6 +26,8 @@ public class LikeService implements ILikeService {
     private RingBuffer<LikeEvent> ringBuffer;
     @Autowired
     private LuaScriptLoader luaScriptLoader;
+    @Autowired
+    private ILikeRepository likeRepository;
 
 
     @Override
@@ -59,6 +62,11 @@ public class LikeService implements ILikeService {
         if (value == 1 || value == 0){
             publishLikeEvent(userId, type, targetId, value == 1);
         }
+    }
+
+    @Override
+    public boolean checkStatus(Long userId, Integer type, Long targetId) {
+        return likeRepository.findStatus(userId, type, targetId) == 1;
     }
 
     private void publishLikeEvent(Long userId, Integer type, Long targetId, boolean isLiked) {

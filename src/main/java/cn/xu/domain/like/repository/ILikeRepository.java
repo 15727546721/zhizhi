@@ -13,4 +13,6 @@ public interface ILikeRepository {
     void save(LikeEntity likeEntity);
 
     Like findByUserIdAndTypeAndTargetId(Long userId, int value, Long targetId);
+
+    Integer findStatus(Long userId, Integer type, Long targetId);
 }

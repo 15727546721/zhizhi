@@ -15,4 +15,12 @@ public interface ILikeService {
      */
     void like(Long userId, Integer type, Long targetId, Integer status);
 
+    /**
+     * 校验点赞状态
+     * @param userId 用户ID
+     * @param type 点赞类型
+     * @param targetId 被点赞对象ID
+     * @return 点赞状态
+     */
+    boolean checkStatus(Long userId, Integer type, Long targetId);
 } 

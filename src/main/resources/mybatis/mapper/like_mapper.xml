@@ -30,5 +30,13 @@
         AND type = #{type}
         LIMIT 1
     </select>
+    <select id="findStatus" resultType="java.lang.Integer">
+        SELECT status
+        FROM `like`
+        WHERE user_id = #{userId}
+        AND target_id = #{targetId}
+        AND type = #{type}
+        LIMIT 1
+    </select>
 
 </mapper>

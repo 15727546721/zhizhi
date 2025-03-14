@@ -4,6 +4,7 @@ import cn.xu.api.system.model.dto.article.ArticleRequest;
 import cn.xu.api.web.model.vo.article.ArticleListVO;
 import cn.xu.api.web.model.vo.article.ArticlePageVO;
 import cn.xu.application.common.ResponseCode;
+import cn.xu.domain.article.model.aggregate.ArticleAndAuthorAggregate;
 import cn.xu.domain.article.model.entity.ArticleEntity;
 import cn.xu.domain.article.model.valobj.ArticleStatus;
 import cn.xu.domain.article.repository.IArticleRepository;
@@ -11,6 +12,8 @@ import cn.xu.domain.article.repository.IArticleTagRepository;
 import cn.xu.domain.article.repository.ITagRepository;
 import cn.xu.domain.article.service.IArticleService;
 import cn.xu.domain.file.service.MinioService;
+import cn.xu.domain.user.model.entity.UserEntity;
+import cn.xu.domain.user.repository.IUserRepository;
 import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.common.response.PageResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +33,9 @@ public class ArticleService implements IArticleService {
 
     @Resource
     private IArticleRepository articleRepository; // 文章仓储
+    @Resource
+    private IUserRepository userRepository; // 用户仓储
+
     @Resource
     private IArticleTagRepository articleTagRepository; // 文章标签仓储
 
@@ -149,7 +155,7 @@ public class ArticleService implements IArticleService {
     }
 
     @Override
-    public ArticleEntity getArticleById(Long articleId) {
+    public ArticleAndAuthorAggregate getArticleDetailById(Long articleId) {
         if (articleId == null) {
             log.error("[文章服务] 获取文章详情失败：文章ID为空");
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "文章ID不能为空");
@@ -161,12 +167,14 @@ public class ArticleService implements IArticleService {
 
             if (article == null) {
                 log.warn("[文章服务] 文章不存在 - articleId: {}", articleId);
-                return null;
+                throw new BusinessException(ResponseCode.NULL_RESPONSE.getCode(), "文章不存在");
             }
-
-            log.info("[文章服务] 获取文章详情成功 - articleId: {}, title: {}",
-                    articleId, article.getTitle());
-            return article;
+            UserEntity userEntity = userRepository.findById(article.getUserId());
+            if (userEntity == null) {
+                log.error("[文章服务] 作者不存在 - userId: {}", article.getUserId());
+                throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "作者不存在");
+            }
+            return new ArticleAndAuthorAggregate(article, userEntity);
         } catch (Exception e) {
             log.error("[文章服务] 获取文章详情失败 - articleId: {}", articleId, e);
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "获取文章详情失败：" + e.getMessage());

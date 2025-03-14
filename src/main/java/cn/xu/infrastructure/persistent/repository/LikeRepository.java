@@ -28,6 +28,11 @@ public class LikeRepository implements ILikeRepository {
         return likeDao.findByUserIdAndTargetIdAndType(userId, type, targetId);
     }
 
+    @Override
+    public Integer findStatus(Long userId, Integer type, Long targetId) {
+        return likeDao.findStatus(userId, type, targetId);
+    }
+
     private Like convertToLike(LikeEntity likeEntity) {
         return Like.builder()
                 .id(likeEntity.getId())

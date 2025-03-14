@@ -56,8 +56,7 @@ public class UserServiceImpl implements IUserService {
 
         try {
             log.info("[用户服务] 开始获取用户信息 - userId: {}", userId);
-            return userRepository.findById(userId)
-                    .orElse(null);
+            return userRepository.findById(userId);
         } catch (Exception e) {
             log.error("[用户服务] 获取用户信息失败 - userId: {}", userId, e);
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "获取用户信息失败：" + e.getMessage());

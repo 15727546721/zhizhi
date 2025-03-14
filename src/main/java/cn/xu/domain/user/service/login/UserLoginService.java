@@ -52,8 +52,10 @@ public class UserLoginService implements IUserLoginService {
                     UserErrorCode.ILLEGAL_TOKEN.getMessage());
         }
 
-        UserEntity user = userRepository.findById(Long.valueOf(userId.toString()))
-                .orElseThrow(() -> new BusinessException(ResponseCode.NULL_RESPONSE.getCode(), "用户不存在"));
+        UserEntity user = userRepository.findById(Long.valueOf(userId.toString()));
+        if (user == null) {
+            throw new BusinessException(ResponseCode.NULL_RESPONSE.getCode(), "用户不存在");
+        }
 
         return convertToUserInfoEntity(user);
     }
@@ -85,8 +87,10 @@ public class UserLoginService implements IUserLoginService {
                     UserErrorCode.ILLEGAL_TOKEN.getMessage());
         }
 
-        UserEntity user = userRepository.findById(userId)
-                .orElseThrow(() -> new BusinessException(ResponseCode.NULL_RESPONSE.getCode(), "用户不存在"));
+        UserEntity user = userRepository.findById(userId);
+        if (user == null) {
+            throw new BusinessException(ResponseCode.NULL_RESPONSE.getCode(), "用户不存在");
+        }
 
         List<String> roles = userRepository.findRolesByUserId(userId);
 

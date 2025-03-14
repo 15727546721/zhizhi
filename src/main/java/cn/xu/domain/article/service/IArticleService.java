@@ -3,6 +3,7 @@ package cn.xu.domain.article.service;
 import cn.xu.api.system.model.dto.article.ArticleRequest;
 import cn.xu.api.web.model.vo.article.ArticleListVO;
 import cn.xu.api.web.model.vo.article.ArticlePageVO;
+import cn.xu.domain.article.model.aggregate.ArticleAndAuthorAggregate;
 import cn.xu.domain.article.model.entity.ArticleEntity;
 import cn.xu.infrastructure.common.response.PageResponse;
 import org.springframework.web.multipart.MultipartFile;
@@ -124,7 +125,7 @@ public interface IArticleService {
      * @param articleId 文章ID
      * @return 文章实体，不存在则返回null
      */
-    ArticleEntity getArticleById(Long articleId);
+    ArticleAndAuthorAggregate getArticleDetailById(Long articleId);
 
     List<ArticleListVO> getArticlesByUserId(Long userId);
 

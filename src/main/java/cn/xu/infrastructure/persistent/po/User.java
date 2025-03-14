@@ -62,6 +62,26 @@ public class User implements Serializable {
      */
     private Integer status;
     /**
+     * 关注数量
+     */
+    private Integer followCount;
+    /**
+     * 粉丝数量
+     */
+    private Integer fansCount;
+    /**
+     * 获赞数量
+     */
+    private Integer likeCount;
+    /**
+     * 最后登录时间
+     */
+    private LocalDateTime lastLoginTime;
+    /**
+     * 最后登录IP
+     */
+    private String lastLoginIp;
+    /**
      * 创建时间
      */
     private LocalDateTime createTime;
