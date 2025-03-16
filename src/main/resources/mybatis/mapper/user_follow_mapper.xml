@@ -7,21 +7,20 @@
         <result column="followed_id" property="followedId"/>
         <result column="status" property="status"/>
         <result column="create_time" property="createTime"/>
-        <result column="update_time" property="updateTime"/>
     </resultMap>
 
     <sql id="Base_Column_List">
         id
-        , follower_id, followed_id, status, create_time, update_time
+        , follower_id, followed_id, status, create_time
     </sql>
 
     <insert id="insert" parameterType="cn.xu.infrastructure.persistent.po.UserFollow">
-        INSERT INTO user_follows (follower_id, followed_id, status)
+        INSERT INTO `user_follow` (follower_id, followed_id, status)
         VALUES (#{followerId}, #{followedId}, #{status})
     </insert>
 
     <update id="updateStatus">
-        UPDATE user_follows
+        UPDATE `user_follow`
         SET status = #{status}
         WHERE follower_id = #{followerId}
           AND followed_id = #{followedId}
@@ -30,14 +29,14 @@
     <select id="getByFollowerAndFollowed" resultMap="BaseResultMap">
         SELECT
         <include refid="Base_Column_List"/>
-        FROM user_follows
+        FROM `user_follow`
         WHERE follower_id = #{followerId} AND followed_id = #{followedId}
     </select>
 
     <select id="listByFollowerId" resultMap="BaseResultMap">
         SELECT
         <include refid="Base_Column_List"/>
-        FROM user_follows
+        FROM `user_follow`
         WHERE follower_id = #{followerId} AND status = 1
         ORDER BY create_time DESC
     </select>
@@ -45,21 +44,21 @@
     <select id="listByFollowedId" resultMap="BaseResultMap">
         SELECT
         <include refid="Base_Column_List"/>
-        FROM user_follows
+        FROM `user_follow`
         WHERE followed_id = #{followedId} AND status = 1
         ORDER BY create_time DESC
     </select>
 
     <select id="countFollowing" resultType="java.lang.Integer">
         SELECT COUNT(*)
-        FROM user_follows
+        FROM `user_follow`
         WHERE follower_id = #{followerId}
           AND status = 1
     </select>
 
     <select id="countFollowers" resultType="java.lang.Integer">
         SELECT COUNT(*)
-        FROM user_follows
+        FROM `user_follow`
         WHERE followed_id = #{followedId}
           AND status = 1
     </select>
