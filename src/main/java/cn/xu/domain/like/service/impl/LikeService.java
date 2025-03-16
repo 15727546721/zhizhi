@@ -1,7 +1,6 @@
 package cn.xu.domain.like.service.impl;
 
 import cn.xu.application.common.ResponseCode;
-import cn.xu.domain.like.LuaScriptLoader;
 import cn.xu.domain.like.event.LikeEvent;
 import cn.xu.domain.like.model.LikeType;
 import cn.xu.domain.like.repository.ILikeRepository;
@@ -10,12 +9,15 @@ import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.common.utils.RedisKeys;
 import com.lmax.disruptor.RingBuffer;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.script.RedisScript;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
+import org.springframework.scripting.support.ResourceScriptSource;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -25,8 +27,6 @@ public class LikeService implements ILikeService {
     private RedisTemplate<String, String> redisTemplate;
     @Autowired
     private RingBuffer<LikeEvent> ringBuffer;
-    @Autowired
-    private LuaScriptLoader luaScriptLoader;
     @Autowired
     private ILikeRepository likeRepository;
 
@@ -44,25 +44,23 @@ public class LikeService implements ILikeService {
                 status.toString(), // 1-点赞，0-取消
                 timestamp
         );
-        List<String> keys = Arrays.asList(relationKey);
-
-        // 确保脚本返回的是Long类型
-        RedisScript<Long> likeScript = luaScriptLoader.getLikeScript("classpath:lua/like.lua");
 
         // 调用Redis Lua脚本, 执行点赞操作
-        Long value = redisTemplate.execute(
-                likeScript,
-                keys, // keys列表应该是List<String>
-                args // args列表应该是List<String>
-        );
+        DefaultRedisScript<Long> script = new DefaultRedisScript<>();
+        // Lua 脚本路径
+        script.setScriptSource(new ResourceScriptSource(new ClassPathResource("/lua/like.lua")));
+        // 返回值类型
+        script.setResultType(Long.class);
+        Long execute = redisTemplate.execute(script, Collections.singletonList(relationKey), args.toArray());
 
-        if (value == 2) {
+
+        if (execute == 2) {
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "已经点过赞了，不能重复点赞！");
         }
 
         // 发布Disruptor事件
-        if (value == 1 || value == 0) {
-            publishLikeEvent(userId, type, targetId, value == 1);
+        if (execute == 1 || execute == 0) {
+            publishLikeEvent(userId, type, targetId, execute == 1);
         }
     }
 

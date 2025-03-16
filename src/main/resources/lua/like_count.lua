@@ -7,7 +7,7 @@ local current = tonumber(redis.call('GET', key) or 0)
 -- 计算新值并防止负数
 local new_value = current + delta
 if new_value < 0 then
-    new_value = 0
+    new_value = -1
 end
 
 -- 更新计数器值

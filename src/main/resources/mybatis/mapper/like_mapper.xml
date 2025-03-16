@@ -3,7 +3,7 @@
 <mapper namespace="cn.xu.infrastructure.persistent.dao.ILikeDao">
     <sql id="Base_Column_List">
         id
-        , user_id, target_id, type, status, create_time, update_time
+        , user_id, target_id, type, status, create_time
     </sql>
 
     <insert id="save" parameterType="cn.xu.infrastructure.persistent.po.Like">
