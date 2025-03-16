@@ -34,7 +34,6 @@ import java.util.stream.Collectors;
 /**
  * 用户服务实现类
  * 负责用户相关的核心业务逻辑，包括用户信息的增删改查、认证授权等
- *
  */
 @Service
 @RequiredArgsConstructor
@@ -73,12 +72,12 @@ public class UserServiceImpl implements IUserService {
     public UserEntity register(RegisterRequest request) {
         try {
             log.info("[用户服务] 开始用户注册 - username: {}", request.getUsername());
-            
+
             // 1. 验证用户名是否已存在
             if (userRepository.existsByUsername(request.getUsername())) {
                 throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "用户名已存在");
             }
-            
+
             // 2. 创建用户实体
             UserEntity user = UserEntity.builder()
                     .username(request.getUsername())
@@ -87,11 +86,11 @@ public class UserServiceImpl implements IUserService {
                     .createTime(LocalDateTime.now())
                     .updateTime(LocalDateTime.now())
                     .build();
-            
+
             // 3. 保存用户
             userRepository.save(user);
             log.info("[用户服务] 用户注册成功 - userId: {}", user.getId());
-            
+
             return user;
         } catch (BusinessException e) {
             throw e;
@@ -105,12 +104,12 @@ public class UserServiceImpl implements IUserService {
     public UserEntity login(LoginRequest request) {
         try {
             log.info("[用户服务] 用户登录请求 - email: {}", request.getEmail());
-            
+
             // 1. 获取用户信息
             UserEntity user = userRepository.findByEmail(new Email(request.getEmail()))
                     .filter(u -> validatePassword(u, request.getPassword()))
                     .orElseThrow(() -> new BusinessException(ResponseCode.UN_ERROR.getCode(), "用户名或密码错误"));
-            
+
             log.info("[用户服务] 用户登录成功 - userId: {}", user.getId());
             StpUtil.login(user.getId());
             return user;
@@ -136,18 +135,18 @@ public class UserServiceImpl implements IUserService {
     public void updateUserInfo(UserInfoEntity userInfoEntity) {
         try {
             log.info("[用户服务] 开始更新用户信息 - userId: {}", userInfoEntity.getId());
-            
+
             // 1. 获取当前用户
             Long userId = StpUtil.getLoginIdAsLong();
             UserEntity user = getUserInfo(userId);
-            
+
             // 2. 更新用户信息
             updateUserFields(user, userInfoEntity);
-            
+
             // 3. 保存更新
             userRepository.save(user);
             log.info("[用户服务] 用户信息更新成功 - userId: {}", userId);
-            
+
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
@@ -158,8 +157,8 @@ public class UserServiceImpl implements IUserService {
 
     /**
      * 更新用户字段信息
-     * 
-     * @param user 用户实体
+     *
+     * @param user     用户实体
      * @param userInfo 用户信息实体
      */
     private void updateUserFields(UserEntity user, UserInfoEntity userInfo) {
@@ -266,9 +265,9 @@ public class UserServiceImpl implements IUserService {
     @Transactional(rollbackFor = Exception.class)
     public String uploadAvatar(MultipartFile file) {
         try {
-            log.info("[用户服务] 开始上传用户头像 - fileName: {}, size: {}", 
+            log.info("[用户服务] 开始上传用户头像 - fileName: {}, size: {}",
                     file.getOriginalFilename(), file.getSize());
-            
+
             // 获取当前用户
             UserEntity currentUser = getCurrentUser();
             if (currentUser == null) {
@@ -276,10 +275,10 @@ public class UserServiceImpl implements IUserService {
             }
 
             // 生成文件存储路径
-            String fileName = String.format("avatar/%s/%s_%s", 
-                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMM")),
-                currentUser.getId(),
-                file.getOriginalFilename()
+            String fileName = String.format("avatar/%s/%s_%s",
+                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMM")),
+                    currentUser.getId(),
+                    file.getOriginalFilename()
             );
 
             // 上传新头像
@@ -332,10 +331,10 @@ public class UserServiceImpl implements IUserService {
         try {
             log.info("[用户服务] 开始批量获取用户信息 - userIds: {}", userIds);
             List<UserEntity> users = userRepository.findByIds(userIds);
-            
+
             Map<Long, UserEntity> userMap = users.stream()
                     .collect(Collectors.toMap(UserEntity::getId, user -> user));
-            
+
             log.debug("[用户服务] 批量获取用户信息成功 - 请求数量: {}, 实际获取: {}", userIds.size(), users.size());
             return userMap;
         } catch (Exception e) {

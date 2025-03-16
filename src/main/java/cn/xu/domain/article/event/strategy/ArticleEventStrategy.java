@@ -9,7 +9,8 @@ import cn.xu.domain.article.service.search.ArticleIndexService;
 public interface ArticleEventStrategy {
     /**
      * 处理文章事件
-     * @param event 文章事件
+     *
+     * @param event        文章事件
      * @param indexService 索引服务
      */
     void handleEvent(ArticleEvent event, ArticleIndexService indexService);

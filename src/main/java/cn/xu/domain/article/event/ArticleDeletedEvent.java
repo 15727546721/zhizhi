@@ -9,7 +9,7 @@ import lombok.ToString;
 @Getter
 @ToString
 public class ArticleDeletedEvent extends ArticleEvent {
-    
+
     public ArticleDeletedEvent(Long articleId) {
         super(articleId, null, null, null, null, EventType.DELETED);
     }

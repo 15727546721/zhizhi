@@ -12,15 +12,16 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 public class ArticleEventPublisher {
-    
+
     private final RingBuffer<ArticleEventWrapper> eventRingBuffer;
-    
+
     public ArticleEventPublisher(RingBuffer<ArticleEventWrapper> eventRingBuffer) {
         this.eventRingBuffer = eventRingBuffer;
     }
-    
+
     /**
      * 发布领域事件
+     *
      * @param event 领域事件
      */
     private void publishEvent(ArticleEvent event) {
@@ -33,7 +34,7 @@ public class ArticleEventPublisher {
             eventRingBuffer.publish(sequence);
         }
     }
-    
+
     /**
      * 发布文章创建事件
      */
@@ -47,7 +48,7 @@ public class ArticleEventPublisher {
         );
         publishEvent(event);
     }
-    
+
     /**
      * 发布文章更新事件
      */
@@ -61,7 +62,7 @@ public class ArticleEventPublisher {
         );
         publishEvent(event);
     }
-    
+
     /**
      * 发布文章删除事件
      */

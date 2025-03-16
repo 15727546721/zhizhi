@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component("updateArticleStrategy")
 public class UpdateArticleStrategy implements ArticleEventStrategy {
-    
+
     @Override
     public void handleEvent(ArticleEvent event, ArticleIndexService indexService) {
         log.info("处理文章更新事件: {}", event);

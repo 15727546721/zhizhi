@@ -32,7 +32,8 @@ public class OperationLogAspect {
     }
 
     @Pointcut("@annotation(cn.xu.domain.logging.LogOperation)")
-    public void logOperationPointcut() {}
+    public void logOperationPointcut() {
+    }
 
     @AfterReturning(pointcut = "logOperationPointcut()", returning = "result")
     public void logAfterReturning(JoinPoint joinPoint, Object result) {

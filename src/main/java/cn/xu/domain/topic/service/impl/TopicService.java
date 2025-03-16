@@ -124,7 +124,7 @@ public class TopicService implements ITopicService {
     public void deleteTopic(Long id) {
         // 删除与话题相关的评论
         commentRepository.deleteByTopicId(id);
-        
+
         Topic topic = getTopicById(id);
         if (topic != null && topic.getImages() != null && !topic.getImages().isEmpty()) {
             minioService.deleteTopicImages(topic.getImages());

@@ -16,10 +16,10 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class ArticleEventHandler implements EventHandler<ArticleEventWrapper> {
-    
+
     private final ArticleEventStrategyFactory strategyFactory;
     private final ArticleIndexService articleIndexService;
-    
+
     @Override
     public void onEvent(ArticleEventWrapper eventWrapper, long sequence, boolean endOfBatch) {
         ArticleEvent event = eventWrapper.getEvent();

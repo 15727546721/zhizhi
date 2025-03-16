@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class MessageEventHandler implements EventHandler<BaseMessageEvent> {
-    
+
     private final IMessageService messageService;
 
     @Override
@@ -26,7 +26,7 @@ public class MessageEventHandler implements EventHandler<BaseMessageEvent> {
                 .createTime(event.getOccurredTime())
                 .updateTime(event.getOccurredTime())
                 .build();
-                
+
         messageService.sendMessage(message);
     }
 } 

@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component("deleteArticleStrategy")
 public class DeleteArticleStrategy implements ArticleEventStrategy {
-    
+
     @Override
     public void handleEvent(ArticleEvent event, ArticleIndexService indexService) {
         log.info("处理文章删除事件: {}", event);

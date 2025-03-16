@@ -82,6 +82,7 @@ public interface IUserService {
 
     /**
      * 上传用户头像
+     *
      * @param file 头像文件
      * @return 头像访问URL
      */

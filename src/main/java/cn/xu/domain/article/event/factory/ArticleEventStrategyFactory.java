@@ -19,21 +19,22 @@ import java.util.Map;
 @Component
 @RequiredArgsConstructor
 public class ArticleEventStrategyFactory {
-    
+
     private final Map<ArticleEvent.EventType, ArticleEventStrategy> strategies = new HashMap<>();
     private final CreateArticleStrategy createArticleStrategy;
     private final UpdateArticleStrategy updateArticleStrategy;
     private final DeleteArticleStrategy deleteArticleStrategy;
-    
+
     @PostConstruct
     public void init() {
         strategies.put(ArticleEvent.EventType.CREATED, createArticleStrategy);
         strategies.put(ArticleEvent.EventType.UPDATED, updateArticleStrategy);
         strategies.put(ArticleEvent.EventType.DELETED, deleteArticleStrategy);
     }
-    
+
     /**
      * 获取事件处理策略
+     *
      * @param eventType 事件类型
      * @return 对应的处理策略
      */

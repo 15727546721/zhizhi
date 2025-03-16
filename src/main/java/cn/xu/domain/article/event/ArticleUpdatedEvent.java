@@ -9,7 +9,7 @@ import lombok.ToString;
 @Getter
 @ToString
 public class ArticleUpdatedEvent extends ArticleEvent {
-    
+
     public ArticleUpdatedEvent(Long articleId, String title, String description, String content, Long userId) {
         super(articleId, title, description, content, userId, EventType.UPDATED);
     }

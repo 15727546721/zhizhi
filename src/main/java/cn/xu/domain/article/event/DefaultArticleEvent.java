@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
  */
 @NoArgsConstructor
 public class DefaultArticleEvent extends ArticleEvent {
-    
+
     @Override
     public EventType getEventType() {
         return super.getEventType();

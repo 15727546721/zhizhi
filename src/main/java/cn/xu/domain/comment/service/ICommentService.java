@@ -8,7 +8,6 @@ import java.util.List;
 
 /**
  * 评论服务接口
- *
  */
 public interface ICommentService {
     /**
@@ -38,6 +37,7 @@ public interface ICommentService {
 
     /**
      * 删除评论（管理员操作）
+     *
      * @param commentId
      */
     void deleteCommentByAdmin(Long commentId);

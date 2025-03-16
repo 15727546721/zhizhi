@@ -57,7 +57,7 @@ public interface IArticleRepository {
      * 更新文章状态
      *
      * @param status 状态值
-     * @param id 文章ID
+     * @param id     文章ID
      */
     void updateArticleStatus(Integer status, Long id);
 

@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component("createArticleStrategy")
 public class CreateArticleStrategy implements ArticleEventStrategy {
-    
+
     @Override
     public void handleEvent(ArticleEvent event, ArticleIndexService indexService) {
         log.info("处理文章创建事件: {}", event);

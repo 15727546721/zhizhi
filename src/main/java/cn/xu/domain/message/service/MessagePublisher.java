@@ -14,7 +14,7 @@ public class MessagePublisher {
     public void publishMessage(BaseMessageEvent event) {
         // 验证事件数据
         event.validate();
-        
+
         long sequence = messageRingBuffer.next();
         try {
             BaseMessageEvent messageEvent = messageRingBuffer.get(sequence);

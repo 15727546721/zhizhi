@@ -65,7 +65,7 @@ public class ArticleIndexService {
             Files.createDirectories(path);
         }
         this.directory = MMapDirectory.open(path);
-        
+
         // 初始化索引
         try {
             if (DirectoryReader.indexExists(directory)) {
@@ -153,7 +153,7 @@ public class ArticleIndexService {
 
             TopDocs results = searcher.search(query, 10);
             log.info("搜索到{}条结果", results.totalHits.value);
-            
+
             SimpleHTMLFormatter formatter = new SimpleHTMLFormatter("<b>", "</b>");
             Highlighter highlighter = new Highlighter(formatter, new QueryScorer(query));
 
@@ -163,7 +163,7 @@ public class ArticleIndexService {
                 String title = doc.get("title");
                 String highlightedTitle = highlighter.getBestFragment(analyzer, "title", title);
                 log.info("处理搜索结果: 文章ID={}, 标题={}", doc.get("id"), title);
-                
+
                 ArticleEntity article = new ArticleEntity();
                 article.setId(Long.valueOf(doc.get("id")));
                 article.setTitle(highlightedTitle != null ? highlightedTitle : title);
@@ -184,7 +184,7 @@ public class ArticleIndexService {
             try (IndexWriter writer = new IndexWriter(directory, new IndexWriterConfig(analyzer))) {
                 // 清空所有索引
                 writer.deleteAll();
-                
+
                 // 重新创建索引
                 List<ArticleEntity> articles = articleService.getAllPublishedArticles();
                 log.info("获取到所有文章数量: {}", articles.size());
