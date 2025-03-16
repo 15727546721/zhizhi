@@ -11,6 +11,7 @@ import cn.xu.infrastructure.common.utils.RedisKeys;
 import com.lmax.disruptor.RingBuffer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -29,10 +30,8 @@ public class LikeService implements ILikeService {
     @Autowired
     private ILikeRepository likeRepository;
 
-
     @Override
     public void like(Long userId, Integer type, Long targetId, Integer status) {
-
         if (userId == null || type == null || targetId == null) {
             throw new BusinessException(ResponseCode.NULL_PARAMETER.getCode(), ResponseCode.NULL_PARAMETER.getMessage());
         }
@@ -45,28 +44,35 @@ public class LikeService implements ILikeService {
                 status.toString(), // 1-点赞，0-取消
                 timestamp
         );
+        List<String> keys = Arrays.asList(relationKey);
+
+        // 确保脚本返回的是Long类型
+        RedisScript<Long> likeScript = luaScriptLoader.getLikeScript("classpath:lua/like.lua");
 
         // 调用Redis Lua脚本, 执行点赞操作
         Long value = redisTemplate.execute(
-                luaScriptLoader.getLikeScript(),
-                Arrays.asList(relationKey),
-                args
+                likeScript,
+                keys, // keys列表应该是List<String>
+                args // args列表应该是List<String>
         );
-
 
         if (value == 2) {
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "已经点过赞了，不能重复点赞！");
         }
 
         // 发布Disruptor事件
-        if (value == 1 || value == 0){
+        if (value == 1 || value == 0) {
             publishLikeEvent(userId, type, targetId, value == 1);
         }
     }
 
     @Override
     public boolean checkStatus(Long userId, Integer type, Long targetId) {
-        return likeRepository.findStatus(userId, type, targetId) == 1;
+        Integer status = likeRepository.findStatus(userId, type, targetId);
+        if (status == null || status == 0) {
+            return false;
+        }
+        return true;
     }
 
     private void publishLikeEvent(Long userId, Integer type, Long targetId, boolean isLiked) {

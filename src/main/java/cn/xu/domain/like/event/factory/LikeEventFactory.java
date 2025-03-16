@@ -9,6 +9,6 @@ import com.lmax.disruptor.EventFactory;
 public class LikeEventFactory implements EventFactory<LikeEvent> {
     @Override
     public LikeEvent newInstance() {
-         return new LikeEvent();
+        return new LikeEvent();
     }
 }

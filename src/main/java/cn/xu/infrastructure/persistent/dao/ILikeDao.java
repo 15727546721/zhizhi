@@ -12,21 +12,37 @@ public interface ILikeDao {
     /**
      * 插入点赞记录
      */
-    void insert(Like po);
+    void save(Like po);
 
     /**
-     * 更新点赞记录
+     * 更新点赞状态
+     * @param userId
+     * @param type
+     * @param targetId
+     * @param status
      */
-    void update(Like po);
+    void updateStatus(@Param("userId") Long userId,
+                      @Param("type") Integer type,
+                      @Param("targetId") Long targetId,
+                      @Param("status") Integer status);
 
     /**
      * 根据用户ID、目标ID和类型查询点赞记录
      */
-    Like findByUserIdAndTargetIdAndType(@Param("userId") Long userId,
+    Like findByUserIdAndTypeAndTargetId(@Param("userId") Long userId,
                                         @Param("type") Integer type,
                                         @Param("targetId") Long targetId);
 
+    /**
+     * 根据用户ID、目标ID和类型查询点赞状态
+     * @param userId
+     * @param type
+     * @param targetId
+     * @return
+     */
     Integer findStatus(@Param("userId") Long userId,
                        @Param("type") Integer type,
                        @Param("targetId") Long targetId);
+
+
 }

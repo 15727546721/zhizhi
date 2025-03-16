@@ -20,12 +20,17 @@ public class LikeRepository implements ILikeRepository {
 
     @Override
     public void save(LikeEntity likeEntity) {
-        likeDao.insert(convertToLike(likeEntity));
+        likeDao.save(convertToLike(likeEntity));
+    }
+
+    @Override
+    public void updateStatus(Long userId, Integer type, Long targetId, Integer status) {
+        likeDao.updateStatus(userId, type, targetId, status);
     }
 
     @Override
     public Like findByUserIdAndTypeAndTargetId(Long userId, int type, Long targetId) {
-        return likeDao.findByUserIdAndTargetIdAndType(userId, type, targetId);
+        return likeDao.findByUserIdAndTypeAndTargetId(userId, type, targetId);
     }
 
     @Override

@@ -32,7 +32,6 @@ import java.util.concurrent.Executors;
  * Disruptor配置类
  */
 @Configuration
-@RequiredArgsConstructor
 public class DisruptorConfig {
 
     @Resource
@@ -67,8 +66,8 @@ public class DisruptorConfig {
                 new BlockingWaitStrategy()
         );
 
-        // 设置事件处理器
-        disruptor.handleEventsWith(new LikeEventHandler());
+        // 设置消费者组（点赞成功后需要计数）
+        disruptor.handleEventsWith(likeEventHandler);
 
         // 启动Disruptor
         disruptor.start();
