@@ -8,7 +8,7 @@
 
     <insert id="save" parameterType="cn.xu.infrastructure.persistent.po.Like">
         INSERT INTO `like` (user_id, target_id, type, status, create_time)
-        VALUES (#{userId}, #{targetId}, #{type}, #{status}, #{createTime}
+        VALUES (#{userId}, #{targetId}, #{type}, #{status}, #{createTime})
     </insert>
 
     <update id="updateStatus">

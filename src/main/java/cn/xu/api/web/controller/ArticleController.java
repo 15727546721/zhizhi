@@ -79,7 +79,7 @@ public class ArticleController {
         ArticleAndAuthorAggregate article = articleService.getArticleDetailById(id);
         CategoryEntity category = categoryService.getCategoryByArticleId(id);
         List<TagEntity> tag = tagService.getTagsByArticleId(id);
-        boolean checkStatus = likeService.checkStatus(article.getArticle().getUserId(),
+        boolean checkStatus = likeService.checkStatus(StpUtil.getLoginIdAsLong(),
                 LikeType.ARTICLE.getValue(),
                 article.getArticle().getId());
 
