@@ -23,8 +23,9 @@ public class DataSyncTask {
     @Resource
     private ICommentDao commentDao;
 
-    @Scheduled(cron = "0 */1 * * * ?") // 每1分钟执行
+    @Scheduled(cron = "0/10 * * * * ?")
     public void syncLikeCountToMySQL() {
+        log.info("开始同步 Redis的点赞数据 到 MySQL");
         // 1. 扫描 Redis 中所有 like_count:* 的键
         Set<String> keys = redisTemplate.keys("like:count:*");
 
@@ -38,10 +39,10 @@ public class DataSyncTask {
         // 3. 更新到 MySQL
         redisCounts.forEach((key, count) -> {
             String[] parts = key.split(":");
-            int type = Integer.parseInt(parts[1]);
+            String type = parts[1];
             long targetId = Long.parseLong(parts[2]);
 
-            switch (LikeType.valueOf(type)) {
+            switch (LikeType.valueOf(type.toUpperCase())) {
                 case ARTICLE:
                     articleDao.updateLikeCount(targetId, count);
                     break;
