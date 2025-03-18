@@ -60,7 +60,13 @@ public class LikeService implements ILikeService {
 
         // 发布Disruptor事件
         if (execute == 1 || execute == 0) {
-            publishLikeEvent(userId, type, targetId, execute == 1);
+            publishLikeEvent(LikeEvent.builder()
+                   .userId(userId)
+                   .type(LikeType.valueOf(type))
+                   .targetId(targetId)
+                   .status(status == 1)
+                   .createTime(LocalDateTime.now())
+                   .build());
         }
     }
 
@@ -73,13 +79,13 @@ public class LikeService implements ILikeService {
         return true;
     }
 
-    private void publishLikeEvent(Long userId, Integer type, Long targetId, boolean isLiked) {
+    private void publishLikeEvent(LikeEvent likeEvent) {
         ringBuffer.publishEvent((event, sequence) -> {
-            event.setUserId(userId);
-            event.setType(LikeType.valueOf(type));
-            event.setTargetId(targetId);
-            event.setStatus(isLiked);
-            event.setCreateTime(LocalDateTime.now());
+            event.setUserId(likeEvent.getUserId());
+            event.setType(likeEvent.getType());
+            event.setTargetId(likeEvent.getTargetId());
+            event.setStatus(likeEvent.getStatus());
+            event.setCreateTime(likeEvent.getCreateTime());
         });
     }
 }
