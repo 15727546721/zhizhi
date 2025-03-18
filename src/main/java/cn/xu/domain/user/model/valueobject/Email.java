@@ -13,7 +13,10 @@ public class Email {
     private final String value;
 
     public Email(String email) {
-        if (email == null || !EMAIL_PATTERN.matcher(email).matches()) {
+        if (email == null || email.trim().isEmpty()) {
+            throw new BusinessException("邮箱不能为空");
+        }
+        if (!EMAIL_PATTERN.matcher(email).matches()) {
             throw new BusinessException("邮箱格式不正确");
         }
         this.value = email;
