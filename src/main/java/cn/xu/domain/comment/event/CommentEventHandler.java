@@ -24,7 +24,7 @@ public class CommentEventHandler implements EventHandler<CommentEvent> {
     @Override
     public void onEvent(CommentEvent commentEvent, long l, boolean b) throws Exception {
         log.info("Received comment event: {}", commentEvent);
-        if (commentEvent.getCommentId() == null) { // 新增评论
+        if (commentEvent.getReplyUserId() == null) { // 一级评论
             articleDao.updateCommentCount(commentEvent.getTargetId(), 1);
         } else { // 回复评论
             transactionTemplate.execute(status -> {

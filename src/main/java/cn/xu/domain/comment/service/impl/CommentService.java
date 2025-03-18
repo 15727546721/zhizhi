@@ -5,10 +5,12 @@ import cn.xu.api.web.model.dto.comment.CommentRequest;
 import cn.xu.api.web.model.vo.comment.CommentVO;
 import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.article.service.IArticleService;
+import cn.xu.domain.comment.event.CommentEvent;
 import cn.xu.domain.comment.model.entity.CommentEntity;
 import cn.xu.domain.comment.model.valueobject.CommentType;
 import cn.xu.domain.comment.repository.ICommentRepository;
 import cn.xu.domain.comment.service.ICommentService;
+import cn.xu.domain.like.event.LikeEvent;
 import cn.xu.domain.notification.event.NotificationEvent;
 import cn.xu.domain.notification.event.publisher.NotificationEventPublisher;
 import cn.xu.domain.notification.model.valueobject.BusinessType;
@@ -20,7 +22,9 @@ import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.common.request.PageRequest;
 import cn.xu.infrastructure.common.response.PageResponse;
 import cn.xu.infrastructure.persistent.po.Comment;
+import com.lmax.disruptor.RingBuffer;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,6 +48,8 @@ public class CommentService implements ICommentService {
     @Resource
     private ITopicService topicService;
 
+    @Resource
+    private RingBuffer<CommentEvent> ringBuffer;
     @Resource
     private NotificationEventPublisher notificationEventPublisher;
 
@@ -79,6 +85,15 @@ public class CommentService implements ICommentService {
             Long commentId = commentRepository.save(commentEntity);
             log.info("保存评论成功 - commentId: {}", commentId);
             commentEntity.setId(commentId);
+
+            // 5. 评论计数
+            pushCommentEvent(CommentEvent.builder()
+                    .commentId(commentId)
+                    .content(commentEntity.getContent())
+                    .targetId(commentEntity.getTargetId())
+                    .userId(commentEntity.getUserId())
+                    .replyUserId(commentEntity.getReplyUserId())
+                    .build());
 
             // 5. 处理评论并发送消息
             if (request.getParentId() != null) {
@@ -546,5 +561,15 @@ public class CommentService implements ICommentService {
                 .createTime(entity.getCreateTime())
                 .updateTime(entity.getUpdateTime())
                 .build();
+    }
+
+    private void pushCommentEvent(CommentEvent comment) {
+        ringBuffer.publishEvent((event, sequence) -> {
+            event.setCommentId(comment.getCommentId());
+            event.setContent(comment.getContent());
+            event.setTargetId(comment.getTargetId());
+            event.setUserId(comment.getUserId());
+            event.setReplyUserId(comment.getReplyUserId());
+        });
     }
 }
