@@ -116,4 +116,12 @@ public interface ICommentDao {
      * @param parentId 父评论ID
      */
     void deleteByParentId(@Param("parentId") Long parentId);
+
+    /**
+     * 更新评论点赞数
+     *
+     * @param targetId
+     * @param count
+     */
+    void updateLikeCount(@Param("targetId") long targetId, @Param("count") Integer count);
 }

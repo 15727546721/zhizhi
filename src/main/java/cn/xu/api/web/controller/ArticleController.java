@@ -140,6 +140,7 @@ public class ArticleController {
 
     @PostMapping("/publish")
     @Operation(summary = "发布文章")
+    @SaCheckLogin
     public ResponseEntity pushArticle(@RequestBody PublishOrDraftArticleRequest publishArticleRequest) {
         log.info("发布文章，文章内容：{}", publishArticleRequest);
         if (publishArticleRequest != null && publishArticleRequest.getId() != null) {
@@ -188,6 +189,7 @@ public class ArticleController {
 
     @PostMapping("/saveDraft")
     @Operation(summary = "保存文章草稿")
+    @SaCheckLogin
     public ResponseEntity saveArticleDraft(@RequestBody DraftRequest draftRequest) {
         log.info("保存文章草稿，文章内容：{}", draftRequest);
         Long userId = StpUtil.getLoginIdAsLong();
@@ -231,38 +233,6 @@ public class ArticleController {
                 .build();
     }
 
-    @GetMapping("/hot")
-    @Operation(summary = "获取热门文章列表")
-    public ResponseEntity<List<ArticleListVO>> getHotArticles(@RequestParam(defaultValue = "10") int limit) {
-        List<ArticleListVO> hotArticles = articleService.getHotArticles(limit);
-        return ResponseEntity.<List<ArticleListVO>>builder()
-                .code(ResponseCode.SUCCESS.getCode())
-                .data(hotArticles)
-                .build();
-    }
-
-    @GetMapping("/user/likes")
-    @Operation(summary = "获取用户点赞的文章列表")
-    @SaCheckLogin
-    public ResponseEntity<List<ArticleListVO>> getUserLikedArticles() {
-        Long userId = StpUtil.getLoginIdAsLong();
-        List<ArticleListVO> likedArticles = articleService.getUserLikedArticles(userId);
-        return ResponseEntity.<List<ArticleListVO>>builder()
-                .code(ResponseCode.SUCCESS.getCode())
-                .data(likedArticles)
-                .build();
-    }
-
-    @GetMapping("/{id}/liked-users")
-    @Operation(summary = "获取文章的点赞用户列表")
-    public ResponseEntity<List<Long>> getArticleLikedUsers(@PathVariable("id") Long articleId) {
-        List<Long> likedUsers = articleService.getArticleLikedUsers(articleId);
-        return ResponseEntity.<List<Long>>builder()
-                .code(ResponseCode.SUCCESS.getCode())
-                .data(likedUsers)
-                .build();
-    }
-
     @GetMapping("/search")
     @Operation(summary = "搜索文章")
     public ResponseEntity<List<ArticleEntity>> searchArticles(@RequestParam String title) {
@@ -299,6 +269,38 @@ public class ArticleController {
         return ResponseEntity.<List<ArticleListVO>>builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .data(articles)
+                .build();
+    }
+
+    @GetMapping("/view")
+    @Operation(summary = "文章阅读数+1")
+    public ResponseEntity viewArticle(@RequestParam Long articleId) {
+        articleService.viewArticle(articleId);
+        return ResponseEntity.builder()
+                .code(ResponseCode.SUCCESS.getCode())
+                .info("文章阅读数+1成功")
+                .build();
+    }
+
+    @GetMapping("/like")
+    @Operation(summary = "文章点赞")
+    public ResponseEntity likeArticle(@RequestParam Long articleId) {
+        Long userId = StpUtil.getLoginIdAsLong();
+        likeService.like(userId, LikeType.ARTICLE.getValue(), articleId, 1);
+        return ResponseEntity.builder()
+                .code(ResponseCode.SUCCESS.getCode())
+                .info("文章点赞成功")
+                .build();
+    }
+
+    @GetMapping("/unlike")
+    @Operation(summary = "取消文章点赞")
+    public ResponseEntity unlikeArticle(@RequestParam Long articleId) {
+        Long userId = StpUtil.getLoginIdAsLong();
+        likeService.like(userId, LikeType.ARTICLE.getValue(), articleId, 0);
+        return ResponseEntity.builder()
+                .code(ResponseCode.SUCCESS.getCode())
+                .info("文章取消点赞成功")
                 .build();
     }
 }

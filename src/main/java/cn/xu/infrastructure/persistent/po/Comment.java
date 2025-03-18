@@ -57,6 +57,16 @@ public class Comment implements Serializable {
     private String content;
 
     /**
+     * 点赞数
+     */
+    private Long likeCount;
+
+    /**
+     * 子评论数
+     */
+    private Long replyCount;
+
+    /**
      * 创建时间
      */
     private LocalDateTime createTime;

@@ -250,6 +250,24 @@ public class ArticleService implements IArticleService {
     }
 
     @Override
+    public void viewArticle(Long articleId) {
+        try {
+            log.info("[文章服务] 开始浏览文章 - articleId: {}", articleId);
+            ArticleEntity article = articleRepository.findById(articleId);
+            if (article == null) {
+                log.warn("[文章服务] 文章不存在 - articleId: {}", articleId);
+                return;
+            }
+            article.setViewCount(article.getViewCount() + 1);
+            articleRepository.update(article);
+            log.info("[文章服务] 文章浏览成功 - articleId: {}, viewCount: {}", articleId, article.getViewCount());
+        } catch (Exception e) {
+            log.error("[文章服务] 文章浏览失败 - articleId: {}", articleId, e);
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "文章浏览失败：" + e.getMessage());
+        }
+    }
+
+    @Override
     public List<ArticleListVO> getArticleByCategoryId(Long categoryId) {
         try {
             log.info("[文章服务] 开始获取分类文章列表 - categoryId: {}", categoryId);
@@ -261,26 +279,6 @@ public class ArticleService implements IArticleService {
             log.error("[文章服务] 获取分类文章列表失败 - categoryId: {}", categoryId, e);
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "获取分类文章列表失败：" + e.getMessage());
         }
-    }
-
-    @Override
-    public List<ArticleListVO> getHotArticles(int limit) {
-        return null;
-    }
-
-    @Override
-    public List<ArticleListVO> getUserLikedArticles(Long userId) {
-        return null;
-    }
-
-    @Override
-    public List<Long> getArticleLikedUsers(Long articleId) {
-        return null;
-    }
-
-    @Override
-    public boolean isArticleLiked(Long articleId, Long userId) {
-        return false;
     }
 
     @Override

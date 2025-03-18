@@ -98,6 +98,11 @@
         SET status = #{status}
         WHERE id = #{id}
     </update>
+    <update id="updateLikeCount">
+        UPDATE article
+        SET like_count = #{count}
+        WHERE id = #{targetId}
+    </update>
 
     <delete id="deleteByIds">
         DELETE FROM article WHERE id IN

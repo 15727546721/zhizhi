@@ -70,4 +70,11 @@ public interface IArticleDao {
     void deleteById(Long id);
 
 
+    /**
+     * 更新文章点赞数
+     *
+     * @param targetId
+     * @param count
+     */
+    void updateLikeCount(@Param("targetId") long targetId, @Param("count") Integer count);
 }

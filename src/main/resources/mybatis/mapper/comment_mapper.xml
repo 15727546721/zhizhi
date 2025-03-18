@@ -9,12 +9,15 @@
         <result column="user_id" property="userId" jdbcType="BIGINT"/>
         <result column="reply_user_id" property="replyUserId" jdbcType="BIGINT"/>
         <result column="content" property="content" jdbcType="VARCHAR"/>
+        <result column="like_count" property="likeCount" jdbcType="BIGINT"/>
+        <result column="reply_count" property="replyCount" jdbcType="BIGINT"/>
         <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
         <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        id, type, target_id, parent_id, user_id, reply_user_id, content, create_time, update_time
+        id, type, target_id, parent_id, user_id, reply_user_id, content,
+        like_count, reply_count, create_time, update_time
     </sql>
 
     <insert id="insert" parameterType="cn.xu.infrastructure.persistent.po.Comment" useGeneratedKeys="true"
@@ -23,6 +26,11 @@
         values (#{type}, #{targetId}, #{parentId}, #{userId}, #{replyUserId}, #{content}, #{createTime},
                 #{updateTime})
     </insert>
+    <update id="updateLikeCount">
+        UPDATE comment
+        SET like_count = #{count}
+        WHERE target_id = #{targetId}
+    </update>
 
     <delete id="deleteById">
         delete from comment where id = #{id}
