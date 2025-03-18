@@ -58,6 +58,11 @@ public class Article implements Serializable {
     private Long collectCount;
 
     /**
+     * 评论次数
+     */
+    private Long commentCount;
+
+    /**
      * 点赞次数
      */
     private Long likeCount;

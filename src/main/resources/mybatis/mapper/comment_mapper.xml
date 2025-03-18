@@ -31,6 +31,11 @@
         SET like_count = #{count}
         WHERE target_id = #{targetId}
     </update>
+    <update id="updateCommentCount">
+        UPDATE comment
+        SET reply_count = reply_count + #{count}
+        WHERE id = #{commentId}
+    </update>
 
     <delete id="deleteById">
         delete from comment where id = #{id}

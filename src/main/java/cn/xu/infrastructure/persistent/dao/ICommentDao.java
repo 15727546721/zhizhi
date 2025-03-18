@@ -124,4 +124,12 @@ public interface ICommentDao {
      * @param count
      */
     void updateLikeCount(@Param("targetId") long targetId, @Param("count") Integer count);
+
+    /**
+     * 更新评论回复数
+     *
+     * @param commentId
+     * @param count
+     */
+    void updateCommentCount(@Param("commentId") Long commentId, @Param("count") int count);
 }

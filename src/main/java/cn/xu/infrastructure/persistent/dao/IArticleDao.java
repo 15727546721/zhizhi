@@ -77,4 +77,12 @@ public interface IArticleDao {
      * @param count
      */
     void updateLikeCount(@Param("targetId") long targetId, @Param("count") Integer count);
+
+    /**
+     * 更新文章评论数
+     *
+     * @param articleId
+     * @param count
+     */
+    void updateCommentCount(@Param("articleId") Long articleId, @Param("count") int count);
 }
