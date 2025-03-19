@@ -65,7 +65,7 @@ public class UserFollowRepository implements IUserFollowRepository {
         }
         UserFollow po = new UserFollow();
         BeanUtils.copyProperties(entity, po);
-        po.setStatus(entity.getStatus().getCode());
+        po.setStatus(entity.getStatus().getValue());
         return po;
     }
 
@@ -75,7 +75,7 @@ public class UserFollowRepository implements IUserFollowRepository {
         }
         UserFollowEntity entity = new UserFollowEntity();
         BeanUtils.copyProperties(po, entity);
-        entity.setStatus(FollowStatus.of(po.getStatus()));
+        entity.setStatus(FollowStatus.valueOf(po.getStatus()));
         return entity;
     }
 } 

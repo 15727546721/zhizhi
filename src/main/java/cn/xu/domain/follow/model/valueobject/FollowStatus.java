@@ -1,31 +1,26 @@
 package cn.xu.domain.follow.model.valueobject;
 
+import lombok.Getter;
+
+@Getter
 public enum FollowStatus {
     UNFOLLOWED(0, "取消关注"),
     FOLLOWED(1, "已关注");
 
-    private final Integer code;
+    private final Integer value;
     private final String desc;
 
-    FollowStatus(Integer code, String desc) {
-        this.code = code;
+    FollowStatus(Integer value, String desc) {
+        this.value = value;
         this.desc = desc;
     }
 
-    public Integer getCode() {
-        return code;
-    }
-
-    public String getDesc() {
-        return desc;
-    }
-
-    public static FollowStatus of(Integer code) {
-        for (FollowStatus status : values()) {
-            if (status.getCode().equals(code)) {
+    public static FollowStatus valueOf(Integer value) {
+        for (FollowStatus status : FollowStatus.values()) {
+            if (status.getValue().equals(value)) {
                 return status;
             }
         }
-        return UNFOLLOWED;
+        return null;
     }
-} 
+}

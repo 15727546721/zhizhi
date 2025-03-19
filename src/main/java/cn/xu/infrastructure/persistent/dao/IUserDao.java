@@ -77,4 +77,20 @@ public interface IUserDao {
      * @return 用户信息列表
      */
     List<User> findByIds(@Param("userIds") Set<Long> userIds);
+
+    /**
+     * 更新关注数
+     *
+     * @param followerId
+     * @param count
+     */
+    void updateFollowCount(@Param("followerId") Long followerId, @Param("count") int count);
+
+    /**
+     * 更新粉丝数
+     *
+     * @param followeeId
+     * @param count
+     */
+    void updateFansCount(@Param("followeeId") Long followeeId, @Param("count") int count);
 }

@@ -55,6 +55,16 @@
         </set>
         WHERE id = #{id}
     </update>
+    <update id="updateFollowCount">
+        UPDATE user
+        SET follow_count = follow_count + #{count}
+        WHERE id = #{followerId}
+    </update>
+    <update id="updateFansCount">
+        UPDATE user
+        SET fans_count = fans_count + #{count}
+        WHERE id = #{followeeId}
+    </update>
 
     <select id="selectById" resultMap="userMap">
         SELECT

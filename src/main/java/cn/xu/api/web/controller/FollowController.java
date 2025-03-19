@@ -1,5 +1,6 @@
 package cn.xu.api.web.controller;
 
+import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.follow.model.entity.UserFollowEntity;
@@ -26,11 +27,12 @@ public class FollowController {
     private IUserFollowService userFollowService;
 
     @Operation(summary = "关注用户")
-    @PostMapping("/follow/{followedId}")
-    public ResponseEntity<Void> follow(@PathVariable Long followedId) {
-        log.info("关注用户，请求参数：{}", followedId);
+    @PostMapping("/follow/{userId}")
+    @SaCheckLogin
+    public ResponseEntity<Void> follow(@PathVariable Long userId) {
+        log.info("关注用户，请求参数：{}", userId);
         Long currentUserId = StpUtil.getLoginIdAsLong();
-        userFollowService.follow(currentUserId, followedId);
+        userFollowService.follow(currentUserId, userId);
         return ResponseEntity.<Void>builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .info("关注成功")
@@ -38,13 +40,14 @@ public class FollowController {
     }
 
     @Operation(summary = "取消关注")
-    @PostMapping("/unfollow/{followedId}")
+    @PostMapping("/unfollow/{userId}")
+    @SaCheckLogin
     public ResponseEntity<Void> unfollow(
             @Parameter(description = "被关注用户ID", required = true)
-            @PathVariable Long followedId) {
-        log.info("取消关注，被关注用户ID：{}", followedId);
+            @PathVariable Long userId) {
+        log.info("取消关注，被关注用户ID：{}", userId);
         Long currentUserId = StpUtil.getLoginIdAsLong();
-        userFollowService.unfollow(currentUserId, followedId);
+        userFollowService.unfollow(currentUserId, userId);
         return ResponseEntity.<Void>builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .info("取消关注成功")
@@ -52,13 +55,13 @@ public class FollowController {
     }
 
     @Operation(summary = "查询是否关注某用户")
-    @GetMapping("/status/{followedId}")
+    @GetMapping("/status/{userId}")
     public ResponseEntity<Boolean> isFollowing(
             @Parameter(description = "被关注用户ID", required = true)
-            @PathVariable Long followedId) {
-        log.info("查询关注状态，被关注用户ID：{}", followedId);
+            @PathVariable Long userId) {
+        log.info("查询关注状态，被关注用户ID：{}", userId);
         Long currentUserId = StpUtil.getLoginIdAsLong();
-        boolean following = userFollowService.isFollowing(currentUserId, followedId);
+        boolean following = userFollowService.isFollowing(currentUserId, userId);
         return ResponseEntity.<Boolean>builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .data(following)

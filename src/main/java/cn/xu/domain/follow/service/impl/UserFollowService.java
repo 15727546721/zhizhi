@@ -1,10 +1,13 @@
 package cn.xu.domain.follow.service.impl;
 
+import cn.xu.domain.comment.event.CommentEvent;
+import cn.xu.domain.follow.event.FollowEvent;
 import cn.xu.domain.follow.model.entity.UserFollowEntity;
 import cn.xu.domain.follow.model.valueobject.FollowStatus;
 import cn.xu.domain.follow.repository.IUserFollowRepository;
 import cn.xu.domain.follow.service.IUserFollowService;
 import cn.xu.infrastructure.common.exception.BusinessException;
+import com.lmax.disruptor.RingBuffer;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,6 +19,10 @@ public class UserFollowService implements IUserFollowService {
 
     @Resource
     private IUserFollowRepository userFollowRepository;
+    @Resource
+    private RingBuffer<FollowEvent> ringBuffer;
+
+
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -30,7 +37,7 @@ public class UserFollowService implements IUserFollowService {
             if (existingFollow.getStatus() == FollowStatus.FOLLOWED) {
                 return;
             }
-            userFollowRepository.updateStatus(followerId, followedId, FollowStatus.FOLLOWED.getCode());
+            userFollowRepository.updateStatus(followerId, followedId, FollowStatus.FOLLOWED.getValue());
         } else {
             UserFollowEntity newFollow = new UserFollowEntity()
                     .setFollowerId(followerId)
@@ -38,6 +45,12 @@ public class UserFollowService implements IUserFollowService {
                     .setStatus(FollowStatus.FOLLOWED);
             userFollowRepository.save(newFollow);
         }
+        // 推送关注事件
+        pushFollowEvent(FollowEvent.builder()
+               .followerId(followerId)
+               .followeeId(followedId)
+               .status(FollowStatus.FOLLOWED)
+               .build());
     }
 
     @Override
@@ -45,8 +58,14 @@ public class UserFollowService implements IUserFollowService {
     public void unfollow(Long followerId, Long followedId) {
         UserFollowEntity existingFollow = userFollowRepository.getByFollowerAndFollowed(followerId, followedId);
         if (existingFollow != null && existingFollow.getStatus() == FollowStatus.FOLLOWED) {
-            userFollowRepository.updateStatus(followerId, followedId, FollowStatus.UNFOLLOWED.getCode());
+            userFollowRepository.updateStatus(followerId, followedId, FollowStatus.UNFOLLOWED.getValue());
         }
+        // 推送取消关注事件
+        pushFollowEvent(FollowEvent.builder()
+               .followerId(followerId)
+               .followeeId(followedId)
+               .status(FollowStatus.UNFOLLOWED)
+               .build());
     }
 
     @Override
@@ -73,5 +92,13 @@ public class UserFollowService implements IUserFollowService {
     @Override
     public int getFollowersCount(Long followedId) {
         return userFollowRepository.countFollowers(followedId);
+    }
+
+    private void pushFollowEvent(FollowEvent followEvent) {
+        ringBuffer.publishEvent((event, sequence) -> {
+            event.setFollowerId(followEvent.getFollowerId());
+            event.setFolloweeId(followEvent.getFolloweeId());
+            event.setStatus(followEvent.getStatus());
+        });
     }
 } 
