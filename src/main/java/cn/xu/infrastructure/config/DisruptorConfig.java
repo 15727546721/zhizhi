@@ -6,6 +6,8 @@ import cn.xu.domain.article.event.ArticleEventWrapper;
 import cn.xu.domain.article.event.factory.ArticleEventFactory;
 import cn.xu.domain.comment.event.CommentEvent;
 import cn.xu.domain.comment.event.CommentEventHandler;
+import cn.xu.domain.follow.event.FollowEvent;
+import cn.xu.domain.follow.event.FollowEventHandler;
 import cn.xu.domain.like.event.LikeEvent;
 import cn.xu.domain.like.event.LikeEventHandler;
 import cn.xu.domain.logging.event.OperationLogEvent;
@@ -39,6 +41,8 @@ public class DisruptorConfig {
     private LikeEventHandler likeEventHandler;
     @Resource
     private CommentEventHandler commentEventHandler;
+    @Resource
+    private FollowEventHandler followEventHandler;
 
     @Resource
     private ArticleEventHandler articleEventHandler;
@@ -97,6 +101,32 @@ public class DisruptorConfig {
 
         // 设置消费者组（评论成功后需要计数）
         disruptor.handleEventsWith(commentEventHandler);
+
+        // 启动Disruptor
+        disruptor.start();
+
+        return disruptor.getRingBuffer();
+    }
+
+    @Bean
+    public RingBuffer<FollowEvent> followRingBuffer() {
+        // 定义事件工厂
+        EventFactory<FollowEvent> factory = FollowEvent::new;
+
+        // 环形缓冲区大小（必须是2的幂）
+        int bufferSize = 1024;
+
+        // 创建Disruptor（使用阻塞等待策略）
+        Disruptor<FollowEvent> disruptor = new Disruptor<>(
+                factory,
+                bufferSize,
+                Executors.defaultThreadFactory(),
+                ProducerType.MULTI,  // 多生产者模式
+                new BlockingWaitStrategy()
+        );
+
+        // 设置消费者组（评论成功后需要计数）
+        disruptor.handleEventsWith(followEventHandler);
 
         // 启动Disruptor
         disruptor.start();
