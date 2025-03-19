@@ -274,7 +274,7 @@ public class ArticleController {
 
     @GetMapping("/view")
     @Operation(summary = "文章阅读数+1")
-    public ResponseEntity viewArticle(@RequestParam Long articleId) {
+    public ResponseEntity<?> viewArticle(@RequestParam Long articleId) {
         articleService.viewArticle(articleId);
         return ResponseEntity.builder()
                 .code(ResponseCode.SUCCESS.getCode())
@@ -282,20 +282,20 @@ public class ArticleController {
                 .build();
     }
 
-    @GetMapping("/like")
+    @GetMapping("/like/{id}")
     @Operation(summary = "文章点赞")
-    public ResponseEntity likeArticle(@RequestParam Long articleId) {
+    public ResponseEntity<?> likeArticle(@PathVariable("id") Long id) {
         Long userId = StpUtil.getLoginIdAsLong();
-        likeService.like(userId, LikeType.ARTICLE.getValue(), articleId, 1);
+        likeService.like(userId, LikeType.ARTICLE.getValue(), id, 1);
         return ResponseEntity.builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .info("文章点赞成功")
                 .build();
     }
 
-    @GetMapping("/unlike")
+    @GetMapping("/unlike/{id}")
     @Operation(summary = "取消文章点赞")
-    public ResponseEntity unlikeArticle(@RequestParam Long articleId) {
+    public ResponseEntity<?> unlikeArticle(@PathVariable("id") Long articleId) {
         Long userId = StpUtil.getLoginIdAsLong();
         likeService.like(userId, LikeType.ARTICLE.getValue(), articleId, 0);
         return ResponseEntity.builder()

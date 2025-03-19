@@ -11,6 +11,7 @@
         <result property="content" column="content" jdbcType="VARCHAR"/>
         <result property="coverUrl" column="cover_url" jdbcType="VARCHAR"/>
         <result property="userId" column="user_id" jdbcType="BIGINT"/>
+        <result property="articleCount" column="article_count" jdbcType="BIGINT"/>
         <result property="viewCount" column="view_count" jdbcType="BIGINT"/>
         <result property="collectCount" column="collect_count" jdbcType="BIGINT"/>
         <result property="commentCount" column="comment_count" jdbcType="BIGINT"/>

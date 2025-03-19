@@ -23,7 +23,7 @@ public class CommentEventHandler implements EventHandler<CommentEvent> {
 
     @Override
     public void onEvent(CommentEvent commentEvent, long l, boolean b) throws Exception {
-        log.info("Received comment event: {}", commentEvent);
+        log.info("[评论事件]接收到事件: {}", commentEvent);
         if (commentEvent.getReplyUserId() == null) { // 一级评论
             articleDao.updateCommentCount(commentEvent.getTargetId(), 1);
         } else { // 回复评论
@@ -32,7 +32,7 @@ public class CommentEventHandler implements EventHandler<CommentEvent> {
                     articleDao.updateCommentCount(commentEvent.getTargetId(), 1);
                     commentDao.updateCommentCount(commentEvent.getCommentId(), 1);
                 } catch (Exception e) {
-                    throw new BusinessException("评论计数更新失败");
+                    log.error("[评论计数]更新失败", e);
                 }
                 return 1;
             });

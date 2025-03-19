@@ -31,6 +31,7 @@ public class LikeEventHandler implements EventHandler<LikeEvent> {
 
     @Override
     public void onEvent(LikeEvent event, long sequence, boolean endOfBatch) {
+        log.info("处理点赞事件: {}", event);
         try {
             // 更新MySQL点赞记录
             Like like = likeDao.findByUserIdAndTypeAndTargetId(

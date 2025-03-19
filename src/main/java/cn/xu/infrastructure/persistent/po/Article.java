@@ -48,6 +48,11 @@ public class Article implements Serializable {
     private Long userId;
 
     /**
+     * 发布文章次数
+     */
+    private Long articleCount;
+
+    /**
      * 阅读次数
      */
     private Long viewCount;
