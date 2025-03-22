@@ -14,7 +14,16 @@ public interface ILikeService {
      * @param targetId 被点赞对象ID
      * @param status   点赞状态
      */
-    void like(Long userId, Integer type, Long targetId, Integer status);
+    void like(Long userId, Integer type, Long targetId);
+
+    /**
+     * 取消点赞
+     *
+     * @param userId
+     * @param type
+     * @param targetId
+     */
+    void unlike(Long userId, Integer type, Long targetId);
 
     /**
      * 校验点赞状态

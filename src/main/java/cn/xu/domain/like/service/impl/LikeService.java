@@ -1,5 +1,6 @@
 package cn.xu.domain.like.service.impl;
 
+import cn.hutool.core.util.RandomUtil;
 import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.like.event.LikeEvent;
 import cn.xu.domain.like.model.LikeType;
@@ -19,6 +20,7 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class LikeService implements ILikeService {
@@ -31,52 +33,99 @@ public class LikeService implements ILikeService {
     private ILikeRepository likeRepository;
 
     @Override
-    public void like(Long userId, Integer type, Long targetId, Integer status) {
+    public void like(Long userId, Integer type, Long targetId) {
         if (userId == null || type == null || targetId == null) {
             throw new BusinessException(ResponseCode.NULL_PARAMETER.getCode(), ResponseCode.NULL_PARAMETER.getMessage());
         }
 
-        String relationKey = RedisKeys.likeRelationKey(type, targetId);
-        String timestamp = String.valueOf(System.currentTimeMillis() / 1000);
+        String likeKey = RedisKeys.likeRelationKey(type, targetId);
 
-        List<String> args = Arrays.asList(
-                userId.toString(),
-                status.toString(), // 1-点赞，0-取消
-                timestamp
-        );
+        // 直接获取Hash中的value，减少一次查询
+        Object existingStatus = redisTemplate.opsForHash().get(likeKey, userId.toString());
 
-        // 调用Redis Lua脚本, 执行点赞操作
-        DefaultRedisScript<Long> script = new DefaultRedisScript<>();
-        // Lua 脚本路径
-        script.setScriptSource(new ResourceScriptSource(new ClassPathResource("/lua/like.lua")));
-        // 返回值类型
-        script.setResultType(Long.class);
-        Long execute = redisTemplate.execute(script, Collections.singletonList(relationKey), args.toArray());
-
-
-        if (execute == 2) {
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "已经点过赞了，不能重复点赞！");
+        if (existingStatus != null && existingStatus.toString().equals("1")) {
+           throw new BusinessException("您已经点赞过了！");
         }
+
+        // 如果Redis中没有该用户的点赞状态，检查数据库
+        if (existingStatus == null) {
+            boolean hasLike = likeRepository.checkStatus(userId, type, targetId);
+            if (hasLike) {
+                // 更新Redis中的点赞状态
+                redisTemplate.opsForHash().put(likeKey, userId.toString(), "1");
+                // 设置随机过期时间
+                int randomInt = RandomUtil.randomInt(24 * 60 * 60); // 随机过期时间
+                redisTemplate.expire(likeKey, randomInt, TimeUnit.SECONDS);
+                throw new BusinessException("您已经点赞过了！");
+            }
+        }
+
+        // 更新Redis中的点赞状态
+        redisTemplate.opsForHash().put(likeKey, userId.toString(), "1");
+
+        // 设置随机过期时间
+        int randomInt = RandomUtil.randomInt(24 * 60 * 60); // 随机过期时间
+        redisTemplate.expire(likeKey, randomInt, TimeUnit.SECONDS);
 
         // 发布Disruptor事件
-        if (execute == 1 || execute == 0) {
-            publishLikeEvent(LikeEvent.builder()
-                   .userId(userId)
-                   .type(LikeType.valueOf(type))
-                   .targetId(targetId)
-                   .status(status == 1)
-                   .createTime(LocalDateTime.now())
-                   .build());
-        }
+        publishLikeEvent(LikeEvent.builder()
+                .userId(userId)
+                .type(LikeType.valueOf(type))
+                .targetId(targetId)
+                .status(true)
+                .createTime(LocalDateTime.now())
+                .build());
     }
 
     @Override
-    public boolean checkStatus(Long userId, Integer type, Long targetId) {
-        Integer status = likeRepository.findStatus(userId, type, targetId);
-        if (status == null || status == 0) {
-            return false;
+    public void unlike(Long userId, Integer type, Long targetId) {
+        if (userId == null || type == null || targetId == null) {
+            throw new BusinessException(ResponseCode.NULL_PARAMETER.getCode(), ResponseCode.NULL_PARAMETER.getMessage());
         }
-        return true;
+
+        String likeKey = RedisKeys.likeRelationKey(type, targetId);
+
+        // 直接获取Hash中的value，减少一次查询
+        Object existingStatus = redisTemplate.opsForHash().get(likeKey, userId.toString());
+
+        if (existingStatus != null && existingStatus.toString().equals("0")) {
+            throw new BusinessException("您还没有点赞过，不能取消点赞！");
+        }
+
+        // 如果Redis中没有该用户的点赞状态，检查数据库
+        if (existingStatus == null) {
+            boolean hasLike = likeRepository.checkStatus(userId, type, targetId);
+            if (!hasLike) {
+                // 更新Redis中的点赞状态
+                redisTemplate.opsForHash().put(likeKey, userId.toString(), "0");
+                // 设置随机过期时间
+                int randomInt = RandomUtil.randomInt(24 * 60 * 60); // 随机过期时间
+                redisTemplate.expire(likeKey, randomInt, TimeUnit.SECONDS);
+                throw new BusinessException("您还没有点赞过，不能取消点赞！");
+            }
+        }
+
+        // 更新Redis中的点赞状态
+        redisTemplate.opsForHash().put(likeKey, userId.toString(), "0");
+
+        // 设置随机过期时间
+        int randomInt = RandomUtil.randomInt(24 * 60 * 60); // 随机过期时间
+        redisTemplate.expire(likeKey, randomInt, TimeUnit.SECONDS);
+
+        // 发布Disruptor事件
+        publishLikeEvent(LikeEvent.builder()
+                .userId(userId)
+                .type(LikeType.valueOf(type))
+                .targetId(targetId)
+                .status(true)
+                .createTime(LocalDateTime.now())
+                .build());
+    }
+
+
+    @Override
+    public boolean checkStatus(Long userId, Integer type, Long targetId) {
+        return likeRepository.checkStatus(userId, type, targetId);
     }
 
     private void publishLikeEvent(LikeEvent likeEvent) {

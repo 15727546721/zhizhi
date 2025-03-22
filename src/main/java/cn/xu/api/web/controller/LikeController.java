@@ -31,8 +31,7 @@ public class LikeController {
         likeService.like(
                 request.getUserId(),
                 LikeType.valueOf(request.getType()).getValue(),
-                request.getTargetId(),
-                1);
+                request.getTargetId());
         return ResponseEntity.<Void>builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .info("点赞成功")
@@ -45,8 +44,7 @@ public class LikeController {
         likeService.like(
                 request.getUserId(),
                 LikeType.valueOf(request.getType()).getValue(),
-                request.getTargetId(),
-                0);
+                request.getTargetId());
         return ResponseEntity.<Void>builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .info("点赞成功")

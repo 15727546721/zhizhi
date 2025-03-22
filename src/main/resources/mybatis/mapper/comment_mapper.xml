@@ -3,7 +3,7 @@
 <mapper namespace="cn.xu.infrastructure.persistent.dao.ICommentDao">
     <resultMap id="BaseResultMap" type="cn.xu.infrastructure.persistent.po.Comment">
         <id column="id" property="id" jdbcType="BIGINT"/>
-        <result column="type" property="type" jdbcType="INTEGER"/>
+        <result column="target_type" property="targetType" jdbcType="INTEGER"/>
         <result column="target_id" property="targetId" jdbcType="BIGINT"/>
         <result column="parent_id" property="parentId" jdbcType="BIGINT"/>
         <result column="user_id" property="userId" jdbcType="BIGINT"/>
@@ -15,20 +15,62 @@
         <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
     </resultMap>
 
+    <resultMap id="CommentWithUserMap" type="cn.xu.domain.comment.model.entity.CommentEntity">
+        <!-- 评论表字段映射 -->
+        <id column="id" property="id"/>
+        <result column="target_type" property="targetType"/>
+        <result column="target_id" property="targetId"/>
+        <result column="parent_id" property="parentId"/>
+        <result column="content" property="content"/>
+        <result column="like_count" property="likeCount"/>
+        <result column="reply_count" property="replyCount"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+
+        <!-- 评论用户信息映射 -->
+        <association property="user" javaType="cn.xu.domain.user.model.entity.UserEntity">
+            <id column="id" property="id"/>
+            <result column="user_username" property="username"/>
+            <result column="user_nickname" property="nickname"/>
+            <result column="user_avatar" property="avatar"/>
+            <result column="user_gender" property="gender"/>
+            <result column="user_region" property="region"/>
+            <result column="user_description" property="description"/>
+            <result column="user_follow_count" property="followCount"/>
+            <result column="user_fans_count" property="fansCount"/>
+            <result column="user_like_count" property="likeCount"/>
+        </association>
+
+        <!-- 被回复用户信息映射 -->
+        <association property="replyUser" javaType="cn.xu.domain.user.model.entity.UserEntity">
+            <id column="id" property="id"/>
+            <result column="reply_user_username" property="username"/>
+            <result column="reply_user_nickname" property="nickname"/>
+            <result column="reply_user_avatar" property="avatar"/>
+            <result column="reply_user_gender" property="gender"/>
+            <result column="reply_user_region" property="region"/>
+            <result column="reply_user_description" property="description"/>
+            <result column="reply_user_follow_count" property="followCount"/>
+            <result column="reply_user_fans_count" property="fansCount"/>
+            <result column="reply_user_like_count" property="likeCount"/>
+        </association>
+    </resultMap>
+
     <sql id="Base_Column_List">
-        id, type, target_id, parent_id, user_id, reply_user_id, content,
-        like_count, reply_count, create_time, update_time
+        id
+        , target_type, target_id, parent_id, user_id, reply_user_id, `content`, like_count, reply_count, create_time, update_time
     </sql>
 
     <insert id="insert" parameterType="cn.xu.infrastructure.persistent.po.Comment" useGeneratedKeys="true"
             keyProperty="id">
-        insert into comment (type, target_id, parent_id, user_id, reply_user_id, content, create_time, update_time)
-        values (#{type}, #{targetId}, #{parentId}, #{userId}, #{replyUserId}, #{content}, #{createTime},
+        insert into comment (target_type, target_id, parent_id, user_id, reply_user_id, content, create_time,
+                             update_time)
+        values (#{targetType}, #{targetId}, #{parentId}, #{userId}, #{replyUserId}, #{content}, #{createTime},
                 #{updateTime})
     </insert>
     <update id="updateLikeCount">
         UPDATE comment
-        SET like_count = #{count}
+        SET like_count = like_count + #{count}
         WHERE target_id = #{targetId}
     </update>
     <update id="updateCommentCount">
@@ -38,7 +80,9 @@
     </update>
 
     <delete id="deleteById">
-        delete from comment where id = #{id}
+        delete
+        from comment
+        where id = #{id}
     </delete>
 
     <select id="findById" resultMap="BaseResultMap">
@@ -52,7 +96,7 @@
         SELECT
         <include refid="Base_Column_List"/>
         FROM comment
-        WHERE type = #{type}
+        WHERE target_type = #{targetType}
         AND target_id = #{targetId}
         ORDER BY create_time DESC
     </select>
@@ -75,8 +119,10 @@
     </delete>
 
     <delete id="deleteByTypeAndTargetId" parameterType="map">
-        DELETE FROM comment
-        WHERE type = #{type} AND target_id = #{targetId}
+        DELETE
+        FROM comment
+        WHERE target_type = #{targetType}
+          AND target_id = #{targetId}
     </delete>
 
     <!-- 查询一级评论列表 -->
@@ -86,8 +132,8 @@
         FROM comment
         WHERE target_id = #{targetId}
         AND parent_id IS NULL
-        <if test="type != null">
-            AND type = #{type}
+        <if test="target_type != null">
+            AND target_type = #{targetType}
         </if>
         ORDER BY create_time DESC
     </select>
@@ -108,8 +154,8 @@
         <include refid="Base_Column_List"/>
         FROM comment
         WHERE parent_id IS NULL
-        <if test="type != null">
-            AND type = #{type}
+        <if test="targetType != null">
+            AND target_type = #{targetType}
         </if>
         <if test="targetId != null">
             AND target_id = #{targetId}
@@ -118,30 +164,19 @@
         LIMIT #{offset}, #{limit}
     </select>
 
-    <!-- 统计一级评论总数 -->
-    <select id="countRootComments" resultType="long">
-        SELECT COUNT(*)
-        FROM comment
-        WHERE parent_id IS NULL
-        <if test="type != null">
-            AND type = #{type}
-        </if>
-        <if test="userId != null">
-            AND user_id = #{userId}
-        </if>
-    </select>
 
     <!-- 根据ID查询评论 -->
     <select id="selectById" resultMap="BaseResultMap">
-        SELECT 
+        SELECT
         <include refid="Base_Column_List"/>
         FROM comment
         WHERE id = #{id}
     </select>
-    
+
     <!-- 根据父评论ID删除所有子评论 -->
     <delete id="deleteByParentId">
-        DELETE FROM comment 
+        DELETE
+        FROM comment
         WHERE parent_id = #{parentId}
     </delete>
 
@@ -157,5 +192,178 @@
         ORDER BY create_time ASC
     </select>
 
-    <!-- 根据父评论ID删除所有子评论 -->
+    <select id="findByTargetWithSort" resultMap="CommentWithUserMap">
+        SELECT
+        c.id, c.target_type, c.target_id, c.parent_id,
+        c.user_id, c.reply_user_id, c.content,
+        c.like_count, c.create_time,
+        u.id as user_id, u.username as user_username, u.nickname as user_nickname, u.avatar as user_avatar,
+        u.gender as user_gender, u.region as user_region, u.description as user_description,
+        u.follow_count as user_follow_count, u.fans_count as user_fans_count, u.like_count as user_like_count,
+        ru.id as reply_user_id, ru.username as reply_user_username, ru.nickname as reply_user_nickname, ru.avatar as
+        reply_user_avatar,
+        ru.gender as reply_user_gender, ru.region as reply_user_region, ru.description as reply_user_description,
+        ru.follow_count as reply_user_follow_count, ru.fans_count as reply_user_fans_count, ru.like_count as
+        reply_user_like_count
+        FROM comment c
+        LEFT JOIN user u ON c.user_id = u.id
+        LEFT JOIN user ru ON c.reply_user_id = ru.id
+        WHERE c.target_type = #{targetType}
+        AND c.target_id = #{targetId}
+        <choose>
+            <when test="sortType.name() == 'HOT'">
+                ORDER BY c.like_count DESC, c.create_time DESC
+            </when>
+            <otherwise>
+                ORDER BY c.create_time DESC
+            </otherwise>
+        </choose>
+    </select>
+    <select id="selectRootComments" parameterType="cn.xu.api.web.model.dto.comment.CommentQueryRequest"
+            resultType="cn.xu.domain.comment.model.entity.CommentEntity">
+        SELECT
+        c.*
+        FROM comment c
+        WHERE c.target_type = #{targetType}
+        AND c.target_id = #{targetId}
+        AND c.parent_id IS NULL
+        <choose>
+            <when test="sortType.name() == 'HOT'">
+                ORDER BY c.like_count DESC, c.create_time DESC
+            </when>
+            <otherwise>
+                ORDER BY c.create_time DESC
+            </otherwise>
+        </choose>
+        LIMIT #{pageSize} OFFSET (#{pageNo} - 1) * #{pageSize};
+    </select>
+
+    <select id="selectChildComments" resultType="cn.xu.domain.comment.model.entity.CommentEntity">
+        SELECT
+        c.*
+        FROM comment c
+        WHERE c.parent_id = #{parentId}
+        <choose>
+            <when test="sortType.name() == 'HOT'">
+                ORDER BY c.like_count DESC, c.create_time DESC
+            </when>
+            <otherwise>
+                ORDER BY c.create_time DESC
+            </otherwise>
+        </choose>
+        LIMIT #{pageSize} OFFSET (#{pageNo} - 1) * #{pageSize};
+    </select>
+
+    <!-- 分页查询一级评论（包含用户信息） -->
+    <select id="findRootCommentsWithUser" resultMap="CommentWithUserMap">
+        SELECT
+        c.*,
+        u.id as user_id, u.username as user_username, u.nickname as user_nickname, u.avatar as user_avatar,
+        u.gender as user_gender, u.region as user_region, u.description as user_description,
+        u.follow_count as user_follow_count, u.fans_count as user_fans_count, u.like_count as user_like_count
+        FROM comment c
+        LEFT JOIN user u ON c.user_id = u.id
+        WHERE c.target_type = #{targetType}
+        AND c.target_id = #{targetId}
+        AND c.parent_id IS NULL
+        <choose>
+            <when test="sortType.name() == 'HOT'">
+                ORDER BY c.like_count DESC, c.create_time DESC
+            </when>
+            <otherwise>
+                ORDER BY c.create_time DESC
+            </otherwise>
+        </choose>
+        LIMIT #{pageSize} OFFSET (#{pageNo} - 1) * #{pageSize}
+    </select>
+
+    <!-- 查询一级评论下的子评论（包含用户信息） -->
+    <select id="findChildCommentsWithUser" resultMap="CommentWithUserMap">
+        SELECT
+        c.*,
+        u.id as user_id, u.username as user_username, u.nickname as user_nickname, u.avatar as user_avatar,
+        u.gender as user_gender, u.region as user_region, u.description as user_description,
+        u.follow_count as user_follow_count, u.fans_count as user_fans_count, u.like_count as user_like_count,
+        ru.id as reply_user_id, ru.username as reply_user_username, ru.nickname as reply_user_nickname,
+        ru.avatar as reply_user_avatar, ru.gender as reply_user_gender, ru.region as reply_user_region,
+        ru.description as reply_user_description, ru.follow_count as reply_user_follow_count,
+        ru.fans_count as reply_user_fans_count, ru.like_count as reply_user_like_count
+        FROM comment c
+        LEFT JOIN user u ON c.user_id = u.id
+        LEFT JOIN user ru ON c.reply_user_id = ru.id
+        WHERE c.parent_id IN
+        <foreach collection="parentIds" item="parentId" open="(" separator="," close=")">
+            #{parentId}
+        </foreach>
+        ORDER BY c.create_time ASC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 统计一级评论总数 -->
+    <select id="countRootComments" resultType="long">
+        SELECT COUNT(*)
+        FROM comment
+        WHERE target_type = #{targetType}
+          AND target_id = #{targetId}
+          AND parent_id IS NULL
+    </select>
+
+    <!-- 统计子评论总数 -->
+    <select id="countChildComments" resultType="long">
+        SELECT COUNT(*)
+        FROM comment
+        WHERE parent_id = #{parentId}
+    </select>
+    <select id="findRootCommentList" parameterType="cn.xu.api.web.model.dto.comment.CommentQueryRequest"
+            resultType="cn.xu.infrastructure.persistent.po.Comment">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM comment
+        WHERE parent_id IS NULL
+        AND target_type = #{targetType}
+        AND target_id = #{targetId}
+        <if test="sortType == 'HOT'">
+            ORDER BY like_count DESC, create_time DESC
+        </if>
+        <if test="sortType == 'NEW'">
+            ORDER BY create_time DESC
+        </if>
+        LIMIT 10 OFFSET 0;
+    </select>
+
+    <select id="findReplyListByPage" resultType="cn.xu.infrastructure.persistent.po.Comment">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM comment
+        WHERE parent_id IN
+        <foreach collection="parentIds" item="parentId" open="(" separator="," close=")">
+            #{parentId}
+        </foreach>
+        <if test="sortType.name() == 'HOT'">
+            ORDER BY like_count DESC, create_time DESC
+        </if>
+        <if test="sortType.name() == 'NEW'">
+            ORDER BY create_time DESC
+        </if>
+        LIMIT 10 OFFSET 0;
+    </select>
+
+    <!-- 批量更新评论点赞数 -->
+    <update id="batchUpdateLikeCount">
+        <foreach collection="list" item="item" separator=";">
+            UPDATE comment
+            SET like_count = #{item.likeCount}
+            WHERE id = #{item.id}
+        </foreach>
+    </update>
+
+    <!-- 批量更新评论回复数 -->
+    <update id="batchUpdateReplyCount">
+        <foreach collection="list" item="item" separator=";">
+            UPDATE comment
+            SET reply_count = #{item.replyCount}
+            WHERE id = #{item.id}
+        </foreach>
+    </update>
+
 </mapper>

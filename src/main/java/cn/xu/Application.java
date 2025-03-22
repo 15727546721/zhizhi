@@ -13,7 +13,7 @@ import java.net.UnknownHostException;
 
 @Slf4j
 @SpringBootApplication
-@EnableScheduling
+//@EnableScheduling
 @Configurable
 public class Application {
 

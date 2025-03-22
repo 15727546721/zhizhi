@@ -28,7 +28,7 @@
         AND type = #{type}
         LIMIT 1
     </select>
-    <select id="findStatus" resultType="java.lang.Integer">
+    <select id="checkStatus" resultType="java.lang.Integer">
         SELECT status
         FROM `like`
         WHERE user_id = #{userId}

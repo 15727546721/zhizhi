@@ -40,9 +40,8 @@ public interface ILikeDao {
      * @param targetId
      * @return
      */
-    Integer findStatus(@Param("userId") Long userId,
+    Integer checkStatus(@Param("userId") Long userId,
                        @Param("type") Integer type,
                        @Param("targetId") Long targetId);
-
 
 }

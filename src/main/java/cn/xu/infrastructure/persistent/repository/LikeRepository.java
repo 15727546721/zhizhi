@@ -34,8 +34,12 @@ public class LikeRepository implements ILikeRepository {
     }
 
     @Override
-    public Integer findStatus(Long userId, Integer type, Long targetId) {
-        return likeDao.findStatus(userId, type, targetId);
+    public boolean checkStatus(Long userId, Integer type, Long targetId) {
+        Integer status = likeDao.checkStatus(userId, type, targetId);
+        if (status == null || status == 0) {
+            return false;
+        }
+        return true;
     }
 
     private Like convertToLike(LikeEntity likeEntity) {

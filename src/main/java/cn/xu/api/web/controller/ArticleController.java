@@ -286,7 +286,7 @@ public class ArticleController {
     @Operation(summary = "文章点赞")
     public ResponseEntity<?> likeArticle(@PathVariable("id") Long id) {
         Long userId = StpUtil.getLoginIdAsLong();
-        likeService.like(userId, LikeType.ARTICLE.getValue(), id, 1);
+        likeService.like(userId, LikeType.ARTICLE.getValue(), id);
         return ResponseEntity.builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .info("文章点赞成功")
@@ -297,7 +297,7 @@ public class ArticleController {
     @Operation(summary = "取消文章点赞")
     public ResponseEntity<?> unlikeArticle(@PathVariable("id") Long articleId) {
         Long userId = StpUtil.getLoginIdAsLong();
-        likeService.like(userId, LikeType.ARTICLE.getValue(), articleId, 0);
+        likeService.like(userId, LikeType.ARTICLE.getValue(), articleId);
         return ResponseEntity.builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .info("文章取消点赞成功")

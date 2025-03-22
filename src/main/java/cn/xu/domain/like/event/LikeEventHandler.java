@@ -1,6 +1,9 @@
 package cn.xu.domain.like.event;
 
+import cn.xu.domain.like.model.LikeType;
 import cn.xu.infrastructure.common.utils.RedisKeys;
+import cn.xu.infrastructure.persistent.dao.IArticleDao;
+import cn.xu.infrastructure.persistent.dao.ICommentDao;
 import cn.xu.infrastructure.persistent.dao.ILikeDao;
 import cn.xu.infrastructure.persistent.po.Like;
 import com.lmax.disruptor.EventHandler;
@@ -25,9 +28,12 @@ public class LikeEventHandler implements EventHandler<LikeEvent> {
 
     @Resource
     private RedisTemplate<String, String> redisTemplate;
-
-    @Autowired
+    @Resource
     private ILikeDao likeDao;
+    @Resource
+    private IArticleDao articleDao;
+    @Resource
+    private ICommentDao commentDao;
 
     @Override
     public void onEvent(LikeEvent event, long sequence, boolean endOfBatch) {
@@ -36,12 +42,13 @@ public class LikeEventHandler implements EventHandler<LikeEvent> {
             // 更新MySQL点赞记录
             Like like = likeDao.findByUserIdAndTypeAndTargetId(
                     event.getUserId(), event.getType().getValue(), event.getTargetId());
+            int status = event.getStatus() == null ? 1 : (event.getStatus() ? 1 : 0);
             if (like == null) {
                 likeDao.save(Like.builder()
                         .userId(event.getUserId())
                         .targetId(event.getTargetId())
                         .type(event.getType().getValue())
-                        .status(event.getStatus() == null ? 1 : (event.getStatus() ? 1 : 0))
+                        .status(status)
                         .createTime(event.getCreateTime())
                         .build());
             } else {
@@ -49,18 +56,17 @@ public class LikeEventHandler implements EventHandler<LikeEvent> {
                 likeDao.updateStatus(event.getUserId(),
                         event.getType().getValue(),
                         event.getTargetId(),
-                        event.getStatus() ? 1 : 0);
+                        status);
             }
-            String countKey = RedisKeys.likeCountKey(event.getType().getValue(), event.getTargetId());
-            // 调用Redis Lua脚本, 执行点赞操作
-            DefaultRedisScript<Long> script = new DefaultRedisScript<>();
-            // Lua 脚本路径
-            script.setScriptSource(new ResourceScriptSource(new ClassPathResource("/lua/like_count.lua")));
-            // 返回值类型
-            script.setResultType(Long.class);
-            Long execute = redisTemplate.execute(script, Collections.singletonList(countKey), event.getStatus() ? 1 : -1);
-            if (execute == null || execute == -1) {
-                log.error("点赞计数有误");
+            switch (event.getType()) {
+                case ARTICLE:
+                    articleDao.updateLikeCount(event.getTargetId(), status == 1 ? 1 : -1);
+                    break;
+                case COMMENT:
+                    commentDao.updateLikeCount(event.getTargetId(), status == 1 ? 1 : -1);
+                    break;
+                default:
+                    break;
             }
         } catch (Exception e) {
             log.error("点赞记录查询失败", e);
