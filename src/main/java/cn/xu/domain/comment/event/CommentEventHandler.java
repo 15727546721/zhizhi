@@ -1,6 +1,5 @@
 package cn.xu.domain.comment.event;
 
-import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.persistent.dao.IArticleDao;
 import cn.xu.infrastructure.persistent.dao.ICommentDao;
 import com.lmax.disruptor.EventHandler;

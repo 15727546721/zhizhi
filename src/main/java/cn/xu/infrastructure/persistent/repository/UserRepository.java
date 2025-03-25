@@ -36,13 +36,12 @@ public class UserRepository implements IUserRepository {
 
     @Override
     public UserEntity save(UserEntity user) {
-        User userPO = convertToUserPO(user);
         if (user.getId() == null) {
-            userDao.insert(userPO);
+            userDao.insert(user);
         } else {
-            userDao.update(userPO);
+            userDao.update(user);
         }
-        return convertToUserEntity(userPO);
+        return user;
     }
 
     @Override
@@ -147,6 +146,11 @@ public class UserRepository implements IUserRepository {
     @Override
     public String getNicknameById(Long userId) {
         return userDao.selectById(userId).getNickname();
+    }
+
+    @Override
+    public void update(UserEntity userEntity) {
+        userDao.update(userEntity);
     }
 
     private UserEntity convertToUserEntity(User user) {

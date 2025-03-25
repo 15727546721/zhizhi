@@ -80,4 +80,11 @@ public interface IUserRepository {
      * @return
      */
     String getNicknameById(Long userId);
+
+    /**
+     * 更新用户信息
+     *
+     * @param userEntity
+     */
+    void update(UserEntity userEntity);
 }

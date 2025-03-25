@@ -1,6 +1,5 @@
 package cn.xu.infrastructure.persistent.po;
 
-import cn.xu.domain.comment.model.valueobject.CommentType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -29,7 +28,7 @@ public class Comment implements Serializable {
     /**
      * 评论类型，如1-文章；2-话题
      */
-    private Integer type;
+    private Integer targetType;
 
     /**
      * 评论来源的标识符
@@ -76,11 +75,4 @@ public class Comment implements Serializable {
      */
     private LocalDateTime updateTime;
 
-    public CommentType getCommentType() {
-        return type != null ? CommentType.of(type) : null;
-    }
-
-    public void setCommentType(CommentType commentType) {
-        this.type = commentType != null ? commentType.getValue() : null;
-    }
 }

@@ -4,11 +4,8 @@ import cn.xu.domain.article.model.entity.ArticleEntity;
 import cn.xu.domain.user.model.entity.UserEntity;
 import lombok.Data;
 
-import java.util.List;
-
 @Data
-public class ArticleListVO {
-    ArticleEntity article;
-    UserEntity user;
-    private List<String> tagNameList;
+public class ArticleListPageVO {
+    private ArticleEntity article;
+    private UserEntity user;
 }

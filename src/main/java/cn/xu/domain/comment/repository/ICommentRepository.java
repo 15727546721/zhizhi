@@ -1,6 +1,8 @@
 package cn.xu.domain.comment.repository;
 
+import cn.xu.api.web.model.dto.comment.CommentQueryRequest;
 import cn.xu.domain.comment.model.entity.CommentEntity;
+import cn.xu.domain.comment.model.valueobject.CommentSortType;
 
 import java.util.List;
 
@@ -112,4 +114,17 @@ public interface ICommentRepository {
      * @return 子评论列表
      */
     List<CommentEntity> findRepliesByParentIds(List<Long> parentIds);
+
+    /**
+     * 根据评论ID列表查询评论
+     *
+     * @param request
+     * @return
+     */
+    List<CommentEntity> findRootCommentList(CommentQueryRequest request);
+
+    /**
+     * 根据评论ID列表分页查询子评论
+     */
+    List<CommentEntity> findReplyListByPage(List<Long> parentIds, CommentSortType sortType, Integer page, Integer size);
 }

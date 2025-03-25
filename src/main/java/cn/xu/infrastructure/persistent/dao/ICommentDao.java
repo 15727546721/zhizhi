@@ -1,5 +1,7 @@
 package cn.xu.infrastructure.persistent.dao;
 
+import cn.xu.api.web.model.dto.comment.CommentQueryRequest;
+import cn.xu.domain.comment.model.valueobject.CommentSortType;
 import cn.xu.infrastructure.persistent.po.Comment;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -92,12 +94,12 @@ public interface ICommentDao {
      * @param userId 用户ID（可选）
      * @return 评论总数
      */
-    long countRootComments(@Param("type") Integer type, @Param("userId") Long userId);
+    long countRootComments(@Param("targetType") Integer targetType, @Param("userId") Long userId);
 
     /**
      * 分页查询一级评论列表
      */
-    List<Comment> findRootCommentsByPage(@Param("type") Integer type, 
+    List<Comment> findRootCommentsByPage(@Param("targetType") Integer targetType,
                                        @Param("targetId") Long targetId,
                                        @Param("offset") int offset, 
                                        @Param("limit") int limit);
@@ -132,4 +134,20 @@ public interface ICommentDao {
      * @param count
      */
     void updateCommentCount(@Param("commentId") Long commentId, @Param("count") int count);
+
+    /**
+     * 根据条件查询一级评论列表
+     *
+     * @param request
+     * @return
+     */
+    List<Comment> findRootCommentList(CommentQueryRequest request);
+
+    /**
+     * 根据条件查询二级评论列表
+     */
+    List<Comment> findReplyListByPage(@Param("parentIds") List<Long> parentIds,
+                                      @Param("sortType") CommentSortType sortType,
+                                      @Param("pageNo") Integer pageNo,
+                                      @Param("pageSize") Integer pageSize);
 }

@@ -1,8 +1,9 @@
 package cn.xu.infrastructure.persistent.repository;
 
+import cn.xu.api.web.model.dto.comment.CommentQueryRequest;
 import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.comment.model.entity.CommentEntity;
-import cn.xu.domain.comment.model.valueobject.CommentType;
+import cn.xu.domain.comment.model.valueobject.CommentSortType;
 import cn.xu.domain.comment.repository.ICommentRepository;
 import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.persistent.dao.ICommentDao;
@@ -45,7 +46,7 @@ public class CommentRepository implements ICommentRepository {
     public List<CommentEntity> getArticleComments(Long articleId) {
         return commentDao.findByTypeAndTargetId(1, articleId)
                 .stream()
-                .map(this::convertToCommentEntity)
+                .map(this::convertToEntity)
                 .collect(Collectors.toList());
     }
 
@@ -53,7 +54,7 @@ public class CommentRepository implements ICommentRepository {
     public List<CommentEntity> getTopicComments(Long topicId) {
         return commentDao.findByTypeAndTargetId(2, topicId)
                 .stream()
-                .map(this::convertToCommentEntity)
+                .map(this::convertToEntity)
                 .collect(Collectors.toList());
     }
 
@@ -92,7 +93,7 @@ public class CommentRepository implements ICommentRepository {
             }
 
             List<CommentEntity> commentEntities = comments.stream()
-                    .map(this::convertToCommentEntity)
+                    .map(this::convertToEntity)
                     .collect(Collectors.toList());
 
             log.info("查询到评论数量: {}", commentEntities.size());
@@ -115,7 +116,7 @@ public class CommentRepository implements ICommentRepository {
             }
 
             List<CommentEntity> commentEntities = comments.stream()
-                    .map(this::convertToCommentEntity)
+                    .map(this::convertToEntity)
                     .collect(Collectors.toList());
 
             log.info("查询到子评论数量: {}", commentEntities.size());
@@ -166,7 +167,7 @@ public class CommentRepository implements ICommentRepository {
                 return new ArrayList<>();
             }
             return comments.stream()
-                    .map(this::convertToCommentEntity)
+                    .map(this::convertToEntity)
                     .collect(Collectors.toList());
         } catch (Exception e) {
             log.error("查询一级评论列表失败 - targetId: {}, type: {}", targetId, type, e);
@@ -182,7 +183,7 @@ public class CommentRepository implements ICommentRepository {
                 return new ArrayList<>();
             }
             return replies.stream()
-                    .map(this::convertToCommentEntity)
+                    .map(this::convertToEntity)
                     .collect(Collectors.toList());
         } catch (Exception e) {
             log.error("分页查询二级评论列表失败 - parentId: {}", parentId, e);
@@ -204,17 +205,17 @@ public class CommentRepository implements ICommentRepository {
     /**
      * 分页查询一级评论列表
      *
-     * @param type   评论类型（可选）
+     * @param type     评论类型（可选）
      * @param targetId 业务目标ID
-     * @param offset 偏移量
-     * @param limit  每页数量
+     * @param offset   偏移量
+     * @param limit    每页数量
      * @return 一级评论列表
      */
     @Override
     public List<CommentEntity> findRootCommentsByPage(Integer type, Long targetId, int offset, int limit) {
         try {
             log.info("分页查询一级评论列表 - type: {}, targetId: {}, offset: {}, limit: {}", type, targetId, offset, limit);
-            
+
             // 参数校验
             if (offset < 0) {
                 offset = 0;
@@ -222,50 +223,26 @@ public class CommentRepository implements ICommentRepository {
             if (limit <= 0) {
                 limit = 10;
             }
-            
+
             List<Comment> comments = commentDao.findRootCommentsByPage(type, targetId, offset, limit);
             if (comments == null || comments.isEmpty()) {
                 return new ArrayList<>();
             }
-            
+
             // 批量转换为实体对象
             List<CommentEntity> commentEntities = comments.stream()
-                    .map(this::convertToCommentEntity)
+                    .map(this::convertToEntity)
                     .collect(Collectors.toList());
-                    
+
             log.info("查询到评论数量: {}", commentEntities.size());
             return commentEntities;
-            
+
         } catch (Exception e) {
             log.error("分页查询一级评论列表失败 - type: {}, targetId: {}", type, targetId, e);
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "查询评论列表失败：" + e.getMessage());
         }
     }
 
-    /**
-     * 将PO对象转换为领域实体对象
-     */
-    private CommentEntity convertToEntity(Comment comment) {
-        if (comment == null) {
-            return null;
-        }
-        CommentEntity entity = CommentEntity.builder()
-                .id(comment.getId())
-                .userId(comment.getUserId())
-                .targetId(comment.getTargetId())
-                .content(comment.getContent())
-                .parentId(comment.getParentId())
-                .replyUserId(comment.getReplyUserId())
-                .createTime(comment.getCreateTime())
-                .updateTime(comment.getUpdateTime())
-                .build();
-        
-        if (comment.getType() != null) {
-            entity.setType(CommentType.of(comment.getType()));
-        }
-        
-        return entity;
-    }
 
     /**
      * 将评论实体转换为Comment
@@ -276,7 +253,7 @@ public class CommentRepository implements ICommentRepository {
         }
         return Comment.builder()
                 .id(entity.getId())
-                .type(entity.getType() != null ? entity.getType().getValue() : null)
+                .targetType(entity.getTargetType())
                 .targetId(entity.getTargetId())
                 .parentId(entity.getParentId())
                 .userId(entity.getUserId())
@@ -285,10 +262,6 @@ public class CommentRepository implements ICommentRepository {
                 .createTime(entity.getCreateTime())
                 .updateTime(entity.getUpdateTime())
                 .build();
-    }
-
-    private CommentEntity convertToCommentEntity(Comment comment) {
-        return convertToEntity(comment);
     }
 
     @Override
@@ -328,7 +301,7 @@ public class CommentRepository implements ICommentRepository {
             }
             List<Comment> replies = commentDao.findByParentIds(parentIds);
             List<CommentEntity> replyEntities = replies.stream()
-                    .map(this::convertToCommentEntity)
+                    .map(this::convertToEntity)
                     .collect(Collectors.toList());
             log.info("批量查询子评论成功 - parentIds: {}, count: {}", parentIds, replyEntities.size());
             return replyEntities;
@@ -336,5 +309,49 @@ public class CommentRepository implements ICommentRepository {
             log.error("批量查询子评论失败 - parentIds: {}", parentIds, e);
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "查询回复列表失败：" + e.getMessage());
         }
+    }
+
+    @Override
+    public List<CommentEntity> findRootCommentList(CommentQueryRequest request) {
+        List<Comment> rootCommentList = commentDao.findRootCommentList(request);
+        return convertCommentList(rootCommentList);
+    }
+
+    @Override
+    public List<CommentEntity> findReplyListByPage(List<Long> parentIds, CommentSortType sortType, Integer page, Integer size) {
+        List<Comment> replyList = commentDao.findReplyListByPage(parentIds, sortType, page, size);
+        return convertCommentList(replyList);
+    }
+
+    private List<CommentEntity> convertCommentList(List<Comment> comments) {
+        if (comments == null || comments.isEmpty()) {
+            return new ArrayList<>();
+        }
+        List<CommentEntity> result = new ArrayList<>();
+        for (Comment comment : comments) {
+            CommentEntity commentEntity = convertToEntity(comment);
+            result.add(commentEntity);
+        }
+        return result;
+    }
+
+    /**
+     * 将PO对象转换为领域实体对象
+     */
+    private CommentEntity convertToEntity(Comment comment) {
+        if (comment == null) {
+            return null;
+        }
+        return CommentEntity.builder()
+                .id(comment.getId())
+                .userId(comment.getUserId())
+                .targetType(comment.getTargetType())
+                .targetId(comment.getTargetId())
+                .content(comment.getContent())
+                .parentId(comment.getParentId())
+                .replyUserId(comment.getReplyUserId())
+                .createTime(comment.getCreateTime())
+                .updateTime(comment.getUpdateTime())
+                .build();
     }
 }

@@ -1,13 +1,10 @@
 package cn.xu.domain.comment.model.entity;
 
-import cn.xu.application.common.ResponseCode;
-import cn.xu.domain.comment.model.valueobject.CommentType;
-import cn.xu.infrastructure.common.exception.BusinessException;
+import cn.xu.domain.user.model.entity.UserEntity;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -25,7 +22,7 @@ public class CommentEntity {
     /**
      * 评论类型，如1-文章；2-话题
      */
-    private CommentType type;
+    private Integer targetType;
 
     /**
      * 评论来源的标识符
@@ -48,14 +45,19 @@ public class CommentEntity {
     private Long replyUserId;
 
     /**
-     * 回复的具体评论ID
-     */
-    private Long replyCommentId;
-
-    /**
      * 评论的具体内容
      */
     private String content;
+
+    /**
+     * 点赞数
+     */
+    private Long likeCount;
+
+    /**
+     * 子评论数
+     */
+    private Long replyCount;
 
     /**
      * 创建时间
@@ -67,29 +69,11 @@ public class CommentEntity {
      */
     private LocalDateTime updateTime;
 
+    private UserEntity user;
+    private UserEntity replyUser;
     /**
      * 子评论列表
      */
     private List<CommentEntity> children;
 
-    /**
-     * 验证评论数据
-     */
-    public void validate() {
-        if (type == null) {
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "评论类型不能为空");
-        }
-        if (targetId == null) {
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "评论目标ID不能为空");
-        }
-        if (userId == null) {
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "用户ID不能为空");
-        }
-        if (!StringUtils.hasText(content)) {
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "评论内容不能为空");
-        }
-        if (content.length() > 1000) {
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "评论内容不能超过1000字");
-        }
-    }
 } 

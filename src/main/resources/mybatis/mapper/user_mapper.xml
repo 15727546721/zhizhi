@@ -29,7 +29,7 @@
         , username, password, email, nickname, avatar, gender, phone, region, birthday, description, status, create_time, update_time
     </sql>
 
-    <insert id="insert" parameterType="cn.xu.infrastructure.persistent.po.User" useGeneratedKeys="true"
+    <insert id="insert" parameterType="cn.xu.domain.user.model.entity.UserEntity" useGeneratedKeys="true"
             keyProperty="id">
         INSERT INTO user (username, password, email, nickname, avatar, gender, phone, region, birthday, description,
                           status)
@@ -37,7 +37,7 @@
                 #{description}, #{status})
     </insert>
 
-    <update id="update" parameterType="cn.xu.infrastructure.persistent.po.User">
+    <update id="update" parameterType="cn.xu.domain.user.model.entity.UserEntity">
         UPDATE user
         <set>
             <if test="username != null">username = #{username},</if>

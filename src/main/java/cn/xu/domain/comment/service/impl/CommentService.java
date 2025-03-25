@@ -1,30 +1,26 @@
 package cn.xu.domain.comment.service.impl;
 
 import cn.xu.api.system.model.vo.comment.CommentReplyVO;
+import cn.xu.api.web.model.dto.comment.CommentQueryRequest;
 import cn.xu.api.web.model.dto.comment.CommentRequest;
 import cn.xu.api.web.model.vo.comment.CommentVO;
 import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.article.service.IArticleService;
+import cn.xu.domain.comment.CommentDTO;
 import cn.xu.domain.comment.event.CommentEvent;
 import cn.xu.domain.comment.model.entity.CommentEntity;
+import cn.xu.domain.comment.model.valueobject.CommentSortType;
 import cn.xu.domain.comment.model.valueobject.CommentType;
 import cn.xu.domain.comment.repository.ICommentRepository;
 import cn.xu.domain.comment.service.ICommentService;
-import cn.xu.domain.like.event.LikeEvent;
-import cn.xu.domain.notification.event.NotificationEvent;
-import cn.xu.domain.notification.event.publisher.NotificationEventPublisher;
-import cn.xu.domain.notification.model.valueobject.BusinessType;
-import cn.xu.domain.notification.model.valueobject.NotificationType;
 import cn.xu.domain.topic.service.ITopicService;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.service.IUserService;
 import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.common.request.PageRequest;
 import cn.xu.infrastructure.common.response.PageResponse;
-import cn.xu.infrastructure.persistent.po.Comment;
 import com.lmax.disruptor.RingBuffer;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -50,8 +46,8 @@ public class CommentService implements ICommentService {
 
     @Resource
     private RingBuffer<CommentEvent> ringBuffer;
-    @Resource
-    private NotificationEventPublisher notificationEventPublisher;
+//    @Resource
+//    private NotificationEventPublisher notificationEventPublisher;
 
 
     @Override
@@ -70,7 +66,7 @@ public class CommentService implements ICommentService {
 
             // 2. 构建评论实体
             CommentEntity commentEntity = CommentEntity.builder()
-                    .type(CommentType.of(request.getType()))
+                    .targetType(request.getType())
                     .targetId(request.getTargetId())
                     .parentId(request.getParentId())
                     .userId(currentUserId)
@@ -79,7 +75,6 @@ public class CommentService implements ICommentService {
                     .build();
 
             // 3. 验证评论数据
-            commentEntity.validate();
 
             // 4. 保存评论
             Long commentId = commentRepository.save(commentEntity);
@@ -95,14 +90,7 @@ public class CommentService implements ICommentService {
                     .replyUserId(commentEntity.getReplyUserId())
                     .build());
 
-            // 5. 处理评论并发送消息
-            if (request.getParentId() != null) {
-                // 回复评论的情况
-                handleReplyComment(commentEntity, currentUser);
-            } else {
-                // 一级评论的情况
-                handleRootComment(commentEntity, currentUser);
-            }
+            // 6. 处理评论并发送消息
 
         } catch (BusinessException e) {
             log.error("保存评论失败 - error: {}", e.getMessage());
@@ -110,118 +98,6 @@ public class CommentService implements ICommentService {
         } catch (Exception e) {
             log.error("保存评论发生未知错误", e);
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "保存评论失败：" + e.getMessage());
-        }
-    }
-
-    /**
-     * 处理回复评论
-     */
-    private void handleReplyComment(CommentEntity comment, UserEntity currentUser) {
-        // 1. 获取父评论
-        CommentEntity parentComment = getCommentById(comment.getParentId());
-        if (parentComment == null) {
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "回复的评论不存在");
-        }
-
-        // 2. 确保回复的是一级评论
-        if (parentComment.getParentId() != null) {
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "只能回复一级评论");
-        }
-
-        // 3. 获取被回复用户信息
-        UserEntity replyToUser = userService.getUserById(parentComment.getUserId());
-        if (replyToUser == null) {
-            log.warn("被回复的用户不存在 - userId: {}", parentComment.getUserId());
-            return;
-        }
-
-        // 4. 发送通知
-        notificationEventPublisher.publishEvent(NotificationEvent.builder()
-                .type(NotificationType.REPLY)
-                .senderId(currentUser.getId())
-                .receiverId(replyToUser.getId())
-                .businessId(comment.getId())
-                .businessType(BusinessType.getType(parentComment.getType().getValue()))
-                .content(comment.getContent())
-                .build());
-    }
-
-    /**
-     * 处理一级评论
-     * 根据评论类型分别处理文章评论、话题评论等
-     */
-    private void handleRootComment(CommentEntity comment, UserEntity currentUser) {
-        log.debug("[评论服务] 开始处理一级评论 - type: {}, targetId: {}, userId: {}",
-                comment.getType(), comment.getTargetId(), currentUser.getId());
-
-        // 根据评论类型处理评论
-        if (CommentType.getCommentType(comment.getType().getValue()) == null) {
-            log.warn("[评论服务] 未知的评论类型 - type: {}", comment.getType());
-        }
-        handleComment(comment, currentUser);
-    }
-
-    /**
-     * 处理文章评论
-     */
-    private void handleComment(CommentEntity comment, UserEntity currentUser) {
-        Long authorId = null;
-        if (comment.getType().equals(CommentType.ARTICLE)) {
-            authorId = articleService.getArticleAuthorId(comment.getTargetId());
-        } else if (comment.getType().equals(CommentType.TOPIC)) {
-            authorId = topicService.getTopicAuthorId(comment.getTargetId());
-        }
-
-        if (authorId == null) {
-            log.warn("[评论服务] 无法获取作者信息 - targetId: {}", comment.getTargetId());
-            return;
-        }
-
-        UserEntity author = userService.getUserById(authorId);
-        if (author == null) {
-            log.warn("[评论服务] 作者信息不存在 - authorId: {}", authorId);
-            return;
-        }
-
-        // 如果评论者不是作者本人，才发送消息通知
-        if (!authorId.equals(currentUser.getId())) {
-            sendCommentNotification(currentUser, author, comment);
-        } else {
-            log.debug("[评论服务] 作者评论自己的内容，不发送通知 - authorId: {}", authorId);
-        }
-    }
-
-
-    /**
-     * 发送评论通知
-     */
-    private void sendCommentNotification(UserEntity fromUser, UserEntity toUser, CommentEntity comment) {
-
-        notificationEventPublisher.publishEvent(NotificationEvent.builder()
-                .type(NotificationType.COMMENT)
-                .senderId(fromUser.getId())
-                .receiverId(toUser.getId())
-                .businessId(comment.getId())
-                .businessType(BusinessType.getType(comment.getType().getValue()))
-                .content(comment.getContent())
-                .build());
-        log.debug("[评论服务] 已发送评论通知 - from: {}, to: {}", fromUser.getId(), toUser.getId());
-    }
-
-    /**
-     * 获取评论目标类型的描述
-     */
-    private String getCommentTargetType(CommentType type) {
-        if (type == null) {
-            return "内容";
-        }
-        switch (type) {
-            case ARTICLE:
-                return "文章";
-            case TOPIC:
-                return "话题";
-            default:
-                return "内容";
         }
     }
 
@@ -395,6 +271,61 @@ public class CommentService implements ICommentService {
         }
     }
 
+    @Override
+    public List<CommentEntity> getCommentList(CommentQueryRequest request) {
+        log.info("获取评论列表 - request: {}", request);
+        CommentSortType sortType = CommentSortType.valueOf(request.getSortType().toUpperCase());
+        // 1. 获取评论列表
+        List<CommentEntity> comments = commentRepository.findRootCommentList(request);
+        if (comments.isEmpty()) {
+            return Collections.emptyList();
+        }
+        // 2. 获取子评论
+        List<Long> commentIds = comments.stream()
+                .map(CommentEntity::getId)
+                .collect(Collectors.toList());
+        List<CommentEntity> replyListByPage = commentRepository.findReplyListByPage(commentIds, sortType, 1, 2);
+
+        // 3. 获取用户信息
+        Set<Long> rootCommentUserIds = comments.stream()
+                .map(CommentEntity::getUserId)
+                .collect(Collectors.toSet());
+        Set<Long> replyUserIds1 = replyListByPage.stream()
+                .map(CommentEntity::getUserId) // 假设 parentId 是被回复的评论的作者 userId
+                .collect(Collectors.toSet());
+        Set<Long> replyUserIds2 = replyListByPage.stream()
+                .map(CommentEntity::getReplyUserId) // 假设 parentId 是被回复的评论的作者 userId
+                .collect(Collectors.toSet());
+        rootCommentUserIds.addAll(replyUserIds1);
+        rootCommentUserIds.addAll(replyUserIds2);
+        Map<Long, UserEntity> userMap = userService.getBatchUserInfo(rootCommentUserIds);
+
+        // 4. 构建评论树并设置用户信息
+        comments.forEach(comment -> {
+            // 设置根评论的用户信息
+            comment.setUser(userMap.get(comment.getUserId()));
+
+            List<CommentEntity> commentReplies = replyListByPage.stream()
+                    .filter(reply -> reply.getParentId().equals(comment.getId()))
+                    .collect(Collectors.toList());
+
+            // 设置子评论的用户信息及其 replyUserId
+            commentReplies.forEach(reply -> {
+                reply.setUser(userMap.get(reply.getUserId()));
+                reply.setReplyUser(userMap.get(reply.getParentId())); // 假设 parentId 是被回复的评论的作者 userId
+            });
+
+            comment.setChildren(commentReplies);
+        });
+
+        return comments;
+    }
+
+    @Override
+    public List<CommentDTO> getComments(Long targetId, Integer targetType, Integer page, Integer size, String sortBy) {
+        return null;
+    }
+
     /**
      * 分页获取一级评论列表（包含用户信息）
      *
@@ -532,27 +463,7 @@ public class CommentService implements ICommentService {
         }
         return CommentVO.builder()
                 .id(entity.getId())
-                .type(entity.getType().getValue())
-                .targetId(entity.getTargetId())
-                .parentId(entity.getParentId())
-                .userId(entity.getUserId())
-                .replyUserId(entity.getReplyUserId())
-                .content(entity.getContent())
-                .createTime(entity.getCreateTime())
-                .updateTime(entity.getUpdateTime())
-                .build();
-    }
-
-    /**
-     * 将评论实体转换为Comment
-     */
-    private Comment convertToComment(CommentEntity entity) {
-        if (entity == null) {
-            return null;
-        }
-        return Comment.builder()
-                .id(entity.getId())
-                .type(entity.getType() != null ? entity.getType().getValue() : null)
+                .type(entity.getTargetType())
                 .targetId(entity.getTargetId())
                 .parentId(entity.getParentId())
                 .userId(entity.getUserId())

@@ -5,6 +5,7 @@ import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.api.system.model.dto.user.UserRequest;
 import cn.xu.api.web.model.dto.user.LoginRequest;
 import cn.xu.api.web.model.dto.user.RegisterRequest;
+import cn.xu.api.web.model.dto.user.UserUpdateRequest;
 import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.file.service.IFileStorageService;
 import cn.xu.domain.user.model.entity.UserEntity;
@@ -65,6 +66,24 @@ public class UserServiceImpl implements IUserService {
     @Override
     public String getNicknameById(Long userId) {
         return userRepository.getNicknameById(userId);
+    }
+
+    @Override
+    public void update(UserUpdateRequest user) {
+        UserEntity userEntity = getUserById(user.getId());
+        if (userEntity == null) {
+            log.error("[用户服务] 更新用户信息失败：用户不存在");
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "用户不存在");
+        }
+        userEntity.setNickname(user.getNickname());
+        userEntity.setAvatar(user.getAvatar());
+        userEntity.setGender(user.getGender());
+        userEntity.setRegion(user.getRegion());
+        userEntity.setBirthday(user.getBirthday());
+        userEntity.setDescription(user.getDescription());
+        userEntity.setPhone(user.getPhone());
+        userEntity.setUpdateTime(LocalDateTime.now());
+        userRepository.update(userEntity);
     }
 
     @Override

@@ -1,8 +1,6 @@
 package cn.xu.infrastructure.persistent.dao;
 
 import cn.xu.api.system.model.dto.article.ArticleRequest;
-import cn.xu.api.web.model.dto.article.ArticlePageRequest;
-import cn.xu.api.web.model.vo.article.ArticleListPageVO;
 import cn.xu.api.web.model.vo.article.ArticleListVO;
 import cn.xu.api.web.model.vo.article.ArticlePageVO;
 import cn.xu.domain.article.model.entity.ArticleEntity;

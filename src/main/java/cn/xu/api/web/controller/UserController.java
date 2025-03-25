@@ -3,6 +3,7 @@ package cn.xu.api.web.controller;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.api.web.model.dto.user.LoginRequest;
 import cn.xu.api.web.model.dto.user.RegisterRequest;
+import cn.xu.api.web.model.dto.user.UserUpdateRequest;
 import cn.xu.api.web.model.vo.user.UserLoginVO;
 import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.user.model.entity.UserEntity;
@@ -97,10 +98,20 @@ public class UserController {
 
     @GetMapping("/info/{id}")
     public ResponseEntity<UserEntity> getUserInfo(@PathVariable Long id) {
+        log.info("获取用户信息，用户ID：{}", id);
         UserEntity user = userService.getUserInfo(id);
         return ResponseEntity.<UserEntity>builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .data(user)
+                .build();
+    }
+
+    @PostMapping("/update")
+    public ResponseEntity<Void> updateUser(@RequestBody UserUpdateRequest user) {
+        userService.update(user);
+        return ResponseEntity.<Void>builder()
+                .code(ResponseCode.SUCCESS.getCode())
+                .info("用户信息更新成功")
                 .build();
     }
 }

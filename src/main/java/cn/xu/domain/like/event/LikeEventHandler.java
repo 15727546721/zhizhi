@@ -1,22 +1,15 @@
 package cn.xu.domain.like.event;
 
-import cn.xu.domain.like.model.LikeType;
-import cn.xu.infrastructure.common.utils.RedisKeys;
 import cn.xu.infrastructure.persistent.dao.IArticleDao;
 import cn.xu.infrastructure.persistent.dao.ICommentDao;
 import cn.xu.infrastructure.persistent.dao.ILikeDao;
 import cn.xu.infrastructure.persistent.po.Like;
 import com.lmax.disruptor.EventHandler;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.script.DefaultRedisScript;
-import org.springframework.scripting.support.ResourceScriptSource;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
-import java.util.Collections;
 
 
 /**

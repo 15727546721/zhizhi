@@ -20,31 +20,12 @@ public enum CommentType {
         this.description = description;
     }
 
-    public static CommentType of(Integer value) {
-        if (value == null) {
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "评论类型不能为空");
-        }
-
+    public static CommentType valueOf(Integer value) {
         for (CommentType type : CommentType.values()) {
             if (type.getValue().equals(value)) {
                 return type;
             }
         }
-        throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "无效的评论类型：" + value);
+        throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "评论类型不正确");
     }
-
-    public static Integer getCommentType(Integer value) {
-        if (value == null) {
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "评论类型不能为空");
-        }
-
-        for (CommentType type : CommentType.values()) {
-            if (type.getValue().equals(value)) {
-                return type.getValue();
-            }
-        }
-        // 如果循环结束都没有找到匹配的值
-        return null;
-    }
-
 } 

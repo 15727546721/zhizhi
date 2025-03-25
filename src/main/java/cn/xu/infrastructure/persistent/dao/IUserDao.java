@@ -1,5 +1,6 @@
 package cn.xu.infrastructure.persistent.dao;
 
+import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.model.entity.UserInfoEntity;
 import cn.xu.infrastructure.persistent.po.User;
 import org.apache.ibatis.annotations.Mapper;
@@ -13,12 +14,12 @@ public interface IUserDao {
     /**
      * 插入用户
      */
-    void insert(User user);
+    void insert(UserEntity user);
 
     /**
      * 更新用户
      */
-    void update(User user);
+    void update(UserEntity user);
 
     /**
      * 根据ID查询用户

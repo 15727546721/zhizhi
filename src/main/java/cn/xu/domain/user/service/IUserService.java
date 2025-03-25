@@ -3,6 +3,7 @@ package cn.xu.domain.user.service;
 import cn.xu.api.system.model.dto.user.UserRequest;
 import cn.xu.api.web.model.dto.user.LoginRequest;
 import cn.xu.api.web.model.dto.user.RegisterRequest;
+import cn.xu.api.web.model.dto.user.UserUpdateRequest;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.model.entity.UserInfoEntity;
 import cn.xu.infrastructure.common.request.PageRequest;
@@ -116,4 +117,11 @@ public interface IUserService {
      * @return 用户名
      */
     String getNicknameById(Long userId);
+
+    /**
+     * 更新用户信息
+     *
+     * @param user
+     */
+    void update(UserUpdateRequest user);
 }

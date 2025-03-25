@@ -1,6 +1,8 @@
 package cn.xu.domain.comment.service;
 
+import cn.xu.api.web.model.dto.comment.CommentQueryRequest;
 import cn.xu.api.web.model.dto.comment.CommentRequest;
+import cn.xu.domain.comment.CommentDTO;
 import cn.xu.domain.comment.model.entity.CommentEntity;
 import cn.xu.domain.comment.model.valueobject.CommentType;
 
@@ -49,4 +51,15 @@ public interface ICommentService {
      * @return 评论实体
      */
     CommentEntity getCommentById(Long commentId);
+
+    /**
+     * 获取评论列表（分页）
+     *
+     * @param request
+     * @return
+     */
+    List<CommentEntity> getCommentList(CommentQueryRequest request);
+
+
+    List<CommentDTO> getComments(Long targetId, Integer targetType, Integer page, Integer size, String sortBy);
 }

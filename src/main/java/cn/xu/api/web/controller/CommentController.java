@@ -54,7 +54,7 @@ public class CommentController {
             @RequestParam(defaultValue = "1") Integer pageNum,
             @RequestParam(defaultValue = "20") Integer pageSize) {
         
-        CommentType commentType = CommentType.of(type);
+        CommentType commentType = CommentType.valueOf(type);
         List<CommentEntity> commentEntityList = commentService.getPagedComments(commentType, targetId, pageNum, pageSize);
 
         // 收集所有用户ID（包括子评论的用户）
