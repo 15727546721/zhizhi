@@ -117,7 +117,7 @@ public class LikeService implements ILikeService {
                 .userId(userId)
                 .type(LikeType.valueOf(type))
                 .targetId(targetId)
-                .status(true)
+                .status(false)
                 .createTime(LocalDateTime.now())
                 .build());
     }

@@ -79,9 +79,13 @@ public class ArticleController {
         ArticleAndAuthorAggregate article = articleService.getArticleDetailById(id);
         CategoryEntity category = categoryService.getCategoryByArticleId(id);
         List<TagEntity> tag = tagService.getTagsByArticleId(id);
-        boolean checkStatus = likeService.checkStatus(StpUtil.getLoginIdAsLong(),
-                LikeType.ARTICLE.getValue(),
-                article.getArticle().getId());
+        boolean login = StpUtil.isLogin();
+        boolean checkStatus = false;
+        if (login) {
+            checkStatus = likeService.checkStatus(StpUtil.getLoginIdAsLong(),
+                    LikeType.ARTICLE.getValue(),
+                    article.getArticle().getId());
+        }
 
         return ResponseEntity.<ArticleDetailVO>builder()
                 .code(ResponseCode.SUCCESS.getCode())
@@ -297,7 +301,7 @@ public class ArticleController {
     @Operation(summary = "取消文章点赞")
     public ResponseEntity<?> unlikeArticle(@PathVariable("id") Long articleId) {
         Long userId = StpUtil.getLoginIdAsLong();
-        likeService.like(userId, LikeType.ARTICLE.getValue(), articleId);
+        likeService.unlike(userId, LikeType.ARTICLE.getValue(), articleId);
         return ResponseEntity.builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .info("文章取消点赞成功")

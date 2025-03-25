@@ -70,7 +70,6 @@ public class LikeEventHandler implements EventHandler<LikeEvent> {
             }
         } catch (Exception e) {
             log.error("点赞记录查询失败", e);
-            event.markAsFailed(e);
         }
     }
 
