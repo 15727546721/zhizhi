@@ -11,11 +11,11 @@ import cn.xu.api.web.model.vo.article.ArticleListVO;
 import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.article.model.aggregate.ArticleAndAuthorAggregate;
 import cn.xu.domain.article.model.entity.ArticleEntity;
-import cn.xu.domain.article.model.entity.CategoryEntity;
 import cn.xu.domain.article.model.entity.TagEntity;
 import cn.xu.domain.article.model.valobj.ArticleStatus;
 import cn.xu.domain.article.service.*;
 import cn.xu.domain.article.service.search.ArticleIndexService;
+import cn.xu.domain.follow.service.IFollowService;
 import cn.xu.domain.like.model.LikeType;
 import cn.xu.domain.like.service.ILikeService;
 import cn.xu.domain.user.service.IUserService;
@@ -58,6 +58,8 @@ public class ArticleController {
     private IUserService userService;
     @Resource
     private ILikeService likeService;
+    @Resource
+    private IFollowService followService;
 
     @PostMapping("/list/page")
     @Operation(summary = "分页获取文章列表")
@@ -87,26 +89,30 @@ public class ArticleController {
     @Operation(summary = "获取文章详情")
     public ResponseEntity<ArticleDetailVO> getArticleDetail(@PathVariable("id") Long id) {
         log.info("获取文章详情，文章ID：{}", id);
-
         ArticleAndAuthorAggregate article = articleService.getArticleDetailById(id);
-        CategoryEntity category = categoryService.getCategoryByArticleId(id);
         List<TagEntity> tag = tagService.getTagsByArticleId(id);
         boolean login = StpUtil.isLogin();
-        boolean checkStatus = false;
+        boolean likeStatus = false;
+        boolean followStatus = false;
+        boolean isAuthor = false;
         if (login) {
-            checkStatus = likeService.checkStatus(StpUtil.getLoginIdAsLong(),
+            isAuthor = article.getUser().getId().equals(StpUtil.getLoginIdAsLong());
+            likeStatus = likeService.checkStatus(StpUtil.getLoginIdAsLong(),
                     LikeType.ARTICLE.getValue(),
                     article.getArticle().getId());
+            followStatus = followService.checkStatus(StpUtil.getLoginIdAsLong(),
+                    article.getUser().getId());
         }
-
         return ResponseEntity.<ArticleDetailVO>builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .info("文章获取成功")
                 .data(ArticleDetailVO.builder()
-                        .articleAndAuthorAggregate(article)
-                        .categoryName(category.getName())
-                        .tags(tag.stream().map(TagEntity::getName).collect(Collectors.toList()))
-                        .isLiked(checkStatus)
+                        .article(article.getArticle())
+                        .user(article.getUser())
+                        .tagNameList(tag.stream().map(TagEntity::getName).collect(Collectors.toList()))
+                        .isLiked(likeStatus)
+                        .isFollowed(followStatus)
+                        .isAuthor(isAuthor)
                         .build())
                 .build();
     }

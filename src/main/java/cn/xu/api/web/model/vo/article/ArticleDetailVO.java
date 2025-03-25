@@ -1,6 +1,8 @@
 package cn.xu.api.web.model.vo.article;
 
-import cn.xu.domain.article.model.aggregate.ArticleAndAuthorAggregate;
+import cn.xu.domain.article.model.entity.ArticleEntity;
+import cn.xu.domain.user.model.entity.UserEntity;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,8 +15,16 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ArticleDetailVO {
-    ArticleAndAuthorAggregate articleAndAuthorAggregate;
+    private ArticleEntity article;
+    private UserEntity user;
     private String categoryName;
-    private List<String> tags;
+    private List<String> tagNameList;
+    @JsonProperty("isLiked")
     private boolean isLiked;
+    @JsonProperty("isCollected")
+    private boolean isCollected;
+    @JsonProperty("isAuthor")
+    private boolean isAuthor;
+    @JsonProperty("isFollowed")
+    private boolean isFollowed;
 }
