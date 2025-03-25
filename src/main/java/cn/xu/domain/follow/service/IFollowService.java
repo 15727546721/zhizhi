@@ -4,7 +4,7 @@ import cn.xu.domain.follow.model.entity.UserFollowEntity;
 
 import java.util.List;
 
-public interface IUserFollowService {
+public interface IFollowService {
     /**
      * 关注用户
      */
@@ -39,4 +39,13 @@ public interface IUserFollowService {
      * 获取用户粉丝数
      */
     int getFollowersCount(Long followedId);
-} 
+
+    /**
+     * 查询用户关注状态
+     *
+     * @param followerId
+     * @param followedId
+     * @return
+     */
+    boolean checkStatus(long followerId, long followedId);
+}

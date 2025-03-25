@@ -4,7 +4,7 @@ import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.follow.model.entity.UserFollowEntity;
-import cn.xu.domain.follow.service.IUserFollowService;
+import cn.xu.domain.follow.service.IFollowService;
 import cn.xu.infrastructure.common.response.ResponseEntity;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -24,7 +24,7 @@ import java.util.List;
 public class FollowController {
 
     @Resource
-    private IUserFollowService userFollowService;
+    private IFollowService userFollowService;
 
     @Operation(summary = "关注用户")
     @PostMapping("/follow/{userId}")

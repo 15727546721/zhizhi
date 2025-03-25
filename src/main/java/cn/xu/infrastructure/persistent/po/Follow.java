@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 
 @Data
 @Accessors(chain = true)
-public class UserFollow implements Serializable {
+public class Follow implements Serializable {
     /**
      * 关注关系ID
      */

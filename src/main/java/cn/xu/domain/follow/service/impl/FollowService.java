@@ -1,11 +1,10 @@
 package cn.xu.domain.follow.service.impl;
 
-import cn.xu.domain.comment.event.CommentEvent;
 import cn.xu.domain.follow.event.FollowEvent;
 import cn.xu.domain.follow.model.entity.UserFollowEntity;
 import cn.xu.domain.follow.model.valueobject.FollowStatus;
-import cn.xu.domain.follow.repository.IUserFollowRepository;
-import cn.xu.domain.follow.service.IUserFollowService;
+import cn.xu.domain.follow.repository.IFollowRepository;
+import cn.xu.domain.follow.service.IFollowService;
 import cn.xu.infrastructure.common.exception.BusinessException;
 import com.lmax.disruptor.RingBuffer;
 import org.springframework.stereotype.Service;
@@ -15,10 +14,10 @@ import javax.annotation.Resource;
 import java.util.List;
 
 @Service
-public class UserFollowService implements IUserFollowService {
+public class FollowService implements IFollowService {
 
     @Resource
-    private IUserFollowRepository userFollowRepository;
+    private IFollowRepository userFollowRepository;
     @Resource
     private RingBuffer<FollowEvent> ringBuffer;
 
@@ -92,6 +91,15 @@ public class UserFollowService implements IUserFollowService {
     @Override
     public int getFollowersCount(Long followedId) {
         return userFollowRepository.countFollowers(followedId);
+    }
+
+    @Override
+    public boolean checkStatus(long followerId, long followedId) {
+         Integer status = userFollowRepository.findStatus(followerId, followedId);
+         if (status == null || status == 0) {
+             return false;
+         }
+         return true;
     }
 
     private void pushFollowEvent(FollowEvent followEvent) {

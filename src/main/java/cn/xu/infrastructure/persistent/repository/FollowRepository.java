@@ -2,9 +2,9 @@ package cn.xu.infrastructure.persistent.repository;
 
 import cn.xu.domain.follow.model.entity.UserFollowEntity;
 import cn.xu.domain.follow.model.valueobject.FollowStatus;
-import cn.xu.domain.follow.repository.IUserFollowRepository;
-import cn.xu.infrastructure.persistent.dao.IUserFollowDao;
-import cn.xu.infrastructure.persistent.po.UserFollow;
+import cn.xu.domain.follow.repository.IFollowRepository;
+import cn.xu.infrastructure.persistent.dao.IFollowDao;
+import cn.xu.infrastructure.persistent.po.Follow;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Repository;
 
@@ -13,14 +13,14 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Repository
-public class UserFollowRepository implements IUserFollowRepository {
+public class FollowRepository implements IFollowRepository {
 
     @Resource
-    private IUserFollowDao userFollowDao;
+    private IFollowDao userFollowDao;
 
     @Override
     public void save(UserFollowEntity entity) {
-        UserFollow po = convertToPO(entity);
+        Follow po = convertToPO(entity);
         userFollowDao.insert(po);
     }
 
@@ -31,7 +31,7 @@ public class UserFollowRepository implements IUserFollowRepository {
 
     @Override
     public UserFollowEntity getByFollowerAndFollowed(Long followerId, Long followedId) {
-        UserFollow po = userFollowDao.getByFollowerAndFollowed(followerId, followedId);
+        Follow po = userFollowDao.getByFollowerAndFollowed(followerId, followedId);
         return convertToEntity(po);
     }
 
@@ -59,17 +59,22 @@ public class UserFollowRepository implements IUserFollowRepository {
         return userFollowDao.countFollowers(followedId);
     }
 
-    private UserFollow convertToPO(UserFollowEntity entity) {
+    @Override
+    public Integer findStatus(long followerId, long followedId) {
+        return userFollowDao.findStatus(followerId, followedId);
+    }
+
+    private Follow convertToPO(UserFollowEntity entity) {
         if (entity == null) {
             return null;
         }
-        UserFollow po = new UserFollow();
+        Follow po = new Follow();
         BeanUtils.copyProperties(entity, po);
         po.setStatus(entity.getStatus().getValue());
         return po;
     }
 
-    private UserFollowEntity convertToEntity(UserFollow po) {
+    private UserFollowEntity convertToEntity(Follow po) {
         if (po == null) {
             return null;
         }

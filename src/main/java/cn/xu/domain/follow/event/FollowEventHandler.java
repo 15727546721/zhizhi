@@ -24,11 +24,22 @@ public class FollowEventHandler implements EventHandler<FollowEvent> {
         //被关注者的粉丝数+1
         transactionTemplate.execute(status -> {
             try {
-                userDao.updateFollowCount(followEvent.getFollowerId(), 1);
-                userDao.updateFansCount(followEvent.getFolloweeId(), 1);
+                switch (followEvent.getStatus()) {
+                    case FOLLOWED:
+                        userDao.updateFollowCount(followEvent.getFollowerId(), 1);
+                        userDao.updateFansCount(followEvent.getFolloweeId(), 1);
+                        break;
+                    case UNFOLLOWED:
+                        userDao.updateFollowCount(followEvent.getFollowerId(), -1);
+                        userDao.updateFansCount(followEvent.getFolloweeId(), -1);
+                        break;
+                    default:
+                        break;
+                }
             } catch (Exception e) {
+                // 处理异常
+                log.error("关注事件处理异常", e);
                 status.setRollbackOnly();
-                log.error("[关注计数]更新失败", e);
             }
             return 1;
         });
