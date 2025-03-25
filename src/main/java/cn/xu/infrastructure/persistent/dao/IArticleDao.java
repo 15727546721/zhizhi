@@ -1,9 +1,11 @@
 package cn.xu.infrastructure.persistent.dao;
 
 import cn.xu.api.system.model.dto.article.ArticleRequest;
+import cn.xu.api.web.model.dto.article.ArticlePageRequest;
+import cn.xu.api.web.model.vo.article.ArticleListPageVO;
 import cn.xu.api.web.model.vo.article.ArticleListVO;
 import cn.xu.api.web.model.vo.article.ArticlePageVO;
-import cn.xu.domain.article.model.entity.ArticleRecommendOrNew;
+import cn.xu.domain.article.model.entity.ArticleEntity;
 import cn.xu.infrastructure.persistent.po.Article;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -22,7 +24,7 @@ public interface IArticleDao {
 
     void update(Article article);
 
-    List<ArticleRecommendOrNew> queryArticleByPage(@Param("page") int page, @Param("size") int size);
+    List<ArticleEntity> queryArticleByPage(@Param("page") int page, @Param("size") int size);
 
     List<ArticleListVO> queryByCategoryId(Long categoryId);
 
@@ -85,4 +87,11 @@ public interface IArticleDao {
      * @param count
      */
     void updateCommentCount(@Param("articleId") Long articleId, @Param("count") int count);
+
+    /**
+     * 分页查询文章列表
+     * @param request
+     * @return
+     */
+    List<ArticleEntity> getArticlePageByCategory(Long categoryId, int offset, int size);
 }

@@ -23,34 +23,37 @@
     </resultMap>
 
     <resultMap id="ArticleListResultMap" type="cn.xu.api.web.model.vo.article.ArticleListVO">
-        <id property="id" column="id"/>
-        <result property="title" column="title"/>
-        <result property="description" column="description"/>
-        <result property="coverUrl" column="cover_url"/>
-        <result property="viewCount" column="view_count"/>
-        <result property="likeCount" column="like_count"/>
-        <result property="createTime" column="create_time"/>
-        <result property="publishTime" column="publish_time"/>
-        <result property="nickname" column="nickname"/>
-
-        <!-- 映射 Tag 集合 -->
-        <collection property="tagNameList" ofType="String">
-            <result property="name" column="name"/>
+        <association property="article" javaType="cn.xu.domain.article.model.entity.ArticleEntity">
+            <result property="id" column="id"/>
+            <result property="title" column="title"/>
+            <result property="description" column="description"/>
+            <result property="coverUrl" column="cover_url"/>
+            <result property="userId" column="user_id"/>
+            <result property="viewCount" column="view_count"/>
+            <result property="collectCount" column="collect_count"/>
+            <result property="likeCount" column="like_count"/>
+            <result property="createTime" column="create_time"/>
+            <result property="updateTime" column="update_time"/>
+        </association>
+        <association property="user" javaType="cn.xu.domain.user.model.entity.UserEntity">
+            <result property="id" column="user_id"/>
+            <result property="nickname" column="nickname"/>
+            <result property="avatar" column="avatar"/>
+            <result property="gender" column="gender"/>
+            <result property="followCount" column="follow_count"/>
+            <result property="fansCount" column="fans_count"/>
+            <result property="likeCount" column="like_count"/>
+        </association>
+        <collection property="tagNameList" ofType="java.lang.String">
+            <result column="name"/>
         </collection>
     </resultMap>
 
+
     <select id="queryByCategoryId" parameterType="java.lang.Long" resultMap="ArticleListResultMap">
         SELECT DISTINCT
-        a.id,
-        a.title,
-        a.description,
-        a.cover_url,
-        a.user_id,
-        a.view_count,
-        a.like_count,
-        a.create_time,
-        a.publish_time,
-        u.nickname,
+        a.*,
+        u.*,
         t.name
         FROM article a
         JOIN user u ON a.user_id = u.id
@@ -64,6 +67,7 @@
             AND ac.category_id = #{categoryId}
         </if>
     </select>
+
 
     <sql id="Base_Column_List">
         id
@@ -172,31 +176,11 @@
         FROM article
         WHERE id = #{id}
     </select>
-    <select id="queryArticleByPage" resultType="cn.xu.domain.article.model.entity.ArticleRecommendOrNew">
-        SELECT a.id                                                         AS article_id,
-               a.title,
-               a.description,
-               a.content,
-               a.cover_url,
-               a.user_id,
-               a.view_count,
-               a.collect_count,
-               a.like_count,
-               a.create_time,
-               a.update_time,
-               GROUP_CONCAT(DISTINCT t.name ORDER BY t.name SEPARATOR ', ') AS tags,
-               u.nickname                                                   AS author_nickname,
-               u.avatar                                                     AS author_avatar
-        FROM article a
-                 LEFT JOIN
-             article_tag_relation at
-        ON a.id = at.article_id
-            LEFT JOIN
-            article_tag t ON at.tag_id = t.id
-            LEFT JOIN
-            user u ON a.user_id = u.id
-        GROUP BY
-            a.id
+    <select id="queryArticleByPage" resultType="cn.xu.domain.article.model.entity.ArticleEntity">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM article
+        WHERE status = 1
         ORDER BY
             a.create_time DESC;
     </select>
@@ -324,6 +308,19 @@
             LEFT JOIN article_tag t ON at.tag_id = t.id
         WHERE a.status = 0
           AND a.user_id = #{userId}
+    </select>
+
+    <select id="getArticlePageByCategory" resultType="cn.xu.domain.article.model.entity.ArticleEntity">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM article
+        JOIN article_category_relation ac ON article.id = ac.article_id
+        JOIN article_category c ON ac.category_id = c.id
+        WHERE c.id = #{categoryId}
+        AND status = 1
+        ORDER BY
+        a.create_time DESC
+        limit #{offset}, #{size}
     </select>
 
 </mapper>

@@ -2,9 +2,11 @@ package cn.xu.api.web.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.stp.StpUtil;
+import cn.xu.api.web.model.dto.article.ArticlePageRequest;
 import cn.xu.api.web.model.dto.article.DraftRequest;
 import cn.xu.api.web.model.dto.article.PublishOrDraftArticleRequest;
 import cn.xu.api.web.model.vo.article.ArticleDetailVO;
+import cn.xu.api.web.model.vo.article.ArticleListPageVO;
 import cn.xu.api.web.model.vo.article.ArticleListVO;
 import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.article.model.aggregate.ArticleAndAuthorAggregate;
@@ -19,6 +21,7 @@ import cn.xu.domain.like.service.ILikeService;
 import cn.xu.domain.user.service.IUserService;
 import cn.xu.infrastructure.common.annotation.ApiOperationLog;
 import cn.xu.infrastructure.common.exception.BusinessException;
+import cn.xu.infrastructure.common.response.PageResponse;
 import cn.xu.infrastructure.common.response.ResponseEntity;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -55,6 +58,15 @@ public class ArticleController {
     private IUserService userService;
     @Resource
     private ILikeService likeService;
+
+    @PostMapping("/list/page")
+    @Operation(summary = "分页获取文章列表")
+    public ResponseEntity<PageResponse<List<ArticleListPageVO>>> listArticle(@RequestBody ArticlePageRequest request) {
+        log.info("分页获取文章列表，请求参数：{}", request);
+        List<ArticleListPageVO> articleList = articleService.getArticlePageByCategory(request);
+        return null;
+    }
+
 
     @GetMapping("/category")
     @Operation(summary = "通过分类获取文章列表")

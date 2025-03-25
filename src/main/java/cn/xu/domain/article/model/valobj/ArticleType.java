@@ -1,4 +1,4 @@
-package cn.xu.domain.article.constant;
+package cn.xu.domain.article.model.valobj;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -6,9 +6,9 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public enum ArticleType {
-    RECOMMEND(1, "推荐"),
-    NEW(2, "最新");
+    RECOMMEND("recommend", "推荐"),
+    NEW("new", "最新");
 
-    private final Integer code;
+    private final String value;
     private final String message;
 } 

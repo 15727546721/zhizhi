@@ -1,6 +1,8 @@
 package cn.xu.domain.article.service;
 
 import cn.xu.api.system.model.dto.article.ArticleRequest;
+import cn.xu.api.web.model.dto.article.ArticlePageRequest;
+import cn.xu.api.web.model.vo.article.ArticleListPageVO;
 import cn.xu.api.web.model.vo.article.ArticleListVO;
 import cn.xu.api.web.model.vo.article.ArticlePageVO;
 import cn.xu.domain.article.model.aggregate.ArticleAndAuthorAggregate;
@@ -126,4 +128,12 @@ public interface IArticleService {
      * @param articleId
      */
     void viewArticle(Long articleId);
+
+    /**
+     * 分页查询文章列表
+     *
+     * @param request
+     * @return
+     */
+    List<ArticleListPageVO> getArticlePageByCategory(ArticlePageRequest request);
 }

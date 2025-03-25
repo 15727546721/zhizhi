@@ -1,6 +1,8 @@
 package cn.xu.domain.article.service.impl;
 
 import cn.xu.api.system.model.dto.article.ArticleRequest;
+import cn.xu.api.web.model.dto.article.ArticlePageRequest;
+import cn.xu.api.web.model.vo.article.ArticleListPageVO;
 import cn.xu.api.web.model.vo.article.ArticleListVO;
 import cn.xu.api.web.model.vo.article.ArticlePageVO;
 import cn.xu.application.common.ResponseCode;
@@ -265,6 +267,13 @@ public class ArticleService implements IArticleService {
             log.error("[文章服务] 文章浏览失败 - articleId: {}", articleId, e);
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "文章浏览失败：" + e.getMessage());
         }
+    }
+
+    @Override
+    public List<ArticleListPageVO> getArticlePageByCategory(ArticlePageRequest request) {
+         List<ArticleEntity> articleList = articleRepository.getArticlePageByCategory(request);
+//         userRepository.findById()
+        return null;
     }
 
     @Override

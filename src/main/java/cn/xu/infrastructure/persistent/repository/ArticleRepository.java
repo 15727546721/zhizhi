@@ -1,10 +1,10 @@
 package cn.xu.infrastructure.persistent.repository;
 
 import cn.xu.api.system.model.dto.article.ArticleRequest;
+import cn.xu.api.web.model.dto.article.ArticlePageRequest;
 import cn.xu.api.web.model.vo.article.ArticleListVO;
 import cn.xu.api.web.model.vo.article.ArticlePageVO;
 import cn.xu.domain.article.model.entity.ArticleEntity;
-import cn.xu.domain.article.model.entity.ArticleRecommendOrNew;
 import cn.xu.domain.article.repository.IArticleRepository;
 import cn.xu.infrastructure.persistent.dao.IArticleDao;
 import cn.xu.infrastructure.persistent.dao.IArticleTagDao;
@@ -96,8 +96,8 @@ public class ArticleRepository implements IArticleRepository {
     }
 
     @Override
-    public List<ArticleRecommendOrNew> queryArticleByPage() {
-        return articleDao.queryArticleByPage(0, 10);
+    public List<ArticleEntity> queryArticleByPage(int page, int size) {
+        return articleDao.queryArticleByPage(page, size);
     }
 
     @Override
@@ -150,6 +150,13 @@ public class ArticleRepository implements IArticleRepository {
     public void deleteById(Long id) {
         log.info("Deleting article by ID: {}", id);
         articleDao.deleteById(id);
+    }
+
+    @Override
+    public List<ArticleEntity> getArticlePageByCategory(ArticlePageRequest request) {
+        return articleDao.getArticlePageByCategory(request.getCategoryId(),
+                (request.getPageNo() - 1) * request.getPageSize(),
+                request.getPageSize());
     }
 
     private ArticleEntity convert(Article article) {

@@ -1,10 +1,10 @@
 package cn.xu.domain.article.repository;
 
 import cn.xu.api.system.model.dto.article.ArticleRequest;
+import cn.xu.api.web.model.dto.article.ArticlePageRequest;
 import cn.xu.api.web.model.vo.article.ArticleListVO;
 import cn.xu.api.web.model.vo.article.ArticlePageVO;
 import cn.xu.domain.article.model.entity.ArticleEntity;
-import cn.xu.domain.article.model.entity.ArticleRecommendOrNew;
 
 import java.util.List;
 import java.util.Map;
@@ -20,7 +20,7 @@ public interface IArticleRepository {
 
     void update(ArticleEntity articleEntity);
 
-    List<ArticleRecommendOrNew> queryArticleByPage();
+    List<ArticleEntity> queryArticleByPage(int page, int size);
 
     List<ArticleListVO> queryArticleByCategoryId(Long categoryId);
 
@@ -75,4 +75,12 @@ public interface IArticleRepository {
      * @param id
      */
     void deleteById(Long id);
+
+    /**
+     * 分页查询文章列表
+     *
+     * @param request
+     * @return
+     */
+    List<ArticleEntity> getArticlePageByCategory(ArticlePageRequest request);
 }
