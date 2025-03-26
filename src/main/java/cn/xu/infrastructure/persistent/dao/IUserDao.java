@@ -24,7 +24,7 @@ public interface IUserDao {
     /**
      * 根据ID查询用户
      */
-    User selectById(Long id);
+    UserEntity selectById(Long id);
 
     /**
      * 根据用户名查询用户

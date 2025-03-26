@@ -46,7 +46,7 @@ public class UserRepository implements IUserRepository {
 
     @Override
     public UserEntity findById(Long id) {
-        return convertToUserEntity(userDao.selectById(id));
+        return userDao.selectById(id);
     }
 
     @Override
@@ -108,7 +108,7 @@ public class UserRepository implements IUserRepository {
 
     @Override
     public UserInfoEntity findUserInfoById(Long userId) {
-        User user = userDao.selectById(userId);
+        UserEntity user = userDao.selectById(userId);
         if (user == null) {
             return null;
         }

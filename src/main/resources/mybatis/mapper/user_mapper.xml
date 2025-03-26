@@ -25,9 +25,12 @@
 
 
     <sql id="Base_Column_List">
-        id
-        , username, password, email, nickname, avatar, gender, phone, region, birthday, description, status, create_time, update_time
+        id,
+    username, password, email, nickname, avatar, gender, phone, region, birthday, status,
+    description, follow_count, fans_count, like_count, last_login_time, last_login_ip,
+    create_time, update_time
     </sql>
+
 
     <insert id="insert" parameterType="cn.xu.domain.user.model.entity.UserEntity" useGeneratedKeys="true"
             keyProperty="id">
@@ -66,7 +69,7 @@
         WHERE id = #{followeeId}
     </update>
 
-    <select id="selectById" resultMap="userMap">
+    <select id="selectById" resultType="cn.xu.domain.user.model.entity.UserEntity">
         SELECT
         <include refid="Base_Column_List"/>
         FROM user
@@ -163,7 +166,7 @@
 
     <!-- 批量查询用户信息 -->
     <select id="findByIds" resultMap="userMap">
-        SELECT 
+        SELECT
         <include refid="Base_Column_List"/>
         FROM user
         WHERE id IN
