@@ -6,7 +6,8 @@ import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.user.constant.UserErrorCode;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.model.entity.UserInfoEntity;
-import cn.xu.domain.user.model.valobj.LoginFormVO;
+import cn.xu.domain.user.model.vo.LoginFormVO;
+import cn.xu.domain.user.model.vo.UserFormVO;
 import cn.xu.domain.user.repository.IUserRepository;
 import cn.xu.domain.user.service.IUserLoginService;
 import cn.xu.infrastructure.common.exception.BusinessException;
@@ -29,17 +30,17 @@ public class UserLoginService implements IUserLoginService {
         if (ObjectUtils.isEmpty(loginFormVO)) {
             throw new BusinessException(ResponseCode.NULL_PARAMETER.getCode(), "登录参数不能为空");
         }
-
-        UserEntity user = userRepository.findByUsername(loginFormVO.getUsername())
-                .orElseThrow(() -> new BusinessException(ResponseCode.NULL_RESPONSE.getCode(), "该用户不存在"));
-
+        UserFormVO userFormVO = userRepository.findUsernameAndPasswordByUsername(loginFormVO.getUsername());
+        if (ObjectUtils.isEmpty(userFormVO)) {
+            throw new BusinessException(UserErrorCode.USER_NOT_FOUND.getCode(), "用户不存在");
+        }
         String password = SaSecureUtil.sha256(loginFormVO.getPassword());
-        if (!user.getPassword().equals(password)) {
+        if (!userFormVO.getPassword().equals(password)) {
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "密码错误");
         }
 
         // 登录
-        StpUtil.login(user.getId());
+        StpUtil.login(userFormVO.getId());
         // 返回token
         return StpUtil.getTokenValue();
     }

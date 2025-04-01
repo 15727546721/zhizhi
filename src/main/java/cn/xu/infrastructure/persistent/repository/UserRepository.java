@@ -3,8 +3,10 @@ package cn.xu.infrastructure.persistent.repository;
 import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.model.entity.UserInfoEntity;
-import cn.xu.domain.user.model.valobj.LoginFormVO;
-import cn.xu.domain.user.model.valueobject.Email;
+import cn.xu.domain.user.model.entity.UserRegisterEntity;
+import cn.xu.domain.user.model.vo.LoginFormVO;
+import cn.xu.domain.user.model.valobj.Email;
+import cn.xu.domain.user.model.vo.UserFormVO;
 import cn.xu.domain.user.repository.IUserRepository;
 import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.persistent.dao.IRoleDao;
@@ -153,6 +155,20 @@ public class UserRepository implements IUserRepository {
         userDao.update(userEntity);
     }
 
+    @Override
+    public UserFormVO findUsernameAndPasswordByUsername(String username) {
+        return userDao.selectUsernameAndPasswordByUsername(username);
+    }
+
+    @Override
+    public long register(UserRegisterEntity user) {
+        Long userId = userDao.register(user);
+        if (userId == null) {
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "注册失败");
+        }
+        return userId;
+    }
+
     private UserEntity convertToUserEntity(User user) {
         if (user == null) {
             return null;
@@ -160,26 +176,6 @@ public class UserRepository implements IUserRepository {
         return UserEntity.builder()
                 .id(user.getId())
                 .username(user.getUsername())
-                .password(user.getPassword())
-                .email(user.getEmail())
-                .nickname(user.getNickname())
-                .avatar(user.getAvatar())
-                .gender(user.getGender())
-                .phone(user.getPhone())
-                .region(user.getRegion())
-                .birthday(user.getBirthday())
-                .status(user.getStatus())
-                .description(user.getDescription())
-                .createTime(user.getCreateTime())
-                .updateTime(user.getUpdateTime())
-                .build();
-    }
-
-    private User convertToUserPO(UserEntity user) {
-        return User.builder()
-                .id(user.getId())
-                .username(user.getUsername())
-                .password(user.getPassword())
                 .email(user.getEmail())
                 .nickname(user.getNickname())
                 .avatar(user.getAvatar())

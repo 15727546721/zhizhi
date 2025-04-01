@@ -1,38 +1,24 @@
-package cn.xu.infrastructure.persistent.po;
+package cn.xu.domain.essay.model.vo;
 
+import cn.xu.domain.user.model.entity.UserEntity;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
-/**
- * 话题分类持久化对象
- */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Topic {
-
-    /**
-     * 分类ID
-     */
+public class EssayVO {
     private Long id;
-
-    /**
-     * 分类名称
-     */
-    private String name;
-
-    /**
-     * 创建时间
-     */
+    private UserEntity user;
+    private String content;
+    private String[] images;
+    private String[] topics;
     private LocalDateTime createTime;
-
-    /**
-     * 更新时间
-     */
     private LocalDateTime updateTime;
-} 
+}

@@ -1,6 +1,5 @@
-package cn.xu.api.web.model.vo.topic;
+package cn.xu.domain.essay.model.entity;
 
-import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,18 +11,26 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "话题")
-public class TopicVO {
+public class TopicEntity {
 
-    @Schema(description = "话题ID")
+    /**
+     * 分类ID
+     */
     private Long id;
 
-    @Schema(description = "话题名称")
+    /**
+     * 分类名称
+     */
     private String name;
 
-    @Schema(description = "创建时间")
+    /**
+     * 创建时间
+     */
     private LocalDateTime createTime;
 
-    @Schema(description = "更新时间")
+    /**
+     * 更新时间
+     */
     private LocalDateTime updateTime;
+
 } 

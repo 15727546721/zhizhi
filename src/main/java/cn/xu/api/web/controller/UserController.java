@@ -7,7 +7,7 @@ import cn.xu.api.web.model.dto.user.UserUpdateRequest;
 import cn.xu.api.web.model.vo.user.UserLoginVO;
 import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.user.model.entity.UserEntity;
-import cn.xu.domain.user.model.valueobject.Email;
+import cn.xu.domain.user.model.valobj.Email;
 import cn.xu.domain.user.service.IUserService;
 import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.common.response.ResponseEntity;
@@ -33,10 +33,7 @@ public class UserController {
         validateRegisterRequest(registerRequest);
 
         // 注册用户
-        UserEntity user = userService.register(registerRequest);
-
-        // 自动登录
-        StpUtil.login(user.getId());
+        userService.register(registerRequest);
 
         return ResponseEntity.<Void>builder()
                 .code(ResponseCode.SUCCESS.getCode())
@@ -88,8 +85,9 @@ public class UserController {
 
     @PostMapping("/logout")
     public ResponseEntity<Void> logout() {
+        long useId = StpUtil.getLoginIdAsLong();
         StpUtil.logout();
-        log.info("用户退出成功: {}", StpUtil.getLoginIdAsLong());
+        log.info("用户退出成功: {}", useId);
         return ResponseEntity.<Void>builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .info("退出成功")

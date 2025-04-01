@@ -2,8 +2,10 @@ package cn.xu.domain.user.repository;
 
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.model.entity.UserInfoEntity;
-import cn.xu.domain.user.model.valobj.LoginFormVO;
-import cn.xu.domain.user.model.valueobject.Email;
+import cn.xu.domain.user.model.entity.UserRegisterEntity;
+import cn.xu.domain.user.model.vo.LoginFormVO;
+import cn.xu.domain.user.model.valobj.Email;
+import cn.xu.domain.user.model.vo.UserFormVO;
 
 import java.util.List;
 import java.util.Optional;
@@ -87,4 +89,20 @@ public interface IUserRepository {
      * @param userEntity
      */
     void update(UserEntity userEntity);
+
+    /**
+     * 根据用户名查询用户信息
+     *
+     * @param username
+     * @return
+     */
+    UserFormVO findUsernameAndPasswordByUsername(String username);
+
+    /**
+     * 注册用户
+     *
+     * @param user
+     * @return
+     */
+    long register(UserRegisterEntity user);
 }

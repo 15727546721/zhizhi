@@ -8,7 +8,7 @@ import cn.xu.api.system.model.dto.user.UserRequest;
 import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.model.entity.UserInfoEntity;
-import cn.xu.domain.user.model.valobj.LoginFormVO;
+import cn.xu.domain.user.model.vo.LoginFormVO;
 import cn.xu.domain.user.service.IUserLoginService;
 import cn.xu.domain.user.service.IUserService;
 import cn.xu.infrastructure.common.exception.BusinessException;

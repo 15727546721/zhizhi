@@ -16,20 +16,9 @@ public class RedisKeys {
             case COMMENT:
                 return "like:comment:" + targetId;
             default:
-                throw new IllegalArgumentException("Invalid type: " + type);
+                throw new IllegalArgumentException("点赞类型错误: " + type);
         }
     }
 
-    // 点赞计数器 String
-    public static String likeCountKey(Integer type, Long targetId) {
-        switch (Objects.requireNonNull(LikeType.valueOf(type))) {
-            case ARTICLE:
-                return "like:count:article:" + targetId;
-            case COMMENT:
-                return "like:count:comment:" + targetId;
-            default:
-                throw new IllegalArgumentException("Invalid type: " + type);
-        }
-    }
 }
 

@@ -2,6 +2,8 @@ package cn.xu.infrastructure.persistent.dao;
 
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.model.entity.UserInfoEntity;
+import cn.xu.domain.user.model.entity.UserRegisterEntity;
+import cn.xu.domain.user.model.vo.UserFormVO;
 import cn.xu.infrastructure.persistent.po.User;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -94,4 +96,19 @@ public interface IUserDao {
      * @param count
      */
     void updateFansCount(@Param("followeeId") Long followeeId, @Param("count") int count);
+
+    /**
+     * 根据用户名查询用户名和密码
+     *
+     * @param username
+     * @return
+     */
+    UserFormVO selectUsernameAndPasswordByUsername(@Param("username") String username);
+
+    /**
+     * 注册用户
+     * @param user
+     * @return
+     */
+    Long register(UserRegisterEntity user);
 }

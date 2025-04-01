@@ -4,7 +4,6 @@
     <resultMap id="userMap" type="cn.xu.infrastructure.persistent.po.User">
         <id column="id" property="id"/>
         <result column="username" property="username"/>
-        <result column="password" property="password"/>
         <result column="email" property="email"/>
         <result column="nickname" property="nickname"/>
         <result column="avatar" property="avatar"/>
@@ -25,7 +24,8 @@
 
 
     <sql id="Base_Column_List">
-        id,
+        id
+        ,
     username, password, email, nickname, avatar, gender, phone, region, birthday, status,
     description, follow_count, fans_count, like_count, last_login_time, last_login_ip,
     create_time, update_time
@@ -38,6 +38,15 @@
                           status)
         VALUES (#{username}, #{password}, #{email}, #{nickname}, #{avatar}, #{gender}, #{phone}, #{region}, #{birthday},
                 #{description}, #{status})
+    </insert>
+
+    <insert id="register" useGeneratedKeys="true" keyProperty="id">
+        insert into `user`
+        (username, password, nickname, email, avatar, status, create_time, update_time, gender, phone, region, birthday,
+         description, follow_count, fans_count, like_count, last_login_time, last_login_ip)
+        values (#{username}, #{password}, #{nickname}, #{email}, #{avatar}, #{status}, now(), now(), #{gender},
+                #{phone}, #{region}, #{birthday}, #{description}, #{followCount}, #{fansCount}, #{likeCount},
+                #{lastLoginTime}, #{lastLoginIp})
     </insert>
 
     <update id="update" parameterType="cn.xu.domain.user.model.entity.UserEntity">
@@ -173,5 +182,10 @@
         <foreach collection="userIds" item="userId" open="(" separator="," close=")">
             #{userId}
         </foreach>
+    </select>
+    <select id="selectUsernameAndPasswordByUsername" resultType="cn.xu.domain.user.model.vo.UserFormVO">
+        SELECT id, username, password
+        FROM user
+        WHERE username = #{username}
     </select>
 </mapper>

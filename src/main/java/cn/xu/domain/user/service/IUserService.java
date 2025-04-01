@@ -24,7 +24,7 @@ public interface IUserService {
     /**
      * 用户注册
      */
-    UserEntity register(RegisterRequest request);
+    void register(RegisterRequest request);
 
     /**
      * 用户登录

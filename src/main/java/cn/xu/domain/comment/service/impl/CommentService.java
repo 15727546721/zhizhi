@@ -5,15 +5,12 @@ import cn.xu.api.web.model.dto.comment.CommentQueryRequest;
 import cn.xu.api.web.model.dto.comment.CommentRequest;
 import cn.xu.api.web.model.vo.comment.CommentVO;
 import cn.xu.application.common.ResponseCode;
-import cn.xu.domain.article.service.IArticleService;
-import cn.xu.domain.comment.CommentDTO;
 import cn.xu.domain.comment.event.CommentEvent;
 import cn.xu.domain.comment.model.entity.CommentEntity;
 import cn.xu.domain.comment.model.valueobject.CommentSortType;
 import cn.xu.domain.comment.model.valueobject.CommentType;
 import cn.xu.domain.comment.repository.ICommentRepository;
 import cn.xu.domain.comment.service.ICommentService;
-import cn.xu.domain.topic.service.ITopicService;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.service.IUserService;
 import cn.xu.infrastructure.common.exception.BusinessException;
@@ -37,12 +34,6 @@ public class CommentService implements ICommentService {
 
     @Resource
     private IUserService userService;
-
-    @Resource
-    private IArticleService articleService;
-
-    @Resource
-    private ITopicService topicService;
 
     @Resource
     private RingBuffer<CommentEvent> ringBuffer;
@@ -319,11 +310,6 @@ public class CommentService implements ICommentService {
         });
 
         return comments;
-    }
-
-    @Override
-    public List<CommentDTO> getComments(Long targetId, Integer targetType, Integer page, Integer size, String sortBy) {
-        return null;
     }
 
     /**
