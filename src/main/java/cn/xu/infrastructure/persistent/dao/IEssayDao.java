@@ -81,4 +81,9 @@ public interface IEssayDao {
                                                  @Param("size") int size,
                                                  @Param("topic") String topic,
                                                  @Param("essayType") String essayType);
+
+    /**
+     * 更新评论数
+     */
+    void updateCommentCount(@Param("targetId") Long targetId, @Param("count") int count);
 }

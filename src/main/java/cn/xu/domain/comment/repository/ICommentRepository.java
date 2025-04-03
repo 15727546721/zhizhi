@@ -1,6 +1,7 @@
 package cn.xu.domain.comment.repository;
 
 import cn.xu.api.web.model.dto.comment.CommentQueryRequest;
+import cn.xu.api.web.model.vo.comment.CommentPageVO;
 import cn.xu.domain.comment.model.entity.CommentEntity;
 import cn.xu.domain.comment.model.valueobject.CommentSortType;
 
@@ -105,7 +106,7 @@ public interface ICommentRepository {
      *
      * @param parentId 父评论ID
      */
-    void deleteByParentId(Long parentId);
+    int deleteByParentId(Long parentId);
 
     /**
      * 根据父评论ID列表批量查询子评论
@@ -127,4 +128,11 @@ public interface ICommentRepository {
      * 根据评论ID列表分页查询子评论
      */
     List<CommentEntity> findReplyListByPage(List<Long> parentIds, CommentSortType sortType, Integer page, Integer size);
+
+    /**
+     * 根据评论ID查询评论及用户信息
+     * @param commentId
+     * @return
+     */
+    CommentEntity findCommentWithUserById(Long commentId);
 }

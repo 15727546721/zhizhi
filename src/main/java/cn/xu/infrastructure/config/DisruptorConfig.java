@@ -4,7 +4,7 @@ import cn.xu.domain.article.event.ArticleEvent;
 import cn.xu.domain.article.event.ArticleEventHandler;
 import cn.xu.domain.article.event.ArticleEventWrapper;
 import cn.xu.domain.article.event.factory.ArticleEventFactory;
-import cn.xu.domain.comment.event.CommentEvent;
+import cn.xu.domain.comment.event.CommentCountEvent;
 import cn.xu.domain.comment.event.CommentEventHandler;
 import cn.xu.domain.follow.event.FollowEvent;
 import cn.xu.domain.follow.event.FollowEventHandler;
@@ -83,15 +83,15 @@ public class DisruptorConfig {
     }
 
     @Bean
-    public RingBuffer<CommentEvent> commentRingBuffer() {
+    public RingBuffer<CommentCountEvent> commentRingBuffer() {
         // 定义事件工厂
-        EventFactory<CommentEvent> factory = CommentEvent::new;
+        EventFactory<CommentCountEvent> factory = CommentCountEvent::new;
 
         // 环形缓冲区大小（必须是2的幂）
         int bufferSize = 1024;
 
         // 创建Disruptor（使用阻塞等待策略）
-        Disruptor<CommentEvent> disruptor = new Disruptor<>(
+        Disruptor<CommentCountEvent> disruptor = new Disruptor<>(
                 factory,
                 bufferSize,
                 Executors.defaultThreadFactory(),

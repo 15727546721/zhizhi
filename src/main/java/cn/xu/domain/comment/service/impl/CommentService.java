@@ -5,6 +5,7 @@ import cn.xu.api.web.model.dto.comment.CommentQueryRequest;
 import cn.xu.api.web.model.dto.comment.CommentRequest;
 import cn.xu.api.web.model.vo.comment.CommentVO;
 import cn.xu.application.common.ResponseCode;
+import cn.xu.domain.comment.event.CommentCountEvent;
 import cn.xu.domain.comment.event.CommentEvent;
 import cn.xu.domain.comment.model.entity.CommentEntity;
 import cn.xu.domain.comment.model.valueobject.CommentSortType;
@@ -16,10 +17,14 @@ import cn.xu.domain.user.service.IUserService;
 import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.common.request.PageRequest;
 import cn.xu.infrastructure.common.response.PageResponse;
+import cn.xu.infrastructure.persistent.dao.IArticleDao;
+import cn.xu.infrastructure.persistent.dao.ICommentDao;
+import cn.xu.infrastructure.persistent.dao.IEssayDao;
 import com.lmax.disruptor.RingBuffer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.annotation.Resource;
 import java.util.*;
@@ -28,25 +33,28 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 public class CommentService implements ICommentService {
-
     @Resource
     private ICommentRepository commentRepository;
-
     @Resource
     private IUserService userService;
+    @Resource
+    private RingBuffer<CommentCountEvent> ringBuffer;
 
     @Resource
-    private RingBuffer<CommentEvent> ringBuffer;
-//    @Resource
-//    private NotificationEventPublisher notificationEventPublisher;
-
+    private IArticleDao articleDao;
+    @Resource
+    private IEssayDao essayDao;
+    @Resource
+    private ICommentDao commentDao;
+    @Resource
+    private TransactionTemplate transactionTemplate;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void saveComment(CommentRequest request) {
+    public Long saveComment(CommentEvent request) {
         try {
-            log.info("开始保存评论 - type: {}, targetId: {}, parentId: {}",
-                    request.getType(), request.getTargetId(), request.getParentId());
+            log.info("开始保存评论 - type: {}, targetId: {}, commentId: {}",
+                    request.getTargetType(), request.getTargetId(), request.getCommentId());
 
             // 1. 获取当前用户
             Long currentUserId = userService.getCurrentUserId();
@@ -57,9 +65,9 @@ public class CommentService implements ICommentService {
 
             // 2. 构建评论实体
             CommentEntity commentEntity = CommentEntity.builder()
-                    .targetType(request.getType())
+                    .targetType(request.getTargetType().getValue())
                     .targetId(request.getTargetId())
-                    .parentId(request.getParentId())
+                    .parentId(request.getCommentId())
                     .userId(currentUserId)
                     .replyUserId(request.getReplyUserId())
                     .content(request.getContent())
@@ -73,16 +81,16 @@ public class CommentService implements ICommentService {
             commentEntity.setId(commentId);
 
             // 5. 评论计数
-            pushCommentEvent(CommentEvent.builder()
-                    .commentId(commentId)
-                    .content(commentEntity.getContent())
-                    .targetId(commentEntity.getTargetId())
-                    .userId(commentEntity.getUserId())
-                    .replyUserId(commentEntity.getReplyUserId())
+            pushCommentEvent(CommentCountEvent.builder()
+                    .targetType(request.getTargetType())
+                    .level(request.getCommentId() == null ? 1 : 2)
+                    .targetId(request.getTargetId())
+                    .count(1)
                     .build());
 
             // 6. 处理评论并发送消息
 
+            return commentId;
         } catch (BusinessException e) {
             log.error("保存评论失败 - error: {}", e.getMessage());
             throw e;
@@ -232,19 +240,23 @@ public class CommentService implements ICommentService {
      * @param comment 评论实体
      */
     private void deleteCommentInternal(CommentEntity comment) {
+        int count = 1;
         if (comment.getParentId() == null) {
             // 删除一级评论及其所有回复
-            commentRepository.deleteByParentId(comment.getId());
-            log.info("删除子评论成功 - parentId: {}", comment.getId());
-
+            int i = commentRepository.deleteByParentId(comment.getId());
             commentRepository.deleteById(comment.getId());
-            log.info("删除一级评论成功 - commentId: {}", comment.getId());
-            log.info("删除一级评论及其回复成功 - commentId: {}", comment.getId());
+            count += i;
         } else {
             // 删除单条回复
             commentRepository.deleteById(comment.getId());
-            log.info("删除回复评论成功 - commentId: {}", comment.getId());
         }
+        pushCommentEvent(CommentCountEvent.builder()
+                .targetType(CommentType.valueOf(comment.getTargetType()))
+                .level(comment.getParentId() == null ? 1 : 2)
+                .targetId(comment.getTargetId())
+                .count(-count)
+                .build());
+        log.info("删除评论成功 - commentId: {}, count: {}", comment.getId(), count);
     }
 
     @Override
@@ -312,6 +324,12 @@ public class CommentService implements ICommentService {
         return comments;
     }
 
+    @Override
+    public CommentEntity findCommentWithUserById(Long commentId) {
+        CommentEntity byId = commentRepository.findCommentWithUserById(commentId);
+        return byId;
+    }
+
     /**
      * 分页获取一级评论列表（包含用户信息）
      *
@@ -349,7 +367,7 @@ public class CommentService implements ICommentService {
             Map<Long, UserEntity> userMap = userService.getBatchUserInfo(userIds);
 
             // 6. 转换为DTO
-            List<CommentVO> commentVOS = comments.stream()
+            List<CommentVO> CommentVOS = comments.stream()
                     .map(comment -> {
                         CommentVO dto = convertToDTO(comment);
                         UserEntity user = userMap.get(comment.getUserId());
@@ -362,7 +380,7 @@ public class CommentService implements ICommentService {
                     .collect(Collectors.toList());
 
             // 7. 构建分页响应
-            return PageResponse.of(request.getPageNo(), request.getPageSize(), total, commentVOS);
+            return PageResponse.of(request.getPageNo(), request.getPageSize(), total, CommentVOS);
 
         } catch (Exception e) {
             log.error("分页获取一级评论列表失败 - request: {}", request, e);
@@ -460,13 +478,13 @@ public class CommentService implements ICommentService {
                 .build();
     }
 
-    private void pushCommentEvent(CommentEvent comment) {
+    private void pushCommentEvent(CommentCountEvent comment) {
         ringBuffer.publishEvent((event, sequence) -> {
             event.setCommentId(comment.getCommentId());
-            event.setContent(comment.getContent());
+            event.setTargetType(comment.getTargetType());
             event.setTargetId(comment.getTargetId());
-            event.setUserId(comment.getUserId());
-            event.setReplyUserId(comment.getReplyUserId());
+            event.setLevel(comment.getLevel());
+            event.setCount(comment.getCount());
         });
     }
 }

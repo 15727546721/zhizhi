@@ -116,6 +116,8 @@ public class EssayService implements IEssayService {
                     .content(essay.getContent())
                     .images(images)
                     .topics(topics)
+                    .likeCount(essay.getLikeCount())
+                    .commentCount(essay.getCommentCount())
                     .createTime(essay.getCreateTime())
                     .updateTime(essay.getUpdateTime())
                     .build();

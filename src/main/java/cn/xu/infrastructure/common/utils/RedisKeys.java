@@ -15,6 +15,8 @@ public class RedisKeys {
                 return "like:article:" + targetId;
             case COMMENT:
                 return "like:comment:" + targetId;
+            case ESSAY:
+                return "like:essay:" + targetId;
             default:
                 throw new IllegalArgumentException("点赞类型错误: " + type);
         }

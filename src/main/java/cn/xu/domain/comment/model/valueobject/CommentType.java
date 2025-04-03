@@ -10,7 +10,7 @@ import lombok.Getter;
 @Getter
 public enum CommentType {
     ARTICLE(1, "文章评论"),
-    TOPIC(2, "话题评论");
+    ESSAY(2, "随笔评论");
 
     private final Integer value;
     private final String description;

@@ -1,13 +1,17 @@
 package cn.xu.api.web.controller;
 
-import cn.xu.api.web.model.dto.comment.CommentRequest;
+import cn.dev33.satoken.stp.StpUtil;
+import cn.xu.api.web.model.dto.comment.CommentAddRequest;
+import cn.xu.api.web.model.dto.comment.ReplyCommentRequest;
 import cn.xu.api.web.model.vo.comment.CommentListVO;
 import cn.xu.application.common.ResponseCode;
+import cn.xu.domain.comment.event.CommentEvent;
 import cn.xu.domain.comment.model.entity.CommentEntity;
 import cn.xu.domain.comment.model.valueobject.CommentType;
 import cn.xu.domain.comment.service.ICommentService;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.service.IUserService;
+import cn.xu.infrastructure.common.annotation.ApiOperationLog;
 import cn.xu.infrastructure.common.response.ResponseEntity;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -16,7 +20,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
-import javax.validation.Valid;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -31,21 +34,48 @@ public class CommentController {
     private IUserService userService;
 
     @Operation(summary = "发表评论")
-    @PostMapping("/add")
-    public ResponseEntity addComment(@Valid @RequestBody CommentRequest request) {
-        commentService.saveComment(request);
-        return ResponseEntity.builder()
+    @PostMapping("/publish")
+    @ApiOperationLog(description = "发表评论")
+    public ResponseEntity<CommentEntity> addComment(@RequestBody CommentAddRequest request) {
+        Long commentId = commentService.saveComment(CommentEvent.builder()
+                .content(request.getContent())
+                .targetId(request.getTargetId())
+                .targetType(CommentType.valueOf(request.getTargetType()))
+                .userId(StpUtil.getLoginIdAsLong())
+                .build());
+        CommentEntity comment = commentService.findCommentWithUserById(commentId);
+        return ResponseEntity.<CommentEntity>builder()
+                .info("评论成功")
+                .data(comment)
+                .code(ResponseCode.SUCCESS.getCode())
+                .build();
+    }
+
+    @Operation(summary = "回复评论")
+    @PostMapping("/reply")
+    @ApiOperationLog(description = "回复评论")
+    public ResponseEntity<Void> replyComment(@RequestBody ReplyCommentRequest request) {
+        commentService.saveComment(CommentEvent.builder()
+                .content(request.getContent())
+                .targetId(request.getTargetId())
+                .targetType(CommentType.valueOf(request.getTargetType()))
+                .commentId(request.getCommentId())
+                .userId(StpUtil.getLoginIdAsLong())
+                .replyUserId(request.getReplyUserId())
+                .build());
+        return ResponseEntity.<Void>builder()
                 .info("评论成功")
                 .code(ResponseCode.SUCCESS.getCode())
                 .build();
     }
 
+
     @Operation(summary = "获取评论列表")
     @Parameters({
-        @Parameter(name = "type", description = "评论类型", required = true),
-        @Parameter(name = "targetId", description = "目标ID", required = true),
-        @Parameter(name = "pageNum", description = "页码", required = true),
-        @Parameter(name = "pageSize", description = "每页数量", required = true)
+            @Parameter(name = "type", description = "评论类型", required = true),
+            @Parameter(name = "targetId", description = "目标ID", required = true),
+            @Parameter(name = "pageNum", description = "页码", required = true),
+            @Parameter(name = "pageSize", description = "每页数量", required = true)
     })
     @GetMapping("/list")
     public ResponseEntity<List<CommentListVO>> getCommentList(
@@ -53,7 +83,7 @@ public class CommentController {
             @RequestParam("targetId") Long targetId,
             @RequestParam(defaultValue = "1") Integer pageNum,
             @RequestParam(defaultValue = "20") Integer pageSize) {
-        
+
         CommentType commentType = CommentType.valueOf(type);
         List<CommentEntity> commentEntityList = commentService.getPagedComments(commentType, targetId, pageNum, pageSize);
 

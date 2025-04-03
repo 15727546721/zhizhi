@@ -10,7 +10,7 @@ public enum LikeType {
 
     ARTICLE(1, "文章"),
     COMMENT(2, "评论"),
-    TOPIC(3, "话题"),
+    ESSAY(3, "随笔"),
     ;
 
     private final int value;

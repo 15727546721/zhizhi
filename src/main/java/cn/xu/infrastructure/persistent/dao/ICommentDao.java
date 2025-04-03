@@ -1,6 +1,8 @@
 package cn.xu.infrastructure.persistent.dao;
 
 import cn.xu.api.web.model.dto.comment.CommentQueryRequest;
+import cn.xu.api.web.model.vo.comment.CommentPageVO;
+import cn.xu.domain.comment.model.entity.CommentEntity;
 import cn.xu.domain.comment.model.valueobject.CommentSortType;
 import cn.xu.infrastructure.persistent.po.Comment;
 import org.apache.ibatis.annotations.Mapper;
@@ -117,7 +119,7 @@ public interface ICommentDao {
      *
      * @param parentId 父评论ID
      */
-    void deleteByParentId(@Param("parentId") Long parentId);
+    int deleteByParentId(@Param("parentId") Long parentId);
 
     /**
      * 更新评论点赞数
@@ -150,4 +152,11 @@ public interface ICommentDao {
                                       @Param("sortType") CommentSortType sortType,
                                       @Param("pageNo") Integer pageNo,
                                       @Param("pageSize") Integer pageSize);
+
+    /**
+     * 根据评论ID查询评论及用户信息
+     * @param commentId
+     * @return
+     */
+    CommentEntity findCommentWithUserById(@Param("id") Long id);
 }

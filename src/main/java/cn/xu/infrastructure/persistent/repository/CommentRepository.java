@@ -1,6 +1,7 @@
 package cn.xu.infrastructure.persistent.repository;
 
 import cn.xu.api.web.model.dto.comment.CommentQueryRequest;
+import cn.xu.api.web.model.vo.comment.CommentPageVO;
 import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.comment.model.entity.CommentEntity;
 import cn.xu.domain.comment.model.valueobject.CommentSortType;
@@ -265,15 +266,8 @@ public class CommentRepository implements ICommentRepository {
     }
 
     @Override
-    public void deleteByParentId(Long parentId) {
-        try {
-            log.info("删除子评论 - parentId: {}", parentId);
-            commentDao.deleteByParentId(parentId);
-            log.info("删除子评论成功 - parentId: {}", parentId);
-        } catch (Exception e) {
-            log.error("删除子评论失败 - parentId: {}", parentId, e);
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "删除子评论失败：" + e.getMessage());
-        }
+    public int deleteByParentId(Long parentId) {
+        return commentDao.deleteByParentId(parentId);
     }
 
     @Override
@@ -321,6 +315,11 @@ public class CommentRepository implements ICommentRepository {
     public List<CommentEntity> findReplyListByPage(List<Long> parentIds, CommentSortType sortType, Integer page, Integer size) {
         List<Comment> replyList = commentDao.findReplyListByPage(parentIds, sortType, page, size);
         return convertCommentList(replyList);
+    }
+
+    @Override
+    public CommentEntity findCommentWithUserById(Long commentId) {
+        return commentDao.findCommentWithUserById(commentId);
     }
 
     private List<CommentEntity> convertCommentList(List<Comment> comments) {

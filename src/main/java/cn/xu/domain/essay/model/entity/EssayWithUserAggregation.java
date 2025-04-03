@@ -12,6 +12,8 @@ public class EssayWithUserAggregation {
     private String content;
     private String images;
     private String topics;
+    private Long likeCount;
+    private Long commentCount;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 }

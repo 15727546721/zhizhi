@@ -2,9 +2,11 @@ package cn.xu.api.web.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.stp.StpUtil;
+import cn.xu.api.web.model.dto.comment.CommentAddRequest;
 import cn.xu.api.web.model.dto.essay.EssayQueryRequest;
 import cn.xu.api.web.model.dto.essay.EssaySaveRequest;
 import cn.xu.application.common.ResponseCode;
+import cn.xu.domain.comment.service.ICommentService;
 import cn.xu.domain.essay.command.CreateEssayCommand;
 import cn.xu.domain.essay.model.vo.EssayVO;
 import cn.xu.domain.essay.service.impl.EssayService;
@@ -19,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
+import javax.validation.Valid;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -33,7 +36,6 @@ public class EssayController {
 
     @Resource
     private EssayService essayService;
-
     @Resource
     private MinioService minioService;
 

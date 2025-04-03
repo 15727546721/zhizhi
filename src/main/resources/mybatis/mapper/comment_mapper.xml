@@ -30,29 +30,29 @@
         <!-- 评论用户信息映射 -->
         <association property="user" javaType="cn.xu.domain.user.model.entity.UserEntity">
             <id column="id" property="id"/>
-            <result column="user_username" property="username"/>
-            <result column="user_nickname" property="nickname"/>
-            <result column="user_avatar" property="avatar"/>
-            <result column="user_gender" property="gender"/>
-            <result column="user_region" property="region"/>
-            <result column="user_description" property="description"/>
-            <result column="user_follow_count" property="followCount"/>
-            <result column="user_fans_count" property="fansCount"/>
-            <result column="user_like_count" property="likeCount"/>
+            <result column="username" property="username"/>
+            <result column="nickname" property="nickname"/>
+            <result column="avatar" property="avatar"/>
+            <result column="gender" property="gender"/>
+            <result column="region" property="region"/>
+            <result column="description" property="description"/>
+            <result column="follow_count" property="followCount"/>
+            <result column="fans_count" property="fansCount"/>
+            <result column="like_count" property="likeCount"/>
         </association>
 
         <!-- 被回复用户信息映射 -->
         <association property="replyUser" javaType="cn.xu.domain.user.model.entity.UserEntity">
-            <id column="id" property="id"/>
-            <result column="reply_user_username" property="username"/>
-            <result column="reply_user_nickname" property="nickname"/>
-            <result column="reply_user_avatar" property="avatar"/>
-            <result column="reply_user_gender" property="gender"/>
-            <result column="reply_user_region" property="region"/>
-            <result column="reply_user_description" property="description"/>
-            <result column="reply_user_follow_count" property="followCount"/>
-            <result column="reply_user_fans_count" property="fansCount"/>
-            <result column="reply_user_like_count" property="likeCount"/>
+            <id column="reply_id" property="id"/>
+            <result column="reply_username" property="username"/>
+            <result column="reply_nickname" property="nickname"/>
+            <result column="reply_avatar" property="avatar"/>
+            <result column="reply_gender" property="gender"/>
+            <result column="reply_region" property="region"/>
+            <result column="reply_description" property="description"/>
+            <result column="reply_follow_count" property="followCount"/>
+            <result column="reply_fans_count" property="fansCount"/>
+            <result column="reply_like_count" property="likeCount"/>
         </association>
     </resultMap>
 
@@ -346,6 +346,14 @@
             ORDER BY create_time DESC
         </if>
         LIMIT 10 OFFSET 0;
+    </select>
+    <select id="findCommentWithUserById" resultMap="CommentWithUserMap">
+        SELECT
+        c.*,
+        u.*
+        FROM comment c
+        LEFT JOIN user u ON c.user_id = u.id
+        WHERE c.id = #{id}
     </select>
 
     <!-- 批量更新评论点赞数 -->

@@ -7,7 +7,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Data
 @Builder
@@ -19,6 +18,8 @@ public class EssayVO {
     private String content;
     private String[] images;
     private String[] topics;
+    private Long likeCount;
+    private Long commentCount;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 }

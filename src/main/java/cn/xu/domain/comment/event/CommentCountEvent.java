@@ -10,19 +10,10 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CommentEvent {
+public class CommentCountEvent {
     private Long commentId;
-    private CommentType targetType;
     private Long targetId;
-    private String content;
-    /**
-     * 发表评论的用户ID
-     */
-    private Long userId;
-
-    /**
-     * 回复的用户ID，若为回复评论则存在
-     */
-    private Long replyUserId;
-
+    private CommentType targetType;
+    private Integer level; // 评论层级
+    private Integer count; // 评论数(可能是新增评论数，也可能是减少评论数)
 }

@@ -29,7 +29,7 @@ public class LikeRequest {
     /**
      * 点赞类型
      * ARTICLE(1, "文章"),
-     * TOPIC(2, "话题"),
+     * ESSAY(2, "话题"),
      * COMMENT(3, "评论");
      */
     @NotBlank(message = "点赞类型不能为空")

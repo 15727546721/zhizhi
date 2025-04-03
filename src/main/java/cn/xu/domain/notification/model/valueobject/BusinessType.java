@@ -10,7 +10,7 @@ import lombok.Getter;
 public enum BusinessType {
     SYSTEM(0, "系统"),
     ARTICLE(1, "文章"),
-    TOPIC(2, "话题"),
+    ESSAY(2, "话题"),
     USER(3, "用户");
 
     private final Integer value;

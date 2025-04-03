@@ -7,7 +7,9 @@
         <result column="user_id" property="userId" jdbcType="BIGINT"/>
         <result column="content" property="content" jdbcType="VARCHAR"/>
         <result column="images" property="images" jdbcType="VARCHAR"/>
-        <result column="category_id" property="categoryId" jdbcType="BIGINT"/>
+        <result column="topics" property="topics" jdbcType="VARCHAR"/>
+        <result column="like_count" property="likeCount" jdbcType="BIGINT"/>
+        <result column="comment_count" property="commentCount" jdbcType="BIGINT"/>
         <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
         <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
     </resultMap>
@@ -40,13 +42,15 @@
         <result property="content" column="content"/>
         <result property="images" column="images"/>
         <result property="topics" column="topics"/>
+        <result property="likeCount" column="like_count"/>
+        <result property="commentCount" column="comment_count"/>
         <result property="createTime" column="create_time"/>
         <result property="updateTime" column="update_time"/>
         <association property="user" resultMap="UserResultMap"/>
     </resultMap>
     <sql id="Base_Column_List">
         id
-        , user_id, content, images, topics, create_time, update_time
+        , user_id, content, images, topics, lile_count, comment_count, create_time, update_time
     </sql>
 
     <insert id="insert" parameterType="cn.xu.domain.essay.model.entity.EssayEntity" useGeneratedKeys="true"
@@ -70,6 +74,11 @@
             update_time = now()
         </set>
         where id = #{id}
+    </update>
+    <update id="updateCommentCount">
+        update `essay`
+        set comment_count = comment_count + #{count}
+        where id = #{targetId}
     </update>
 
     <delete id="deleteById" parameterType="java.lang.Long">
@@ -108,7 +117,7 @@
 
     <select id="findEssayList" resultMap="EssayWithUserResultMap">
         select
-        e.id, e.user_id, e.content, e.images, e.topics, e.create_time, e.update_time,
+        e.id, e.user_id, e.content, e.images, e.topics, e.like_count, e.comment_count, e.create_time, e.update_time,
         u.*
         from `essay` e
         left join `user` u on e.user_id = u.id
