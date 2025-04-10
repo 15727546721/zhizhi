@@ -5,7 +5,7 @@ import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.api.system.model.dto.user.UserRequest;
 import cn.xu.api.web.model.dto.user.LoginRequest;
 import cn.xu.api.web.model.dto.user.RegisterRequest;
-import cn.xu.api.web.model.dto.user.UserUpdateRequest;
+import cn.xu.api.web.model.dto.user.UpdateUserReq;
 import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.file.service.IFileStorageService;
 import cn.xu.domain.user.model.entity.UserEntity;
@@ -70,7 +70,7 @@ public class UserServiceImpl implements IUserService {
     }
 
     @Override
-    public void update(UserUpdateRequest user) {
+    public void update(UpdateUserReq user) {
         UserEntity userEntity = getUserById(user.getId());
         if (userEntity == null) {
             log.error("[用户服务] 更新用户信息失败：用户不存在");
