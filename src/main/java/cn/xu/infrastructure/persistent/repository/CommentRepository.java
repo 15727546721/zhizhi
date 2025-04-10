@@ -1,7 +1,8 @@
 package cn.xu.infrastructure.persistent.repository;
 
 import cn.xu.api.web.model.dto.comment.CommentQueryRequest;
-import cn.xu.api.web.model.vo.comment.CommentPageVO;
+import cn.xu.api.web.model.dto.comment.FindChildCommentItemVO;
+import cn.xu.api.web.model.dto.comment.FindCommentItemVO;
 import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.comment.model.entity.CommentEntity;
 import cn.xu.domain.comment.model.valueobject.CommentSortType;
@@ -14,8 +15,7 @@ import org.springframework.stereotype.Repository;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -320,6 +320,34 @@ public class CommentRepository implements ICommentRepository {
     @Override
     public CommentEntity findCommentWithUserById(Long commentId) {
         return commentDao.findCommentWithUserById(commentId);
+    }
+
+    @Override
+    public List<FindCommentItemVO> findRootCommentWithUser(Integer targetType, Long targetId, Integer pageNo, Integer pageSize) {
+        int offset = (pageNo - 1) * pageSize;
+        int size = pageSize;
+        List<FindCommentItemVO> vo = commentDao.findRootCommentWithUser(targetType, targetId, offset, size);
+        return vo;
+    }
+
+    @Override
+    public Map<Long, List<FindChildCommentItemVO>> findReplyWithUser(List<Long> commentIds, Integer pageNo, Integer pageSize) {
+        int offset = (pageNo - 1) * pageSize;
+        int size = pageSize;
+        Map<Long, List<FindChildCommentItemVO>> map = new HashMap<>();
+        commentIds.forEach(commentId -> {
+            List<FindChildCommentItemVO> childComment = commentDao.findReplyPageWithUserByParentId(commentId, offset, size);
+            map.put(commentId, childComment);
+        });
+        return map;
+    }
+
+    @Override
+    public List<FindChildCommentItemVO> findReplyPageWithUser(Long parentId, Integer pageNo, Integer pageSize) {
+        int offset = (pageNo - 1) * pageSize;
+        int size = pageSize;
+        List<FindChildCommentItemVO> childComment = commentDao.findReplyPageWithUserByParentId(parentId, offset, size);
+        return childComment;
     }
 
     private List<CommentEntity> convertCommentList(List<Comment> comments) {

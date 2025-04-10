@@ -15,47 +15,64 @@
         <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
     </resultMap>
 
-    <resultMap id="CommentWithUserMap" type="cn.xu.domain.comment.model.entity.CommentEntity">
+    <resultMap id="CommentWithUserAndReplyMap" type="cn.xu.api.web.model.dto.comment.FindChildCommentItemVO">
         <!-- 评论表字段映射 -->
         <id column="id" property="id"/>
-        <result column="target_type" property="targetType"/>
-        <result column="target_id" property="targetId"/>
-        <result column="parent_id" property="parentId"/>
         <result column="content" property="content"/>
         <result column="like_count" property="likeCount"/>
-        <result column="reply_count" property="replyCount"/>
         <result column="create_time" property="createTime"/>
-        <result column="update_time" property="updateTime"/>
 
         <!-- 评论用户信息映射 -->
         <association property="user" javaType="cn.xu.domain.user.model.entity.UserEntity">
-            <id column="id" property="id"/>
-            <result column="username" property="username"/>
-            <result column="nickname" property="nickname"/>
-            <result column="avatar" property="avatar"/>
-            <result column="gender" property="gender"/>
-            <result column="region" property="region"/>
-            <result column="description" property="description"/>
-            <result column="follow_count" property="followCount"/>
-            <result column="fans_count" property="fansCount"/>
-            <result column="like_count" property="likeCount"/>
+            <id column="user_id" property="id"/>
+            <result column="user_username" property="username"/>
+            <result column="user_nickname" property="nickname"/>
+            <result column="user_avatar" property="avatar"/>
+            <result column="user_gender" property="gender"/>
+            <result column="user_region" property="region"/>
+            <result column="user_description" property="description"/>
+            <result column="user_follow_count" property="followCount"/>
+            <result column="user_fans_count" property="fansCount"/>
+            <result column="user_like_count" property="likeCount"/>
         </association>
 
         <!-- 被回复用户信息映射 -->
         <association property="replyUser" javaType="cn.xu.domain.user.model.entity.UserEntity">
             <id column="reply_id" property="id"/>
-            <result column="reply_username" property="username"/>
-            <result column="reply_nickname" property="nickname"/>
-            <result column="reply_avatar" property="avatar"/>
-            <result column="reply_gender" property="gender"/>
-            <result column="reply_region" property="region"/>
-            <result column="reply_description" property="description"/>
-            <result column="reply_follow_count" property="followCount"/>
-            <result column="reply_fans_count" property="fansCount"/>
-            <result column="reply_like_count" property="likeCount"/>
+            <result column="reply_user_username" property="username"/>
+            <result column="reply_user_nickname" property="nickname"/>
+            <result column="reply_user_avatar" property="avatar"/>
+            <result column="reply_user_gender" property="gender"/>
+            <result column="reply_user_region" property="region"/>
+            <result column="reply_user_description" property="description"/>
+            <result column="reply_user_follow_count" property="followCount"/>
+            <result column="reply_user_fans_count" property="fansCount"/>
+            <result column="reply_user_like_count" property="likeCount"/>
         </association>
     </resultMap>
 
+    <resultMap id="CommentWithUserMap" type="cn.xu.api.web.model.dto.comment.FindCommentItemVO">
+        <!-- 评论表字段映射 -->
+        <id column="id" property="id"/>
+        <result column="content" property="content"/>
+        <result column="like_count" property="likeCount"/>
+        <result column="reply_count" property="replyCount"/>
+        <result column="create_time" property="createTime"/>
+
+        <!-- 评论用户信息映射 -->
+        <association property="user" javaType="cn.xu.domain.user.model.entity.UserEntity">
+            <id column="user_id" property="id"/>
+            <result column="user_username" property="username"/>
+            <result column="user_nickname" property="nickname"/>
+            <result column="user_avatar" property="avatar"/>
+            <result column="user_gender" property="gender"/>
+            <result column="user_region" property="region"/>
+            <result column="user_description" property="description"/>
+            <result column="user_follow_count" property="followCount"/>
+            <result column="user_fans_count" property="fansCount"/>
+            <result column="user_like_count" property="likeCount"/>
+        </association>
+    </resultMap>
     <sql id="Base_Column_List">
         id
         , target_type, target_id, parent_id, user_id, reply_user_id, `content`, like_count, reply_count, create_time, update_time
@@ -192,7 +209,7 @@
         ORDER BY create_time ASC
     </select>
 
-    <select id="findByTargetWithSort" resultMap="CommentWithUserMap">
+    <select id="findByTargetWithSort" resultMap="CommentWithUserAndReplyMap">
         SELECT
         c.id, c.target_type, c.target_id, c.parent_id,
         c.user_id, c.reply_user_id, c.content,
@@ -255,7 +272,7 @@
     </select>
 
     <!-- 分页查询一级评论（包含用户信息） -->
-    <select id="findRootCommentsWithUser" resultMap="CommentWithUserMap">
+    <select id="findRootCommentsWithUser" resultMap="CommentWithUserAndReplyMap">
         SELECT
         c.*,
         u.id as user_id, u.username as user_username, u.nickname as user_nickname, u.avatar as user_avatar,
@@ -278,7 +295,7 @@
     </select>
 
     <!-- 查询一级评论下的子评论（包含用户信息） -->
-    <select id="findChildCommentsWithUser" resultMap="CommentWithUserMap">
+    <select id="findChildCommentsWithUser" resultMap="CommentWithUserAndReplyMap">
         SELECT
         c.*,
         u.id as user_id, u.username as user_username, u.nickname as user_nickname, u.avatar as user_avatar,
@@ -347,13 +364,43 @@
         </if>
         LIMIT 10 OFFSET 0;
     </select>
-    <select id="findCommentWithUserById" resultMap="CommentWithUserMap">
+    <select id="findCommentWithUserById" resultMap="CommentWithUserAndReplyMap">
         SELECT
         c.*,
         u.*
         FROM comment c
         LEFT JOIN user u ON c.user_id = u.id
         WHERE c.id = #{id}
+    </select>
+    <select id="findRootCommentWithUser" resultMap="CommentWithUserMap">
+        SELECT
+            c.*,
+            u.id as user_id, u.username as user_username, u.nickname as user_nickname, u.avatar as user_avatar,
+            u.gender as user_gender, u.region as user_region, u.description as user_description,
+            u.follow_count as user_follow_count, u.fans_count as user_fans_count, u.like_count as user_like_count
+        FROM comment c
+        JOIN user u ON c.user_id = u.id
+        WHERE c.parent_id IS NULL
+        AND c.target_type = #{targetType}
+        AND c.target_id = #{targetId}
+        ORDER BY c.create_time DESC
+        LIMIT #{size} OFFSET #{offset};
+    </select>
+
+    <select id="findReplyPageWithUserByParentId" resultMap="CommentWithUserAndReplyMap">
+        SELECT c.*, u.id as user_id, u.username as user_username, u.nickname as user_nickname, u.avatar as user_avatar,
+        u.gender as user_gender, u.region as user_region, u.description as user_description,
+        u.follow_count as user_follow_count, u.fans_count as user_fans_count, u.like_count as user_like_count,
+        ru.id as reply_user_id, ru.username as reply_user_username, ru.nickname as reply_user_nickname,
+        ru.avatar as reply_user_avatar, ru.gender as reply_user_gender, ru.region as reply_user_region,
+        ru.description as reply_user_description, ru.follow_count as reply_user_follow_count,
+        ru.fans_count as reply_user_fans_count, ru.like_count as reply_user_like_count
+        FROM comment c
+        LEFT JOIN user u ON c.user_id = u.id
+        LEFT JOIN user ru ON c.reply_user_id = ru.id
+        WHERE c.parent_id = #{parentId}
+        ORDER BY c.create_time ASC
+        LIMIT #{size} OFFSET #{offset};
     </select>
 
     <!-- 批量更新评论点赞数 -->

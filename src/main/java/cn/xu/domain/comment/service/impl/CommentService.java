@@ -1,8 +1,7 @@
 package cn.xu.domain.comment.service.impl;
 
 import cn.xu.api.system.model.vo.comment.CommentReplyVO;
-import cn.xu.api.web.model.dto.comment.CommentQueryRequest;
-import cn.xu.api.web.model.dto.comment.CommentRequest;
+import cn.xu.api.web.model.dto.comment.*;
 import cn.xu.api.web.model.vo.comment.CommentVO;
 import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.comment.event.CommentCountEvent;
@@ -17,14 +16,10 @@ import cn.xu.domain.user.service.IUserService;
 import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.common.request.PageRequest;
 import cn.xu.infrastructure.common.response.PageResponse;
-import cn.xu.infrastructure.persistent.dao.IArticleDao;
-import cn.xu.infrastructure.persistent.dao.ICommentDao;
-import cn.xu.infrastructure.persistent.dao.IEssayDao;
 import com.lmax.disruptor.RingBuffer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.annotation.Resource;
 import java.util.*;
@@ -39,15 +34,6 @@ public class CommentService implements ICommentService {
     private IUserService userService;
     @Resource
     private RingBuffer<CommentCountEvent> ringBuffer;
-
-    @Resource
-    private IArticleDao articleDao;
-    @Resource
-    private IEssayDao essayDao;
-    @Resource
-    private ICommentDao commentDao;
-    @Resource
-    private TransactionTemplate transactionTemplate;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -330,6 +316,43 @@ public class CommentService implements ICommentService {
         return byId;
     }
 
+    @Override
+    public List<FindCommentItemVO> findCommentPageList(FindCommentReq request) {
+
+        Integer targetType = request.getTargetType();
+        Long targetId = request.getTargetId();
+        Integer pageNo = request.getPageNo();
+        Integer pageSize = 10;
+
+        // 1. 获取评论列表
+        List<FindCommentItemVO> commentList = commentRepository.findRootCommentWithUser(targetType, targetId, pageNo, pageSize);
+
+        // 2. 获取子评论
+        List<Long> commentIds = commentList.stream()
+               .map(FindCommentItemVO::getId)
+               .collect(Collectors.toList());
+        Map<Long, List<FindChildCommentItemVO>> childCommentMap
+                = commentRepository.findReplyWithUser(commentIds, 1, 6);
+
+        // 3. 构建评论树
+        for (FindCommentItemVO comment : commentList) {
+            comment.setReplyComment(childCommentMap.get(comment.getId()));
+        }
+
+        return commentList;
+    }
+
+    @Override
+    public List<FindChildCommentItemVO> findReplyPageList(FindReplyReq request) {
+        Long parentId = request.getCommentId();
+        Integer pageNo = request.getPageNo();
+        Integer pageSize = 6;
+        List<FindChildCommentItemVO> replyList
+                = commentRepository.findReplyPageWithUser(parentId, pageNo, pageSize);
+        return replyList;
+    }
+
+
     /**
      * 分页获取一级评论列表（包含用户信息）
      *
@@ -477,6 +500,8 @@ public class CommentService implements ICommentService {
                 .updateTime(entity.getUpdateTime())
                 .build();
     }
+
+
 
     private void pushCommentEvent(CommentCountEvent comment) {
         ringBuffer.publishEvent((event, sequence) -> {

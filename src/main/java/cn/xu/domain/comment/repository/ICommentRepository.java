@@ -1,11 +1,13 @@
 package cn.xu.domain.comment.repository;
 
 import cn.xu.api.web.model.dto.comment.CommentQueryRequest;
-import cn.xu.api.web.model.vo.comment.CommentPageVO;
+import cn.xu.api.web.model.dto.comment.FindChildCommentItemVO;
+import cn.xu.api.web.model.dto.comment.FindCommentItemVO;
 import cn.xu.domain.comment.model.entity.CommentEntity;
 import cn.xu.domain.comment.model.valueobject.CommentSortType;
 
 import java.util.List;
+import java.util.Map;
 
 public interface ICommentRepository {
     /**
@@ -135,4 +137,26 @@ public interface ICommentRepository {
      * @return
      */
     CommentEntity findCommentWithUserById(Long commentId);
+
+    /**
+     * 查询一级评论及用户信息
+     * @param targetType
+     * @param targetId
+     * @param pageNo
+     * @param pageSize
+     * @return
+     */
+    List<FindCommentItemVO> findRootCommentWithUser(Integer targetType, Long targetId, Integer pageNo, Integer pageSize);
+
+
+    Map<Long, List<FindChildCommentItemVO>> findReplyWithUser(List<Long> commentIds, Integer pageNo, Integer pageSize);
+
+    /**
+     * 根据父评论ID分页查询子评论及用户信息
+     * @param parentId
+     * @param pageNo
+     * @param pageSize
+     * @return
+     */
+    List<FindChildCommentItemVO> findReplyPageWithUser(Long parentId, Integer pageNo, Integer pageSize);
 }

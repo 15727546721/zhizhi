@@ -4,6 +4,7 @@ import cn.xu.infrastructure.common.request.PageRequest;
 import lombok.Data;
 
 @Data
-public class ReplyRequest extends PageRequest {
-    private Long commentId;
+public class FindCommentReq extends PageRequest {
+    private Long targetId;
+    private Integer targetType;
 }

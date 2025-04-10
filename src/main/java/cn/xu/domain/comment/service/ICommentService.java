@@ -1,6 +1,6 @@
 package cn.xu.domain.comment.service;
 
-import cn.xu.api.web.model.dto.comment.CommentQueryRequest;
+import cn.xu.api.web.model.dto.comment.*;
 import cn.xu.domain.comment.event.CommentEvent;
 import cn.xu.domain.comment.model.entity.CommentEntity;
 import cn.xu.domain.comment.model.valueobject.CommentType;
@@ -66,4 +66,18 @@ public interface ICommentService {
      * @return
      */
     CommentEntity findCommentWithUserById(Long commentId);
+
+    /**
+     * 获取评论列表（分页）
+     * @param request
+     * @return
+     */
+    List<FindCommentItemVO> findCommentPageList(FindCommentReq request);
+
+    /**
+     * 获取子评论列表（分页）
+     * @param request
+     * @return
+     */
+    List<FindChildCommentItemVO> findReplyPageList(FindReplyReq request);
 }

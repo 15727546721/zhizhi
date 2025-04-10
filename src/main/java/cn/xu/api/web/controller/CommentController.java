@@ -1,8 +1,7 @@
 package cn.xu.api.web.controller;
 
 import cn.dev33.satoken.stp.StpUtil;
-import cn.xu.api.web.model.dto.comment.CommentAddRequest;
-import cn.xu.api.web.model.dto.comment.ReplyCommentRequest;
+import cn.xu.api.web.model.dto.comment.*;
 import cn.xu.api.web.model.vo.comment.CommentListVO;
 import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.comment.event.CommentEvent;
@@ -27,11 +26,8 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/comment")
 public class CommentController {
-
     @Resource
     private ICommentService commentService;
-    @Resource
-    private IUserService userService;
 
     @Operation(summary = "发表评论")
     @PostMapping("/publish")
@@ -69,73 +65,26 @@ public class CommentController {
                 .build();
     }
 
-
-    @Operation(summary = "获取评论列表")
-    @Parameters({
-            @Parameter(name = "type", description = "评论类型", required = true),
-            @Parameter(name = "targetId", description = "目标ID", required = true),
-            @Parameter(name = "pageNum", description = "页码", required = true),
-            @Parameter(name = "pageSize", description = "每页数量", required = true)
-    })
-    @GetMapping("/list")
-    public ResponseEntity<List<CommentListVO>> getCommentList(
-            @RequestParam("type") Integer type,
-            @RequestParam("targetId") Long targetId,
-            @RequestParam(defaultValue = "1") Integer pageNum,
-            @RequestParam(defaultValue = "20") Integer pageSize) {
-
-        CommentType commentType = CommentType.valueOf(type);
-        List<CommentEntity> commentEntityList = commentService.getPagedComments(commentType, targetId, pageNum, pageSize);
-
-        // 收集所有用户ID（包括子评论的用户）
-        Set<Long> userIds = new HashSet<>();
-        collectUserIds(commentEntityList, userIds);
-
-        // 批量获取用户信息
-        Map<Long, UserEntity> userInfoMap = userService.getBatchUserInfo(userIds);
-
-        // 转换为DTO
-        List<CommentListVO> commentListDTOList = convertToDTO(commentEntityList, userInfoMap);
-
-        return ResponseEntity.<List<CommentListVO>>builder()
-                .data(commentListDTOList)
+    @PostMapping("/page/list")
+    @ApiOperationLog(description = "评论分页查询")
+    public ResponseEntity<List<FindCommentItemVO>> getCommentPageList(@RequestBody FindCommentReq request) {
+        List<FindCommentItemVO> commentPageList = commentService.findCommentPageList(request);
+        return ResponseEntity.<List<FindCommentItemVO>>builder()
+                .data(commentPageList)
                 .code(ResponseCode.SUCCESS.getCode())
                 .info("获取评论列表成功")
                 .build();
     }
 
-    private List<CommentListVO> convertToDTO(List<CommentEntity> commentEntities, Map<Long, UserEntity> userInfoMap) {
-        if (commentEntities == null || commentEntities.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        return commentEntities.stream()
-                .map(commentEntity -> convertSingleCommentToDTO(commentEntity, userInfoMap))
-                .collect(Collectors.toList());
-    }
-
-    private CommentListVO convertSingleCommentToDTO(CommentEntity commentEntity, Map<Long, UserEntity> userInfoMap) {
-        return CommentListVO.builder()
-                .id(commentEntity.getId())
-                .userId(commentEntity.getUserId())
-                .replyUserId(commentEntity.getReplyUserId())
-                .content(commentEntity.getContent())
-                .createTime(commentEntity.getCreateTime())
-                .userInfo(userInfoMap.get(commentEntity.getUserId()))
-                .replyComment(convertToDTO(commentEntity.getChildren(), userInfoMap))
+    @PostMapping("/reply/list")
+    @ApiOperationLog(description = "获取评论回复列表")
+    public ResponseEntity<List<FindChildCommentItemVO>> getReplyCommentList(@RequestBody FindReplyReq request) {
+        List<FindChildCommentItemVO> replyCommentList = commentService.findReplyPageList(request);
+        return ResponseEntity.<List<FindChildCommentItemVO>>builder()
+                .data(replyCommentList)
+                .code(ResponseCode.SUCCESS.getCode())
+                .info("获取评论回复列表成功")
                 .build();
-    }
-
-    private void collectUserIds(List<CommentEntity> comments, Set<Long> userIds) {
-        if (comments == null || comments.isEmpty()) {
-            return;
-        }
-
-        comments.forEach(comment -> {
-            userIds.add(comment.getUserId());
-            Optional.ofNullable(comment.getReplyUserId()).ifPresent(userIds::add);
-            Optional.ofNullable(comment.getChildren()).ifPresent(children -> collectUserIds(children, userIds));
-        });
     }
 
     @Operation(summary = "删除评论")

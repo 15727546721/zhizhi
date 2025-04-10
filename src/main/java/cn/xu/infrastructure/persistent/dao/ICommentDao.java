@@ -1,7 +1,8 @@
 package cn.xu.infrastructure.persistent.dao;
 
 import cn.xu.api.web.model.dto.comment.CommentQueryRequest;
-import cn.xu.api.web.model.vo.comment.CommentPageVO;
+import cn.xu.api.web.model.dto.comment.FindChildCommentItemVO;
+import cn.xu.api.web.model.dto.comment.FindCommentItemVO;
 import cn.xu.domain.comment.model.entity.CommentEntity;
 import cn.xu.domain.comment.model.valueobject.CommentSortType;
 import cn.xu.infrastructure.persistent.po.Comment;
@@ -159,4 +160,28 @@ public interface ICommentDao {
      * @return
      */
     CommentEntity findCommentWithUserById(@Param("id") Long id);
+
+    /**
+     * 根据评论ID查询评论及用户信息
+     * @param targetType
+     * @param targetId
+     * @param offset
+     * @param size
+     * @return
+     */
+    List<FindCommentItemVO> findRootCommentWithUser(@Param("targetType") Integer targetType,
+                                                    @Param("targetId") Long targetId,
+                                                    @Param("offset") int offset,
+                                                    @Param("size") int size);
+
+    /**
+     * 根据父评论ID分页查询子评论及用户信息
+     * @param parentId
+     * @param offset
+     * @param size
+     * @return
+     */
+    List<FindChildCommentItemVO> findReplyPageWithUserByParentId(@Param("parentId") Long parentId,
+                                                           @Param("offset") int offset,
+                                                           @Param("size") int size);
 }
