@@ -2,15 +2,15 @@ package cn.xu.api.web.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.stp.StpUtil;
-import cn.xu.api.web.model.dto.comment.CommentAddRequest;
 import cn.xu.api.web.model.dto.essay.EssayQueryRequest;
 import cn.xu.api.web.model.dto.essay.EssaySaveRequest;
 import cn.xu.application.common.ResponseCode;
-import cn.xu.domain.comment.service.ICommentService;
 import cn.xu.domain.essay.command.CreateEssayCommand;
 import cn.xu.domain.essay.model.vo.EssayVO;
 import cn.xu.domain.essay.service.impl.EssayService;
 import cn.xu.domain.file.service.MinioService;
+import cn.xu.domain.like.model.LikeType;
+import cn.xu.domain.like.service.ILikeService;
 import cn.xu.infrastructure.common.annotation.ApiOperationLog;
 import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.common.response.ResponseEntity;
@@ -21,7 +21,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
-import javax.validation.Valid;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -36,6 +35,8 @@ public class EssayController {
 
     @Resource
     private EssayService essayService;
+    @Resource
+    private ILikeService likeService;
     @Resource
     private MinioService minioService;
 
@@ -123,4 +124,28 @@ public class EssayController {
         }
     }
 
+    @GetMapping("/like/{id}")
+    @Operation(summary = "随笔点赞")
+    @SaCheckLogin
+    public ResponseEntity<Void> likeEssay(@PathVariable Long id) {
+        log.info("开始点赞随笔，id: {}", id);
+        long userId = StpUtil.getLoginIdAsLong();
+        likeService.like(userId, LikeType.ESSAY.getValue(), id);
+        return ResponseEntity.<Void>builder()
+                .code(ResponseCode.SUCCESS.getCode())
+                .info(ResponseCode.SUCCESS.getMessage())
+                .build();
+    }
+
+    @GetMapping("/unlike/{id}")
+    @Operation(summary = "取消随笔点赞")
+    @SaCheckLogin
+    public ResponseEntity<?> unlikeEssay(@PathVariable("id") Long id) {
+        long userId = StpUtil.getLoginIdAsLong();
+        likeService.unlike(userId, LikeType.ESSAY.getValue(), id);
+        return ResponseEntity.builder()
+                .code(ResponseCode.SUCCESS.getCode())
+                .info("文章取消点赞成功")
+                .build();
+    }
 } 
