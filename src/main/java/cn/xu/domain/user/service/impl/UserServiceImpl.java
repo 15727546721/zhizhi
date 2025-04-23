@@ -27,10 +27,7 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -85,6 +82,11 @@ public class UserServiceImpl implements IUserService {
         userEntity.setPhone(user.getPhone());
         userEntity.setUpdateTime(LocalDateTime.now());
         userRepository.update(userEntity);
+    }
+
+    @Override
+    public List<UserEntity> batchGetUserInfo(List<Long> userIds) {
+        return userRepository.findByIds(userIds);
     }
 
     @Override
@@ -327,7 +329,8 @@ public class UserServiceImpl implements IUserService {
 
     @Override
     public Map<Long, UserEntity> getBatchUserInfo(Set<Long> userIds) {
-        return userRepository.findByIds(userIds).stream()
+        List<Long> collect = new ArrayList<>(userIds);
+        return userRepository.findByIds(collect).stream()
                 .collect(Collectors.toMap(UserEntity::getId, user -> user));
     }
 
@@ -346,7 +349,8 @@ public class UserServiceImpl implements IUserService {
 
         try {
             log.info("[用户服务] 开始批量获取用户信息 - userIds: {}", userIds);
-            List<UserEntity> users = userRepository.findByIds(userIds);
+            List<Long> collect = new ArrayList<>(userIds);
+            List<UserEntity> users = userRepository.findByIds(collect);
 
             Map<Long, UserEntity> userMap = users.stream()
                     .collect(Collectors.toMap(UserEntity::getId, user -> user));

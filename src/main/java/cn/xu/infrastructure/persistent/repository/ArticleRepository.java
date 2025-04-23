@@ -1,7 +1,6 @@
 package cn.xu.infrastructure.persistent.repository;
 
 import cn.xu.api.system.model.dto.article.ArticleRequest;
-import cn.xu.api.web.model.dto.article.ArticlePageRequest;
 import cn.xu.api.web.model.vo.article.ArticleListVO;
 import cn.xu.api.web.model.vo.article.ArticlePageVO;
 import cn.xu.domain.article.model.entity.ArticleEntity;
@@ -153,12 +152,22 @@ public class ArticleRepository implements IArticleRepository {
     }
 
     @Override
-    public List<ArticleEntity> getArticlePageByCategory(ArticlePageRequest request) {
-        return articleDao.getArticlePageByCategory(request.getCategoryId(),
-                (request.getPageNo() - 1) * request.getPageSize(),
-                request.getPageSize());
+    public List<ArticleEntity> getArticlePageListByCategoryId(Long categoryId, Integer pageNo, Integer pageSize) {
+        int offset = (pageNo - 1) * pageSize;
+        List<Article> page = articleDao.getArticlePageByCategory(categoryId, offset, pageSize);
+        return page.stream()
+                .map(this::convert)
+                .collect(Collectors.toList());
     }
 
+    @Override
+    public List<ArticleEntity> getArticlePageList(Integer pageNo, Integer pageSize) {
+        int offset = (pageNo - 1) * pageSize;
+
+        return articleDao.getArticlePageList(offset, pageSize);
+    }
+
+    // 修改 convert 方法的参数类型
     private ArticleEntity convert(Article article) {
         return ArticleEntity.builder()
                 .id(article.getId())

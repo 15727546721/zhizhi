@@ -79,7 +79,7 @@ public interface IUserDao {
      * @param userIds 用户ID集合
      * @return 用户信息列表
      */
-    List<User> findByIds(@Param("userIds") Set<Long> userIds);
+    List<User> findByIds(@Param("userIds") List<Long> userIds);
 
     /**
      * 更新关注数

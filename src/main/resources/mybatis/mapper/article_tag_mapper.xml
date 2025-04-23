@@ -66,4 +66,21 @@
         FROM article_tag LIMIT #{offset}, #{pageSize}
     </select>
 
+    <select id="selectByArticleIds" resultType="cn.xu.domain.article.model.aggregate.ArticleAndTagAgg">
+        SELECT
+        at.article_id AS articleId,
+        SUBSTRING_INDEX(
+        GROUP_CONCAT(t.name ORDER BY t.id SEPARATOR ','),
+        ',', 3
+        ) AS tags
+        FROM article_tag_rel as at
+        JOIN article_tag as t ON at.tag_id = t.id
+        <if test="articleIds != null and articleIds.size() > 0">
+            WHERE at.article_id IN
+            <foreach item="id" collection="articleIds" open="(" separator="," close=")">
+                #{id}
+            </foreach>
+        </if>
+        GROUP BY at.article_id
+    </select>
 </mapper>

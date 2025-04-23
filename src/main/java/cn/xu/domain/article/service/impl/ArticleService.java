@@ -1,8 +1,6 @@
 package cn.xu.domain.article.service.impl;
 
 import cn.xu.api.system.model.dto.article.ArticleRequest;
-import cn.xu.api.web.model.dto.article.ArticlePageRequest;
-import cn.xu.api.web.model.vo.article.ArticleListPageVO;
 import cn.xu.api.web.model.vo.article.ArticleListVO;
 import cn.xu.api.web.model.vo.article.ArticlePageVO;
 import cn.xu.application.common.ResponseCode;
@@ -270,24 +268,13 @@ public class ArticleService implements IArticleService {
     }
 
     @Override
-    public List<ArticleListPageVO> getArticlePageByCategory(ArticlePageRequest request) {
-         List<ArticleEntity> articleList = articleRepository.getArticlePageByCategory(request);
-//         userRepository.findById()
-        return null;
+    public List<ArticleEntity> getArticlePageListByCategoryId(Long categoryId, Integer pageNo, Integer pageSize) {
+        return articleRepository.getArticlePageListByCategoryId(categoryId, pageNo, pageSize);
     }
 
     @Override
-    public List<ArticleListVO> getArticleByCategoryId(Long categoryId) {
-        try {
-            log.info("[文章服务] 开始获取分类文章列表 - categoryId: {}", categoryId);
-            List<ArticleListVO> articles = articleRepository.queryArticleByCategoryId(categoryId);
-            log.info("[文章服务] 获取分类文章列表成功 - categoryId: {}, size: {}",
-                    categoryId, articles.size());
-            return articles;
-        } catch (Exception e) {
-            log.error("[文章服务] 获取分类文章列表失败 - categoryId: {}", categoryId, e);
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "获取分类文章列表失败：" + e.getMessage());
-        }
+    public List<ArticleEntity> getArticlePageList(Integer pageNo, Integer pageSize) {
+        return articleRepository.getArticlePageList(pageNo, pageSize);
     }
 
     @Override
@@ -298,38 +285,6 @@ public class ArticleService implements IArticleService {
     @Override
     public List<ArticleEntity> getAllArticles() {
         return articleRepository.findAll();
-    }
-
-    @Override
-    public Long getArticleAuthorId(Long articleId) {
-        if (articleId == null) {
-            log.error("[文章服务] 获取文章作者ID失败：文章ID为空");
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "文章ID不能为空");
-        }
-
-        try {
-            log.info("[文章服务] 开始获取文章作者ID - articleId: {}", articleId);
-            ArticleEntity article = articleRepository.findById(articleId);
-
-            if (article == null) {
-                log.warn("[文章服务] 文章不存在 - articleId: {}", articleId);
-                return null;
-            }
-
-            if (article.getUserId() == null) {
-                log.error("[文章服务] 文章数据异常，作者ID为空 - articleId: {}", articleId);
-                throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "文章数据异常");
-            }
-
-            log.info("[文章服务] 获取文章作者ID成功 - articleId: {}, authorId: {}",
-                    articleId, article.getUserId());
-            return article.getUserId();
-        } catch (BusinessException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("[文章服务] 获取文章作者ID失败 - articleId: {}", articleId, e);
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "获取文章作者信息失败：" + e.getMessage());
-        }
     }
 
 }

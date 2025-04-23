@@ -88,8 +88,12 @@ public interface IArticleDao {
 
     /**
      * 分页查询文章列表
-     * @param request
-     * @return
      */
-    List<ArticleEntity> getArticlePageByCategory(Long categoryId, int offset, int size);
+    List<Article> getArticlePageByCategory(Long categoryId, int offset, int size);
+
+    /**
+     * 获取文章
+     */
+    List<ArticleEntity> getArticlePageList(@Param("offset") Integer offset,
+                                           @Param("size") Integer size);
 }

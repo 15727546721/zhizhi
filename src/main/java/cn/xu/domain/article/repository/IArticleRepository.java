@@ -1,7 +1,6 @@
 package cn.xu.domain.article.repository;
 
 import cn.xu.api.system.model.dto.article.ArticleRequest;
-import cn.xu.api.web.model.dto.article.ArticlePageRequest;
 import cn.xu.api.web.model.vo.article.ArticleListVO;
 import cn.xu.api.web.model.vo.article.ArticlePageVO;
 import cn.xu.domain.article.model.entity.ArticleEntity;
@@ -78,9 +77,14 @@ public interface IArticleRepository {
 
     /**
      * 分页查询文章列表
-     *
-     * @param request
+     * @param categoryId
      * @return
      */
-    List<ArticleEntity> getArticlePageByCategory(ArticlePageRequest request);
+    List<ArticleEntity> getArticlePageListByCategoryId(Long categoryId, Integer pageNo, Integer pageSize);
+
+    /**
+     * 分页查询文章列表
+     * @return
+     */
+    List<ArticleEntity> getArticlePageList(Integer pageNo, Integer pageSize);
 }

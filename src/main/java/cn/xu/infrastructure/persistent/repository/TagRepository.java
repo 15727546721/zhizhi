@@ -2,6 +2,7 @@ package cn.xu.infrastructure.persistent.repository;
 
 
 import cn.xu.application.common.ResponseCode;
+import cn.xu.domain.article.model.aggregate.ArticleAndTagAgg;
 import cn.xu.domain.article.model.entity.TagEntity;
 import cn.xu.domain.article.repository.ITagRepository;
 import cn.xu.infrastructure.common.exception.BusinessException;
@@ -27,7 +28,6 @@ public class TagRepository implements ITagRepository {
         ArticleTag build = ArticleTag.builder()
                 .id(tag.getId())
                 .name(tag.getName())
-                .description(tag.getDescription())
                 .build();
         try {
             tagDao.insert(build);
@@ -58,7 +58,6 @@ public class TagRepository implements ITagRepository {
             ArticleTag articleTag = ArticleTag.builder()
                     .id(tagEntity.getId())
                     .name(tagEntity.getName())
-                    .description(tagEntity.getDescription())
                     .build();
             tagDao.update(articleTag);
         } catch (Exception e) {
@@ -127,6 +126,11 @@ public class TagRepository implements ITagRepository {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<ArticleAndTagAgg> selectByArticleIds(List<Long> articleIds) {
+        return tagDao.selectByArticleIds(articleIds);
+    }
+
     private TagEntity convertToTagEntity(ArticleTag articleTag) {
         if (articleTag == null) {
             return null;
@@ -134,7 +138,6 @@ public class TagRepository implements ITagRepository {
         TagEntity tagEntity = new TagEntity();
         tagEntity.setId(articleTag.getId());
         tagEntity.setName(articleTag.getName());
-        tagEntity.setDescription(articleTag.getDescription());
         tagEntity.setCreateTime(articleTag.getCreateTime());
         tagEntity.setUpdateTime(articleTag.getUpdateTime());
         return tagEntity;

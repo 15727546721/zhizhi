@@ -2,14 +2,15 @@ package cn.xu.api.web.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.stp.StpUtil;
-import cn.xu.api.web.model.dto.article.ArticlePageRequest;
 import cn.xu.api.web.model.dto.article.DraftRequest;
+import cn.xu.api.web.model.dto.article.FindArticlePageByCategoryReq;
 import cn.xu.api.web.model.dto.article.PublishOrDraftArticleRequest;
 import cn.xu.api.web.model.vo.article.ArticleDetailVO;
-import cn.xu.api.web.model.vo.article.ArticleListPageVO;
 import cn.xu.api.web.model.vo.article.ArticleListVO;
+import cn.xu.api.web.model.vo.article.FindArticlePageListVO;
 import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.article.model.aggregate.ArticleAndAuthorAggregate;
+import cn.xu.domain.article.model.aggregate.ArticleAndTagAgg;
 import cn.xu.domain.article.model.entity.ArticleEntity;
 import cn.xu.domain.article.model.entity.TagEntity;
 import cn.xu.domain.article.model.valobj.ArticleStatus;
@@ -18,10 +19,10 @@ import cn.xu.domain.article.service.search.ArticleIndexService;
 import cn.xu.domain.follow.service.IFollowService;
 import cn.xu.domain.like.model.LikeType;
 import cn.xu.domain.like.service.ILikeService;
+import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.service.IUserService;
 import cn.xu.infrastructure.common.annotation.ApiOperationLog;
 import cn.xu.infrastructure.common.exception.BusinessException;
-import cn.xu.infrastructure.common.response.PageResponse;
 import cn.xu.infrastructure.common.response.ResponseEntity;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -31,6 +32,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -61,26 +63,31 @@ public class ArticleController {
     @Resource
     private IFollowService followService;
 
-    @PostMapping("/list/page")
-    @Operation(summary = "分页获取文章列表")
-    public ResponseEntity<PageResponse<List<ArticleListPageVO>>> listArticle(@RequestBody ArticlePageRequest request) {
-        log.info("分页获取文章列表，请求参数：{}", request);
-        List<ArticleListPageVO> articleList = articleService.getArticlePageByCategory(request);
-        return null;
-    }
-
-
-    @GetMapping("/category")
+    @PostMapping("/page/category")
+    @ApiOperationLog(description = "通过分类获取文章列表")
     @Operation(summary = "通过分类获取文章列表")
-    public ResponseEntity<List<ArticleListVO>> getArticleByCategory(Long categoryId) {
-        log.info("获取文章列表，分类ID：{}", categoryId);
-        if (categoryId == null || categoryId == 0) {
-            categoryId = null;
+    public ResponseEntity<List<FindArticlePageListVO>> getArticleByCategoryId(@RequestBody FindArticlePageByCategoryReq request) {
+        List<FindArticlePageListVO> result = new LinkedList<>();
+        List<ArticleEntity> articleList;
+        if (request.getCategoryId() == null) {
+            articleList = articleService.getArticlePageList(request.getPageNo(), request.getPageSize());
+        } else {
+            articleList = articleService.getArticlePageListByCategoryId(request.getCategoryId(), request.getPageNo(), request.getPageSize());
         }
-        List<ArticleListVO> articleEntityList = articleService.getArticleByCategoryId(categoryId);
-        return ResponseEntity.<List<ArticleListVO>>builder()
+        List<Long> articleIds = articleList.stream().map(ArticleEntity::getId).collect(Collectors.toList());
+        List<Long> userIds = articleList.stream().map(ArticleEntity::getUserId).collect(Collectors.toList());
+        List<UserEntity> userList = userService.batchGetUserInfo(userIds);
+        List<ArticleAndTagAgg> articleAndTagAggs = tagService.batchGetTagListByArticleIds(articleIds);
+        articleList.stream().forEach(article -> {
+            result.add(FindArticlePageListVO.builder()
+                    .article(article)
+                    .user(userList.stream().filter(user -> user.getId().equals(article.getUserId())).findFirst().get())
+                    .tags(articleAndTagAggs.stream().filter(agg -> agg.getArticleId().equals(article.getId())).findFirst().get().getTags().split(","))
+                    .build());
+        });
+        return ResponseEntity.<List<FindArticlePageListVO>>builder()
                 .code(ResponseCode.SUCCESS.getCode())
-                .data(articleEntityList)
+                .data(result)
                 .build();
     }
 
@@ -282,10 +289,10 @@ public class ArticleController {
     }
 
     @GetMapping("/user/articles")
+    @SaCheckLogin
     @Operation(summary = "根据用户ID查询发布的文章列表")
     public ResponseEntity<List<ArticleListVO>> getArticlesByUserId() {
-        Long userId = userService.getCurrentUserId();
-
+        Long userId = StpUtil.getLoginIdAsLong();
         log.info("根据用户ID查询发布的文章列表，用户ID：{}", userId);
         List<ArticleListVO> articles = articleService.getArticlesByUserId(userId);
         return ResponseEntity.<List<ArticleListVO>>builder()

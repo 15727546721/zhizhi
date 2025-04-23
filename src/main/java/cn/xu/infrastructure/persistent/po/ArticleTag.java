@@ -28,10 +28,6 @@ public class ArticleTag implements Serializable {
      */
     private String name;
 
-    /**
-     * 标签描述
-     */
-    private String description;
 
     /**
      * 创建时间

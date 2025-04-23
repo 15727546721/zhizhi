@@ -124,4 +124,12 @@ public interface IUserService {
      * @param user
      */
     void update(UpdateUserReq user);
+
+    /**
+     * 批量获取用户信息
+     *
+     * @param userIds 用户ID集合
+     * @return 用户信息集合
+     */
+    List<UserEntity> batchGetUserInfo(List<Long> userIds);
 }

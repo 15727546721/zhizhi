@@ -3,13 +3,12 @@ package cn.xu.domain.user.repository;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.model.entity.UserInfoEntity;
 import cn.xu.domain.user.model.entity.UserRegisterEntity;
-import cn.xu.domain.user.model.vo.LoginFormVO;
 import cn.xu.domain.user.model.valobj.Email;
+import cn.xu.domain.user.model.vo.LoginFormVO;
 import cn.xu.domain.user.model.vo.UserFormVO;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 public interface IUserRepository {
     /**
@@ -58,7 +57,7 @@ public interface IUserRepository {
      * @param userIds 用户ID集合
      * @return 用户信息列表
      */
-    List<UserEntity> findByIds(Set<Long> userIds);
+    List<UserEntity> findByIds(List<Long> userIds);
 
     /**
      * 根据用户名查找用户登录信息

@@ -7,14 +7,13 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
-@AllArgsConstructor
-@NoArgsConstructor
-@Builder
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class TagEntity {
     private Long id;
     private String name;
-    private String description;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
 }

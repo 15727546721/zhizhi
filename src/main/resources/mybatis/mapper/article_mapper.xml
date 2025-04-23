@@ -310,17 +310,34 @@
           AND a.user_id = #{userId}
     </select>
 
-    <select id="getArticlePageByCategory" resultType="cn.xu.domain.article.model.entity.ArticleEntity">
+    <select id="getArticlePageByCategory" resultMap="BaseResultMap">
+        SELECT
+        a.id AS id,
+        a.title,
+        a.content,
+        a.cover_url,
+        a.user_id,
+        a.view_count,
+        a.collect_count,
+        a.like_count,
+        a.create_time,
+        a.update_time
+        FROM article AS a
+        JOIN article_category_relation ac ON a.id = ac.article_id
+        JOIN article_category c ON ac.category_id = c.id
+        WHERE c.id = #{categoryId}
+        AND a.status = 1
+        ORDER BY a.create_time DESC
+        LIMIT #{offset}, #{size}
+    </select>
+
+    <select id="getArticlePageList" resultType="cn.xu.domain.article.model.entity.ArticleEntity">
         SELECT
         <include refid="Base_Column_List"/>
         FROM article
-        JOIN article_category_relation ac ON article.id = ac.article_id
-        JOIN article_category c ON ac.category_id = c.id
-        WHERE c.id = #{categoryId}
-        AND status = 1
-        ORDER BY
-        a.create_time DESC
-        limit #{offset}, #{size}
+        WHERE status = 1
+        ORDER BY create_time DESC
+        LIMIT #{offset}, #{size}
     </select>
 
 </mapper>

@@ -1,8 +1,6 @@
 package cn.xu.domain.article.service;
 
 import cn.xu.api.system.model.dto.article.ArticleRequest;
-import cn.xu.api.web.model.dto.article.ArticlePageRequest;
-import cn.xu.api.web.model.vo.article.ArticleListPageVO;
 import cn.xu.api.web.model.vo.article.ArticleListVO;
 import cn.xu.api.web.model.vo.article.ArticlePageVO;
 import cn.xu.domain.article.model.aggregate.ArticleAndAuthorAggregate;
@@ -55,18 +53,8 @@ public interface IArticleService {
 
     /**
      * 更新文章
-     *
-     * @param articleEntity
      */
     void updateArticle(ArticleEntity articleEntity);
-
-    /**
-     * 根据分类ID获取文章列表
-     *
-     * @param categoryId
-     * @return
-     */
-    List<ArticleListVO> getArticleByCategoryId(Long categoryId);
 
     /**
      * 获取全部文章（已发布）
@@ -79,14 +67,6 @@ public interface IArticleService {
      * @return 所有文章列表
      */
     List<ArticleEntity> getAllArticles();
-
-    /**
-     * 获取文章作者ID
-     *
-     * @param articleId 文章ID
-     * @return 作者ID，如果文章不存在则返回null
-     */
-    Long getArticleAuthorId(Long articleId);
 
     /**
      * 获取文章详细信息
@@ -130,10 +110,17 @@ public interface IArticleService {
     void viewArticle(Long articleId);
 
     /**
-     * 分页查询文章列表
-     *
-     * @param request
+     * 根据分类ID获取文章列表
+     * @param categoryId
      * @return
      */
-    List<ArticleListPageVO> getArticlePageByCategory(ArticlePageRequest request);
+    List<ArticleEntity> getArticlePageListByCategoryId(Long categoryId, Integer pageNo, Integer pageSize);
+
+    /**
+     * 获取文章分页列表
+     * @param pageNo
+     * @param pageSize
+     * @return
+     */
+    List<ArticleEntity> getArticlePageList(Integer pageNo, Integer pageSize);
 }
