@@ -144,7 +144,7 @@ public class GlobalExceptionHandler {
         log.error("异常位置: {}.{}", className, methodName);
         log.error("参数信息: 名称 = {}, 期望类型 = {}, 实际值 = {}",
                 paramName, expectedType, actualValue);
-
+        log.error("错误消息: {}", ex);
         return ResponseEntity.<String>builder()
                 .code(ResponseCode.ILLEGAL_PARAMETER.getCode())
                 .info(errorMessage)

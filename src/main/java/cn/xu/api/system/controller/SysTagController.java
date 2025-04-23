@@ -33,7 +33,6 @@ public class SysTagController {
         }
         TagEntity tagEntity = TagEntity.builder()
                 .name(tagRequest.getName())
-                .description(tagRequest.getDescription())
                 .build();
         tagService.save(tagEntity);
         return ResponseEntity.builder()
@@ -77,7 +76,6 @@ public class SysTagController {
         TagEntity tagEntity = TagEntity.builder()
                 .id(tagRequest.getId())
                 .name(tagRequest.getName())
-                .description(tagRequest.getDescription())
                 .build();
         tagService.update(tagEntity);
         return ResponseEntity.builder()

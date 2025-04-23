@@ -2,8 +2,6 @@ package cn.xu.infrastructure.persistent.repository;
 
 import cn.xu.domain.essay.model.entity.EssayEntity;
 import cn.xu.domain.essay.model.entity.EssayWithUserAggregation;
-import cn.xu.domain.essay.model.valobj.EssayType;
-import cn.xu.domain.essay.model.vo.EssayVO;
 import cn.xu.domain.essay.repository.IEssayRepository;
 import cn.xu.infrastructure.persistent.dao.IEssayDao;
 import cn.xu.infrastructure.persistent.po.Essay;

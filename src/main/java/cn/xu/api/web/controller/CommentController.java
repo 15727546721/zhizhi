@@ -2,25 +2,20 @@ package cn.xu.api.web.controller;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.api.web.model.dto.comment.*;
-import cn.xu.api.web.model.vo.comment.CommentListVO;
 import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.comment.event.CommentEvent;
 import cn.xu.domain.comment.model.entity.CommentEntity;
 import cn.xu.domain.comment.model.valueobject.CommentType;
 import cn.xu.domain.comment.service.ICommentService;
-import cn.xu.domain.user.model.entity.UserEntity;
-import cn.xu.domain.user.service.IUserService;
 import cn.xu.infrastructure.common.annotation.ApiOperationLog;
 import cn.xu.infrastructure.common.response.ResponseEntity;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.List;
 
 @Tag(name = "评论接口", description = "评论相关接口")
 @RestController

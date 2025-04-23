@@ -2,8 +2,6 @@ package cn.xu.domain.essay.repository;
 
 import cn.xu.domain.essay.model.entity.EssayEntity;
 import cn.xu.domain.essay.model.entity.EssayWithUserAggregation;
-import cn.xu.domain.essay.model.valobj.EssayType;
-import cn.xu.domain.essay.model.vo.EssayVO;
 
 import java.util.List;
 

@@ -2,8 +2,6 @@ package cn.xu.infrastructure.persistent.dao;
 
 import cn.xu.domain.essay.model.entity.EssayEntity;
 import cn.xu.domain.essay.model.entity.EssayWithUserAggregation;
-import cn.xu.domain.essay.model.valobj.EssayType;
-import cn.xu.domain.essay.model.vo.EssayVO;
 import cn.xu.infrastructure.persistent.po.Essay;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;

@@ -1,7 +1,6 @@
 package cn.xu.api.web.model.dto.comment;
 
 import cn.xu.domain.user.model.entity.UserEntity;
-import cn.xu.infrastructure.persistent.po.User;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
