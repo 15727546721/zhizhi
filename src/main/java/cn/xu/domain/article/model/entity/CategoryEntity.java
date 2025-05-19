@@ -17,8 +17,6 @@ public class CategoryEntity {
 
     private String name;
 
-    private String description;
-
     private LocalDateTime createTime;
 
     private LocalDateTime updateTime;

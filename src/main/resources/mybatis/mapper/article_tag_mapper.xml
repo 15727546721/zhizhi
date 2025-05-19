@@ -55,7 +55,7 @@
     <select id="selectByArticleId" resultType="cn.xu.infrastructure.persistent.po.ArticleTag">
         SELECT t.id, t.name
         FROM article_tag t
-                 INNER JOIN article_tag_relation at
+                 INNER JOIN article_tag_rel at
         ON t.id = at.tag_id
         WHERE at.article_id = #{articleId}
     </select>

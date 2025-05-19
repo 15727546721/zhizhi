@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class ArticleEntity {
     private Long id;
+    private Long categoryId;
     private String title;
     private String description;
     private String content;

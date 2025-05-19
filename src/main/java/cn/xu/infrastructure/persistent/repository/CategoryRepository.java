@@ -28,7 +28,6 @@ public class CategoryRepository implements ICategoryRepository {
             categoryDao.insert(ArticleCategory.builder()
                     .id(category.getId())
                     .name(category.getName())
-                    .description(category.getDescription())
                     .build());
         } catch (Exception e) {
             log.error("保存分类失败", e);
@@ -53,7 +52,6 @@ public class CategoryRepository implements ICategoryRepository {
             categoryDao.update(ArticleCategory.builder()
                     .id(categoryEntity.getId())
                     .name(categoryEntity.getName())
-                    .description(categoryEntity.getDescription())
                     .build());
         } catch (Exception e) {
             log.error("更新分类失败", e);
@@ -109,7 +107,6 @@ public class CategoryRepository implements ICategoryRepository {
         CategoryEntity categoryEntity = new CategoryEntity();
         categoryEntity.setId(articleCategory.getId());
         categoryEntity.setName(articleCategory.getName());
-        categoryEntity.setDescription(articleCategory.getDescription());
         categoryEntity.setCreateTime(articleCategory.getCreateTime());
         categoryEntity.setUpdateTime(articleCategory.getUpdateTime());
         return categoryEntity;

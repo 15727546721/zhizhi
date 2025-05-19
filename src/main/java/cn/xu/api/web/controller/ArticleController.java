@@ -14,7 +14,9 @@ import cn.xu.domain.article.model.aggregate.ArticleAndTagAgg;
 import cn.xu.domain.article.model.entity.ArticleEntity;
 import cn.xu.domain.article.model.entity.TagEntity;
 import cn.xu.domain.article.model.valobj.ArticleStatus;
-import cn.xu.domain.article.service.*;
+import cn.xu.domain.article.service.IArticleService;
+import cn.xu.domain.article.service.IArticleTagService;
+import cn.xu.domain.article.service.ITagService;
 import cn.xu.domain.article.service.search.ArticleIndexService;
 import cn.xu.domain.follow.service.IFollowService;
 import cn.xu.domain.like.model.LikeType;
@@ -34,6 +36,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 @RequestMapping("api/article")
@@ -45,13 +48,9 @@ public class ArticleController {
     @Resource
     private IArticleService articleService;
     @Resource
-    private IArticleCategoryService articleCategoryService;
-    @Resource
     private IArticleTagService articleTagService;
     @Resource
     private ITagService tagService;
-    @Resource
-    private ICategoryService categoryService;
     @Resource
     private TransactionTemplate transactionTemplate;
     @Resource
@@ -127,13 +126,15 @@ public class ArticleController {
     @PostMapping("/create")
     @Operation(summary = "创建文章")
     @ApiOperationLog(description = "创建文章")
-    public ResponseEntity createArticle(@RequestBody PublishOrDraftArticleRequest publishArticleRequest) {
+    public ResponseEntity<Long> createArticle(@RequestBody PublishOrDraftArticleRequest publishArticleRequest) {
         Long userId = StpUtil.getLoginIdAsLong();
+        AtomicLong articleId = new AtomicLong();
         transactionTemplate.execute(status -> {
             // 事务开始
             try {
-                //1. 保存文章
-                Long articleId = articleService.createArticle(ArticleEntity.builder()
+                //1. 保存文章和分类id
+                long id = articleService.createArticle(ArticleEntity.builder()
+                        .categoryId(publishArticleRequest.getCategoryId())
                         .title(publishArticleRequest.getTitle())
                         .coverUrl(publishArticleRequest.getCoverUrl())
                         .content(publishArticleRequest.getContent())
@@ -141,16 +142,15 @@ public class ArticleController {
                         .userId(userId) // 当前登录用户ID
                         .status(ArticleStatus.PUBLISHED)
                         .build());
-                //2. 保存文章分类
-                articleCategoryService.saveArticleCategory(articleId, publishArticleRequest.getCategoryId());
-                //3. 保存文章标签
+                articleId.set(id);
+                //2. 保存文章标签
                 if (publishArticleRequest.getTagIds() == null || publishArticleRequest.getTagIds().isEmpty()) {
                     throw new BusinessException(ResponseCode.NULL_PARAMETER.getCode(), "标签不能为空");
                 }
                 if (publishArticleRequest.getTagIds().size() > 3) {
                     throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "标签不能超过3个");
                 }
-                articleTagService.saveArticleTag(articleId, publishArticleRequest.getTagIds());
+                articleTagService.saveArticleTag(articleId.get(), publishArticleRequest.getTagIds());
                 // 事务提交
                 return 1;
             } catch (Exception e) {
@@ -163,6 +163,7 @@ public class ArticleController {
         log.info("文章创建成功");
         return ResponseEntity.<Long>builder()
                 .code(ResponseCode.SUCCESS.getCode())
+                .data(articleId.longValue())
                 .info("文章创建成功")
                 .build();
     }
@@ -180,9 +181,10 @@ public class ArticleController {
             // 事务开始
             try {
                 Long articleId = publishArticleRequest.getId();
-                //1. 保存文章
+                //1. 保存文章和分类id
                 articleService.publishArticle(ArticleEntity.builder()
                         .id(publishArticleRequest.getId())
+                        .categoryId(publishArticleRequest.getCategoryId())
                         .title(publishArticleRequest.getTitle())
                         .coverUrl(publishArticleRequest.getCoverUrl())
                         .content(publishArticleRequest.getContent())
@@ -190,9 +192,7 @@ public class ArticleController {
                         .userId(userId) // 当前登录用户ID
                         .status(ArticleStatus.PUBLISHED)
                         .build(), userId);
-                //2. 保存文章分类
-                articleCategoryService.saveArticleCategory(articleId, publishArticleRequest.getCategoryId());
-                //3. 保存文章标签
+                //2. 保存文章标签
                 if (publishArticleRequest.getTagIds() == null || publishArticleRequest.getTagIds().isEmpty()) {
                     throw new BusinessException(ResponseCode.NULL_PARAMETER.getCode(), "标签不能为空");
                 }

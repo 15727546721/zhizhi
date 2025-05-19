@@ -39,8 +39,6 @@ public class SysArticleController {
     @Resource
     private IArticleService articleService;
     @Resource
-    private IArticleCategoryService articleCategoryService;
-    @Resource
     private IArticleTagService articleTagService;
     @Resource
     private ITagService tagService;
@@ -70,8 +68,9 @@ public class SysArticleController {
         log.info("文章创建参数: {}", createArticleRequest);
         transactionTemplate.execute(status -> {
             try {
-                //1. 保存文章
+                //1. 保存文章和分类id
                 ArticleEntity article = ArticleEntity.builder()
+                        .categoryId(createArticleRequest.getCategoryId())
                         .title(createArticleRequest.getTitle())
                         .coverUrl(createArticleRequest.getCoverUrl())
                         .content(createArticleRequest.getContent())
@@ -81,10 +80,7 @@ public class SysArticleController {
                 Long articleId = articleService.createArticle(article);
                 article.setId(articleId);
                 
-                //2. 保存文章分类
-                articleCategoryService.saveArticleCategory(articleId, createArticleRequest.getCategoryId());
-                
-                //3. 保存文章标签
+                //2. 保存文章标签
                 if (createArticleRequest.getTagIds() == null || createArticleRequest.getTagIds().isEmpty()) {
                     throw new BusinessException(ResponseCode.NULL_PARAMETER.getCode(), "标签不能为空");
                 }
@@ -114,9 +110,10 @@ public class SysArticleController {
         log.info("文章更新参数: {}", createArticleRequest);
         transactionTemplate.execute(status -> {
             try {
-                //1. 更新文章
+                //1. 更新文章和分类id
                 ArticleEntity article = ArticleEntity.builder()
                         .id(createArticleRequest.getId())
+                        .categoryId(createArticleRequest.getCategoryId())
                         .title(createArticleRequest.getTitle())
                         .coverUrl(createArticleRequest.getCoverUrl())
                         .content(createArticleRequest.getContent())
@@ -125,10 +122,7 @@ public class SysArticleController {
                         .build();
                 articleService.updateArticle(article);
 
-                //2. 更新文章分类
-                articleCategoryService.updateArticleCategory(createArticleRequest.getId(), createArticleRequest.getCategoryId());
-
-                //3. 更新文章标签
+                //2. 更新文章标签
                 if (createArticleRequest.getTagIds() == null || createArticleRequest.getTagIds().isEmpty()) {
                     throw new BusinessException(ResponseCode.NULL_PARAMETER.getCode(), "标签不能为空");
                 }
@@ -265,8 +259,9 @@ public class SysArticleController {
         
         transactionTemplate.execute(status -> {
             try {
-                //1. 保存文章
+                //1. 保存文章和分类id
                 ArticleEntity article = ArticleEntity.builder()
+                        .categoryId(publishArticleRequest.getCategoryId())
                         .title(publishArticleRequest.getTitle())
                         .coverUrl(publishArticleRequest.getCoverUrl())
                         .content(publishArticleRequest.getContent())
@@ -277,10 +272,7 @@ public class SysArticleController {
                 articleId[0] = articleService.createArticle(article);
                 article.setId(articleId[0]);
                 
-                //2. 保存文章分类
-                articleCategoryService.saveArticleCategory(articleId[0], publishArticleRequest.getCategoryId());
-                
-                //3. 保存文章标签
+                //2. 保存文章标签
                 if (publishArticleRequest.getTagIds() == null || publishArticleRequest.getTagIds().isEmpty()) {
                     throw new BusinessException(ResponseCode.NULL_PARAMETER.getCode(), "标签不能为空");
                 }

@@ -8,17 +8,17 @@ import lombok.NoArgsConstructor;
 import java.io.Serializable;
 
 /**
- * 文章分类关系表
+ * 存储文章与标签之间的多对多关系
  *
- * @TableName article_category_relation
+ * @TableName article_tag_rel
  */
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-public class ArticleCategoryRelation implements Serializable {
+public class ArticleTagRel implements Serializable {
     /**
-     * 文章-分类关系表主键
+     * 文章标签关联ID
      */
     private Long id;
 
@@ -28,8 +28,7 @@ public class ArticleCategoryRelation implements Serializable {
     private Long articleId;
 
     /**
-     * 分类ID
+     * 标签ID
      */
-    private Long categoryId;
-
+    private Long tagId;
 }
