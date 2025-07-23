@@ -1,6 +1,6 @@
 package cn.xu.domain.follow.event;
 
-import cn.xu.infrastructure.persistent.dao.IUserDao;
+import cn.xu.infrastructure.persistent.dao.UserMapper;
 import com.lmax.disruptor.EventHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -13,7 +13,7 @@ import javax.annotation.Resource;
 public class FollowEventHandler implements EventHandler<FollowEvent> {
 
     @Resource
-    private IUserDao userDao;
+    private UserMapper userDao;
     @Resource
     private TransactionTemplate transactionTemplate;
 

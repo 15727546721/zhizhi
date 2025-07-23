@@ -11,7 +11,7 @@ import cn.xu.domain.essay.repository.IEssayRepository;
 import cn.xu.domain.essay.service.IEssayService;
 import cn.xu.domain.file.service.MinioService;
 import cn.xu.infrastructure.common.exception.BusinessException;
-import cn.xu.infrastructure.persistent.repository.CommentRepository;
+import cn.xu.infrastructure.persistent.repository.CommentRepositoryImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,7 +33,7 @@ public class EssayService implements IEssayService {
     private MinioService minioService;
 
     @Resource
-    private CommentRepository commentRepository;
+    private CommentRepositoryImpl commentRepositoryImpl;
 
     /**
      * 创建话题

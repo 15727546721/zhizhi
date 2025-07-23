@@ -1,8 +1,8 @@
 package cn.xu.domain.comment.event;
 
-import cn.xu.infrastructure.persistent.dao.IArticleDao;
-import cn.xu.infrastructure.persistent.dao.ICommentDao;
-import cn.xu.infrastructure.persistent.dao.IEssayDao;
+import cn.xu.infrastructure.persistent.dao.ArticleMapper;
+import cn.xu.infrastructure.persistent.dao.CommentMapper;
+import cn.xu.infrastructure.persistent.dao.EssayMapper;
 import com.lmax.disruptor.EventHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -11,15 +11,15 @@ import org.springframework.transaction.support.TransactionTemplate;
 import javax.annotation.Resource;
 
 @Slf4j
-@Component
+@Component("domainCommentEventHandler")
 public class CommentEventHandler implements EventHandler<CommentCountEvent> {
 
     @Resource
-    private IArticleDao articleDao;
+    private ArticleMapper articleDao;
     @Resource
-    private IEssayDao essayDao;
+    private EssayMapper essayDao;
     @Resource
-    private ICommentDao commentDao;
+    private CommentMapper commentDao;
     @Resource
     private TransactionTemplate transactionTemplate;
 

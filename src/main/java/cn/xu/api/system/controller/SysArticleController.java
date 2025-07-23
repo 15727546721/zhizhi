@@ -13,11 +13,11 @@ import cn.xu.domain.article.model.entity.ArticleEntity;
 import cn.xu.domain.article.model.entity.CategoryEntity;
 import cn.xu.domain.article.model.entity.TagEntity;
 import cn.xu.domain.article.service.*;
-import cn.xu.domain.article.service.search.ArticleIndexService;
 import cn.xu.domain.like.service.ILikeService;
 import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.common.response.PageResponse;
 import cn.xu.infrastructure.common.response.ResponseEntity;
+import cn.xu.infrastructure.persistent.read.elastic.service.ArticleElasticService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
@@ -47,7 +47,7 @@ public class SysArticleController {
     @Resource
     private TransactionTemplate transactionTemplate;
     @Resource
-    private ArticleIndexService articleIndexService;
+    private ArticleElasticService articleElasticService;
     @Resource
     private ArticleEventPublisher eventPublisher;
     @Resource
@@ -234,7 +234,7 @@ public class SysArticleController {
                     .build();
             }
 
-            List<ArticleEntity> articles = articleIndexService.searchArticles(title);
+            List<ArticleEntity> articles = articleElasticService.searchArticles(title);
             return ResponseEntity.<List<ArticleEntity>>builder()
                 .data(articles)
                 .code(ResponseCode.SUCCESS.getCode())

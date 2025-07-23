@@ -5,7 +5,7 @@ import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.article.model.entity.CategoryEntity;
 import cn.xu.domain.article.repository.ICategoryRepository;
 import cn.xu.infrastructure.common.exception.BusinessException;
-import cn.xu.infrastructure.persistent.dao.ICategoryDao;
+import cn.xu.infrastructure.persistent.dao.CategoryMapper;
 import cn.xu.infrastructure.persistent.po.ArticleCategory;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 public class CategoryRepository implements ICategoryRepository {
 
     @Resource
-    private ICategoryDao categoryDao;
+    private CategoryMapper categoryDao;
 
     @Override
     public void save(CategoryEntity category) {

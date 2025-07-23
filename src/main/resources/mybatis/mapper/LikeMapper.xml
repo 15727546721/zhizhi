@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.xu.infrastructure.persistent.dao.LikeMapper">
+    <sql id="Base_Column_List">
+        id
+        , user_id, target_id, type, status, create_time
+    </sql>
+
+    <insert id="save" parameterType="cn.xu.infrastructure.persistent.po.Like">
+        INSERT INTO `like` (user_id, target_id, type, status, create_time)
+        VALUES (#{userId}, #{targetId}, #{type}, #{status}, #{createTime})
+    </insert>
+
+    <update id="updateStatus">
+        UPDATE `like`
+        SET status = #{status}
+        WHERE user_id = #{userId}
+        AND target_id = #{targetId}
+        AND type = #{type}
+    </update>
+
+    <select id="findByUserIdAndTypeAndTargetId" resultType="cn.xu.infrastructure.persistent.po.Like">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM `like`
+        WHERE user_id = #{userId}
+        AND target_id = #{targetId}
+        AND type = #{type}
+        LIMIT 1
+    </select>
+    <select id="checkStatus" resultType="java.lang.Integer">
+        SELECT status
+        FROM `like`
+        WHERE user_id = #{userId}
+        AND target_id = #{targetId}
+        AND type = #{type}
+        LIMIT 1
+    </select>
+
+</mapper>

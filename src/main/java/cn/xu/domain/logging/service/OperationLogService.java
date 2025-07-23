@@ -1,7 +1,7 @@
 package cn.xu.domain.logging.service;
 
 import cn.xu.domain.logging.event.OperationLogEvent;
-import cn.xu.infrastructure.persistent.dao.IOperationLogsDao;
+import cn.xu.infrastructure.persistent.dao.OperationLogsMapper;
 import cn.xu.infrastructure.persistent.po.OperationLogs;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 public class OperationLogService implements IOperationLogService {
 
     @Autowired
-    private IOperationLogsDao operationLogsDao;
+    private OperationLogsMapper operationLogsDao;
 
     @Autowired
     private ApplicationEventPublisher eventPublisher;

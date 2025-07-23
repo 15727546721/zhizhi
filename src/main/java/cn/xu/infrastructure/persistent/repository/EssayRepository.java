@@ -3,7 +3,7 @@ package cn.xu.infrastructure.persistent.repository;
 import cn.xu.domain.essay.model.entity.EssayEntity;
 import cn.xu.domain.essay.model.entity.EssayWithUserAggregation;
 import cn.xu.domain.essay.repository.IEssayRepository;
-import cn.xu.infrastructure.persistent.dao.IEssayDao;
+import cn.xu.infrastructure.persistent.dao.EssayMapper;
 import cn.xu.infrastructure.persistent.po.Essay;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
@@ -16,7 +16,7 @@ import java.util.List;
 public class EssayRepository implements IEssayRepository {
 
     @Resource
-    private IEssayDao essayDao;
+    private EssayMapper essayDao;
 
     @Override
     public Long save(EssayEntity essayEntity) {

@@ -1,7 +1,7 @@
 package cn.xu.infrastructure.persistent.repository;
 
 import cn.xu.domain.article.repository.IArticleTagRepository;
-import cn.xu.infrastructure.persistent.dao.IArticleTagDao;
+import cn.xu.infrastructure.persistent.dao.ArticleTagMapper;
 import cn.xu.infrastructure.persistent.po.ArticleTagRel;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
@@ -14,7 +14,7 @@ import java.util.List;
 @Repository
 public class ArticleTagRepository implements IArticleTagRepository {
     @Resource
-    private IArticleTagDao articleTagDao;
+    private ArticleTagMapper articleTagDao;
 
     @Override
     public void save(ArticleTagRel articleTagRel) {

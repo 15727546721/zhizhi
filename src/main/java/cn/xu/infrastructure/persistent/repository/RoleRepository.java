@@ -2,7 +2,7 @@ package cn.xu.infrastructure.persistent.repository;
 
 import cn.xu.domain.permission.model.entity.RoleEntity;
 import cn.xu.domain.permission.repository.IRoleRepository;
-import cn.xu.infrastructure.persistent.dao.IRoleDao;
+import cn.xu.infrastructure.persistent.dao.RoleMapper;
 import cn.xu.infrastructure.persistent.po.Role;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 public class RoleRepository implements IRoleRepository {
 
     @Resource
-    private IRoleDao roleDao;
+    private RoleMapper roleDao;
 
     @Resource
     private TransactionTemplate transactionTemplate;

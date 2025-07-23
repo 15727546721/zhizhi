@@ -1,7 +1,7 @@
 package cn.xu.infrastructure.persistent.repository;
 
 import cn.xu.domain.logging.repository.IOperationLogRepository;
-import cn.xu.infrastructure.persistent.dao.IOperationLogsDao;
+import cn.xu.infrastructure.persistent.dao.OperationLogsMapper;
 import cn.xu.infrastructure.persistent.po.OperationLogs;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
@@ -10,7 +10,7 @@ import org.springframework.stereotype.Repository;
 public class OperationLogsRepository implements IOperationLogRepository {
 
     @Autowired
-    private IOperationLogsDao operationLogsDao;
+    private OperationLogsMapper operationLogsDao;
 
     public void saveLog(OperationLogs log) {
         operationLogsDao.insertLog(log);

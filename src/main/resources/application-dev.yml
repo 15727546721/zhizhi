@@ -18,6 +18,11 @@ spring:
       max-lifetime: 1800000 #此属性控制池中连接的最长生命周期，值0表示无限生命周期，默认1800000即30分钟
       connection-timeout: 30000 #数据库连接超时时间,默认30秒，即30000
       connection-test-query: SELECT 1
+  elasticsearch:
+#      uris: http://124.222.71.27:9200  # 您的ES服务器地址
+      uris: 124.222.71.27:9200  # 您的ES服务器地址
+      connection-timeout: 5s
+      read-timeout: 30s
   flyway:
     # flyway 开启/关闭
     enabled: true
@@ -31,6 +36,13 @@ spring:
     #    locations: classpath:db/migration
     # flyway 基线版本号
     baseline-version: 2025
+
+# 可选：配置索引名称
+app:
+  elasticsearch:
+    index:
+      comments: comments
+      articles: articles
 
 # 线程池配置
 thread:

@@ -3,7 +3,7 @@ package cn.xu.infrastructure.persistent.repository;
 import cn.xu.domain.message.model.entity.MessageEntity;
 import cn.xu.domain.message.model.entity.MessageType;
 import cn.xu.domain.message.repository.IMessageRepository;
-import cn.xu.infrastructure.persistent.dao.IMessageDao;
+import cn.xu.infrastructure.persistent.dao.MessageMapper;
 import cn.xu.infrastructure.persistent.po.Message;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class MessageRepository implements IMessageRepository {
 
-    private final IMessageDao messageDao;
+    private final MessageMapper messageDao;
 
     @Override
     public void save(MessageEntity entity) {

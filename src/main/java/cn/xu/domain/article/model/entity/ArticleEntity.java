@@ -22,6 +22,7 @@ public class ArticleEntity {
     private Long userId;
     private Long viewCount;
     private Long collectCount;
+    private Long commentCount;
     private Long likeCount;
     private ArticleStatus status;
     private LocalDateTime createTime;

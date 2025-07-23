@@ -3,6 +3,7 @@ package cn.xu.api.web.controller;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.api.web.model.dto.comment.*;
 import cn.xu.application.common.ResponseCode;
+import cn.xu.application.query.comment.CommentQueryService;
 import cn.xu.domain.comment.event.CommentEvent;
 import cn.xu.domain.comment.model.entity.CommentEntity;
 import cn.xu.domain.comment.model.valueobject.CommentType;
@@ -24,14 +25,18 @@ public class CommentController {
     @Resource
     private ICommentService commentService;
 
+    @Resource
+    private CommentQueryService commentQueryService;
+
     @Operation(summary = "发表评论")
     @PostMapping("/publish")
     @ApiOperationLog(description = "发表评论")
-    public ResponseEntity<CommentEntity> addComment(@RequestBody CommentAddRequest request) {
+    public ResponseEntity<?> addComment(@RequestBody CommentAddRequest request) {
         Long commentId = commentService.saveComment(CommentEvent.builder()
-                .content(request.getContent())
-                .targetId(request.getTargetId())
                 .targetType(CommentType.valueOf(request.getTargetType()))
+                .targetId(request.getTargetId())
+                .content(request.getContent())
+                .imageUrls(request.getImageUrls())
                 .userId(StpUtil.getLoginIdAsLong())
                 .build());
         CommentEntity comment = commentService.findCommentWithUserById(commentId);
@@ -63,7 +68,7 @@ public class CommentController {
     @PostMapping("/page/list")
     @ApiOperationLog(description = "评论分页查询")
     public ResponseEntity<List<FindCommentItemVO>> getCommentPageList(@RequestBody FindCommentReq request) {
-        List<FindCommentItemVO> commentPageList = commentService.findCommentPageList(request);
+        List<FindCommentItemVO> commentPageList = commentQueryService.findTopComments(request);
         return ResponseEntity.<List<FindCommentItemVO>>builder()
                 .data(commentPageList)
                 .code(ResponseCode.SUCCESS.getCode())
@@ -74,7 +79,7 @@ public class CommentController {
     @PostMapping("/reply/list")
     @ApiOperationLog(description = "获取评论回复列表")
     public ResponseEntity<List<FindChildCommentItemVO>> getReplyCommentList(@RequestBody FindReplyReq request) {
-        List<FindChildCommentItemVO> replyCommentList = commentService.findReplyPageList(request);
+        List<FindChildCommentItemVO> replyCommentList = commentQueryService.findChildComments(request);
         return ResponseEntity.<List<FindChildCommentItemVO>>builder()
                 .data(replyCommentList)
                 .code(ResponseCode.SUCCESS.getCode())

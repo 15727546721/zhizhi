@@ -5,7 +5,7 @@ import cn.xu.domain.notification.model.entity.NotificationEntity;
 import cn.xu.domain.notification.model.valueobject.NotificationType;
 import cn.xu.domain.notification.repository.INotificationRepository;
 import cn.xu.infrastructure.common.exception.BusinessException;
-import cn.xu.infrastructure.persistent.dao.INotificationDao;
+import cn.xu.infrastructure.persistent.dao.NotificationMapper;
 import cn.xu.infrastructure.persistent.po.Notification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class NotificationRepository implements INotificationRepository {
 
-    private final INotificationDao notificationDao;
+    private final NotificationMapper notificationMapper;
 
     /**
      * 保存通知
@@ -44,7 +44,7 @@ public class NotificationRepository implements INotificationRepository {
             if (entity.getId() == null) {
                 log.info("[通知服务] 开始新增通知, receiverId={}, type={}", entity.getReceiverId(), entity.getType());
                 entity.setStatus(true); // 设置为有效状态
-                notificationDao.insert(
+                notificationMapper.insert(
                         Notification.builder()
                                 .receiverId(entity.getReceiverId())
                                 .senderId(entity.getSenderId())
@@ -61,7 +61,7 @@ public class NotificationRepository implements INotificationRepository {
                 log.info("[通知服务] 新增通知成功, id={}", entity.getId());
             } else {
                 log.info("[通知服务] 开始更新通知, id={}", entity.getId());
-                notificationDao.update(entity);
+                notificationMapper.update(entity);
                 log.info("[通知服务] 更新通知成功");
             }
             return NotificationAggregate.from(entity);
@@ -82,7 +82,7 @@ public class NotificationRepository implements INotificationRepository {
     public NotificationEntity findById(Long id) {
         try {
             log.info("[通知服务] 开始查询通知, id={}", id);
-            NotificationEntity entity = notificationDao.selectById(id);
+            NotificationEntity entity = notificationMapper.selectById(id);
             if (entity == null) {
                 log.info("[通知服务] 通知不存在, id={}", id);
                 throw new BusinessException("通知不存在");
@@ -108,7 +108,7 @@ public class NotificationRepository implements INotificationRepository {
     public List<NotificationAggregate> findByUserIdAndType(Long userId, NotificationType type, Pageable pageable) {
         try {
             log.info("[通知服务] 开始分页查询用户通知, userId={}, type={}, pageable={}", userId, type, pageable);
-            List<NotificationEntity> entities = notificationDao.findByReceiverIdAndType(userId, type.getValue(), pageable);
+            List<NotificationEntity> entities = notificationMapper.findByReceiverIdAndType(userId, type.getValue(), pageable);
             if (entities.isEmpty()) {
                 log.info("[通知服务] 未查询到通知记录");
                 return Collections.emptyList();
@@ -134,7 +134,7 @@ public class NotificationRepository implements INotificationRepository {
     public long countByUserIdAndIsReadFalse(Long userId) {
         try {
             log.info("[通知服务] 开始统计用户未读通知数量, userId={}", userId);
-            long count = notificationDao.countUnreadByReceiverId(userId);
+            long count = notificationMapper.countUnreadByReceiverId(userId);
             log.info("[通知服务] 用户未读通知数量为: {}", count);
             return count;
         } catch (Exception e) {
@@ -154,7 +154,7 @@ public class NotificationRepository implements INotificationRepository {
     public void markAsRead(Long notificationId) {
         try {
             log.info("[通知服务] 开始将通知标记为已读, notificationId={}", notificationId);
-            notificationDao.markAsRead(notificationId);
+            notificationMapper.markAsRead(notificationId);
             log.info("[通知服务] 标记已读成功");
         } catch (Exception e) {
             log.error("[通知服务] 标记通知为已读失败, notificationId={}", notificationId, e);
@@ -176,7 +176,7 @@ public class NotificationRepository implements INotificationRepository {
     public List<NotificationAggregate> findByUserIdAndType(Long userId, NotificationType type, int offset, int limit) {
         try {
             log.info("[通知服务] 开始分页查询用户通知, userId={}, type={}, offset={}, limit={}", userId, type, offset, limit);
-            List<NotificationEntity> entities = notificationDao.selectByReceiverIdAndType(userId, type.getValue(), offset, limit);
+            List<NotificationEntity> entities = notificationMapper.selectByReceiverIdAndType(userId, type.getValue(), offset, limit);
             if (entities.isEmpty()) {
                 log.info("[通知服务] 未查询到通知记录");
                 return Collections.emptyList();
@@ -202,7 +202,7 @@ public class NotificationRepository implements INotificationRepository {
     public long countUnreadByUserId(Long userId) {
         try {
             log.info("[通知服务] 开始统计用户未读通知数量, userId={}", userId);
-            long count = notificationDao.countUnreadByReceiverId(userId);
+            long count = notificationMapper.countUnreadByReceiverId(userId);
             log.info("[通知服务] 用户未读通知数量为: {}", count);
             return count;
         } catch (Exception e) {
@@ -222,7 +222,7 @@ public class NotificationRepository implements INotificationRepository {
     public void markAllAsRead(Long userId) {
         try {
             log.info("[通知服务] 开始将用户所有未读通知标记为已读, userId={}", userId);
-            notificationDao.markAllAsRead(userId);
+            notificationMapper.markAllAsRead(userId);
             log.info("[通知服务] 标记全部已读成功");
         } catch (Exception e) {
             log.error("[通知服务] 标记用户通知为已读失败, userId={}", userId, e);
@@ -241,7 +241,7 @@ public class NotificationRepository implements INotificationRepository {
     public void delete(Long notificationId) {
         try {
             log.info("[通知服务] 开始删除通知, notificationId={}", notificationId);
-            notificationDao.deleteById(notificationId);
+            notificationMapper.deleteById(notificationId);
             log.info("[通知服务] 删除通知成功");
         } catch (Exception e) {
             log.error("[通知服务] 删除通知失败, notificationId={}", notificationId, e);
@@ -260,7 +260,7 @@ public class NotificationRepository implements INotificationRepository {
     public boolean exists(Long id) {
         try {
             log.info("[通知服务] 检查通知是否存在, id={}", id);
-            boolean exists = notificationDao.existsById(id);
+            boolean exists = notificationMapper.existsById(id);
             log.info("[通知服务] 通知{}存在", exists ? "" : "不");
             return exists;
         } catch (Exception e) {

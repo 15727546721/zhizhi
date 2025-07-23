@@ -5,8 +5,8 @@ import cn.xu.api.web.model.vo.article.ArticleListVO;
 import cn.xu.api.web.model.vo.article.ArticlePageVO;
 import cn.xu.domain.article.model.entity.ArticleEntity;
 import cn.xu.domain.article.repository.IArticleRepository;
-import cn.xu.infrastructure.persistent.dao.IArticleDao;
-import cn.xu.infrastructure.persistent.dao.IArticleTagDao;
+import cn.xu.infrastructure.persistent.dao.ArticleMapper;
+import cn.xu.infrastructure.persistent.dao.ArticleTagMapper;
 import cn.xu.infrastructure.persistent.po.Article;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
@@ -22,9 +22,9 @@ import java.util.stream.Collectors;
 public class ArticleRepository implements IArticleRepository {
 
     @Resource
-    private IArticleDao articleDao;
+    private ArticleMapper articleDao;
     @Resource
-    private IArticleTagDao articleTagDao;
+    private ArticleTagMapper articleTagDao;
 
     @Resource
     private TransactionTemplate transactionTemplate;

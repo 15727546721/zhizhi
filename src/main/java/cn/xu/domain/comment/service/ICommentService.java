@@ -1,6 +1,7 @@
 package cn.xu.domain.comment.service;
 
 import cn.xu.api.web.model.dto.comment.*;
+import cn.xu.api.web.model.vo.comment.CommentWithPreviewVO;
 import cn.xu.domain.comment.event.CommentEvent;
 import cn.xu.domain.comment.model.entity.CommentEntity;
 import cn.xu.domain.comment.model.valueobject.CommentType;
@@ -17,6 +18,8 @@ public interface ICommentService {
      * @param request 评论请求参数
      */
     Long saveComment(CommentEvent request);
+
+    List<CommentWithPreviewVO> listWithPreview(int targetType, long targetId, String sortBy, int page, int previewSize);
 
     /**
      * 分页获取评论列表

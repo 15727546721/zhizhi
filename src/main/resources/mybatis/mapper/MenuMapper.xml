@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.xu.infrastructure.persistent.dao.MenuMapper">
+
+    <resultMap id="BaseResultMap" type="cn.xu.infrastructure.persistent.po.Menu">
+        <id property="id" column="id" jdbcType="BIGINT"/>
+        <result property="parentId" column="parent_id" jdbcType="BIGINT"/>
+        <result property="path" column="path" jdbcType="VARCHAR"/>
+        <result property="component" column="component" jdbcType="VARCHAR"/>
+        <result property="title" column="title" jdbcType="VARCHAR"/>
+        <result property="sort" column="sort" jdbcType="INTEGER"/>
+        <result property="icon" column="icon" jdbcType="VARCHAR"/>
+        <result property="type" column="type" jdbcType="VARCHAR"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+        <result property="redirect" column="redirect" jdbcType="VARCHAR"/>
+        <result property="name" column="name" jdbcType="VARCHAR"/>
+        <result property="hidden" column="hidden" jdbcType="TINYINT"/>
+        <result property="perm" column="perm" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id
+        , parent_id, path, component, title, sort, icon, type, create_time, update_time, redirect, name, hidden, perm
+    </sql>
+    <insert id="addMenu" parameterType="cn.xu.infrastructure.persistent.po.Menu">
+        INSERT INTO menu (
+        <include refid="Base_Column_List"/>
+        ) VALUES (
+        #{id}, #{parentId}, #{path}, #{component}, #{title}, #{sort}, #{icon}, #{type}, #{createTime}, #{updateTime},
+        #{redirect}, #{name}, #{hidden}, #{perm}
+        )
+    </insert>
+    <update id="updateMenu" parameterType="cn.xu.infrastructure.persistent.po.Menu">
+        update menu
+        set parent_id   = #{parentId},
+            path        = #{path},
+            component   = #{component},
+            title       = #{title},
+            sort        = #{sort},
+            icon        = #{icon},
+            type        = #{type},
+            create_time = #{createTime},
+            update_time = #{updateTime},
+            redirect    = #{redirect},
+            name        = #{name},
+            hidden      = #{hidden},
+            perm        = #{perm}
+        WHERE id = #{id}
+    </update>
+    <delete id="deleteMenu">
+        DELETE
+        FROM menu
+        WHERE id = #{id}
+    </delete>
+    <select id="selectMenuList" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM menu
+    </select>
+    <select id="selectMenuById" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM menu
+        WHERE id = #{id}
+    </select>
+    <select id="selectAllMenuId" resultType="java.lang.Long">
+        SELECT id
+        FROM menu
+    </select>
+    <select id="getMenuById" resultType="java.lang.Long">
+        select rm.menu_id
+        from user
+        where u.id = #{id} join user_role ur
+        on u.id = ur.user_id
+            join role_menu rm on rm.role_id = ru.id
+    </select>
+    <select id="listByIds" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM menu
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </select>
+    <select id="findPermissionsByUserid" resultType="java.lang.String">
+        SELECT m.perm
+        FROM menu m
+                 INNER JOIN user_role ur ON m.id = ur.menu_id
+        WHERE ur.user_id = #{userId}
+          AND m.perm IS NOT NULL
+    </select>
+</mapper>

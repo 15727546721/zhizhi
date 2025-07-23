@@ -9,8 +9,8 @@ import cn.xu.domain.user.model.vo.LoginFormVO;
 import cn.xu.domain.user.model.vo.UserFormVO;
 import cn.xu.domain.user.repository.IUserRepository;
 import cn.xu.infrastructure.common.exception.BusinessException;
-import cn.xu.infrastructure.persistent.dao.IRoleDao;
-import cn.xu.infrastructure.persistent.dao.IUserDao;
+import cn.xu.infrastructure.persistent.dao.RoleMapper;
+import cn.xu.infrastructure.persistent.dao.UserMapper;
 import cn.xu.infrastructure.persistent.po.User;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
@@ -27,13 +27,13 @@ import java.util.stream.Collectors;
 public class UserRepository implements IUserRepository {
 
     @Resource
-    private IUserDao userDao;
+    private UserMapper userDao;
 
     @Resource
     private TransactionTemplate transactionTemplate;
 
     @Resource
-    private IRoleDao roleDao;
+    private RoleMapper roleDao;
 
     @Override
     public UserEntity save(UserEntity user) {

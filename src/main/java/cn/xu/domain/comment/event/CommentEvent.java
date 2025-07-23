@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -15,14 +17,11 @@ public class CommentEvent {
     private CommentType targetType;
     private Long targetId;
     private String content;
-    /**
-     * 发表评论的用户ID
-     */
     private Long userId;
-
-    /**
-     * 回复的用户ID，若为回复评论则存在
-     */
     private Long replyUserId;
 
+    /**
+     * 评论附带图片链接列表
+     */
+    private List<String> imageUrls;
 }

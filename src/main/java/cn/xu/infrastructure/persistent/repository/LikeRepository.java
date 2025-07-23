@@ -2,7 +2,7 @@ package cn.xu.infrastructure.persistent.repository;
 
 import cn.xu.domain.like.model.LikeEntity;
 import cn.xu.domain.like.repository.ILikeRepository;
-import cn.xu.infrastructure.persistent.dao.ILikeDao;
+import cn.xu.infrastructure.persistent.dao.LikeMapper;
 import cn.xu.infrastructure.persistent.po.Like;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,7 +16,7 @@ import org.springframework.stereotype.Repository;
 @RequiredArgsConstructor
 public class LikeRepository implements ILikeRepository {
 
-    private final ILikeDao likeDao;
+    private final LikeMapper likeDao;
 
     @Override
     public void save(LikeEntity likeEntity) {

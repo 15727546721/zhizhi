@@ -1,8 +1,8 @@
 package cn.xu.domain.like.event;
 
-import cn.xu.infrastructure.persistent.dao.IArticleDao;
-import cn.xu.infrastructure.persistent.dao.ICommentDao;
-import cn.xu.infrastructure.persistent.dao.ILikeDao;
+import cn.xu.infrastructure.persistent.dao.ArticleMapper;
+import cn.xu.infrastructure.persistent.dao.CommentMapper;
+import cn.xu.infrastructure.persistent.dao.LikeMapper;
 import cn.xu.infrastructure.persistent.po.Like;
 import com.lmax.disruptor.EventHandler;
 import lombok.extern.slf4j.Slf4j;
@@ -22,11 +22,11 @@ public class LikeEventHandler implements EventHandler<LikeEvent> {
     @Resource
     private RedisTemplate<String, String> redisTemplate;
     @Resource
-    private ILikeDao likeDao;
+    private LikeMapper likeDao;
     @Resource
-    private IArticleDao articleDao;
+    private ArticleMapper articleDao;
     @Resource
-    private ICommentDao commentDao;
+    private CommentMapper commentDao;
 
     @Override
     public void onEvent(LikeEvent event, long sequence, boolean endOfBatch) {

@@ -3,7 +3,7 @@ package cn.xu.infrastructure.persistent.repository;
 import cn.xu.domain.follow.model.entity.UserFollowEntity;
 import cn.xu.domain.follow.model.valueobject.FollowStatus;
 import cn.xu.domain.follow.repository.IFollowRepository;
-import cn.xu.infrastructure.persistent.dao.IFollowDao;
+import cn.xu.infrastructure.persistent.dao.FollowMapper;
 import cn.xu.infrastructure.persistent.po.Follow;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Repository;
@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 public class FollowRepository implements IFollowRepository {
 
     @Resource
-    private IFollowDao userFollowDao;
+    private FollowMapper userFollowDao;
 
     @Override
     public void save(UserFollowEntity entity) {

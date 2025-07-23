@@ -17,7 +17,6 @@ import cn.xu.domain.article.model.valobj.ArticleStatus;
 import cn.xu.domain.article.service.IArticleService;
 import cn.xu.domain.article.service.IArticleTagService;
 import cn.xu.domain.article.service.ITagService;
-import cn.xu.domain.article.service.search.ArticleIndexService;
 import cn.xu.domain.follow.service.IFollowService;
 import cn.xu.domain.like.model.LikeType;
 import cn.xu.domain.like.service.ILikeService;
@@ -26,6 +25,7 @@ import cn.xu.domain.user.service.IUserService;
 import cn.xu.infrastructure.common.annotation.ApiOperationLog;
 import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.common.response.ResponseEntity;
+import cn.xu.infrastructure.persistent.read.elastic.service.ArticleElasticService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
@@ -54,7 +54,7 @@ public class ArticleController {
     @Resource
     private TransactionTemplate transactionTemplate;
     @Resource
-    private ArticleIndexService articleIndexService;
+    private ArticleElasticService articleElasticService;
     @Resource
     private IUserService userService;
     @Resource
@@ -273,7 +273,7 @@ public class ArticleController {
                         .build();
             }
 
-            List<ArticleEntity> articles = articleIndexService.searchArticles(title);
+            List<ArticleEntity> articles = articleElasticService.searchArticles(title);
             return ResponseEntity.<List<ArticleEntity>>builder()
                     .data(articles)
                     .code(ResponseCode.SUCCESS.getCode())

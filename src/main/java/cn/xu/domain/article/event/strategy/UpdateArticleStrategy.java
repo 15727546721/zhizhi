@@ -1,25 +1,17 @@
 package cn.xu.domain.article.event.strategy;
 
 import cn.xu.domain.article.event.ArticleEvent;
-import cn.xu.domain.article.model.entity.ArticleEntity;
-import cn.xu.domain.article.service.search.ArticleIndexService;
+import cn.xu.infrastructure.persistent.read.elastic.service.ArticleElasticService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component("updateArticleStrategy")
-public class UpdateArticleStrategy implements ArticleEventStrategy {
+public class UpdateArticleStrategy extends AbstractModifyArticleStrategy {
 
     @Override
-    public void handleEvent(ArticleEvent event, ArticleIndexService indexService) {
+    public void handleEvent(ArticleEvent event, ArticleElasticService indexService) {
         log.info("处理文章更新事件: {}", event);
-        ArticleEntity article = ArticleEntity.builder()
-                .id(event.getArticleId())
-                .title(event.getTitle())
-                .description(event.getDescription())
-                .content(event.getContent())
-                .userId(event.getUserId())
-                .build();
-        indexService.updateIndex(article);
+        indexService.updateIndexedArticle(toArticleEntity(event));
     }
-} 
+}

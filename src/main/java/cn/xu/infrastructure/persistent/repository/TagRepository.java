@@ -6,7 +6,7 @@ import cn.xu.domain.article.model.aggregate.ArticleAndTagAgg;
 import cn.xu.domain.article.model.entity.TagEntity;
 import cn.xu.domain.article.repository.ITagRepository;
 import cn.xu.infrastructure.common.exception.BusinessException;
-import cn.xu.infrastructure.persistent.dao.ITagDao;
+import cn.xu.infrastructure.persistent.dao.TagMapper;
 import cn.xu.infrastructure.persistent.po.ArticleTag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 public class TagRepository implements ITagRepository {
 
     @Resource
-    private ITagDao tagDao;
+    private TagMapper tagDao;
 
     @Override
     public void save(TagEntity tag) {

@@ -5,7 +5,7 @@ import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.essay.model.entity.TopicEntity;
 import cn.xu.domain.essay.repository.ITopicRepository;
 import cn.xu.infrastructure.common.exception.BusinessException;
-import cn.xu.infrastructure.persistent.dao.ITopicDao;
+import cn.xu.infrastructure.persistent.dao.TopicMapper;
 import cn.xu.infrastructure.persistent.po.Topic;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,10 +20,10 @@ import java.util.stream.Collectors;
 @Repository
 public class TopicRepository implements ITopicRepository {
 
-    private final ITopicDao topicDao;
+    private final TopicMapper topicDao;
 
     @Autowired
-    public TopicRepository(ITopicDao topicDao) {
+    public TopicRepository(TopicMapper topicDao) {
         this.topicDao = topicDao;
     }
 

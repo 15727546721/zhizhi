@@ -3,6 +3,7 @@ package cn.xu.domain.comment.repository;
 import cn.xu.api.web.model.dto.comment.CommentQueryRequest;
 import cn.xu.api.web.model.dto.comment.FindChildCommentItemVO;
 import cn.xu.api.web.model.dto.comment.FindCommentItemVO;
+import cn.xu.application.query.comment.dto.CommentCountDTO;
 import cn.xu.domain.comment.model.entity.CommentEntity;
 import cn.xu.domain.comment.model.valueobject.CommentSortType;
 
@@ -39,12 +40,32 @@ public interface ICommentRepository {
     List<CommentEntity> getTopicComments(Long topicId);
 
     /**
+     * 查询所有评论（用于ES数据初始化）
+     * @return 所有评论列表
+     */
+    List<CommentEntity> findCommentBatch(int offset, int batchSize);
+
+    /**
+     * 统计每个父评论下的子评论数量
+     *
+     * @param parentIds 父评论ID列表
+     * @return 每个父评论ID对应的子评论数量
+     */
+    List<CommentCountDTO> countChildCommentsGroupByParent(List<Long> parentIds);
+
+    /**
      * 根据ID获取评论
      *
      * @param id 评论ID
      * @return 评论实体
      */
     CommentEntity findById(Long id);
+
+    List<CommentEntity> selectParentsByHot(int targetType, long targetId, int offset, int pageSize);
+
+    List<CommentEntity> selectParentsByTime(int targetType, long targetId, int offset, int pageSize);
+
+    List<CommentEntity> selectPreviewRepliesByParentIds(List<Long> parentIds, int previewSize);
 
     /**
      * 根据ID删除评论
@@ -74,9 +95,14 @@ public interface ICommentRepository {
     void batchDelete(List<Long> commentIds);
 
     /**
-     * 查询一级评论列表
+     * 查询一级评论的分页列表
+     * @param type 评论目标类型
+     * @param targetId 目标ID
+     * @param offset 偏移量
+     * @param limit 每页数量
+     * @return 一级评论实体列表
      */
-    List<CommentEntity> findRootComments(Long targetId, Integer type);
+    List<CommentEntity> findRootComments(Integer type, Long targetId, int offset, int limit);
 
     /**
      * 分页查询二级评论列表
@@ -133,6 +159,7 @@ public interface ICommentRepository {
 
     /**
      * 根据评论ID查询评论及用户信息
+     *
      * @param commentId
      * @return
      */
@@ -140,6 +167,7 @@ public interface ICommentRepository {
 
     /**
      * 查询一级评论及用户信息
+     *
      * @param targetType
      * @param targetId
      * @param pageNo
@@ -153,10 +181,15 @@ public interface ICommentRepository {
 
     /**
      * 根据父评论ID分页查询子评论及用户信息
+     *
      * @param parentId
      * @param pageNo
      * @param pageSize
      * @return
      */
     List<FindChildCommentItemVO> findReplyPageWithUser(Long parentId, Integer pageNo, Integer pageSize);
+
+    long countReplies(Long commentId);
+
+    Map<Long, List<CommentEntity>> findPreviewRepliesByParentIds(List<Long> commentIds, int previewSize);
 }
