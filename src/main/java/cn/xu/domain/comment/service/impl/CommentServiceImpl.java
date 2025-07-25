@@ -410,8 +410,12 @@ public class CommentServiceImpl implements ICommentService {
 
     @Override
     public CommentEntity findCommentWithUserById(Long commentId) {
-        CommentEntity byId = commentRepository.findCommentWithUserById(commentId);
-        return byId;
+        CommentEntity comment = commentRepository.findCommentWithUserById(commentId);
+        if (comment != null) {
+            List<CommentEntity> children = commentRepository.findByParentId(commentId);
+            comment.setChildren(children);
+        }
+        return comment;
     }
 
     @Override
