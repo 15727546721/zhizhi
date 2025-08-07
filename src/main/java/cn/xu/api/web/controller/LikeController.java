@@ -30,7 +30,7 @@ public class LikeController {
     public ResponseEntity<Void> like(@Valid @RequestBody LikeRequest request) {
         likeService.like(
                 request.getUserId(),
-                LikeType.valueOf(request.getType()).getValue(),
+                LikeType.valueOf(request.getType()).getCode(),
                 request.getTargetId());
         return ResponseEntity.<Void>builder()
                 .code(ResponseCode.SUCCESS.getCode())
@@ -43,7 +43,7 @@ public class LikeController {
     public ResponseEntity<Void> unlike(@Valid @RequestBody LikeRequest request) {
         likeService.like(
                 request.getUserId(),
-                LikeType.valueOf(request.getType()).getValue(),
+                LikeType.valueOf(request.getType()).getCode(),
                 request.getTargetId());
         return ResponseEntity.<Void>builder()
                 .code(ResponseCode.SUCCESS.getCode())

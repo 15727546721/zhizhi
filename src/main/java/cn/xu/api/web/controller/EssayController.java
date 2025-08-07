@@ -130,7 +130,7 @@ public class EssayController {
     public ResponseEntity<Void> likeEssay(@PathVariable Long id) {
         log.info("开始点赞随笔，id: {}", id);
         long userId = StpUtil.getLoginIdAsLong();
-        likeService.like(userId, LikeType.ESSAY.getValue(), id);
+        likeService.like(userId, LikeType.ESSAY.getCode(), id);
         return ResponseEntity.<Void>builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .info(ResponseCode.SUCCESS.getMessage())
@@ -142,7 +142,7 @@ public class EssayController {
     @SaCheckLogin
     public ResponseEntity<?> unlikeEssay(@PathVariable("id") Long id) {
         long userId = StpUtil.getLoginIdAsLong();
-        likeService.unlike(userId, LikeType.ESSAY.getValue(), id);
+        likeService.unlike(userId, LikeType.ESSAY.getCode(), id);
         return ResponseEntity.builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .info("文章取消点赞成功")

@@ -6,6 +6,7 @@ import cn.xu.api.web.model.vo.article.ArticlePageVO;
 import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.article.model.aggregate.ArticleAndAuthorAggregate;
 import cn.xu.domain.article.model.entity.ArticleEntity;
+import cn.xu.domain.article.model.valobj.ArticleHotScorePolicy;
 import cn.xu.domain.article.model.valobj.ArticleStatus;
 import cn.xu.domain.article.repository.IArticleRepository;
 import cn.xu.domain.article.repository.IArticleTagRepository;
@@ -14,14 +15,19 @@ import cn.xu.domain.article.service.IArticleService;
 import cn.xu.domain.file.service.MinioService;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.repository.IUserRepository;
+import cn.xu.infrastructure.cache.RedisKeyConstants;
 import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.common.response.PageResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import java.util.List;
+import java.util.Set;
 
 /**
  * 文章服务实现类
@@ -35,6 +41,8 @@ public class ArticleService implements IArticleService {
     private IArticleRepository articleRepository; // 文章仓储
     @Resource
     private IUserRepository userRepository; // 用户仓储
+    @Resource
+    private RedisTemplate<String, Object> redisTemplate;
 
     @Resource
     private IArticleTagRepository articleTagRepository; // 文章标签仓储
@@ -264,6 +272,68 @@ public class ArticleService implements IArticleService {
         } catch (Exception e) {
             log.error("[文章服务] 文章浏览失败 - articleId: {}", articleId, e);
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "文章浏览失败：" + e.getMessage());
+        }
+    }
+
+    /**
+     * 更新文章热度到 Redis
+     * @param articleId 文章ID
+     */
+    public void updateArticleHotScore(Long articleId) {
+        try {
+            // 获取文章数据
+            ArticleEntity article = articleRepository.findById(articleId);
+            if (article == null) {
+                log.warn("[文章服务] 文章不存在 - articleId: {}", articleId);
+                throw new BusinessException("文章不存在");
+            }
+
+            // 计算热度分数
+            double hotScore = ArticleHotScorePolicy.calculate(
+                    article.getLikeCount(),
+                    article.getCommentCount(),
+                    article.getViewCount(),
+                    article.getCreateTime()
+            );
+
+            // 使用 RedisTemplate 更新文章热度（ZSet）
+            ZSetOperations<String, Object> zSetOperations = redisTemplate.opsForZSet();
+            zSetOperations.add(RedisKeyConstants.ARTICLE_RANK_HOT, articleId.toString(), hotScore);
+
+            log.info("[文章服务] 文章热度更新成功 - articleId: {}, hotScore: {}", articleId, hotScore);
+
+        } catch (Exception e) {
+            log.error("[文章服务] 更新文章热度失败 - articleId: {}", articleId, e);
+            throw new BusinessException("更新文章热度失败：" + e.getMessage());
+        }
+    }
+
+    /**
+     * 获取前N篇热度最高的文章
+     * @param topN 获取的文章数量
+     * @return 热度前N篇文章的ID
+     */
+    public List<Long> getTopNHotArticles(int topN) {
+        try {
+            // 使用 RedisTemplate 获取热度前 N 篇文章的 ID
+            ZSetOperations<String, Object> zSetOperations = redisTemplate.opsForZSet();
+            Set<Object> topArticles = zSetOperations.reverseRange(RedisKeyConstants.ARTICLE_RANK_HOT, 0, topN - 1);
+
+            // 如果没有获取到热度前 N 篇文章，直接返回空列表
+            if (CollectionUtils.isEmpty(topArticles)) {
+                return new java.util.ArrayList<>();  // Java 8 中返回一个空的 List
+            }
+
+            // 使用传统的方式将 Set 转换为 List<Long>（Java 8 兼容）
+            List<Long> articleIds = new java.util.ArrayList<>();
+            for (Object articleId : topArticles) {
+                articleIds.add(Long.parseLong((String) articleId));  // 将字符串转为 Long
+            }
+
+            return articleIds;
+        } catch (Exception e) {
+            log.error("[文章服务] 获取热度前 N 篇文章失败", e);
+            throw new BusinessException("获取热度前 N 篇文章失败：" + e.getMessage());
         }
     }
 

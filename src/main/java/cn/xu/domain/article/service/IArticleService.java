@@ -110,7 +110,15 @@ public interface IArticleService {
     void viewArticle(Long articleId);
 
     /**
+     * 更新文章热度
+     *
+     * @param articleId
+     */
+    void updateArticleHotScore(Long articleId);
+
+    /**
      * 根据分类ID获取文章列表
+     *
      * @param categoryId
      * @return
      */
@@ -118,6 +126,7 @@ public interface IArticleService {
 
     /**
      * 获取文章分页列表
+     *
      * @param pageNo
      * @param pageSize
      * @return

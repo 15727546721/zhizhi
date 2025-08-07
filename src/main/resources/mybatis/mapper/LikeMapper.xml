@@ -19,6 +19,12 @@
         AND type = #{type}
     </update>
 
+    <delete id="delete">
+        DELETE FROM `like`
+        WHERE target_id = #{targetId}
+        AND type = #{type}
+    </delete>
+
     <select id="findByUserIdAndTypeAndTargetId" resultType="cn.xu.infrastructure.persistent.po.Like">
         SELECT
         <include refid="Base_Column_List"/>
@@ -28,6 +34,7 @@
         AND type = #{type}
         LIMIT 1
     </select>
+
     <select id="checkStatus" resultType="java.lang.Integer">
         SELECT status
         FROM `like`

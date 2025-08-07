@@ -4,6 +4,7 @@ import cn.xu.api.system.model.dto.article.ArticleRequest;
 import cn.xu.api.web.model.vo.article.ArticleListVO;
 import cn.xu.api.web.model.vo.article.ArticlePageVO;
 import cn.xu.domain.article.model.entity.ArticleEntity;
+import cn.xu.infrastructure.persistent.po.Article;
 
 import java.util.List;
 import java.util.Map;
@@ -16,6 +17,8 @@ public interface IArticleRepository {
     void deleteByIds(List<Long> articleIds);
 
     ArticleEntity findById(Long id);
+
+    Article findPoById(Long id);
 
     void update(ArticleEntity articleEntity);
 

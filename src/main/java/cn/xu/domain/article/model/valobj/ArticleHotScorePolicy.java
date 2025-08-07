@@ -1,28 +1,31 @@
 package cn.xu.domain.article.model.valobj;
 
 import java.time.LocalDateTime;
+import java.time.Duration;
 
 public class ArticleHotScorePolicy {
 
     /**
-     * 热度计算示例公式
-     * @param likeCount 点赞数
-     * @param collectCount 收藏数
-     * @param commentCount 评论数
-     * @param publishTime 发布时间
-     * @return 热度得分
+     * 计算文章热度值
+     * @param likeCount      点赞数
+     * @param commentCount   评论数
+     * @param viewCount      浏览数
+     * @param publishTime    发布时间
+     * @return               热度分数（带时间衰减）
      */
-    public static double calculate(long likeCount, long collectCount, long commentCount, LocalDateTime publishTime) {
-        // 基础分：点赞 * 2 + 收藏 * 3 + 评论 * 5
-        double baseScore = likeCount * 2 + collectCount * 3 + commentCount * 5;
+    public static double calculate(long likeCount, long commentCount, long viewCount, LocalDateTime publishTime) {
+//        hot_score = (点赞数 * 3 + 评论 * 5 + 浏览 * 0.5) / ((发布时间距今小时数 + 2)^1.5)
 
-        // 时间衰减，当前时间 - 发布时间，单位小时
-        long hoursSincePublish = java.time.Duration.between(publishTime, LocalDateTime.now()).toHours();
+        // 时间差（小时）
+        long hoursSincePublished = Duration.between(publishTime, LocalDateTime.now()).toHours();
 
-        // 衰减函数：比如每小时衰减0.01（指数衰减）
-        double decayFactor = Math.exp(-0.01 * hoursSincePublish);
+        // 基础热度值（可调权重）
+        double baseScore = likeCount * 3 + commentCount * 5 + viewCount * 0.5;
 
-        return baseScore * decayFactor;
+        // 衰减系数，避免除以 0
+        double decayFactor = Math.pow(hoursSincePublished + 2, 1.5);
+
+        // 带时间衰减的热度值
+        return baseScore / decayFactor;
     }
 }
-

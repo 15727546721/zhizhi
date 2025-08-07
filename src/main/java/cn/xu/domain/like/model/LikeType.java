@@ -13,17 +13,17 @@ public enum LikeType {
     ESSAY(3, "随笔"),
     ;
 
-    private final int value;
+    private final int code;
     private final String description;
 
     LikeType(int value, String description) {
-        this.value = value;
+        this.code = value;
         this.description = description;
     }
 
-    public static LikeType valueOf(int value) {
+    public static LikeType valueOf(int code) {
         for (LikeType likeType : LikeType.values()) {
-            if (likeType.getValue() == value) {
+            if (likeType.getCode() == code) {
                 return likeType;
             }
         }

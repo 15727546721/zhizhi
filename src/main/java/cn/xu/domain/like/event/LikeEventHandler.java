@@ -1,9 +1,12 @@
 package cn.xu.domain.like.event;
 
+import cn.xu.domain.article.service.IArticleService;
+import cn.xu.domain.like.model.LikeType;
 import cn.xu.infrastructure.persistent.dao.ArticleMapper;
 import cn.xu.infrastructure.persistent.dao.CommentMapper;
 import cn.xu.infrastructure.persistent.dao.LikeMapper;
 import cn.xu.infrastructure.persistent.po.Like;
+import cn.xu.infrastructure.persistent.repository.LikeRepository;
 import com.lmax.disruptor.EventHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -20,50 +23,47 @@ import javax.annotation.Resource;
 public class LikeEventHandler implements EventHandler<LikeEvent> {
 
     @Resource
-    private RedisTemplate<String, String> redisTemplate;
+    private LikeRepository likeRepository;
     @Resource
-    private LikeMapper likeDao;
-    @Resource
-    private ArticleMapper articleDao;
-    @Resource
-    private CommentMapper commentDao;
+    private IArticleService articleService;
 
     @Override
     public void onEvent(LikeEvent event, long sequence, boolean endOfBatch) {
         log.info("处理点赞事件: {}", event);
         try {
-            // 更新MySQL点赞记录
-            Like like = likeDao.findByUserIdAndTypeAndTargetId(
-                    event.getUserId(), event.getType().getValue(), event.getTargetId());
-            int status = event.getStatus() == null ? 1 : (event.getStatus() ? 1 : 0);
-            if (like == null) {
-                likeDao.save(Like.builder()
-                        .userId(event.getUserId())
-                        .targetId(event.getTargetId())
-                        .type(event.getType().getValue())
-                        .status(status)
-                        .createTime(event.getCreateTime())
-                        .build());
+            if (event.getStatus()) {
+                handleLike(event);
             } else {
-                // 更新点赞状态
-                likeDao.updateStatus(event.getUserId(),
-                        event.getType().getValue(),
-                        event.getTargetId(),
-                        status);
-            }
-            switch (event.getType()) {
-                case ARTICLE:
-                    articleDao.updateLikeCount(event.getTargetId(), status == 1 ? 1 : -1);
-                    break;
-                case COMMENT:
-                    commentDao.updateLikeCount(event.getTargetId(), status == 1 ? 1 : -1);
-                    break;
-                default:
-                    break;
+                handleUnlike(event);
             }
         } catch (Exception e) {
-            log.error("点赞记录查询失败", e);
+            log.error("处理点赞事件失败: {}", e.getMessage(), e);
         }
     }
 
+    private void handleLike(LikeEvent event) {
+        // 1. 写入点赞数据（比如存入数据库或缓存）
+        likeRepository.saveLike(event.getUserId(), event.getTargetId(), event.getType().getCode());
+
+        // 2. 点赞计数增加
+        likeRepository.incrementLikeCount(event.getTargetId(), event.getType().getCode());
+
+        // 3. 文章热度排行榜更新
+        if (event.getType() == LikeType.ARTICLE) {
+            articleService.updateArticleHotScore(event.getTargetId());
+        }
+    }
+
+    private void handleUnlike(LikeEvent event) {
+        // 1. 删除点赞数据
+        likeRepository.remove(event.getUserId(), event.getTargetId(), event.getType().getCode());
+
+        // 2. 点赞计数减少
+        likeRepository.decrementLikeCount(event.getTargetId(), event.getType().getCode());
+
+        // 3. 文章热度排行榜更新
+        if (event.getType() == LikeType.ARTICLE) {
+            articleService.updateArticleHotScore(event.getTargetId());
+        }
+    }
 }

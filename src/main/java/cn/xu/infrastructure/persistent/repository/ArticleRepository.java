@@ -79,6 +79,10 @@ public class ArticleRepository implements IArticleRepository {
         return convert(articleDao.findById(id));
     }
 
+    public Article findPoById(Long id) {
+        return articleDao.findById(id);
+    }
+
     @Override
     public void update(ArticleEntity articleEntity) {
         log.info("更新文章 {}", articleEntity);
@@ -180,6 +184,7 @@ public class ArticleRepository implements IArticleRepository {
                 .updateTime(article.getUpdateTime())
                 .viewCount(article.getViewCount())
                 .likeCount(article.getLikeCount())
+                .commentCount(article.getCommentCount())
                 .collectCount(article.getCollectCount())
                 .build();
     }

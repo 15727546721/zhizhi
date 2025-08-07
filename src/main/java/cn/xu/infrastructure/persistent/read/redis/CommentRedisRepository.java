@@ -53,4 +53,23 @@ public class CommentRedisRepository {
                 1
         );
     }
+
+    public Long incrementReplyCount(Long commentId) {
+        return redisTemplate.opsForHash().increment(
+                "comment:counters",
+                "reply:" + commentId,
+                1
+        );
+    }
+
+    public Long getLikeCount(Long commentId) {
+        Object val = redisTemplate.opsForHash().get("comment:counters", "like:" + commentId);
+        return val == null ? 0L : Long.parseLong(val.toString());
+    }
+
+    public Long getReplyCount(Long commentId) {
+        Object val = redisTemplate.opsForHash().get("comment:counters", "reply:" + commentId);
+        return val == null ? 0L : Long.parseLong(val.toString());
+    }
+
 }

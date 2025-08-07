@@ -14,6 +14,8 @@ public interface LikeMapper {
      */
     void save(Like po);
 
+    void delete(@Param("targetId") Long targetId, @Param("type") Integer type);
+
     /**
      * 更新点赞状态
      * @param userId

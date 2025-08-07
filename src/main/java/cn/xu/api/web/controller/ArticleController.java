@@ -104,7 +104,7 @@ public class ArticleController {
         if (login) {
             isAuthor = article.getUser().getId().equals(StpUtil.getLoginIdAsLong());
             likeStatus = likeService.checkStatus(StpUtil.getLoginIdAsLong(),
-                    LikeType.ARTICLE.getValue(),
+                    LikeType.ARTICLE.getCode(),
                     article.getArticle().getId());
             followStatus = followService.checkStatus(StpUtil.getLoginIdAsLong(),
                     article.getUser().getId());
@@ -315,7 +315,7 @@ public class ArticleController {
     @Operation(summary = "文章点赞")
     public ResponseEntity<?> likeArticle(@PathVariable("id") Long id) {
         Long userId = StpUtil.getLoginIdAsLong();
-        likeService.like(userId, LikeType.ARTICLE.getValue(), id);
+        likeService.like(userId, LikeType.ARTICLE.getCode(), id);
         return ResponseEntity.builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .info("文章点赞成功")
@@ -326,7 +326,7 @@ public class ArticleController {
     @Operation(summary = "取消文章点赞")
     public ResponseEntity<?> unlikeArticle(@PathVariable("id") Long articleId) {
         Long userId = StpUtil.getLoginIdAsLong();
-        likeService.unlike(userId, LikeType.ARTICLE.getValue(), articleId);
+        likeService.unlike(userId, LikeType.ARTICLE.getCode(), articleId);
         return ResponseEntity.builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .info("文章取消点赞成功")

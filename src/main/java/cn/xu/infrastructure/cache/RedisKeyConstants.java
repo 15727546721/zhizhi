@@ -24,7 +24,7 @@ public class RedisKeyConstants {
     public static final String ARTICLE_LIKE_COUNT = ARTICLE_BASE + "like:count:";   // String，文章点赞数
     public static final String ARTICLE_COLLECT_COUNT = ARTICLE_BASE + "collect:count:"; // String，文章收藏数
     public static final String ARTICLE_COMMENT_COUNT = ARTICLE_BASE + "comment:count:"; // String，文章评论数
-    public static final String ARTICLE_HOT_SCORE = ARTICLE_BASE + "hot:score";   // ZSet，文章热度分数
+    public static final String ARTICLE_RANK_HOT = ARTICLE_BASE + "rank:hot";   // ZSet，文章热度排行榜
     public static final String ARTICLE_VIEW_IP = ARTICLE_BASE + "view:ip:";      // HyperLogLog，文章访问IP去重
     
     // 用户相关

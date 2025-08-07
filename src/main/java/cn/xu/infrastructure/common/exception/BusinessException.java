@@ -1,5 +1,6 @@
 package cn.xu.infrastructure.common.exception;
 
+import cn.xu.application.common.ResponseCode;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -26,6 +27,7 @@ public class BusinessException extends RuntimeException {
     }
 
     public BusinessException(String message) {
+        this.code = ResponseCode.UN_ERROR.getCode();
         this.message = message;
     }
 

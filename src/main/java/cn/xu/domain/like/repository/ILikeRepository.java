@@ -1,6 +1,5 @@
 package cn.xu.domain.like.repository;
 
-import cn.xu.domain.like.model.LikeEntity;
 import cn.xu.infrastructure.persistent.po.Like;
 
 /**
@@ -10,7 +9,12 @@ public interface ILikeRepository {
     /**
      * 保存点赞记录
      */
-    void save(LikeEntity likeEntity);
+    void saveLike(long userId, long targetId, int type);
+
+    /**
+     * 删除点赞记录
+     */
+    void remove(long userId, long targetId, int type);
 
     /**
      * 更新点赞状态
@@ -36,4 +40,20 @@ public interface ILikeRepository {
      * @return
      */
     boolean checkStatus(Long userId, Integer type, Long targetId);
+
+    /**
+     * 增加点赞数
+     *
+     * @param targetId
+     * @param type
+     */
+    void incrementLikeCount(Long targetId, int type);
+
+    /**
+     * 减少点赞数
+     *
+     * @param targetId
+     * @param type
+     */
+    void decrementLikeCount(Long targetId, int type);
 }
