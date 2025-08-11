@@ -2,9 +2,7 @@ package cn.xu.infrastructure.cache;
 
 import cn.xu.application.query.comment.dto.CommentDTO;
 import cn.xu.application.query.comment.dto.CommentWithRepliesDTO;
-import cn.xu.infrastructure.cache.keys.CommentCacheKeys;
 import cn.xu.infrastructure.common.response.PageResponse;
-import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -26,7 +24,7 @@ public class CommentCacheService {
             Integer pageNo, Integer pageSize,
             Supplier<List<CommentWithRepliesDTO>> loader) {
 
-        String cacheKey = CommentCacheKeys.previewCommentsKey(
+        String cacheKey = RedisKeyManager.previewCommentsKey(
                 targetType, targetId, pageNo, pageSize);
 
         return getFromCache(cacheKey, loader, 5, TimeUnit.MINUTES);
@@ -37,7 +35,7 @@ public class CommentCacheService {
             Long commentId, Integer pageNo, Integer pageSize,
             Supplier<PageResponse<List<CommentDTO>>> loader) {
 
-        String cacheKey = CommentCacheKeys.commentRepliesKey(
+        String cacheKey = RedisKeyManager.commentRepliesKey(
                 commentId, pageNo, pageSize);
 
         return getFromCache(cacheKey, loader, 10, TimeUnit.MINUTES);
@@ -47,7 +45,7 @@ public class CommentCacheService {
     // 更新缓存版本（使旧缓存失效）
     public void refreshCacheVersion() {
         redisTemplate.opsForValue().set(
-                CommentCacheKeys.commentsLastUpdateKey(),
+                RedisKeyManager.commentsLastUpdateKey(),
                 System.currentTimeMillis()
         );
     }

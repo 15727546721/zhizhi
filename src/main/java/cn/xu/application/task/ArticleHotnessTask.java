@@ -3,7 +3,7 @@ package cn.xu.application.task;
 import cn.xu.domain.article.model.entity.ArticleEntity;
 import cn.xu.domain.article.model.valobj.ArticleHotScorePolicy;
 import cn.xu.domain.article.repository.IArticleRepository;
-import cn.xu.infrastructure.cache.RedisKeyConstants;
+import cn.xu.infrastructure.cache.RedisKeyManager;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,7 +33,8 @@ public class ArticleHotnessTask {
     public void updateArticleHotScores() {
         // 获取 Redis 中所有文章的热度数据
         Set<ZSetOperations.TypedTuple<Object>> allArticles
-                = redisTemplate.opsForZSet().rangeWithScores(RedisKeyConstants.ARTICLE_RANK_HOT, 0, -1);
+                = redisTemplate.opsForZSet()
+                .rangeWithScores(RedisKeyManager.articleHotRankKey(), 0, -1);
 
         // 如果 Redis 中存在文章数据，则继续处理
         if (allArticles != null) {
@@ -49,21 +50,19 @@ public class ArticleHotnessTask {
                 // 如果文章存在，重新计算热度分数
                 if (articleEntity != null) {
                     // 计算文章的热度分数，带时间衰减
-                    double hotScore = ArticleHotScorePolicy.calculate(
-                            articleEntity.getLikeCount(),     // 点赞数
+                    double hotScore = ArticleHotScorePolicy.calculate(articleEntity.getLikeCount(),     // 点赞数
                             articleEntity.getCommentCount(),  // 评论数
                             articleEntity.getViewCount(),     // 浏览数
                             articleEntity.getCreateTime()     // 创建时间
                     );
 
                     // 更新 Redis 中该文章的热度分数
-                    redisTemplate.opsForZSet()
-                            .add(RedisKeyConstants.ARTICLE_RANK_HOT, articleId.toString(), hotScore);
+                    redisTemplate.opsForZSet().add(RedisKeyManager.articleHotRankKey(), articleId.toString(), hotScore);
                 }
             }
 
             // 保证 Redis 中只保存前 1000 名文章的热度数据
-            redisTemplate.opsForZSet().removeRange(RedisKeyConstants.ARTICLE_RANK_HOT, 1000, -1);
+            redisTemplate.opsForZSet().removeRange(RedisKeyManager.articleHotRankKey(), 1000, -1);
 
             // 输出日志，表示任务执行成功
             log.info("文章热度更新成功，保持前1000篇文章热度。");

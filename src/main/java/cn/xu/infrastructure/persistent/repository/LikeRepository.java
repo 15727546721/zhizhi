@@ -1,7 +1,9 @@
 package cn.xu.infrastructure.persistent.repository;
 
 import cn.xu.domain.like.model.LikeEntity;
+import cn.xu.domain.like.model.LikeType;
 import cn.xu.domain.like.repository.ILikeRepository;
+import cn.xu.infrastructure.cache.RedisKeyManager;
 import cn.xu.infrastructure.common.utils.RedisKeys;
 import cn.xu.infrastructure.persistent.dao.LikeMapper;
 import cn.xu.infrastructure.persistent.po.Like;
@@ -11,7 +13,6 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 /**
  * MySQL点赞仓储实现 - 只存储点赞关系，不存储点赞数量
@@ -119,6 +120,11 @@ public class LikeRepository implements ILikeRepository {
      */
     @Override
     public boolean checkStatus(Long userId, Integer type, Long targetId) {
+        String likeKey = RedisKeyManager.likeRelationKey(LikeType.valueOf(type), targetId);
+        Boolean member = redisTemplate.opsForSet().isMember(likeKey, userId.toString());
+        if (Boolean.TRUE.equals(member)) {
+            return true;
+        }
         Integer status = likeDao.checkStatus(userId, type, targetId);
         return status != null && status == 1;
     }

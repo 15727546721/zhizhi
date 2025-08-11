@@ -15,7 +15,7 @@ import cn.xu.domain.article.service.IArticleService;
 import cn.xu.domain.file.service.MinioService;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.repository.IUserRepository;
-import cn.xu.infrastructure.cache.RedisKeyConstants;
+import cn.xu.infrastructure.cache.RedisKeyManager;
 import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.common.response.PageResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -298,7 +298,7 @@ public class ArticleService implements IArticleService {
 
             // 使用 RedisTemplate 更新文章热度（ZSet）
             ZSetOperations<String, Object> zSetOperations = redisTemplate.opsForZSet();
-            zSetOperations.add(RedisKeyConstants.ARTICLE_RANK_HOT, articleId.toString(), hotScore);
+            zSetOperations.add(RedisKeyManager.articleHotRankKey(), articleId.toString(), hotScore);
 
             log.info("[文章服务] 文章热度更新成功 - articleId: {}, hotScore: {}", articleId, hotScore);
 
@@ -317,7 +317,7 @@ public class ArticleService implements IArticleService {
         try {
             // 使用 RedisTemplate 获取热度前 N 篇文章的 ID
             ZSetOperations<String, Object> zSetOperations = redisTemplate.opsForZSet();
-            Set<Object> topArticles = zSetOperations.reverseRange(RedisKeyConstants.ARTICLE_RANK_HOT, 0, topN - 1);
+            Set<Object> topArticles = zSetOperations.reverseRange(RedisKeyManager.articleHotRankKey(), 0, topN - 1);
 
             // 如果没有获取到热度前 N 篇文章，直接返回空列表
             if (CollectionUtils.isEmpty(topArticles)) {

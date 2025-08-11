@@ -2,7 +2,6 @@ package cn.xu.domain.like.service.impl;
 
 import cn.hutool.core.util.RandomUtil;
 import cn.xu.application.common.ResponseCode;
-import cn.xu.domain.like.event.LikeEvent;
 import cn.xu.domain.like.event.LikeEventPublisher;
 import cn.xu.domain.like.model.LikeType;
 import cn.xu.domain.like.repository.ILikeRepository;
@@ -10,14 +9,12 @@ import cn.xu.domain.like.service.ILikeService;
 import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.common.utils.ArticleHotScoreCacheHelper;
 import cn.xu.infrastructure.common.utils.RedisKeys;
-import com.lmax.disruptor.RingBuffer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.time.LocalDateTime;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -63,7 +60,7 @@ public class LikeService implements ILikeService {
 
         // 发布异步事件（写库等后续处理）
         likeEventPublisher.publish(userId, targetId, LikeType.valueOf(type), true);
-    }
+    } 
 
     @Override
     public void unlike(Long userId, Integer type, Long targetId) {

@@ -13,7 +13,6 @@ import cn.xu.domain.comment.model.entity.CommentEntity;
 import cn.xu.domain.comment.repository.ICommentRepository;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.service.IUserService;
-import cn.xu.domain.user.service.impl.UserServiceImpl;
 import cn.xu.infrastructure.cache.CommentCacheService;
 import cn.xu.infrastructure.common.response.PageResponse;
 import cn.xu.infrastructure.persistent.repository.UserRepository;
