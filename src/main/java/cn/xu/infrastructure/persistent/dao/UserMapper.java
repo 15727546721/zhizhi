@@ -111,4 +111,13 @@ public interface UserMapper {
      * @return
      */
     Long register(UserRegisterEntity user);
+
+    List<User> selectAll();
+
+
+    /**
+     * 查询全部用户
+     *
+     * @return
+     */
 }

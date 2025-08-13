@@ -9,10 +9,8 @@ import cn.xu.api.web.model.vo.article.ArticleDetailVO;
 import cn.xu.api.web.model.vo.article.ArticleListVO;
 import cn.xu.api.web.model.vo.article.FindArticlePageListVO;
 import cn.xu.application.common.ResponseCode;
-import cn.xu.domain.article.model.aggregate.ArticleAndAuthorAggregate;
 import cn.xu.domain.article.model.aggregate.ArticleAndTagAgg;
 import cn.xu.domain.article.model.entity.ArticleEntity;
-import cn.xu.domain.article.model.entity.TagEntity;
 import cn.xu.domain.article.model.valobj.ArticleStatus;
 import cn.xu.domain.article.service.IArticleService;
 import cn.xu.domain.article.service.IArticleTagService;
@@ -93,33 +91,17 @@ public class ArticleController {
 
     @GetMapping("/{id}")
     @Operation(summary = "获取文章详情")
-    public ResponseEntity<ArticleDetailVO> getArticleDetail(@PathVariable("id") Long id) {
+    public ResponseEntity<?> getArticleDetail(@PathVariable("id") Long id) {
         log.info("获取文章详情，文章ID：{}", id);
-        ArticleAndAuthorAggregate article = articleService.getArticleDetailById(id);
-        List<TagEntity> tag = tagService.getTagsByArticleId(id);
-        boolean login = StpUtil.isLogin();
-        boolean likeStatus = false;
-        boolean followStatus = false;
-        boolean isAuthor = false;
-        if (login) {
-            isAuthor = article.getUser().getId().equals(StpUtil.getLoginIdAsLong());
-            likeStatus = likeService.checkStatus(StpUtil.getLoginIdAsLong(),
-                    LikeType.ARTICLE.getCode(),
-                    article.getArticle().getId());
-            followStatus = followService.checkStatus(StpUtil.getLoginIdAsLong(),
-                    article.getUser().getId());
-        }
-        return ResponseEntity.<ArticleDetailVO>builder()
+        Long currentUserId = StpUtil.isLogin() ? StpUtil.getLoginIdAsLong() : null;
+
+        // 调用服务层获取文章详情
+        ArticleDetailVO articleDetailVO = articleService.getArticleDetail(id, currentUserId);
+
+        return ResponseEntity.builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .info("文章获取成功")
-                .data(ArticleDetailVO.builder()
-                        .article(article.getArticle())
-                        .user(article.getUser())
-                        .tagNameList(tag.stream().map(TagEntity::getName).collect(Collectors.toList()))
-                        .isLiked(likeStatus)
-                        .isFollowed(followStatus)
-                        .isAuthor(isAuthor)
-                        .build())
+                .data(articleDetailVO)
                 .build();
     }
 

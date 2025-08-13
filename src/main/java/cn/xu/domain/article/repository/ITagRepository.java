@@ -2,7 +2,6 @@ package cn.xu.domain.article.repository;
 
 import cn.xu.domain.article.model.aggregate.ArticleAndTagAgg;
 import cn.xu.domain.article.model.entity.TagEntity;
-import cn.xu.infrastructure.persistent.po.ArticleTag;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
@@ -16,11 +15,11 @@ public interface ITagRepository {
 
     void delete(List<Long> idList);
 
-    ArticleTag findById(Long tagId);
+    TagEntity findById(Long tagId);
 
     List<TagEntity> getTagSelectList();
 
-    List<TagEntity> getTagsByArticleId(Long id);
+    List<TagEntity> getTagsByArticleId(Long articleId);
 
     /**
      * 获取所有标签

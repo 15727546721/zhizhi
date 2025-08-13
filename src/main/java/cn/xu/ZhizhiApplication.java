@@ -14,10 +14,10 @@ import java.net.UnknownHostException;
 @SpringBootApplication
 //@EnableScheduling
 @Configurable
-public class Application {
+public class ZhizhiApplication {
 
     public static void main(String[] args) {
-        ConfigurableApplicationContext application = SpringApplication.run(Application.class);
+        ConfigurableApplicationContext application = SpringApplication.run(ZhizhiApplication.class);
         Environment env = application.getEnvironment();
         String ip = "127.0.0.1";
         try {

@@ -78,7 +78,7 @@ public class TagRepository implements ITagRepository {
     }
 
     @Override
-    public ArticleTag findById(Long tagId) {
+    public TagEntity findById(Long tagId) {
         if (tagId == null) {
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "标签ID不能为空");
         }
@@ -86,7 +86,7 @@ public class TagRepository implements ITagRepository {
         try {
             ArticleTag articleTag = tagDao.selectById(tagId);
             log.info("查询标签结果: {}", articleTag);
-            return articleTag;
+            return convertToTagEntity(articleTag);
         } catch (Exception e) {
             log.error("查询标签失败: {}", e.getMessage());
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "查询标签失败");
@@ -108,9 +108,9 @@ public class TagRepository implements ITagRepository {
     }
 
     @Override
-    public List<TagEntity> getTagsByArticleId(Long id) {
-        List<ArticleTag> articleTag = tagDao.selectByArticleId(id);
-        log.info("查询文章ID: {} 对应的标签: {}", id, articleTag);
+    public List<TagEntity> getTagsByArticleId(Long articleId) {
+        List<ArticleTag> articleTag = tagDao.selectByArticleId(articleId);
+        log.info("查询文章ID: {} 对应的标签: {}", articleId, articleTag);
         List<TagEntity> tagEntityList = articleTag.stream()
                 .map(this::convertToTagEntity)
                 .collect(Collectors.toList());

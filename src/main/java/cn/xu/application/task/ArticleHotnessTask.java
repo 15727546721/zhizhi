@@ -5,13 +5,12 @@ import cn.xu.domain.article.model.valobj.ArticleHotScorePolicy;
 import cn.xu.domain.article.repository.IArticleRepository;
 import cn.xu.infrastructure.cache.RedisKeyManager;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.Set;
 

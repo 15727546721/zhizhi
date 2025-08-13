@@ -21,7 +21,7 @@ public interface TagMapper {
 
     List<ArticleTag> selectList();
 
-    List<ArticleTag> selectByArticleId(@Param("articleId") Long id);
+    List<ArticleTag> selectByArticleId(@Param("articleId") Long articleId);
 
     /**
      *

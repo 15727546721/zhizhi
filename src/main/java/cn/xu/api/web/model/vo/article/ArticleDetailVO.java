@@ -1,6 +1,7 @@
 package cn.xu.api.web.model.vo.article;
 
 import cn.xu.domain.article.model.entity.ArticleEntity;
+import cn.xu.domain.article.model.entity.TagEntity;
 import cn.xu.domain.user.model.entity.UserEntity;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
@@ -18,7 +19,7 @@ public class ArticleDetailVO {
     private ArticleEntity article;
     private UserEntity user;
     private String categoryName;
-    private List<String> tagNameList;
+    private List<TagEntity> tags;
     @JsonProperty("isLiked")
     private boolean isLiked;
     @JsonProperty("isCollected")

@@ -2,14 +2,9 @@ package cn.xu.domain.like.event;
 
 import cn.xu.domain.article.service.IArticleService;
 import cn.xu.domain.like.model.LikeType;
-import cn.xu.infrastructure.persistent.dao.ArticleMapper;
-import cn.xu.infrastructure.persistent.dao.CommentMapper;
-import cn.xu.infrastructure.persistent.dao.LikeMapper;
-import cn.xu.infrastructure.persistent.po.Like;
 import cn.xu.infrastructure.persistent.repository.LikeRepository;
 import com.lmax.disruptor.EventHandler;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;

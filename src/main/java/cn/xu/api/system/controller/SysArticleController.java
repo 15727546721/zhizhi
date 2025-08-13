@@ -12,8 +12,10 @@ import cn.xu.domain.article.model.aggregate.ArticleAndAuthorAggregate;
 import cn.xu.domain.article.model.entity.ArticleEntity;
 import cn.xu.domain.article.model.entity.CategoryEntity;
 import cn.xu.domain.article.model.entity.TagEntity;
-import cn.xu.domain.article.service.*;
-import cn.xu.domain.like.service.ILikeService;
+import cn.xu.domain.article.service.IArticleService;
+import cn.xu.domain.article.service.IArticleTagService;
+import cn.xu.domain.article.service.ICategoryService;
+import cn.xu.domain.article.service.ITagService;
 import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.common.response.PageResponse;
 import cn.xu.infrastructure.common.response.ResponseEntity;
@@ -50,8 +52,6 @@ public class SysArticleController {
     private ArticleElasticService articleElasticService;
     @Resource
     private ArticleEventPublisher eventPublisher;
-    @Resource
-    private ILikeService likeService;
 
     @PostMapping("/uploadCover")
     public ResponseEntity<String> uploadCover(@RequestPart("file") MultipartFile file) {

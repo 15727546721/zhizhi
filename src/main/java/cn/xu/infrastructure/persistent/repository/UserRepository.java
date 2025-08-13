@@ -71,12 +71,21 @@ public class UserRepository implements IUserRepository {
     }
 
     @Override
-    public List<UserEntity> findAll(Integer page, Integer size) {
+    public List<UserEntity> findByPage(Integer page, Integer size) {
         int offset = (page - 1) * size;
         return userDao.selectByPage(offset, size).stream()
                 .map(this::convertToUserEntity)
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public List<UserEntity> findAll() {
+        List<User> userEntityList = userDao.selectAll();
+        return userEntityList.stream()
+                .map(this::convertToUserEntity)
+                .collect(Collectors.toList());
+    }
+
 
     @Override
     public void deleteById(Long id) {

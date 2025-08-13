@@ -1,7 +1,7 @@
 package cn.xu.domain.article.model.valobj;
 
-import java.time.LocalDateTime;
 import java.time.Duration;
+import java.time.LocalDateTime;
 
 public class ArticleHotScorePolicy {
 

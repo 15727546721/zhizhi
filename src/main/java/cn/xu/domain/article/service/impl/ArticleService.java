@@ -1,20 +1,26 @@
 package cn.xu.domain.article.service.impl;
 
 import cn.xu.api.system.model.dto.article.ArticleRequest;
+import cn.xu.api.web.model.vo.article.ArticleDetailVO;
 import cn.xu.api.web.model.vo.article.ArticleListVO;
 import cn.xu.api.web.model.vo.article.ArticlePageVO;
 import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.article.model.aggregate.ArticleAndAuthorAggregate;
 import cn.xu.domain.article.model.entity.ArticleEntity;
+import cn.xu.domain.article.model.entity.TagEntity;
 import cn.xu.domain.article.model.valobj.ArticleHotScorePolicy;
 import cn.xu.domain.article.model.valobj.ArticleStatus;
 import cn.xu.domain.article.repository.IArticleRepository;
 import cn.xu.domain.article.repository.IArticleTagRepository;
 import cn.xu.domain.article.repository.ITagRepository;
+import cn.xu.domain.article.service.IArticleCollectService;
 import cn.xu.domain.article.service.IArticleService;
 import cn.xu.domain.file.service.MinioService;
+import cn.xu.domain.follow.service.IFollowService;
+import cn.xu.domain.like.model.LikeType;
+import cn.xu.domain.like.service.ILikeService;
 import cn.xu.domain.user.model.entity.UserEntity;
-import cn.xu.domain.user.repository.IUserRepository;
+import cn.xu.domain.user.service.IUserService;
 import cn.xu.infrastructure.cache.RedisKeyManager;
 import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.common.response.PageResponse;
@@ -40,24 +46,26 @@ public class ArticleService implements IArticleService {
     @Resource
     private IArticleRepository articleRepository; // 文章仓储
     @Resource
-    private IUserRepository userRepository; // 用户仓储
-    @Resource
-    private RedisTemplate<String, Object> redisTemplate;
-
-    @Resource
     private IArticleTagRepository articleTagRepository; // 文章标签仓储
-
     @Resource
     private ITagRepository tagRepository; // 标签仓储
-
+    @Resource
+    private RedisTemplate<String, Object> redisTemplate;
     @Resource
     private MinioService minioService; // minio客户端
+    @Resource
+    private IUserService userService;
+    @Resource
+    private IArticleCollectService articleCollectService; // 文章收藏服务
+    @Resource
+    private ILikeService likeService;
+    @Resource
+    private IFollowService followService;
 
     @Override
     public Long createArticle(ArticleEntity articleEntity) {
         try {
-            log.info("[文章服务] 开始创建文章 - title: {}, userId: {}",
-                    articleEntity.getTitle(), articleEntity.getUserId());
+            log.info("[文章服务] 开始创建文章 - title: {}, userId: {}", articleEntity.getTitle(), articleEntity.getUserId());
 
             // 保存文章
             Long articleId = articleRepository.save(articleEntity);
@@ -73,8 +81,7 @@ public class ArticleService implements IArticleService {
     @Override
     public Long createOrUpdateArticleDraft(ArticleEntity articleEntity) {
         try {
-            log.info("[文章服务] 开始创建文章草稿 - title: {}, userId: {}",
-                    articleEntity.getTitle(), articleEntity.getUserId());
+            log.info("[文章服务] 开始创建文章草稿 - title: {}, userId: {}", articleEntity.getTitle(), articleEntity.getUserId());
             if (articleEntity.getId() == null) {
                 // 保存文章
                 Long articleId = articleRepository.save(articleEntity);
@@ -95,8 +102,7 @@ public class ArticleService implements IArticleService {
     @Override
     public String uploadCover(MultipartFile imageFile) {
         try {
-            log.info("[文章服务] 开始上传文章封面 - fileName: {}, size: {}",
-                    imageFile.getOriginalFilename(), imageFile.getSize());
+            log.info("[文章服务] 开始上传文章封面 - fileName: {}, size: {}", imageFile.getOriginalFilename(), imageFile.getSize());
 
             String uploadFileUrl = minioService.uploadFile(imageFile, null);
             if (uploadFileUrl == null) {
@@ -115,18 +121,12 @@ public class ArticleService implements IArticleService {
     @Override
     public PageResponse<List<ArticlePageVO>> listArticle(ArticleRequest articleRequest) {
         try {
-            log.info("[文章服务] 开始分页查询文章列表 - pageNo: {}, pageSize: {}",
-                    articleRequest.getPageNo(), articleRequest.getPageSize());
+            log.info("[文章服务] 开始分页查询文章列表 - pageNo: {}, pageSize: {}", articleRequest.getPageNo(), articleRequest.getPageSize());
 
             List<ArticlePageVO> articles = articleRepository.queryArticle(articleRequest);
 
             log.info("[文章服务] 分页查询文章列表成功 - 获取数量: {}", articles.size());
-            return PageResponse.of(
-                    articleRequest.getPageNo(),
-                    articleRequest.getPageSize(),
-                    (long) articles.size(),
-                    articles
-            );
+            return PageResponse.of(articleRequest.getPageNo(), articleRequest.getPageSize(), (long) articles.size(), articles);
         } catch (Exception e) {
             log.error("[文章服务] 分页查询文章列表失败", e);
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "查询文章列表失败：" + e.getMessage());
@@ -164,29 +164,30 @@ public class ArticleService implements IArticleService {
 
     @Override
     public ArticleAndAuthorAggregate getArticleDetailById(Long articleId) {
-        if (articleId == null) {
-            log.error("[文章服务] 获取文章详情失败：文章ID为空");
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "文章ID不能为空");
-        }
-
-        try {
-            log.info("[文章服务] 开始获取文章详情 - articleId: {}", articleId);
-            ArticleEntity article = articleRepository.findById(articleId);
-
-            if (article == null) {
-                log.warn("[文章服务] 文章不存在 - articleId: {}", articleId);
-                throw new BusinessException(ResponseCode.NULL_RESPONSE.getCode(), "文章不存在");
-            }
-            UserEntity userEntity = userRepository.findById(article.getUserId());
-            if (userEntity == null) {
-                log.error("[文章服务] 作者不存在 - userId: {}", article.getUserId());
-                throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "作者不存在");
-            }
-            return new ArticleAndAuthorAggregate(article, userEntity);
-        } catch (Exception e) {
-            log.error("[文章服务] 获取文章详情失败 - articleId: {}", articleId, e);
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "获取文章详情失败：" + e.getMessage());
-        }
+//        if (articleId == null) {
+//            log.error("[文章服务] 获取文章详情失败：文章ID为空");
+//            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "文章ID不能为空");
+//        }
+//
+//        try {
+//            log.info("[文章服务] 开始获取文章详情 - articleId: {}", articleId);
+//            ArticleEntity article = articleRepository.findById(articleId);
+//
+//            if (article == null) {
+//                log.warn("[文章服务] 文章不存在 - articleId: {}", articleId);
+//                throw new BusinessException(ResponseCode.NULL_RESPONSE.getCode(), "文章不存在");
+//            }
+//            UserEntity userEntity = userRepository.findById(article.getUserId());
+//            if (userEntity == null) {
+//                log.error("[文章服务] 作者不存在 - userId: {}", article.getUserId());
+//                throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "作者不存在");
+//            }
+//            return new ArticleAndAuthorAggregate(article, userEntity);
+//        } catch (Exception e) {
+//            log.error("[文章服务] 获取文章详情失败 - articleId: {}", articleId, e);
+//            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "获取文章详情失败：" + e.getMessage());
+//        }
+        return null;
     }
 
     @Override
@@ -227,8 +228,7 @@ public class ArticleService implements IArticleService {
         try {
             log.info("[文章服务] 开始获取草稿文章列表 - userId: {}", userId);
             List<ArticleListVO> articles = articleRepository.queryDraftArticleListByUserId(userId);
-            log.info("[文章服务] 获取草稿文章列表成功 - userId: {}, size: {}",
-                    userId, articles.size());
+            log.info("[文章服务] 获取草稿文章列表成功 - userId: {}, size: {}", userId, articles.size());
             return articles;
         } catch (Exception e) {
             log.error("[文章服务] 获取草稿文章列表失败 - userId: {}", userId, e);
@@ -277,6 +277,7 @@ public class ArticleService implements IArticleService {
 
     /**
      * 更新文章热度到 Redis
+     *
      * @param articleId 文章ID
      */
     public void updateArticleHotScore(Long articleId) {
@@ -289,12 +290,7 @@ public class ArticleService implements IArticleService {
             }
 
             // 计算热度分数
-            double hotScore = ArticleHotScorePolicy.calculate(
-                    article.getLikeCount(),
-                    article.getCommentCount(),
-                    article.getViewCount(),
-                    article.getCreateTime()
-            );
+            double hotScore = ArticleHotScorePolicy.calculate(article.getLikeCount(), article.getCommentCount(), article.getViewCount(), article.getCreateTime());
 
             // 使用 RedisTemplate 更新文章热度（ZSet）
             ZSetOperations<String, Object> zSetOperations = redisTemplate.opsForZSet();
@@ -310,6 +306,7 @@ public class ArticleService implements IArticleService {
 
     /**
      * 获取前N篇热度最高的文章
+     *
      * @param topN 获取的文章数量
      * @return 热度前N篇文章的ID
      */
@@ -345,6 +342,36 @@ public class ArticleService implements IArticleService {
     @Override
     public List<ArticleEntity> getArticlePageList(Integer pageNo, Integer pageSize) {
         return articleRepository.getArticlePageList(pageNo, pageSize);
+    }
+
+    @Override
+    public ArticleDetailVO getArticleDetail(Long articleId, Long currentUserId) {
+        ArticleEntity article = articleRepository.findById(articleId);
+        if (article == null) {
+            log.warn("[文章服务] 文章不存在 - articleId: {}", articleId);
+            throw new BusinessException("文章不存在");
+        }
+        if (article.getStatus().equals(ArticleStatus.DRAFT)) {
+            log.warn("[文章服务] 文章未发布 - articleId: {}", articleId);
+            throw new BusinessException("文章未发布");
+        }
+        UserEntity user = userService.getUserById(article.getUserId());
+        List<TagEntity> tags = tagRepository.getTagsByArticleId(articleId);
+
+        boolean isLiked = likeService.checkStatus(currentUserId, LikeType.ARTICLE.getCode(), articleId);
+        boolean isCollected = articleCollectService.checkStatus(currentUserId, articleId);
+        boolean isFollowed = followService.checkStatus(currentUserId, article.getUserId());
+        boolean isAuthor = user.getId().equals(currentUserId);
+
+        return ArticleDetailVO.builder()
+                .article(article)
+                .user(user)
+                .tags(tags)
+                .isLiked(isLiked)
+                .isCollected(isCollected)
+                .isFollowed(isFollowed)
+                .isAuthor(isAuthor)
+                .build();
     }
 
     @Override

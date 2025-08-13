@@ -1,6 +1,7 @@
 package cn.xu.domain.article.service;
 
 import cn.xu.api.system.model.dto.article.ArticleRequest;
+import cn.xu.api.web.model.vo.article.ArticleDetailVO;
 import cn.xu.api.web.model.vo.article.ArticleListVO;
 import cn.xu.api.web.model.vo.article.ArticlePageVO;
 import cn.xu.domain.article.model.aggregate.ArticleAndAuthorAggregate;
@@ -132,4 +133,12 @@ public interface IArticleService {
      * @return
      */
     List<ArticleEntity> getArticlePageList(Integer pageNo, Integer pageSize);
+
+    /**
+     * 获取文章详情
+     * @param articleId 文章ID
+     * @param currentUserId 当前用户ID，如果未登录则为null
+     * @return 文章详情对象
+     */
+    ArticleDetailVO getArticleDetail(Long id, Long currentUserId);
 }

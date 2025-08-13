@@ -188,4 +188,7 @@
         FROM user
         WHERE username = #{username}
     </select>
+    <select id="selectAll" resultMap="userMap">
+        select * from user
+    </select>
 </mapper>

@@ -44,7 +44,9 @@ public interface IUserRepository {
     /**
      * 分页查询所有用户
      */
-    List<UserEntity> findAll(Integer page, Integer size);
+    List<UserEntity> findByPage(Integer page, Integer size);
+
+    List<UserEntity> findAll();
 
     /**
      * 根据ID删除用户

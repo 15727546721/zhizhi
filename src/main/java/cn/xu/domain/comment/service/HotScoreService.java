@@ -1,10 +1,10 @@
 package cn.xu.domain.comment.service;
 
+import cn.xu.domain.comment.model.entity.CommentEntity;
+import cn.xu.domain.comment.repository.ICommentRepository;
 import cn.xu.infrastructure.persistent.read.elastic.model.CommentIndex;
 import cn.xu.infrastructure.persistent.read.elastic.repository.CommentElasticRepository;
 import cn.xu.infrastructure.persistent.read.redis.CommentRedisRepository;
-import cn.xu.domain.comment.repository.ICommentRepository;
-import cn.xu.domain.comment.model.entity.CommentEntity;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
