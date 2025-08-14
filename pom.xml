@@ -119,12 +119,12 @@
             <artifactId>knife4j-openapi3-spring-boot-starter</artifactId>
             <version>4.4.0</version>
         </dependency>
-        <!-- Disruptor 高性能队列 -->
-        <dependency>
-            <groupId>com.lmax</groupId>
-            <artifactId>disruptor</artifactId>
-            <version>3.4.4</version>
-        </dependency>
+<!--        &lt;!&ndash; Disruptor 高性能队列 &ndash;&gt;-->
+<!--        <dependency>-->
+<!--            <groupId>com.lmax</groupId>-->
+<!--            <artifactId>disruptor</artifactId>-->
+<!--            <version>3.4.4</version>-->
+<!--        </dependency>-->
 <!--        <dependency>-->
 <!--            <groupId>org.apache.lucene</groupId>-->
 <!--            <artifactId>lucene-core</artifactId>-->

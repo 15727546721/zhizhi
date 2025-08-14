@@ -1,47 +1,44 @@
 package cn.xu.domain.follow.event;
 
 import cn.xu.infrastructure.persistent.dao.UserMapper;
-import com.lmax.disruptor.EventHandler;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import javax.annotation.Resource;
-
 @Slf4j
 @Component
-public class FollowEventHandler implements EventHandler<FollowEvent> {
+@RequiredArgsConstructor
+public class FollowEventListener {
 
-    @Resource
-    private UserMapper userDao;
-    @Resource
-    private TransactionTemplate transactionTemplate;
+    private final UserMapper userMapper;
+    private final TransactionTemplate transactionTemplate;
 
-    @Override
-    public void onEvent(FollowEvent followEvent, long sequence, boolean endOfBatch) throws Exception {
-        log.info("[关注事件]处理事件：{}", followEvent);
+    @EventListener
+    public void handleFollowEvent(FollowEvent followEvent) {
+        log.info("[关注事件] 开始处理：{}", followEvent);
         //关注者的关注数+1
         //被关注者的粉丝数+1
         transactionTemplate.execute(status -> {
             try {
                 switch (followEvent.getStatus()) {
                     case FOLLOWED:
-                        userDao.updateFollowCount(followEvent.getFollowerId(), 1);
-                        userDao.updateFansCount(followEvent.getFolloweeId(), 1);
+                        userMapper.updateFollowCount(followEvent.getFollowerId(), 1);
+                        userMapper.updateFansCount(followEvent.getFolloweeId(), 1);
                         break;
                     case UNFOLLOWED:
-                        userDao.updateFollowCount(followEvent.getFollowerId(), -1);
-                        userDao.updateFansCount(followEvent.getFolloweeId(), -1);
+                        userMapper.updateFollowCount(followEvent.getFollowerId(), -1);
+                        userMapper.updateFansCount(followEvent.getFolloweeId(), -1);
                         break;
                     default:
                         break;
                 }
             } catch (Exception e) {
-                // 处理异常
                 log.error("关注事件处理异常", e);
                 status.setRollbackOnly();
             }
-            return 1;
+            return null;
         });
     }
 }

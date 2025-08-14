@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="cn.xu.infrastructure.persistent.dao.INotificationDao">
+<mapper namespace="cn.xu.infrastructure.persistent.dao.NotificationMapper">
 
     <resultMap id="notificationMap" type="cn.xu.infrastructure.persistent.po.Notification">
         <id column="id" property="id"/>

@@ -1,12 +1,12 @@
 package cn.xu.domain.follow.service.impl;
 
 import cn.xu.domain.follow.event.FollowEvent;
+import cn.xu.domain.follow.event.FollowEventPublisher;
 import cn.xu.domain.follow.model.entity.UserFollowEntity;
 import cn.xu.domain.follow.model.valueobject.FollowStatus;
 import cn.xu.domain.follow.repository.IFollowRepository;
 import cn.xu.domain.follow.service.IFollowService;
 import cn.xu.infrastructure.common.exception.BusinessException;
-import com.lmax.disruptor.RingBuffer;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,7 +19,7 @@ public class FollowService implements IFollowService {
     @Resource
     private IFollowRepository userFollowRepository;
     @Resource
-    private RingBuffer<FollowEvent> ringBuffer;
+    private FollowEventPublisher followEventPublisher;
 
 
 
@@ -103,10 +103,6 @@ public class FollowService implements IFollowService {
     }
 
     private void pushFollowEvent(FollowEvent followEvent) {
-        ringBuffer.publishEvent((event, sequence) -> {
-            event.setFollowerId(followEvent.getFollowerId());
-            event.setFolloweeId(followEvent.getFolloweeId());
-            event.setStatus(followEvent.getStatus());
-        });
+        followEventPublisher.publish(followEvent);
     }
 } 

@@ -9,6 +9,7 @@ import cn.xu.application.common.ResponseCode;
 import cn.xu.application.query.comment.dto.CommentCountDTO;
 import cn.xu.domain.comment.event.CommentCountEvent;
 import cn.xu.domain.comment.event.CommentEvent;
+import cn.xu.domain.comment.event.CommentEventPublisher;
 import cn.xu.domain.comment.model.entity.CommentEntity;
 import cn.xu.domain.comment.model.valueobject.CommentSortType;
 import cn.xu.domain.comment.model.valueobject.CommentType;
@@ -19,10 +20,8 @@ import cn.xu.domain.user.service.IUserService;
 import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.common.request.PageRequest;
 import cn.xu.infrastructure.common.response.PageResponse;
-import com.lmax.disruptor.RingBuffer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,11 +34,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class CommentServiceImpl implements ICommentService {
     private final ICommentRepository commentRepository;
-    private final ApplicationEventPublisher eventPublisher;
+    private final CommentEventPublisher commentEventPublisher;
     @Resource
     private IUserService userService;
-    @Resource
-    private RingBuffer<CommentCountEvent> ringBuffer;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -603,15 +600,7 @@ public class CommentServiceImpl implements ICommentService {
                 .build();
     }
 
-
-
     private void pushCommentEvent(CommentCountEvent comment) {
-        ringBuffer.publishEvent((event, sequence) -> {
-            event.setCommentId(comment.getCommentId());
-            event.setTargetType(comment.getTargetType());
-            event.setTargetId(comment.getTargetId());
-            event.setLevel(comment.getLevel());
-            event.setCount(comment.getCount());
-        });
+        commentEventPublisher.publishCommentCountEvent(comment);
     }
 }

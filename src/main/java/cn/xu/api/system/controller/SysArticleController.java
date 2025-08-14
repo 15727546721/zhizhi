@@ -90,7 +90,7 @@ public class SysArticleController {
                 articleTagService.saveArticleTag(articleId, createArticleRequest.getTagIds());
 
                 //4. 发布文章创建事件
-                eventPublisher.publishArticleCreated(article);
+                eventPublisher.publishCreated(article);
 
                 return 1;
             } catch (Exception e) {
@@ -132,7 +132,7 @@ public class SysArticleController {
                 articleTagService.updateArticleTag(createArticleRequest.getId(), createArticleRequest.getTagIds());
 
                 //4. 发布文章更新事件
-                eventPublisher.publishArticleUpdated(article);
+                eventPublisher.publishUpdated(article);
 
                 return 1;
             } catch (Exception e) {
@@ -156,7 +156,7 @@ public class SysArticleController {
                 ArticleEntity article = ArticleEntity.builder()
                         .id(articleId)
                         .build();
-                eventPublisher.publishArticleDeleted(articleId);
+                eventPublisher.publishDeleted(articleId);
             }
             return ResponseEntity.builder()
                     .code(ResponseCode.SUCCESS.getCode())
@@ -282,7 +282,7 @@ public class SysArticleController {
                 articleTagService.saveArticleTag(articleId[0], publishArticleRequest.getTagIds());
                 
                 // 4. 发布文章创建事件
-                eventPublisher.publishArticleCreated(article);
+                eventPublisher.publishCreated(article);
                 
                 return 1;
             } catch (Exception e) {

@@ -1,72 +1,41 @@
 package cn.xu.domain.article.event;
 
+
 import cn.xu.domain.article.model.entity.ArticleEntity;
-import com.lmax.disruptor.RingBuffer;
-import lombok.extern.slf4j.Slf4j;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
-/**
- * 文章领域事件发布者
- * 负责文章领域事件的发布
- */
-@Slf4j
+
 @Service
+@RequiredArgsConstructor
 public class ArticleEventPublisher {
 
-    private final RingBuffer<ArticleEventWrapper> eventRingBuffer;
+    private final ApplicationEventPublisher publisher;
 
-    public ArticleEventPublisher(RingBuffer<ArticleEventWrapper> eventRingBuffer) {
-        this.eventRingBuffer = eventRingBuffer;
+    public void publishCreated(ArticleEntity article) {
+        publish(article, ArticleEvent.ArticleEventType.CREATED);
     }
 
-    /**
-     * 发布领域事件
-     *
-     * @param event 领域事件
-     */
-    private void publishEvent(ArticleEvent event) {
-        long sequence = eventRingBuffer.next();
-        try {
-            ArticleEventWrapper eventWrapper = eventRingBuffer.get(sequence);
-            eventWrapper.setEvent(event);
-            log.info("发布文章领域事件：{}", event);
-        } finally {
-            eventRingBuffer.publish(sequence);
-        }
+    public void publishUpdated(ArticleEntity article) {
+        publish(article, ArticleEvent.ArticleEventType.UPDATED);
     }
 
-    /**
-     * 发布文章创建事件
-     */
-    public void publishArticleCreated(ArticleEntity article) {
-        ArticleCreatedEvent event = new ArticleCreatedEvent(
-                article.getId(),
-                article.getTitle(),
-                article.getDescription(),
-                article.getContent(),
-                article.getUserId()
-        );
-        publishEvent(event);
+    public void publishDeleted(Long articleId) {
+        publisher.publishEvent(ArticleEvent.builder()
+                .articleId(articleId)
+                .type(ArticleEvent.ArticleEventType.DELETED)
+                .build());
     }
 
-    /**
-     * 发布文章更新事件
-     */
-    public void publishArticleUpdated(ArticleEntity article) {
-        ArticleUpdatedEvent event = new ArticleUpdatedEvent(
-                article.getId(),
-                article.getTitle(),
-                article.getDescription(),
-                article.getContent(),
-                article.getUserId()
-        );
-        publishEvent(event);
+    private void publish(ArticleEntity article, ArticleEvent.ArticleEventType type) {
+        publisher.publishEvent(ArticleEvent.builder()
+                .articleId(article.getId())
+                .title(article.getTitle())
+                .description(article.getDescription())
+                .content(article.getContent())
+                .userId(article.getUserId())
+                .type(type)
+                .build());
     }
-
-    /**
-     * 发布文章删除事件
-     */
-    public void publishArticleDeleted(Long articleId) {
-        publishEvent(new ArticleDeletedEvent(articleId));
-    }
-} 
+}

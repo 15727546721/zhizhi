@@ -1,12 +1,16 @@
 package cn.xu.domain.message.model.entity;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.Date;
 
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class MessageEntity {
     private Long id;
     private MessageType type;

@@ -1,17 +1,18 @@
 package cn.xu.domain.article.event.strategy;
 
 import cn.xu.domain.article.event.ArticleEvent;
-import cn.xu.infrastructure.persistent.read.elastic.service.ArticleElasticService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 @Slf4j
-@Component("createArticleStrategy")
-public class CreateArticleStrategy extends AbstractModifyArticleStrategy {
+@Component
+public class CreateArticleStrategy extends AbstractArticleStrategy {
 
     @Override
-    public void handleEvent(ArticleEvent event, ArticleElasticService indexService) {
+    public void handle(ArticleEvent event) {
+        if (event.getType() != ArticleEvent.ArticleEventType.CREATED) return;
         log.info("处理文章创建事件: {}", event);
-        indexService.indexArticle(toArticleEntity(event));
+        elasticService.indexArticle(toEntity(event));
     }
 }
+
