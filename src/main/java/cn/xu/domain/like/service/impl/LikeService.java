@@ -6,16 +6,15 @@ import cn.xu.domain.like.event.LikeEventPublisher;
 import cn.xu.domain.like.model.LikeType;
 import cn.xu.domain.like.repository.ILikeRepository;
 import cn.xu.domain.like.service.ILikeService;
+import cn.xu.infrastructure.cache.RedisKeyManager;
 import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.common.utils.ArticleHotScoreCacheHelper;
-import cn.xu.infrastructure.common.utils.RedisKeys;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
@@ -37,7 +36,7 @@ public class LikeService implements ILikeService {
     public void like(Long userId, Integer type, Long targetId) {
         checkParams(userId, type, targetId);
 
-        String likeKey = RedisKeys.likeRelationKey(type, targetId);
+        String likeKey = RedisKeyManager.likeRelationKey(LikeType.valueOf(type), targetId);
         String userKey = userId.toString();
 
         try {
@@ -56,45 +55,37 @@ public class LikeService implements ILikeService {
             redisTemplate.opsForSet().add(likeKey, userKey);
         } catch (Exception e) {
             log.error("点赞失败", e);
+            return;
         }
 
         // 发布异步事件（写库等后续处理）
         likeEventPublisher.publish(userId, targetId, LikeType.valueOf(type), true);
-    } 
+    }
 
     @Override
     public void unlike(Long userId, Integer type, Long targetId) {
         checkParams(userId, type, targetId);
 
-        String likeKey = RedisKeys.likeRelationKey(type, targetId);
-        String countKey = RedisKeys.likeCountKey(type);
-        String userKey = userId.toString();
+        // 存储点赞用户的集合
+        String likeKey = RedisKeyManager.likeRelationKey(LikeType.valueOf(type), targetId);
 
         try {
-            Object existingStatus = redisTemplate.opsForHash().get(likeKey, userKey);
+            // 检查当前用户是否已点赞
+            Boolean member = redisTemplate.opsForSet().isMember(likeKey, userId.toString());
 
-            if ("0".equals(existingStatus)) {
+            if (Boolean.FALSE.equals(member)) {
                 throw new BusinessException("您还未点赞，无法取消！");
             }
 
-            if (existingStatus == null && !likeRepository.checkStatus(userId, type, targetId)) {
-                // 数据库无点赞，缓存写入并返回异常
-                redisTemplate.opsForHash().put(likeKey, userKey, "0");
-                redisTemplate.expire(likeKey, randomExpire(), TimeUnit.SECONDS);
-                throw new BusinessException("您还未点赞，无法取消！");
-            }
+            // 删除 Redis 中的点赞记录
+            redisTemplate.opsForSet().remove(likeKey, userId.toString());
 
-            // 写入 Redis 缓存取消点赞状态
-            redisTemplate.opsForHash().put(likeKey, userKey, "0");
-            redisTemplate.expire(likeKey, randomExpire(), TimeUnit.SECONDS);
-
-            // 点赞计数器 -1
-            redisTemplate.opsForValue().decrement(countKey);
         } catch (Exception e) {
             log.error("取消点赞失败", e);
+            throw new BusinessException("取消点赞失败，请稍后再试！");
         }
 
-        // 发布异步事件
+        // 发布异步事件（更新数据库等操作）
         likeEventPublisher.publish(userId, targetId, LikeType.valueOf(type), false);
     }
 

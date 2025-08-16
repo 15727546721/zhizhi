@@ -14,4 +14,13 @@ public enum ArticleStatus {
         this.value = value;
         this.description = description;
     }
+
+    public static ArticleStatus valueOf(Integer value) {
+        for (ArticleStatus status : ArticleStatus.values()) {
+            if (status.getValue().equals(value)) {
+                return status;
+            }
+        }
+        return null;
+    }
 } 

@@ -4,6 +4,7 @@ import cn.xu.api.system.model.dto.article.ArticleRequest;
 import cn.xu.api.web.model.vo.article.ArticleListVO;
 import cn.xu.api.web.model.vo.article.ArticlePageVO;
 import cn.xu.domain.article.model.entity.ArticleEntity;
+import cn.xu.domain.article.model.valobj.ArticleStatus;
 import cn.xu.domain.article.repository.IArticleRepository;
 import cn.xu.infrastructure.persistent.dao.ArticleMapper;
 import cn.xu.infrastructure.persistent.dao.ArticleTagMapper;
@@ -180,6 +181,7 @@ public class ArticleRepository implements IArticleRepository {
                 .content(article.getContent())
                 .coverUrl(article.getCoverUrl())
                 .userId(article.getUserId())
+                .status(ArticleStatus.valueOf(article.getStatus()))
                 .createTime(article.getCreateTime())
                 .updateTime(article.getUpdateTime())
                 .viewCount(article.getViewCount())

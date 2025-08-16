@@ -1,6 +1,7 @@
 package cn.xu.application.task;
 
 import cn.xu.domain.article.model.entity.ArticleEntity;
+import cn.xu.domain.article.model.valobj.ArticleStatus;
 import cn.xu.infrastructure.persistent.repository.ArticleRepository;
 import cn.xu.infrastructure.persistent.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +34,10 @@ public class RedisSyncService {
         List<ArticleEntity> articles = articleRepository.findAll();
 
         for (ArticleEntity article : articles) {
+            if (article.getStatus() == null || article.getStatus() == ArticleStatus.DRAFT) {
+                continue;
+            }
+
             Long articleId = article.getId();
             long viewCount = getRedisCount(ARTICLE_VIEW_COUNT_KEY_PREFIX, articleId);
             long likeCount = getRedisCount(ARTICLE_LIKE_COUNT_KEY_PREFIX, articleId);

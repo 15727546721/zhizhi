@@ -4,7 +4,6 @@ import cn.xu.domain.like.model.LikeEntity;
 import cn.xu.domain.like.model.LikeType;
 import cn.xu.domain.like.repository.ILikeRepository;
 import cn.xu.infrastructure.cache.RedisKeyManager;
-import cn.xu.infrastructure.common.utils.RedisKeys;
 import cn.xu.infrastructure.persistent.dao.LikeMapper;
 import cn.xu.infrastructure.persistent.po.Like;
 import lombok.RequiredArgsConstructor;
@@ -126,7 +125,11 @@ public class LikeRepository implements ILikeRepository {
             return true;
         }
         Integer status = likeDao.checkStatus(userId, type, targetId);
-        return status != null && status == 1;
+        if (status != null && status == 1) {
+            redisTemplate.opsForSet().add(likeKey, userId.toString());
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -136,7 +139,7 @@ public class LikeRepository implements ILikeRepository {
      */
     @Override
     public void incrementLikeCount(Long targetId, int type) {
-        redisTemplate.opsForHash().increment(RedisKeys.likeCountKey(type), String.valueOf(targetId), 1);
+        redisTemplate.opsForValue().increment(RedisKeyManager.likeCountKey(LikeType.valueOf(type), targetId), 1);
     }
 
     /**
@@ -146,7 +149,7 @@ public class LikeRepository implements ILikeRepository {
      */
     @Override
     public void decrementLikeCount(Long targetId, int type) {
-        redisTemplate.opsForHash().increment(RedisKeys.likeCountKey(type), String.valueOf(targetId), -1);
+        redisTemplate.opsForValue().increment(RedisKeyManager.likeCountKey(LikeType.valueOf(type), targetId), -1);
     }
 
     /**

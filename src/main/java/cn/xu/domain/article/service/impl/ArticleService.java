@@ -351,7 +351,7 @@ public class ArticleService implements IArticleService {
             log.warn("[文章服务] 文章不存在 - articleId: {}", articleId);
             throw new BusinessException("文章不存在");
         }
-        if (article.getStatus().equals(ArticleStatus.DRAFT)) {
+        if (article.getStatus() == null || article.getStatus().equals(ArticleStatus.DRAFT)) {
             log.warn("[文章服务] 文章未发布 - articleId: {}", articleId);
             throw new BusinessException("文章未发布");
         }
