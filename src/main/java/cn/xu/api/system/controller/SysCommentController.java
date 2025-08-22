@@ -50,11 +50,11 @@ public class SysCommentController {
     @GetMapping("/list")
     public ResponseEntity<PageResponse<List<CommentVO>>> getComments(@Valid CommentRequest request) {
         log.info("分页获取一级评论列表, request: {}", request);
-        PageResponse<List<CommentVO>> pageResponse = commentServiceImpl.getRootCommentsWithUserByPage(request);
+//        PageResponse<List<CommentVO>> pageResponse = commentServiceImpl.getRootCommentsWithUserByPage(request);
         return ResponseEntity.<PageResponse<List<CommentVO>>>builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .info(ResponseCode.SUCCESS.getMessage())
-                .data(pageResponse)
+                .data(null)
                 .build();
     }
 

@@ -1,16 +1,16 @@
 package cn.xu.infrastructure.persistent.repository;
 
-import cn.xu.api.web.model.dto.comment.CommentQueryRequest;
 import cn.xu.api.web.model.dto.comment.FindChildCommentItemVO;
-import cn.xu.api.web.model.dto.comment.FindCommentItemVO;
+import cn.xu.api.web.model.vo.comment.FindCommentItemVO;
 import cn.xu.application.common.ResponseCode;
 import cn.xu.application.query.comment.dto.CommentCountDTO;
 import cn.xu.domain.comment.model.entity.CommentEntity;
-import cn.xu.domain.comment.model.valueobject.CommentSortType;
 import cn.xu.domain.comment.repository.ICommentRepository;
 import cn.xu.infrastructure.common.exception.BusinessException;
+import cn.xu.infrastructure.persistent.dao.CommentImageMapper;
 import cn.xu.infrastructure.persistent.dao.CommentMapper;
 import cn.xu.infrastructure.persistent.po.Comment;
+import cn.xu.infrastructure.persistent.po.CommentImage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 
@@ -25,40 +25,8 @@ public class CommentRepositoryImpl implements ICommentRepository {
 
     @Resource
     private CommentMapper commentMapper;
-
-    @Override
-    public Long addComment(CommentEntity commentEntity) {
-        Comment comment = convertToComment(commentEntity);
-        comment.setCreateTime(LocalDateTime.now());
-        comment.setUpdateTime(LocalDateTime.now());
-        commentMapper.insert(comment);
-        return comment.getId();
-    }
-
-    @Override
-    public Long replyComment(CommentEntity commentEntity) {
-        Comment comment = convertToComment(commentEntity);
-        comment.setCreateTime(LocalDateTime.now());
-        comment.setUpdateTime(LocalDateTime.now());
-        commentMapper.insert(comment);
-        return comment.getId();
-    }
-
-    @Override
-    public List<CommentEntity> getArticleComments(Long articleId) {
-        return commentMapper.findByTypeAndTargetId(1, articleId)
-                .stream()
-                .map(this::convertToEntity)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public List<CommentEntity> getTopicComments(Long topicId) {
-        return commentMapper.findByTypeAndTargetId(2, topicId)
-                .stream()
-                .map(this::convertToEntity)
-                .collect(Collectors.toList());
-    }
+    @Resource
+    private CommentImageMapper commentImageMapper;
 
     @Override
     public List<CommentEntity> findCommentBatch(int offset, int batchSize) {
@@ -88,6 +56,17 @@ public class CommentRepositoryImpl implements ICommentRepository {
     @Override
     public CommentEntity findById(Long id) {
         try {
+//            // 先查询基础评论
+//            List<Comment> comments = commentMapper.selectCommentsByIds(ids);
+//
+//            // 批量查询图片并关联
+//            Map<Long, List<CommentImage>> imageMap = commentMapper
+//                    .selectImagesByCommentIds(ids)
+//                    .stream()
+//                    .collect(Collectors.groupingBy(CommentImage::getCommentId));
+//
+//            comments.forEach(c -> c.setImages(imageMap.get(c.getId())));
+//            return comments;
             log.info("查询评论 - id: {}", id);
             Comment comment = commentMapper.selectById(id);
             return convertToEntity(comment);
@@ -98,23 +77,17 @@ public class CommentRepositoryImpl implements ICommentRepository {
     }
 
     @Override
-    public List<CommentEntity> selectParentsByHot(int targetType, long targetId, int offset, int pageSize) {
-        return commentMapper.selectParentsByHot(targetType, targetId, offset, pageSize);
+    public List<CommentEntity> findRootCommentsByHot(int targetType, long targetId, int offset, int pageSize) {
+        List<Comment> comments = commentMapper.findRootCommentsByHot(targetType, targetId, offset, pageSize);
+        return convertAndAttachImages(comments);
     }
 
     @Override
-    public List<CommentEntity> selectParentsByTime(int targetType, long targetId, int offset, int pageSize) {
-        return commentMapper.selectParentsByTime(targetType, targetId, offset, pageSize);
+    public List<CommentEntity> findRootCommentsByTime(int targetType, long targetId, int offset, int pageSize) {
+        List<Comment> comments = commentMapper.findRootCommentsByTime(targetType, targetId, offset, pageSize);
+        return convertAndAttachImages(comments);
     }
 
-    @Override
-    public List<CommentEntity> selectPreviewRepliesByParentIds(List<Long> parentIds, int previewSize) {
-        if (parentIds == null || parentIds.isEmpty()) {
-            return Collections.emptyList();
-        }
-        return commentMapper.selectPreviewRepliesByParentIds(parentIds, previewSize);
-    }
-    
     @Override
     public void deleteById(Long id) {
         try {
@@ -124,29 +97,6 @@ public class CommentRepositoryImpl implements ICommentRepository {
         } catch (Exception e) {
             log.error("删除评论失败 - id: {}", id, e);
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "删除评论失败：" + e.getMessage());
-        }
-    }
-
-    @Override
-    public List<CommentEntity> findByTypeAndTargetId(Integer type, Long targetId) {
-        try {
-            log.info("查询评论列表 - type: {}, targetId: {}", type, targetId);
-
-            List<Comment> comments = commentMapper.findByTypeAndTargetId(type, targetId);
-            if (comments == null || comments.isEmpty()) {
-                return new ArrayList<>();
-            }
-
-            List<CommentEntity> commentEntities = comments.stream()
-                    .map(this::convertToEntity)
-                    .collect(Collectors.toList());
-
-            log.info("查询到评论数量: {}", commentEntities.size());
-            return commentEntities;
-
-        } catch (Exception e) {
-            log.error("查询评论列表失败 - type: {}, targetId: {}", type, targetId, e);
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "查询评论列表失败：" + e.getMessage());
         }
     }
 
@@ -319,6 +269,17 @@ public class CommentRepositoryImpl implements ICommentRepository {
     @Override
     public Long save(CommentEntity commentEntity) {
         try {
+//            // 1. 保存评论主体
+//            commentMapper.insertComment(comment);
+//
+//            // 2. 保存关联图片
+//            if (comment.getImages() != null && !comment.getImages().isEmpty()) {
+//                // 设置commentId关联
+//                comment.getImages().forEach(img -> img.setCommentId(comment.getId()));
+//                commentMapper.batchInsertImages(comment.getImages());
+//            }
+//
+//            return comment;
             log.info("保存评论 - commentEntity: {}", commentEntity);
             Comment comment = convertToComment(commentEntity);
             comment.setCreateTime(LocalDateTime.now());
@@ -352,23 +313,6 @@ public class CommentRepositoryImpl implements ICommentRepository {
     }
 
     @Override
-    public List<CommentEntity> findRootCommentList(CommentQueryRequest request) {
-        List<Comment> rootCommentList = commentMapper.findRootCommentList(request);
-        return convertCommentList(rootCommentList);
-    }
-
-    @Override
-    public List<CommentEntity> findReplyListByPage(List<Long> parentIds, CommentSortType sortType, Integer page, Integer size) {
-        List<Comment> replyList = commentMapper.findReplyListByPage(parentIds, sortType, page, size);
-        return convertCommentList(replyList);
-    }
-
-    @Override
-    public CommentEntity findCommentWithUserById(Long commentId) {
-        return commentMapper.findCommentWithUserById(commentId);
-    }
-
-    @Override
     public List<FindCommentItemVO> findRootCommentWithUser(Integer targetType, Long targetId, Integer pageNo, Integer pageSize) {
         int offset = (pageNo - 1) * pageSize;
         int size = pageSize;
@@ -397,29 +341,26 @@ public class CommentRepositoryImpl implements ICommentRepository {
     }
 
     @Override
-    public long countReplies(Long commentId) {
-        try {
-            log.info("统计评论回复数量 - parentId: {}", commentId);
-            Long count = commentMapper.countByParentId(commentId);
-            if (count == null) {
-                return 0L;
-            }
-            return count;
-        } catch (Exception e) {
-            log.error("统计评论回复数量失败 - parentId: {}", commentId, e);
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "统计回复数量失败：" + e.getMessage());
+    public void saveCommentImages(Long commentId, List<String> imageUrls) {
+        if (imageUrls == null || imageUrls.isEmpty()) {
+            return;
         }
+        List<CommentImage> images = imageUrls.stream()
+               .map(url -> CommentImage.builder()
+                       .commentId(commentId)
+                       .imageUrl(url)
+                       .build())
+               .collect(Collectors.toList());
+        commentMapper.batchSaveImages(images);
     }
 
     @Override
-    public Map<Long, List<CommentEntity>> findPreviewRepliesByParentIds(List<Long> parentIds, int previewSize) {
+    public List<CommentEntity> findByParentIds(List<Long> parentIds) {
         if (parentIds == null || parentIds.isEmpty()) {
-            return Collections.emptyMap();
+            return Collections.emptyList();
         }
-
-        List<CommentEntity> replies = commentMapper.selectPreviewRepliesByParentIds(parentIds, previewSize);
-
-        return replies.stream().collect(Collectors.groupingBy(CommentEntity::getParentId));
+        List<Comment> comments = commentMapper.findByParentIds(parentIds);
+        return convertCommentList(comments);
     }
 
 
@@ -450,8 +391,28 @@ public class CommentRepositoryImpl implements ICommentRepository {
                 .content(comment.getContent())
                 .parentId(comment.getParentId())
                 .replyUserId(comment.getReplyUserId())
+                .likeCount(comment.getLikeCount() != null ? comment.getLikeCount() : 0L)
+                .replyCount(comment.getReplyCount() != null ? comment.getReplyCount() : 0L)
                 .createTime(comment.getCreateTime())
                 .updateTime(comment.getUpdateTime())
                 .build();
+    }
+
+    private List<CommentEntity> convertAndAttachImages(List<Comment> comments) {
+        if (comments == null || comments.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        return comments.stream()
+                .map(comment -> {
+                    CommentEntity entity = convertToEntity(comment);
+                    List<CommentImage> images = commentImageMapper.selectImagesByCommentId(comment.getId());
+                    List<String> imageUrls = images.stream()
+                            .map(CommentImage::getImageUrl)
+                            .collect(Collectors.toList());
+                    entity.setImageUrls(imageUrls);
+                    return entity;
+                })
+                .collect(Collectors.toList());
     }
 }

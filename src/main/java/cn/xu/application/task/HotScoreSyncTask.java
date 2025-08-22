@@ -7,10 +7,12 @@ import cn.xu.infrastructure.persistent.repository.ArticleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -75,6 +77,31 @@ public class HotScoreSyncTask {
 
             } catch (Exception e) {
                 log.error("同步文章热度失败，key={}", key, e);
+            }
+        }
+    }
+
+    /**
+     * 衰减热度 & 清理冷评论
+     */
+    @Scheduled(cron = "0 0 * * * ?")
+    public void decayHotComments() {
+        Set<String> keys = redisTemplate.keys("comment:hot:zset:*");
+        for (String zsetKey : keys) {
+            Set<ZSetOperations.TypedTuple<Object>> hotComments = redisTemplate.opsForZSet()
+                    .rangeWithScores(zsetKey, 0, -1);
+
+            if (hotComments != null) {
+                for (ZSetOperations.TypedTuple<Object> tuple : hotComments) {
+                    double oldScore = tuple.getScore();
+                    double newScore = oldScore * 0.98; // 衰减 2%
+                    redisTemplate.opsForZSet().add(zsetKey, Objects.requireNonNull(tuple.getValue()), newScore);
+
+                    // 清理过低的
+                    if (newScore < 5) {
+                        redisTemplate.opsForZSet().remove(zsetKey, tuple.getValue());
+                    }
+                }
             }
         }
     }

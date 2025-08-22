@@ -1,12 +1,13 @@
 package cn.xu.domain.comment.service;
 
-import cn.xu.api.web.model.dto.comment.*;
-import cn.xu.api.web.model.vo.comment.CommentWithPreviewVO;
-import cn.xu.domain.comment.event.CommentEvent;
+import cn.xu.api.web.model.vo.comment.FindCommentItemVO;
+import cn.xu.api.web.model.dto.comment.FindCommentReq;
+import cn.xu.domain.comment.event.CommentCreatedEvent;
 import cn.xu.domain.comment.model.entity.CommentEntity;
-import cn.xu.domain.comment.model.valueobject.CommentType;
+import cn.xu.domain.user.model.entity.UserEntity;
 
 import java.util.List;
+
 
 /**
  * 评论服务接口
@@ -17,20 +18,15 @@ public interface ICommentService {
      *
      * @param request 评论请求参数
      */
-    Long saveComment(CommentEvent request);
-
-    List<CommentWithPreviewVO> listWithPreview(int targetType, long targetId, String sortBy, int page, int previewSize);
+    Long saveComment(CommentCreatedEvent request);
 
     /**
-     * 分页获取评论列表
+     * 获取评论列表（带预览）
      *
-     * @param type     评论类型
-     * @param targetId 目标ID（文章ID或话题ID）
-     * @param pageNum  页码
-     * @param pageSize 每页数量
-     * @return 评论列表（已构建好父子关系）
+     * @param request
+     * @return
      */
-    List<CommentEntity> getPagedComments(CommentType type, Long targetId, Integer pageNum, Integer pageSize);
+    List<CommentEntity> findCommentListWithPreview(FindCommentReq request);
 
     /**
      * 删除评论
@@ -54,33 +50,4 @@ public interface ICommentService {
      */
     CommentEntity getCommentById(Long commentId);
 
-    /**
-     * 获取评论列表（分页）
-     *
-     * @param request
-     * @return
-     */
-    List<CommentEntity> getCommentList(CommentQueryRequest request);
-
-    /**
-     * 获取评论详情（带用户信息）
-     *
-     * @param commentId
-     * @return
-     */
-    CommentEntity findCommentWithUserById(Long commentId);
-
-    /**
-     * 获取评论列表（分页）
-     * @param request
-     * @return
-     */
-    List<FindCommentItemVO> findCommentPageList(FindCommentReq request);
-
-    /**
-     * 获取子评论列表（分页）
-     * @param request
-     * @return
-     */
-    List<FindChildCommentItemVO> findReplyPageList(FindReplyReq request);
 }

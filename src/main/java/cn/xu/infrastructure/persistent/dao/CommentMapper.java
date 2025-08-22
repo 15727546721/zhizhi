@@ -2,11 +2,12 @@ package cn.xu.infrastructure.persistent.dao;
 
 import cn.xu.api.web.model.dto.comment.CommentQueryRequest;
 import cn.xu.api.web.model.dto.comment.FindChildCommentItemVO;
-import cn.xu.api.web.model.dto.comment.FindCommentItemVO;
+import cn.xu.api.web.model.vo.comment.FindCommentItemVO;
 import cn.xu.application.query.comment.dto.CommentCountDTO;
 import cn.xu.domain.comment.model.entity.CommentEntity;
 import cn.xu.domain.comment.model.valueobject.CommentSortType;
 import cn.xu.infrastructure.persistent.po.Comment;
+import cn.xu.infrastructure.persistent.po.CommentImage;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -18,6 +19,14 @@ public interface CommentMapper {
      * 插入评论
      */
     int insert(Comment comment);
+
+    /**
+     * 插入评论图片
+     *
+     * @param images
+     * @return
+     */
+    int saveImages(List<CommentImage> images);
 
     /**
      * 根据ID删除评论
@@ -32,7 +41,7 @@ public interface CommentMapper {
     Comment findById(@Param("id") Long id);
 
     // 按热度查询一级评论（带图片）
-    List<CommentEntity> selectParentsByHot(
+    List<Comment> findRootCommentsByHot(
             @Param("targetType") int targetType,
             @Param("targetId") long targetId,
             @Param("offset") int offset,
@@ -40,12 +49,19 @@ public interface CommentMapper {
     );
 
     // 按时间查询一级评论（带图片）
-    List<CommentEntity> selectParentsByTime(
+    List<Comment> findRootCommentsByTime(
             @Param("targetType") int targetType,
             @Param("targetId") long targetId,
             @Param("offset") int offset,
             @Param("pageSize") int pageSize
     );
+
+    List<Comment> findRepliesByParentIdsByTime(@Param("parentIds") List<Long> parentIds,
+                                               @Param("size") int size);
+
+    List<Comment> findRepliesByParentIdsByHot(@Param("parentIds") List<Long> parentIds,
+                                              @Param("size") int size);
+
 
     // 预览回复查询（带图片）
     List<CommentEntity> selectPreviewRepliesByParentIds(
@@ -225,4 +241,11 @@ public interface CommentMapper {
     List<CommentCountDTO> countChildCommentsGroupByParent(@Param("parentIds") List<Long> parentIds);
 
     Long countByParentId(Long commentId);
+
+    /**
+     * 批量保存评论图片
+     *
+     * @param images
+     */
+    void batchSaveImages(List<CommentImage> images);
 }

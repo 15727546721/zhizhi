@@ -110,7 +110,7 @@ public class ArticleService implements IArticleService {
                 throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "上传封面失败");
             }
 
-            log.info("[文章服务] 文章封面上传成功 - url: {}", uploadFileUrl);
+            log.info("[文章服务] 文章封面上传成功 - imageUrl: {}", uploadFileUrl);
             return uploadFileUrl;
         } catch (Exception e) {
             log.error("[文章服务] 上传文章封面失败", e);

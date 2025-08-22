@@ -1,11 +1,9 @@
 package cn.xu.domain.comment.repository;
 
-import cn.xu.api.web.model.dto.comment.CommentQueryRequest;
 import cn.xu.api.web.model.dto.comment.FindChildCommentItemVO;
-import cn.xu.api.web.model.dto.comment.FindCommentItemVO;
+import cn.xu.api.web.model.vo.comment.FindCommentItemVO;
 import cn.xu.application.query.comment.dto.CommentCountDTO;
 import cn.xu.domain.comment.model.entity.CommentEntity;
-import cn.xu.domain.comment.model.valueobject.CommentSortType;
 
 import java.util.List;
 import java.util.Map;
@@ -18,26 +16,6 @@ public interface ICommentRepository {
      * @return 评论ID
      */
     Long save(CommentEntity commentEntity);
-
-    /**
-     * 添加评论
-     */
-    Long addComment(CommentEntity commentEntity);
-
-    /**
-     * 回复评论
-     */
-    Long replyComment(CommentEntity commentEntity);
-
-    /**
-     * 获取文章评论列表
-     */
-    List<CommentEntity> getArticleComments(Long articleId);
-
-    /**
-     * 获取话题评论列表
-     */
-    List<CommentEntity> getTopicComments(Long topicId);
 
     /**
      * 查询所有评论（用于ES数据初始化）
@@ -61,11 +39,9 @@ public interface ICommentRepository {
      */
     CommentEntity findById(Long id);
 
-    List<CommentEntity> selectParentsByHot(int targetType, long targetId, int offset, int pageSize);
+    List<CommentEntity> findRootCommentsByHot(int targetType, long targetId, int offset, int pageSize);
 
-    List<CommentEntity> selectParentsByTime(int targetType, long targetId, int offset, int pageSize);
-
-    List<CommentEntity> selectPreviewRepliesByParentIds(List<Long> parentIds, int previewSize);
+    List<CommentEntity> findRootCommentsByTime(int targetType, long targetId, int offset, int pageSize);
 
     /**
      * 根据ID删除评论
@@ -73,11 +49,6 @@ public interface ICommentRepository {
      * @param id 评论ID
      */
     void deleteById(Long id);
-
-    /**
-     * 根据类型和目标ID查询评论列表
-     */
-    List<CommentEntity> findByTypeAndTargetId(Integer type, Long targetId);
 
     /**
      * 根据父评论ID查询子评论列表
@@ -145,27 +116,6 @@ public interface ICommentRepository {
     List<CommentEntity> findRepliesByParentIds(List<Long> parentIds);
 
     /**
-     * 根据评论ID列表查询评论
-     *
-     * @param request
-     * @return
-     */
-    List<CommentEntity> findRootCommentList(CommentQueryRequest request);
-
-    /**
-     * 根据评论ID列表分页查询子评论
-     */
-    List<CommentEntity> findReplyListByPage(List<Long> parentIds, CommentSortType sortType, Integer page, Integer size);
-
-    /**
-     * 根据评论ID查询评论及用户信息
-     *
-     * @param commentId
-     * @return
-     */
-    CommentEntity findCommentWithUserById(Long commentId);
-
-    /**
      * 查询一级评论及用户信息
      *
      * @param targetType
@@ -189,7 +139,19 @@ public interface ICommentRepository {
      */
     List<FindChildCommentItemVO> findReplyPageWithUser(Long parentId, Integer pageNo, Integer pageSize);
 
-    long countReplies(Long commentId);
+    /**
+     * 保存评论图片
+     *
+     * @param commentId
+     * @param imageUrls
+     */
+    void saveCommentImages(Long commentId, List<String> imageUrls);
 
-    Map<Long, List<CommentEntity>> findPreviewRepliesByParentIds(List<Long> commentIds, int previewSize);
+    /**
+     * 根据父评论ID列表查询评论列表
+     *
+     * @param parentIds
+     * @return
+     */
+    List<CommentEntity> findByParentIds(List<Long> parentIds);
 }

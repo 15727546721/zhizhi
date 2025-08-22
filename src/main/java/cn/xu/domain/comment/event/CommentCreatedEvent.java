@@ -1,14 +1,18 @@
 package cn.xu.domain.comment.event;
 
 import lombok.Builder;
-import lombok.Getter;
+import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
-@Getter
+/**
+ * 用于评论创建/回复
+ */
+@Data
 @Builder
 public class CommentCreatedEvent {
-    private Long id;
+    private Long commentId;
     private Integer targetType;
     private Long targetId;
     private Long parentId;
@@ -16,4 +20,6 @@ public class CommentCreatedEvent {
     private Long replyUserId;
     private String content;
     private LocalDateTime createTime;
+
+    private List<String> imageUrls; // 评论图片URL列表
 }

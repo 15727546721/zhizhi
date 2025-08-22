@@ -1,29 +1,49 @@
 package cn.xu.domain.comment.event;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
+/**
+ * 评论领域事件发布器
+ */
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class CommentEventPublisher {
 
-    private final ApplicationEventPublisher publisher;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public void publishCommentCountEvent(CommentCountEvent event) {
-        publisher.publishEvent(event);
-    }
-
+    /**
+     * 发布评论创建事件
+     */
     public void publishCommentCreatedEvent(CommentCreatedEvent event) {
-        publisher.publishEvent(event);
+        eventPublisher.publishEvent(event);
+        log.info("发布评论创建事件: {}", event);
     }
 
+    /**
+     * 发布评论点赞事件
+     */
     public void publishCommentLikedEvent(CommentLikedEvent event) {
-        publisher.publishEvent(event);
+        eventPublisher.publishEvent(event);
+        log.info("发布评论点赞事件: {}", event);
     }
 
+    /**
+     * 发布评论删除事件
+     */
+    public void publishCommentDeletedEvent(CommentDeletedEvent event) {
+        eventPublisher.publishEvent(event);
+        log.info("发布评论删除事件: {}", event);
+    }
+
+    /**
+     * 通用评论事件发布
+     */
     public void publishCommentEvent(CommentEvent event) {
-        publisher.publishEvent(event);
+        eventPublisher.publishEvent(event);
+        log.info("发布通用评论事件: {}", event);
     }
 }
-

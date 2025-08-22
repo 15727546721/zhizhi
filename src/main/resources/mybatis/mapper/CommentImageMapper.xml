@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.xu.infrastructure.persistent.dao.CommentImageMapper">
+
+    <resultMap id="BaseResultMap" type="cn.xu.infrastructure.persistent.po.CommentImage">
+            <id property="id" column="id" />
+            <result property="commentId" column="comment_id" />
+            <result property="imageUrl" column="image_url" />
+            <result property="sortOrder" column="sort_order" />
+            <result property="createTime" column="create_time" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,comment_id,image_url,sort_order,create_time
+    </sql>
+
+    <select id="selectImagesByCommentId" resultType="cn.xu.infrastructure.persistent.po.CommentImage">
+        SELECT <include refid="Base_Column_List" />
+        FROM comment_image
+        WHERE comment_id = #{commentId}
+        ORDER BY sort_order
+    </select>
+</mapper>

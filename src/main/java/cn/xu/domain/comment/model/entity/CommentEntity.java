@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -69,11 +70,28 @@ public class CommentEntity {
      */
     private LocalDateTime updateTime;
 
-    private UserEntity user;
-    private UserEntity replyUser;
-    /**
-     * 子评论列表
-     */
-    private List<CommentEntity> children;
+    private List<String> imageUrls; // 图片URL列表
+    private UserEntity user; // 评论用户信息
+    private UserEntity replyUser; // 被回复用户信息
+    private List<CommentEntity> children = new ArrayList<>(); // 子评论
 
+    private Double hotScore; // 热度分数
+    private boolean isHot; // 是否热门评论
+
+    /**
+     * 判断是否为根评论（一级评论）
+     */
+    public boolean isRootComment() {
+        return parentId == null;
+    }
+
+    /**
+     * 添加子评论
+     */
+    public void addChildComment(CommentEntity child) {
+        if (children == null) {
+            children = new ArrayList<>();
+        }
+        children.add(child);
+    }
 }

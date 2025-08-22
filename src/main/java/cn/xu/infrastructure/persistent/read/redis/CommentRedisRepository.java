@@ -1,7 +1,7 @@
 package cn.xu.infrastructure.persistent.read.redis;
 
 import cn.xu.api.web.model.dto.comment.FindChildCommentItemVO;
-import cn.xu.api.web.model.dto.comment.FindCommentItemVO;
+import cn.xu.api.web.model.vo.comment.FindCommentItemVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Repository;

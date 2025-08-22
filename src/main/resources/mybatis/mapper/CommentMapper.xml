@@ -51,7 +51,7 @@
         </association>
     </resultMap>
 
-    <resultMap id="CommentWithUserMap" type="cn.xu.api.web.model.dto.comment.FindCommentItemVO">
+    <resultMap id="CommentWithUserMap" type="cn.xu.api.web.model.vo.comment.FindCommentItemVO">
         <!-- 评论表字段映射 -->
         <id column="id" property="id"/>
         <result column="content" property="content"/>
@@ -129,6 +129,40 @@
         values (#{targetType}, #{targetId}, #{parentId}, #{userId}, #{replyUserId}, #{content}, #{createTime},
                 #{updateTime})
     </insert>
+
+    <insert id="saveImages">
+
+    </insert>
+
+    <insert id="batchSaveImages">
+        INSERT INTO comment_image (comment_id, url, sort_order)
+        VALUES
+        <foreach collection="images" item="image" separator=",">
+            (#{commentId}, #{image.url}, #{image.sortOrder})
+        </foreach>
+    </insert>
+
+<!--    &lt;!&ndash; 批量查询图片 &ndash;&gt;-->
+<!--    <select id="selectImagesByCommentIds" resultType="cn.xu.infrastructure.persistent.po.CommentImage">-->
+<!--        SELECT * FROM comment_image-->
+<!--        WHERE comment_id IN-->
+<!--        <foreach item="id" collection="commentIds" open="(" separator="," close=")">-->
+<!--            #{id}-->
+<!--        </foreach>-->
+<!--        ORDER BY comment_id, sort_order-->
+<!--    </select>-->
+
+<!--    &lt;!&ndash; 批量查询评论基础信息 &ndash;&gt;-->
+<!--    <select id="selectCommentsByIds" resultType="Comment">-->
+<!--        SELECT * FROM comment-->
+<!--        WHERE id IN-->
+<!--        <foreach item="id" collection="ids" open="(" separator="," close=")">-->
+<!--            #{id}-->
+<!--        </foreach>-->
+<!--    </select>-->
+
+    <!-- 批量查询评论基础信息 -->
+
     <update id="updateLikeCount">
         UPDATE comment
         SET like_count = like_count + #{count}
@@ -154,24 +188,20 @@
     </select>
 
     <!-- 按热度查询一级评论 -->
-    <select id="selectParentsByHot" resultMap="BaseResultMap">
+    <select id="findRootCommentsByHot" resultMap="BaseResultMap">
         SELECT
-        c.*,
-        <!-- 热度计算公式 -->
-        (c.like_count + c.reply_count * 0.7 +
-        GREATEST(0, 1 - TIMESTAMPDIFF(HOUR, c.create_time, NOW()) / 72.0) * 5
-        ) AS hot_score
+        c.*
         FROM comment c
         WHERE
         c.target_type = #{targetType}
         AND c.target_id = #{targetId}
         AND (c.parent_id IS NULL OR c.parent_id = 0)
-        ORDER BY hot_score DESC
+        ORDER BY like_count DESC
         LIMIT #{offset}, #{pageSize}
     </select>
 
     <!-- 按时间查询一级评论 -->
-    <select id="selectParentsByTime" resultMap="BaseResultMap">
+    <select id="findRootCommentsByTime" resultMap="BaseResultMap">
         SELECT
         c.*,
         0 AS hot_score <!-- 兼容字段 -->
@@ -556,6 +586,44 @@
     <select id="countByParentId" resultType="java.lang.Long" parameterType="java.lang.Long">
         SELECT COUNT(*) FROM comment WHERE parent_id = #{parentId}
     </select>
+
+    <select id="findRepliesByParentIdsByHot" resultMap="BaseResultMap">
+        SELECT * FROM (
+        SELECT
+        c.*,
+        ROW_NUMBER() OVER (
+        PARTITION BY c.parent_id
+        ORDER BY c.like_count DESC, c.create_time DESC
+        ) AS rn
+        FROM comment c
+        WHERE c.parent_id IN
+        <foreach item="parentId" collection="parentIds" open="(" separator="," close=")">
+            #{parentId}
+        </foreach>
+        ) ranked
+        WHERE rn <= #{size}
+        ORDER BY parent_id, like_count DESC, create_time DESC
+    </select>
+
+
+    <select id="findRepliesByParentIdsByTime" resultMap="BaseResultMap">
+        SELECT * FROM (
+        SELECT
+        c.*,
+        ROW_NUMBER() OVER (
+        PARTITION BY c.parent_id
+        ORDER BY c.create_time DESC, c.like_count DESC
+        ) AS rn
+        FROM comment c
+        WHERE c.parent_id IN
+        <foreach item="parentId" collection="parentIds" open="(" separator="," close=")">
+            #{parentId}
+        </foreach>
+        ) ranked
+        WHERE rn <= #{size}
+    </select>
+
+
 
     <!-- 批量更新评论点赞数 -->
     <update id="batchUpdateLikeCount">

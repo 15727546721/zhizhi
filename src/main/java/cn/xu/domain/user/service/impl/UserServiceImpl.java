@@ -319,7 +319,7 @@ public class UserServiceImpl implements IUserService {
                 }
             }
 
-            log.info("[用户服务] 用户头像上传成功 - url: {}", avatarUrl);
+            log.info("[用户服务] 用户头像上传成功 - imageUrl: {}", avatarUrl);
             return avatarUrl;
         } catch (Exception e) {
             log.error("[用户服务] 上传用户头像失败", e);

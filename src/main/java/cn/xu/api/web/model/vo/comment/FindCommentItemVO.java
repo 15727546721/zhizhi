@@ -1,5 +1,6 @@
-package cn.xu.api.web.model.dto.comment;
+package cn.xu.api.web.model.vo.comment;
 
+import cn.xu.api.web.model.dto.comment.FindChildCommentItemVO;
 import cn.xu.domain.user.model.entity.UserEntity;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,10 +10,7 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 
 /**
- * @author: 犬小哈
- * @date: 2024/4/7 15:17
- * @version: v1.0.0
- * @description: 查询评论分页数据
+ *  查询评论分页数据
  **/
 @Data
 @AllArgsConstructor

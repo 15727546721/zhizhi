@@ -1,90 +1,134 @@
 package cn.xu.domain.comment.event;
 
-
-import cn.xu.infrastructure.persistent.dao.ArticleMapper;
-import cn.xu.infrastructure.persistent.dao.CommentMapper;
-import cn.xu.infrastructure.persistent.dao.EssayMapper;
+import cn.xu.domain.comment.model.valueobject.CommentType;
+import cn.xu.domain.comment.repository.ICommentRepository;
+import cn.xu.domain.comment.service.HotScoreService;
+//import cn.xu.domain.notification.service.NotificationService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
-import javax.annotation.Resource;
-
+/**
+ * 评论事件监听处理器
+ */
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class CommentEventListener {
 
-    @Resource
-    private ArticleMapper articleDao;
-    @Resource
-    private EssayMapper essayDao;
-    @Resource
-    private CommentMapper commentDao;
-    @Resource
-    private TransactionTemplate transactionTemplate;
+    private final ICommentRepository commentRepository;
+    private final HotScoreService hotScoreService;
+//    private final NotificationService notificationService;
 
-    @Async  // 可选：异步处理事件
+    /**
+     * 处理评论创建事件（事务提交后执行）
+     */
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void handleCommentCreatedEvent(CommentCreatedEvent event) {
+        try {
+            log.info("处理评论创建事件: {}", event);
+
+            if (event.getParentId() == null) {
+                // 根评论处理
+            }
+            // 1. 更新目标对象的评论计数
+            updateTargetCommentCount(CommentType.valueOf(event.getTargetType()), event.getTargetId(), 1);
+
+            // 2. 更新热度分数（异步）
+            hotScoreService.updateHotScore(event.getCommentId());
+
+            // 3. 如果是回复，发送通知给被回复用户
+//            if (event.getLevel() == 2) {
+//                CommentEntity comment = commentRepository.findById(event.getCommentId());
+//                if (comment != null && comment.getReplyUserId() != null) {
+//                    notificationService.sendReplyNotification(
+//                            comment.getUserId(),
+//                            comment.getReplyUserId(),
+//                            comment.getId(),
+//                            comment.getContent()
+//                    );
+//                }
+//            }
+        } catch (Exception e) {
+            log.error("处理评论创建事件失败", e);
+        }
+    }
+
+    /**
+     * 处理评论点赞事件
+     */
+    @Async
     @EventListener
-    public void onCommentCountEvent(CommentCountEvent commentEvent) {
-        log.info("[评论事件]接收到事件: {}", commentEvent);
+    public void handleCommentLikedEvent(CommentLikedEvent event) {
+        try {
+            log.info("处理评论点赞事件: {}", event);
 
-        switch (commentEvent.getTargetType().toString()) {
-            case "ARTICLE":
-                handleArticleComment(commentEvent);
-                break;
-            case "ESSAY":
-                handleEssayComment(commentEvent);
-                break;
+            // 1. 更新Redis中的点赞计数
+//            if (event.isLike()) {
+//                commentRedisRepository.incrementLikeCount(event.getCommentId());
+//            } else {
+//                commentRedisRepository.decrementLikeCount(event.getCommentId());
+//            }
+
+            // 2. 更新热度分数
+            hotScoreService.updateHotScore(event.getCommentId());
+
+            // 3. 发送点赞通知
+//            if (event.isLike()) {
+//                notificationService.sendLikeNotification(
+//                        event.getUserId(),
+//                        commentRepository.findUserIdById(event.getCommentId()),
+//                        event.getCommentId()
+//                );
+//            }
+        } catch (Exception e) {
+            log.error("处理评论点赞事件失败", e);
+        }
+    }
+
+    /**
+     * 处理评论删除事件
+     */
+    @Async
+    @EventListener
+    public void handleCommentDeletedEvent(CommentDeletedEvent event) {
+        try {
+            log.info("处理评论删除事件: {}", event);
+
+            // 1. 更新目标对象的评论计数
+//            updateTargetCommentCount(event.getTargetType(), event.getTargetId(), -1);
+
+//            // 2. 清理相关数据
+//            commentImageRepository.deleteByCommentId(event.getCommentId());
+//            commentRedisRepository.clearLikeCount(event.getCommentId());
+//
+//            // 3. 如果是根评论，删除所有子评论
+//            if (event.isRootComment()) {
+//                commentRepository.deleteAllReplies(event.getCommentId());
+//            }
+        } catch (Exception e) {
+            log.error("处理评论删除事件失败", e);
+        }
+    }
+
+    private void updateTargetCommentCount(CommentType type, Long targetId, int increment) {
+        switch (type) {
+//            case VIDEO:
+//                videoService.updateCommentCount(targetId, increment);
+//                break;
+//            case ARTICLE:
+//                articleService.updateCommentCount(targetId, increment);
+//                break;
+//            case ESSAY:
+//                essayService.updateCommentCount(targetId, increment);
+//                break;
             default:
-                log.error("[评论事件]未知的评论类型: {}", commentEvent.getTargetType());
-                break;
-        }
-    }
-
-    @Async
-    @EventListener
-    public void onCommentCreated(CommentCreatedEvent event) {
-        // 通知用户、统计分析、审核等等...
-    }
-
-    @Async
-    @EventListener
-    public void onCommentLiked(CommentLikedEvent event) {
-        // 更新点赞计数、发送通知、写日志...
-    }
-
-    private void handleArticleComment(CommentCountEvent commentEvent) {
-        articleDao.updateCommentCount(commentEvent.getTargetId(), commentEvent.getCount());
-
-        if (commentEvent.getLevel() == 2) {
-            transactionTemplate.execute(status -> {
-                try {
-                    articleDao.updateCommentCount(commentEvent.getTargetId(), commentEvent.getCount());
-                    commentDao.updateCommentCount(commentEvent.getCommentId(), commentEvent.getCount());
-                } catch (Exception e) {
-                    log.error("[评论计数]更新失败", e);
-                }
-                return null;
-            });
-        }
-    }
-
-    private void handleEssayComment(CommentCountEvent commentEvent) {
-        essayDao.updateCommentCount(commentEvent.getTargetId(), commentEvent.getCount());
-
-        if (commentEvent.getLevel() == 2) {
-            transactionTemplate.execute(status -> {
-                try {
-                    essayDao.updateCommentCount(commentEvent.getTargetId(), commentEvent.getCount());
-                    commentDao.updateCommentCount(commentEvent.getCommentId(), commentEvent.getCount());
-                } catch (Exception e) {
-                    log.error("[评论计数]更新失败", e);
-                }
-                return null;
-            });
+                log.warn("未知评论目标类型: {}", type);
         }
     }
 }
-

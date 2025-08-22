@@ -1,5 +1,6 @@
 package cn.xu.api.web.model.vo.comment;
 
+import cn.xu.domain.user.model.entity.UserEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -28,29 +29,26 @@ public class CommentVO {
     @Schema(description = "父评论ID，若为顶级则为 null")
     private Long parentId;
 
-    @Schema(description = "评论用户ID")
-    private Long userId;
+    @Schema(description = "评论用户")
+    private UserEntity user;
 
-    @Schema(description = "评论用户昵称")
-    private String nickname;
-
-    @Schema(description = "评论用户头像")
-    private String avatar;
-
-    @Schema(description = "被回复用户ID")
-    private Long replyUserId;
-
-    @Schema(description = "被回复用户昵称")
-    private String replyNickname;
-
-    @Schema(description = "被回复用户头像")
-    private String replyAvatar;
+    @Schema(description = "回复用户")
+    private UserEntity replyUser;
 
     @Schema(description = "评论内容")
     private String content;
 
     @Schema(description = "图片列表")
     private List<String> imageUrls;
+
+    @Schema(description = "点赞数量")
+    private Integer likeCount;
+
+    @Schema(description = "回复数量")
+    private Integer replyCount;
+
+    @Schema(description = "子评论列表")
+    private List<CommentVO> children;
 
     @Schema(description = "创建时间")
     private LocalDateTime createTime;

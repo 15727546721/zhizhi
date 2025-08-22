@@ -116,8 +116,14 @@ public class RedisKeyManager {
         return key("comment", "last", "update");
     }
 
-    public static String commentHotScoreKey(Long commentId) {
-        return key("comment", "hot", "score", commentId);
+    // comment:hot:{postId} zet结构，一级评论热点ZSet
+    public static String commentHotRankKey(Long targetId) {
+        return key("comment", "hot", targetId);
+    }
+
+    // comment:hot:{postId}:{commentId} zet结构，对应一级评论的二级回复热点ZSet
+    public static String replyCommentHotRankKey(Long targetId, Long commentId) {
+        return key( "comment", "hot", targetId, commentId);
     }
 
     public static String commentLikeCountKey(Long commentId) {

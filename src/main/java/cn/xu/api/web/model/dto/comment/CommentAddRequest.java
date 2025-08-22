@@ -9,10 +9,10 @@ import java.util.List;
 @Schema(description = "添加评论请求对象")
 public class CommentAddRequest {
 
-    @Schema(description = "评论类型（1-文章评论；2-话题评论）", required = true)
+    @Schema(description = "评论类型（1-文章评论；2-随笔评论）", required = true)
     private Integer targetType;
 
-    @Schema(description = "评论目标ID（文章ID或话题ID）", required = true)
+    @Schema(description = "评论目标ID（文章ID或随笔ID）", required = true)
     private Long targetId;
 
     @Schema(description = "评论内容")
