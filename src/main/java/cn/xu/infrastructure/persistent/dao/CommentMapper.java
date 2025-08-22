@@ -248,4 +248,8 @@ public interface CommentMapper {
      * @param images
      */
     void batchSaveImages(List<CommentImage> images);
+
+    List<Comment> findRepliesByParentIdByHot(@Param("parentId") Long parentId, @Param("offset") int offset, @Param("size") int size);
+
+    List<Comment> findRepliesByParentIdByTime(@Param("parentId") Long parentId, @Param("offset") int offset, @Param("size") int size);
 }

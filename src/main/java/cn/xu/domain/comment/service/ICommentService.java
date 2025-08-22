@@ -1,5 +1,6 @@
 package cn.xu.domain.comment.service;
 
+import cn.xu.api.web.model.dto.comment.FindReplyReq;
 import cn.xu.api.web.model.vo.comment.FindCommentItemVO;
 import cn.xu.api.web.model.dto.comment.FindCommentReq;
 import cn.xu.domain.comment.event.CommentCreatedEvent;
@@ -50,4 +51,8 @@ public interface ICommentService {
      */
     CommentEntity getCommentById(Long commentId);
 
+    /**
+     * 获取评论的子评论列表
+     */
+    List<CommentEntity> findChildCommentList(FindReplyReq request);
 }

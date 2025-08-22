@@ -65,7 +65,7 @@ public class CommentServiceImpl implements ICommentService {
                     .replyCount(0L)
                     .createTime(LocalDateTime.now())
                     .updateTime(LocalDateTime.now())
-                    .hotScore(0.0)
+                    .hotScore(0L)
                     .isHot(false)
                     .build();
 
@@ -101,10 +101,8 @@ public class CommentServiceImpl implements ICommentService {
 
         if (CommentSortType.HOT.name().equals((request.getSortType().toUpperCase()))) {
             return sortByHot(request);
-        } else if (CommentSortType.NEW.name().equals((request.getSortType().toUpperCase()))) {
-            return sortByTime(request);
         } else {
-            return Collections.emptyList();
+            return sortByTime(request);
         }
     }
 
@@ -122,7 +120,7 @@ public class CommentServiceImpl implements ICommentService {
                 .map(CommentEntity::getId)
                 .collect(Collectors.toList());
 
-        List<CommentEntity> allChildComments = commentRepository.findByParentIds(parentIds);
+        List<CommentEntity> allChildComments = commentRepository.findRepliesByParentIdsByTime(parentIds, 2);
 
         // 3. 按 parentId 分组子评论
         Map<Long, List<CommentEntity>> childCommentMap = allChildComments.stream()
@@ -187,7 +185,7 @@ public class CommentServiceImpl implements ICommentService {
                 .map(CommentEntity::getId)
                 .collect(Collectors.toList());
 
-        List<CommentEntity> allChildComments = commentRepository.findByParentIds(parentIds);
+        List<CommentEntity> allChildComments = commentRepository.findRepliesByParentIdsByHot(parentIds, 2);
 
         // 3. 按 parentId 分组子评论
         Map<Long, List<CommentEntity>> childCommentMap = allChildComments.stream()
@@ -331,6 +329,21 @@ public class CommentServiceImpl implements ICommentService {
         } catch (Exception e) {
             log.error("获取评论信息失败 - commentId: {}", commentId, e);
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "获取评论信息失败：" + e.getMessage());
+        }
+    }
+
+    @Override
+    public List<CommentEntity> findChildCommentList(FindReplyReq request) {
+        try {
+            log.info("获取子评论列表 - request: {}", request);
+            if (CommentSortType.HOT.name().equals((request.getSortType().toUpperCase()))) {
+                return commentRepository.findRepliesByParentIdByHot(request.getParentId(), request.getPageNo(), request.getPageSize());
+            } else {
+                return commentRepository.findRepliesByParentIdByTime(request.getParentId(), request.getPageNo(), request.getPageSize());
+            }
+        } catch (Exception e) {
+            log.error("获取子评论列表失败 - request: {}", request, e);
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "获取子评论列表失败：" + e.getMessage());
         }
     }
 

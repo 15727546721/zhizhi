@@ -28,7 +28,7 @@ public class CommentQueryService {
 
     public List<FindChildCommentItemVO> findChildComments(FindReplyReq request) {
         return commentRepository.findReplyPageWithUser(
-                request.getCommentId(),
+                request.getParentId(),
                 request.getPageNo(),
                 request.getPageSize()
         );

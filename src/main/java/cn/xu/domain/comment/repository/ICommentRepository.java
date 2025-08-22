@@ -24,14 +24,6 @@ public interface ICommentRepository {
     List<CommentEntity> findCommentBatch(int offset, int batchSize);
 
     /**
-     * 统计每个父评论下的子评论数量
-     *
-     * @param parentIds 父评论ID列表
-     * @return 每个父评论ID对应的子评论数量
-     */
-    List<CommentCountDTO> countChildCommentsGroupByParent(List<Long> parentIds);
-
-    /**
      * 根据ID获取评论
      *
      * @param id 评论ID
@@ -81,26 +73,6 @@ public interface ICommentRepository {
     List<CommentEntity> findRepliesByPage(Long parentId, int offset, int limit);
 
     /**
-     * 分页查询一级评论列表
-     *
-     * @param type   评论类型（可选）
-     * @param userId 用户ID（可选）
-     * @param offset 偏移量
-     * @param limit  每页数量
-     * @return 一级评论列表
-     */
-    List<CommentEntity> findRootCommentsByPage(Integer type, Long userId, int offset, int limit);
-
-    /**
-     * 统计一级评论总数
-     *
-     * @param type   评论类型（可选）
-     * @param userId 用户ID（可选）
-     * @return 评论总数
-     */
-    long countRootComments(Integer type, Long userId);
-
-    /**
      * 根据父评论ID删除所有子评论
      *
      * @param parentId 父评论ID
@@ -125,9 +97,6 @@ public interface ICommentRepository {
      * @return
      */
     List<FindCommentItemVO> findRootCommentWithUser(Integer targetType, Long targetId, Integer pageNo, Integer pageSize);
-
-
-    Map<Long, List<FindChildCommentItemVO>> findReplyWithUser(List<Long> commentIds, Integer pageNo, Integer pageSize);
 
     /**
      * 根据父评论ID分页查询子评论及用户信息
@@ -154,4 +123,21 @@ public interface ICommentRepository {
      * @return
      */
     List<CommentEntity> findByParentIds(List<Long> parentIds);
+
+    /**
+     * 查询热门评论的子评论, size为子评论数量
+     */
+    List<CommentEntity> findRepliesByParentIdsByHot(List<Long> parentIds, int size);
+
+    /**
+     * 查询最新评论的子评论, size为子评论数量
+     */
+    List<CommentEntity> findRepliesByParentIdsByTime(List<Long> parentIds, int size);
+
+    /**
+     * 根据评论ID查询热门子评论
+     */
+    List<CommentEntity> findRepliesByParentIdByHot(Long parentId, int page, int size);
+
+    List<CommentEntity> findRepliesByParentIdByTime(Long parentId, int page, int size);
 }

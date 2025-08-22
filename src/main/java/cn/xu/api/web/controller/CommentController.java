@@ -9,6 +9,7 @@ import cn.xu.domain.comment.event.CommentCreatedEvent;
 import cn.xu.domain.comment.model.entity.CommentEntity;
 import cn.xu.domain.comment.service.ICommentService;
 import cn.xu.infrastructure.common.annotation.ApiOperationLog;
+import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.common.response.ResponseEntity;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -77,9 +78,12 @@ public class CommentController {
 
     @PostMapping("/list/reply/page")
     @ApiOperationLog(description = "获取评论回复列表")
-    public ResponseEntity<List<FindChildCommentItemVO>> getReplyCommentList(@RequestBody FindReplyReq request) {
-        List<FindChildCommentItemVO> replyCommentList = commentQueryService.findChildComments(request);
-        return ResponseEntity.<List<FindChildCommentItemVO>>builder()
+    public ResponseEntity<List<CommentEntity>> getReplyCommentList(@RequestBody FindReplyReq request) {
+        if (request.getParentId() == null) {
+            throw new BusinessException(ResponseCode.NULL_PARAMETER.getCode(), "父评论ID不能为空");
+        }
+        List<CommentEntity> replyCommentList = commentService.findChildCommentList(request);
+        return ResponseEntity.<List<CommentEntity>>builder()
                 .data(replyCommentList)
                 .code(ResponseCode.SUCCESS.getCode())
                 .info("获取评论回复列表成功")

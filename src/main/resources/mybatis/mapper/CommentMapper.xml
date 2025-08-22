@@ -142,24 +142,24 @@
         </foreach>
     </insert>
 
-<!--    &lt;!&ndash; 批量查询图片 &ndash;&gt;-->
-<!--    <select id="selectImagesByCommentIds" resultType="cn.xu.infrastructure.persistent.po.CommentImage">-->
-<!--        SELECT * FROM comment_image-->
-<!--        WHERE comment_id IN-->
-<!--        <foreach item="id" collection="commentIds" open="(" separator="," close=")">-->
-<!--            #{id}-->
-<!--        </foreach>-->
-<!--        ORDER BY comment_id, sort_order-->
-<!--    </select>-->
+    <!--    &lt;!&ndash; 批量查询图片 &ndash;&gt;-->
+    <!--    <select id="selectImagesByCommentIds" resultType="cn.xu.infrastructure.persistent.po.CommentImage">-->
+    <!--        SELECT * FROM comment_image-->
+    <!--        WHERE comment_id IN-->
+    <!--        <foreach item="id" collection="commentIds" open="(" separator="," close=")">-->
+    <!--            #{id}-->
+    <!--        </foreach>-->
+    <!--        ORDER BY comment_id, sort_order-->
+    <!--    </select>-->
 
-<!--    &lt;!&ndash; 批量查询评论基础信息 &ndash;&gt;-->
-<!--    <select id="selectCommentsByIds" resultType="Comment">-->
-<!--        SELECT * FROM comment-->
-<!--        WHERE id IN-->
-<!--        <foreach item="id" collection="ids" open="(" separator="," close=")">-->
-<!--            #{id}-->
-<!--        </foreach>-->
-<!--    </select>-->
+    <!--    &lt;!&ndash; 批量查询评论基础信息 &ndash;&gt;-->
+    <!--    <select id="selectCommentsByIds" resultType="Comment">-->
+    <!--        SELECT * FROM comment-->
+    <!--        WHERE id IN-->
+    <!--        <foreach item="id" collection="ids" open="(" separator="," close=")">-->
+    <!--            #{id}-->
+    <!--        </foreach>-->
+    <!--    </select>-->
 
     <!-- 批量查询评论基础信息 -->
 
@@ -189,15 +189,13 @@
 
     <!-- 按热度查询一级评论 -->
     <select id="findRootCommentsByHot" resultMap="BaseResultMap">
-        SELECT
-        c.*
+        SELECT c.*
         FROM comment c
-        WHERE
-        c.target_type = #{targetType}
-        AND c.target_id = #{targetId}
-        AND (c.parent_id IS NULL OR c.parent_id = 0)
+        WHERE c.target_type = #{targetType}
+          AND c.target_id = #{targetId}
+          AND (c.parent_id IS NULL OR c.parent_id = 0)
         ORDER BY like_count DESC
-        LIMIT #{offset}, #{pageSize}
+            LIMIT #{offset}, #{pageSize}
     </select>
 
     <!-- 按时间查询一级评论 -->
@@ -492,18 +490,39 @@
     </select>
 
     <select id="findCommentWithUserById" resultMap="CommentEntityWithUserMap">
-        SELECT
-            c.id, c.target_type, c.target_id, c.parent_id, c.user_id, c.reply_user_id, c.content,
-            c.like_count, c.reply_count, c.create_time, c.update_time,
+        SELECT c.id,
+               c.target_type,
+               c.target_id,
+               c.parent_id,
+               c.user_id,
+               c.reply_user_id,
+               c.content,
+               c.like_count,
+               c.reply_count,
+               c.create_time,
+               c.update_time,
 
-            u.id AS user_id, u.username AS user_username, u.nickname AS user_nickname, u.avatar AS user_avatar,
-            u.gender AS user_gender, u.region AS user_region, u.description AS user_description,
-            u.follow_count AS user_follow_count, u.fans_count AS user_fans_count, u.like_count AS user_like_count,
+               u.id            AS user_id,
+               u.username      AS user_username,
+               u.nickname      AS user_nickname,
+               u.avatar        AS user_avatar,
+               u.gender        AS user_gender,
+               u.region        AS user_region,
+               u.description   AS user_description,
+               u.follow_count  AS user_follow_count,
+               u.fans_count    AS user_fans_count,
+               u.like_count    AS user_like_count,
 
-            ru.id AS reply_user_id, ru.username AS reply_user_username, ru.nickname AS reply_user_nickname,
-            ru.avatar AS reply_user_avatar, ru.gender AS reply_user_gender, ru.region AS reply_user_region,
-            ru.description AS reply_user_description, ru.follow_count AS reply_user_follow_count,
-            ru.fans_count AS reply_user_fans_count, ru.like_count AS reply_user_like_count
+               ru.id           AS reply_user_id,
+               ru.username     AS reply_user_username,
+               ru.nickname     AS reply_user_nickname,
+               ru.avatar       AS reply_user_avatar,
+               ru.gender       AS reply_user_gender,
+               ru.region       AS reply_user_region,
+               ru.description  AS reply_user_description,
+               ru.follow_count AS reply_user_follow_count,
+               ru.fans_count   AS reply_user_fans_count,
+               ru.like_count   AS reply_user_like_count
 
         FROM comment c
                  LEFT JOIN user u ON c.user_id = u.id
@@ -512,18 +531,39 @@
     </select>
 
     <select id="findByParentId" resultMap="CommentEntityWithUserMap">
-        SELECT
-            c.id, c.target_type, c.target_id, c.parent_id, c.user_id, c.reply_user_id, c.content,
-            c.like_count, c.reply_count, c.create_time, c.update_time,
+        SELECT c.id,
+               c.target_type,
+               c.target_id,
+               c.parent_id,
+               c.user_id,
+               c.reply_user_id,
+               c.content,
+               c.like_count,
+               c.reply_count,
+               c.create_time,
+               c.update_time,
 
-            u.id AS user_id, u.username AS user_username, u.nickname AS user_nickname, u.avatar AS user_avatar,
-            u.gender AS user_gender, u.region AS user_region, u.description AS user_description,
-            u.follow_count AS user_follow_count, u.fans_count AS user_fans_count, u.like_count AS user_like_count,
+               u.id            AS user_id,
+               u.username      AS user_username,
+               u.nickname      AS user_nickname,
+               u.avatar        AS user_avatar,
+               u.gender        AS user_gender,
+               u.region        AS user_region,
+               u.description   AS user_description,
+               u.follow_count  AS user_follow_count,
+               u.fans_count    AS user_fans_count,
+               u.like_count    AS user_like_count,
 
-            ru.id AS reply_user_id, ru.username AS reply_user_username, ru.nickname AS reply_user_nickname,
-            ru.avatar AS reply_user_avatar, ru.gender AS reply_user_gender, ru.region AS reply_user_region,
-            ru.description AS reply_user_description, ru.follow_count AS reply_user_follow_count,
-            ru.fans_count AS reply_user_fans_count, ru.like_count AS reply_user_like_count
+               ru.id           AS reply_user_id,
+               ru.username     AS reply_user_username,
+               ru.nickname     AS reply_user_nickname,
+               ru.avatar       AS reply_user_avatar,
+               ru.gender       AS reply_user_gender,
+               ru.region       AS reply_user_region,
+               ru.description  AS reply_user_description,
+               ru.follow_count AS reply_user_follow_count,
+               ru.fans_count   AS reply_user_fans_count,
+               ru.like_count   AS reply_user_like_count
 
         FROM comment c
                  LEFT JOIN user u ON c.user_id = u.id
@@ -533,41 +573,70 @@
     </select>
 
     <select id="findRootCommentWithUser" resultMap="CommentWithUserMap">
-        SELECT
-            c.*,
-            u.id as user_id, u.username as user_username, u.nickname as user_nickname, u.avatar as user_avatar,
-            u.gender as user_gender, u.region as user_region, u.description as user_description,
-            u.follow_count as user_follow_count, u.fans_count as user_fans_count, u.like_count as user_like_count
+        SELECT c.*,
+               u.id           as user_id,
+               u.username     as user_username,
+               u.nickname     as user_nickname,
+               u.avatar       as user_avatar,
+               u.gender       as user_gender,
+               u.region       as user_region,
+               u.description  as user_description,
+               u.follow_count as user_follow_count,
+               u.fans_count   as user_fans_count,
+               u.like_count   as user_like_count
         FROM comment c
-        JOIN user u ON c.user_id = u.id
+                 JOIN user u ON c.user_id = u.id
         WHERE c.parent_id IS NULL
-        AND c.target_type = #{targetType}
-        AND c.target_id = #{targetId}
+          AND c.target_type = #{targetType}
+          AND c.target_id = #{targetId}
         ORDER BY c.create_time DESC
-        LIMIT #{size} OFFSET #{offset};
+            LIMIT #{size}
+        OFFSET #{offset};
     </select>
 
     <select id="findReplyPageWithUserByParentId" resultMap="CommentWithUserAndReplyMap">
-        SELECT c.*, u.id as user_id, u.username as user_username, u.nickname as user_nickname, u.avatar as user_avatar,
-        u.gender as user_gender, u.region as user_region, u.description as user_description,
-        u.follow_count as user_follow_count, u.fans_count as user_fans_count, u.like_count as user_like_count,
-        ru.id as reply_user_id, ru.username as reply_user_username, ru.nickname as reply_user_nickname,
-        ru.avatar as reply_user_avatar, ru.gender as reply_user_gender, ru.region as reply_user_region,
-        ru.description as reply_user_description, ru.follow_count as reply_user_follow_count,
-        ru.fans_count as reply_user_fans_count, ru.like_count as reply_user_like_count
+        SELECT c.*,
+               u.id            as user_id,
+               u.username      as user_username,
+               u.nickname      as user_nickname,
+               u.avatar        as user_avatar,
+               u.gender        as user_gender,
+               u.region        as user_region,
+               u.description   as user_description,
+               u.follow_count  as user_follow_count,
+               u.fans_count    as user_fans_count,
+               u.like_count    as user_like_count,
+               ru.id           as reply_user_id,
+               ru.username     as reply_user_username,
+               ru.nickname     as reply_user_nickname,
+               ru.avatar       as reply_user_avatar,
+               ru.gender       as reply_user_gender,
+               ru.region       as reply_user_region,
+               ru.description  as reply_user_description,
+               ru.follow_count as reply_user_follow_count,
+               ru.fans_count   as reply_user_fans_count,
+               ru.like_count   as reply_user_like_count
         FROM comment c
-        LEFT JOIN user u ON c.user_id = u.id
-        LEFT JOIN user ru ON c.reply_user_id = ru.id
+                 LEFT JOIN user u ON c.user_id = u.id
+                 LEFT JOIN user ru ON c.reply_user_id = ru.id
         WHERE c.parent_id = #{parentId}
         ORDER BY c.create_time ASC
-        LIMIT #{size} OFFSET #{offset};
+            LIMIT #{size}
+        OFFSET #{offset};
     </select>
 
     <select id="findCommentsBatch" resultType="cn.xu.domain.comment.model.entity.CommentEntity">
-        SELECT
-            id, target_type, target_id, parent_id,
-            user_id, reply_user_id, content,
-            like_count, reply_count, create_time, update_time
+        SELECT id,
+               target_type,
+               target_id,
+               parent_id,
+               user_id,
+               reply_user_id,
+               content,
+               like_count,
+               reply_count,
+               create_time,
+               update_time
         FROM comment
         ORDER BY id
             LIMIT #{offset}, #{batchSize}
@@ -584,7 +653,9 @@
     </select>
 
     <select id="countByParentId" resultType="java.lang.Long" parameterType="java.lang.Long">
-        SELECT COUNT(*) FROM comment WHERE parent_id = #{parentId}
+        SELECT COUNT(*)
+        FROM comment
+        WHERE parent_id = #{parentId}
     </select>
 
     <select id="findRepliesByParentIdsByHot" resultMap="BaseResultMap">
@@ -601,10 +672,9 @@
             #{parentId}
         </foreach>
         ) ranked
-        WHERE rn <= #{size}
+        WHERE rn &lt;= #{size}
         ORDER BY parent_id, like_count DESC, create_time DESC
     </select>
-
 
     <select id="findRepliesByParentIdsByTime" resultMap="BaseResultMap">
         SELECT * FROM (
@@ -620,9 +690,25 @@
             #{parentId}
         </foreach>
         ) ranked
-        WHERE rn <= #{size}
+        WHERE rn &lt;= #{size}
+    </select>
+    <select id="findRepliesByParentIdByHot" resultType="cn.xu.infrastructure.persistent.po.Comment">
+        SELECT *
+        FROM comment
+        WHERE parent_id = #{parentId}
+        ORDER BY like_count DESC
+            LIMIT #{size}
+        OFFSET #{offset}
     </select>
 
+    <select id="findRepliesByParentIdByTime" resultType="cn.xu.infrastructure.persistent.po.Comment">
+        SELECT *
+        FROM comment
+        WHERE parent_id = #{parentId}
+        ORDER BY create_time DESC
+            LIMIT #{size}
+        OFFSET #{offset}
+    </select>
 
 
     <!-- 批量更新评论点赞数 -->

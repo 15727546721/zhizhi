@@ -4,7 +4,7 @@ import lombok.Getter;
 
 @Getter
 public enum CommentSortType {
-    NEW("create_time", "最新"),
+    TIME("create_time", "最新"),
     HOT("like_count", "最热");
 
     private String value;

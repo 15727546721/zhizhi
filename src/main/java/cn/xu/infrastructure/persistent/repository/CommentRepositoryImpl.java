@@ -46,14 +46,6 @@ public class CommentRepositoryImpl implements ICommentRepository {
     }
 
     @Override
-    public List<CommentCountDTO> countChildCommentsGroupByParent(List<Long> parentIds) {
-        if (parentIds == null || parentIds.isEmpty()) {
-            return Collections.emptyList();
-        }
-        return commentMapper.countChildCommentsGroupByParent(parentIds);
-    }
-
-    @Override
     public CommentEntity findById(Long id) {
         try {
 //            // 先查询基础评论
@@ -189,59 +181,6 @@ public class CommentRepositoryImpl implements ICommentRepository {
     }
 
     /**
-     * 统计一级评论总数
-     *
-     * @param type 评论类型（可选）
-     * @return 评论总数
-     */
-    @Override
-    public long countRootComments(Integer type, Long userId) {
-        return commentMapper.countRootComments(type, userId);
-    }
-
-    /**
-     * 分页查询一级评论列表
-     *
-     * @param type     评论类型（可选）
-     * @param targetId 业务目标ID
-     * @param offset   偏移量
-     * @param limit    每页数量
-     * @return 一级评论列表
-     */
-    @Override
-    public List<CommentEntity> findRootCommentsByPage(Integer type, Long targetId, int offset, int limit) {
-        try {
-            log.info("分页查询一级评论列表 - type: {}, targetId: {}, offset: {}, limit: {}", type, targetId, offset, limit);
-
-            // 参数校验
-            if (offset < 0) {
-                offset = 0;
-            }
-            if (limit <= 0) {
-                limit = 10;
-            }
-
-            List<Comment> comments = commentMapper.findRootCommentsByPage(type, targetId, offset, limit);
-            if (comments == null || comments.isEmpty()) {
-                return new ArrayList<>();
-            }
-
-            // 批量转换为实体对象
-            List<CommentEntity> commentEntities = comments.stream()
-                    .map(this::convertToEntity)
-                    .collect(Collectors.toList());
-
-            log.info("查询到评论数量: {}", commentEntities.size());
-            return commentEntities;
-
-        } catch (Exception e) {
-            log.error("分页查询一级评论列表失败 - type: {}, targetId: {}", type, targetId, e);
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "查询评论列表失败：" + e.getMessage());
-        }
-    }
-
-
-    /**
      * 将评论实体转换为Comment
      */
     private Comment convertToComment(CommentEntity entity) {
@@ -321,18 +260,6 @@ public class CommentRepositoryImpl implements ICommentRepository {
     }
 
     @Override
-    public Map<Long, List<FindChildCommentItemVO>> findReplyWithUser(List<Long> commentIds, Integer pageNo, Integer pageSize) {
-        int offset = (pageNo - 1) * pageSize;
-        int size = pageSize;
-        Map<Long, List<FindChildCommentItemVO>> map = new HashMap<>();
-        commentIds.forEach(commentId -> {
-            List<FindChildCommentItemVO> childComment = commentMapper.findReplyPageWithUserByParentId(commentId, offset, size);
-            map.put(commentId, childComment);
-        });
-        return map;
-    }
-
-    @Override
     public List<FindChildCommentItemVO> findReplyPageWithUser(Long parentId, Integer pageNo, Integer pageSize) {
         int offset = (pageNo - 1) * pageSize;
         int size = pageSize;
@@ -346,11 +273,11 @@ public class CommentRepositoryImpl implements ICommentRepository {
             return;
         }
         List<CommentImage> images = imageUrls.stream()
-               .map(url -> CommentImage.builder()
-                       .commentId(commentId)
-                       .imageUrl(url)
-                       .build())
-               .collect(Collectors.toList());
+                .map(url -> CommentImage.builder()
+                        .commentId(commentId)
+                        .imageUrl(url)
+                        .build())
+                .collect(Collectors.toList());
         commentMapper.batchSaveImages(images);
     }
 
@@ -363,6 +290,29 @@ public class CommentRepositoryImpl implements ICommentRepository {
         return convertCommentList(comments);
     }
 
+    @Override
+    public List<CommentEntity> findRepliesByParentIdsByHot(List<Long> parentIds, int size) {
+        List<Comment> repliesByParentIdsByHot = commentMapper.findRepliesByParentIdsByHot(parentIds, size);
+        return convertCommentList(repliesByParentIdsByHot);
+    }
+
+    @Override
+    public List<CommentEntity> findRepliesByParentIdsByTime(List<Long> parentIds, int size) {
+        List<Comment> repliesByParentIdsByTime = commentMapper.findRepliesByParentIdsByTime(parentIds, size);
+        return convertCommentList(repliesByParentIdsByTime);
+    }
+
+    @Override
+    public List<CommentEntity> findRepliesByParentIdByHot(Long parentId, int page, int size) {
+        List<Comment> repliesByParentIdByHot = commentMapper.findRepliesByParentIdByHot(parentId, (page - 1) * size, size);
+        return convertCommentList(repliesByParentIdByHot);
+    }
+
+    @Override
+    public List<CommentEntity> findRepliesByParentIdByTime(Long parentId, int page, int size) {
+        List<Comment> repliesByParentIdByTime = commentMapper.findRepliesByParentIdByTime(parentId, (page - 1) * size, size);
+        return convertCommentList(repliesByParentIdByTime);
+    }
 
     private List<CommentEntity> convertCommentList(List<Comment> comments) {
         if (comments == null || comments.isEmpty()) {

@@ -75,23 +75,6 @@ public class CommentEntity {
     private UserEntity replyUser; // 被回复用户信息
     private List<CommentEntity> children = new ArrayList<>(); // 子评论
 
-    private Double hotScore; // 热度分数
+    private long hotScore; // 热度分数
     private boolean isHot; // 是否热门评论
-
-    /**
-     * 判断是否为根评论（一级评论）
-     */
-    public boolean isRootComment() {
-        return parentId == null;
-    }
-
-    /**
-     * 添加子评论
-     */
-    public void addChildComment(CommentEntity child) {
-        if (children == null) {
-            children = new ArrayList<>();
-        }
-        children.add(child);
-    }
 }

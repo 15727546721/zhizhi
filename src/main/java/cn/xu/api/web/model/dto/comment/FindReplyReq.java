@@ -5,5 +5,6 @@ import lombok.Data;
 
 @Data
 public class FindReplyReq extends PageRequest {
-    private Long commentId;
+    private Long parentId; // 父评论ID
+    private String sortType; // 排序类型(HOT, TIME)
 }
