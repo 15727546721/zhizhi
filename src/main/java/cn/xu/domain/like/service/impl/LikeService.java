@@ -91,7 +91,10 @@ public class LikeService implements ILikeService {
 
     @Override
     public boolean checkStatus(Long userId, Integer type, Long targetId) {
-        checkParams(userId, type, targetId);
+        if (userId == null || type == null || targetId == null) {
+            // 未登录用户默认未点赞
+            return false;
+        }
         return likeRepository.checkStatus(userId, type, targetId);
     }
 

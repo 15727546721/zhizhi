@@ -95,6 +95,10 @@ public class FollowService implements IFollowService {
 
     @Override
     public boolean checkStatus(long followerId, long followedId) {
+        if (followerId == 0 || followedId == 0) {
+            // 未登录用户默认未关注
+            return false;
+        }
          Integer status = userFollowRepository.findStatus(followerId, followedId);
          if (status == null || status == 0) {
              return false;

@@ -344,7 +344,6 @@ public class ArticleService implements IArticleService {
         return articleRepository.getArticlePageList(pageNo, pageSize);
     }
 
-    @Override
     public ArticleDetailVO getArticleDetail(Long articleId, Long currentUserId) {
         ArticleEntity article = articleRepository.findById(articleId);
         if (article == null) {
@@ -355,13 +354,21 @@ public class ArticleService implements IArticleService {
             log.warn("[文章服务] 文章未发布 - articleId: {}", articleId);
             throw new BusinessException("文章未发布");
         }
+
         UserEntity user = userService.getUserById(article.getUserId());
         List<TagEntity> tags = tagRepository.getTagsByArticleId(articleId);
 
-        boolean isLiked = likeService.checkStatus(currentUserId, LikeType.ARTICLE.getCode(), articleId);
-        boolean isCollected = articleCollectService.checkStatus(currentUserId, articleId);
-        boolean isFollowed = followService.checkStatus(currentUserId, article.getUserId());
-        boolean isAuthor = user.getId().equals(currentUserId);
+        boolean isLiked = false;
+        boolean isCollected = false;
+        boolean isFollowed = false;
+        boolean isAuthor = false;
+
+        if (currentUserId != null) {
+            isLiked = likeService.checkStatus(currentUserId, LikeType.ARTICLE.getCode(), articleId);
+            isCollected = articleCollectService.checkStatus(currentUserId, articleId);
+            isFollowed = followService.checkStatus(currentUserId, article.getUserId());
+            isAuthor = user.getId().equals(currentUserId);
+        }
 
         return ArticleDetailVO.builder()
                 .article(article)
