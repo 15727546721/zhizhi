@@ -2,11 +2,9 @@ package cn.xu.domain.comment.repository;
 
 import cn.xu.api.web.model.dto.comment.FindChildCommentItemVO;
 import cn.xu.api.web.model.vo.comment.FindCommentItemVO;
-import cn.xu.application.query.comment.dto.CommentCountDTO;
 import cn.xu.domain.comment.model.entity.CommentEntity;
 
 import java.util.List;
-import java.util.Map;
 
 public interface ICommentRepository {
     /**

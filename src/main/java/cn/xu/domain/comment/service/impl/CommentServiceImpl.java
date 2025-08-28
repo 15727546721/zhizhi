@@ -2,12 +2,7 @@ package cn.xu.domain.comment.service.impl;
 
 import cn.xu.api.system.model.vo.comment.CommentReplyVO;
 import cn.xu.api.web.model.dto.comment.*;
-import cn.xu.api.web.model.vo.comment.CommentSimpleVO;
-import cn.xu.api.web.model.vo.comment.CommentVO;
-import cn.xu.api.web.model.vo.comment.CommentWithPreviewVO;
-import cn.xu.api.web.model.vo.comment.FindCommentItemVO;
 import cn.xu.application.common.ResponseCode;
-import cn.xu.application.query.comment.dto.CommentCountDTO;
 import cn.xu.domain.comment.event.CommentCreatedEvent;
 import cn.xu.domain.comment.event.CommentDeletedEvent;
 import cn.xu.domain.comment.event.CommentEventPublisher;
@@ -18,12 +13,13 @@ import cn.xu.domain.comment.repository.ICommentRepository;
 import cn.xu.domain.comment.service.ICommentService;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.service.IUserService;
+import cn.xu.infrastructure.cache.RedisKeyManager;
 import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.common.request.PageRequest;
-import cn.xu.infrastructure.common.response.PageResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,6 +37,8 @@ public class CommentServiceImpl implements ICommentService {
     private final CommentEventPublisher commentEventPublisher;
     @Resource
     private IUserService userService;
+    @Resource
+    private RedisTemplate<String, Object> redisTemplate;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -76,7 +74,15 @@ public class CommentServiceImpl implements ICommentService {
             // 4. 保存评论图片
             commentRepository.saveCommentImages(commentId, event.getImageUrls());
 
-            // 5. 发布评论创建事件
+            // 5. 更新评论计数
+            if (comment.getParentId() != null) {
+                String key = RedisKeyManager.commentCountKey(CommentType.COMMENT.getValue(), event.getCommentId());
+                redisTemplate.opsForValue().increment(key, 1);
+            }
+            String key = RedisKeyManager.commentCountKey(event.getTargetType(), event.getTargetId());
+            redisTemplate.opsForValue().increment(key, 1);
+
+            // 6. 发布评论创建事件
             event.setCommentId(commentId);
             commentEventPublisher.publishCommentCreatedEvent(event);
 

@@ -83,7 +83,7 @@ public class HotScoreService {
         if (comment.getParentId() == null) {
             redisKey = RedisKeyManager.commentHotRankKey(comment.getTargetId());
         } else {
-            redisKey = RedisKeyManager.replyCommentHotRankKey(comment.getTargetId(), comment.getParentId());
+            redisKey = RedisKeyManager.replyHotRankKey(comment.getTargetId(), comment.getParentId());
         }
 
         Long createEpochSecond = comment.getCreateTime().atZone(ZoneId.systemDefault()).toEpochSecond();

@@ -2,9 +2,7 @@ package cn.xu.api.web.controller;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.api.web.model.dto.comment.*;
-import cn.xu.api.web.model.vo.comment.FindCommentItemVO;
 import cn.xu.application.common.ResponseCode;
-import cn.xu.application.query.comment.CommentQueryService;
 import cn.xu.domain.comment.event.CommentCreatedEvent;
 import cn.xu.domain.comment.model.entity.CommentEntity;
 import cn.xu.domain.comment.service.ICommentService;
@@ -25,9 +23,6 @@ import java.util.List;
 public class CommentController {
     @Resource
     private ICommentService commentService;
-
-    @Resource
-    private CommentQueryService commentQueryService;
 
     @Operation(summary = "发表评论")
     @PostMapping("/publish")
@@ -84,29 +79,6 @@ public class CommentController {
         }
         List<CommentEntity> replyCommentList = commentService.findChildCommentList(request);
         return ResponseEntity.<List<CommentEntity>>builder()
-                .data(replyCommentList)
-                .code(ResponseCode.SUCCESS.getCode())
-                .info("获取评论回复列表成功")
-                .build();
-    }
-
-
-    @PostMapping("/page/list")
-    @ApiOperationLog(description = "评论分页查询")
-    public ResponseEntity<List<FindCommentItemVO>> getCommentPageList1(@RequestBody FindCommentReq request) {
-        List<FindCommentItemVO> commentPageList = commentQueryService.findTopComments(request);
-        return ResponseEntity.<List<FindCommentItemVO>>builder()
-                .data(commentPageList)
-                .code(ResponseCode.SUCCESS.getCode())
-                .info("获取评论列表成功")
-                .build();
-    }
-
-    @PostMapping("/reply/list")
-    @ApiOperationLog(description = "获取评论回复列表")
-    public ResponseEntity<List<FindChildCommentItemVO>> getReplyCommentList1(@RequestBody FindReplyReq request) {
-        List<FindChildCommentItemVO> replyCommentList = commentQueryService.findChildComments(request);
-        return ResponseEntity.<List<FindChildCommentItemVO>>builder()
                 .data(replyCommentList)
                 .code(ResponseCode.SUCCESS.getCode())
                 .info("获取评论回复列表成功")

@@ -3,7 +3,6 @@ package cn.xu.infrastructure.persistent.repository;
 import cn.xu.api.web.model.dto.comment.FindChildCommentItemVO;
 import cn.xu.api.web.model.vo.comment.FindCommentItemVO;
 import cn.xu.application.common.ResponseCode;
-import cn.xu.application.query.comment.dto.CommentCountDTO;
 import cn.xu.domain.comment.model.entity.CommentEntity;
 import cn.xu.domain.comment.repository.ICommentRepository;
 import cn.xu.infrastructure.common.exception.BusinessException;

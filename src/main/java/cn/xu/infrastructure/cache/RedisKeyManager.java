@@ -101,33 +101,35 @@ public class RedisKeyManager {
 
     // ===================== 评论模块 =====================
 
-    // 带预览回复的评论缓存的Key
-    public static String previewCommentsKey(Integer targetType, Long targetId, Integer pageNo, Integer pageSize) {
+
+    // 评论预览缓存的 Key: comment:preview:{targetType}:{targetId}:{pageNo}:{pageSize}
+    public static String commentPreviewKey(Integer targetType, Long targetId, Integer pageNo, Integer pageSize) {
         return key("comment", "preview", targetType, targetId, pageNo, pageSize);
     }
 
-    // 评论回复分页缓存的Key
+    // 评论回复分页缓存 Key: comment:replies:{commentId}:{pageNo}:{pageSize}
     public static String commentRepliesKey(Long commentId, Integer pageNo, Integer pageSize) {
         return key("comment", "replies", commentId, pageNo, pageSize);
     }
 
-    // 最新更新时间（用于缓存版本更新的Key）
-    public static String commentsLastUpdateKey() {
-        return key("comment", "last", "update");
+    // 评论最后更新时间 Key: comment:update:last
+    public static String commentLastUpdateKey() {
+        return key("comment", "update", "last");
     }
 
-    // comment:hot:{postId} zet结构，一级评论热点ZSet
+    // 一级评论热点排行 ZSet Key: comment:rank:hot:{targetId}
     public static String commentHotRankKey(Long targetId) {
-        return key("comment", "hot", targetId);
+        return key("comment", "rank", "hot", targetId);
     }
 
-    // comment:hot:{postId}:{commentId} zet结构，对应一级评论的二级回复热点ZSet
-    public static String replyCommentHotRankKey(Long targetId, Long commentId) {
-        return key( "comment", "hot", targetId, commentId);
+    // 二级回复热点排行 ZSet Key: comment:rank:hot:{targetId}:{commentId}
+    public static String replyHotRankKey(Long targetId, Long commentId) {
+        return key("comment", "rank", "hot", targetId, commentId);
     }
 
-    public static String commentLikeCountKey(Long commentId) {
-        return key("comment", "like", "count", commentId);
+    // 评论数量 Key: comment:count:{targetType}:{targetId}:{commentId}
+    public static String commentCountKey(int targetType, Long targetId) {
+        return key("comment", "count", targetType, targetId);
     }
 
     // ===================== 分类 & 标签模块 =====================
