@@ -6,6 +6,7 @@ import cn.xu.domain.like.event.LikeEventPublisher;
 import cn.xu.domain.like.model.LikeType;
 import cn.xu.domain.like.repository.ILikeRepository;
 import cn.xu.domain.like.service.ILikeService;
+import cn.xu.infrastructure.cache.LuaScriptManager;
 import cn.xu.infrastructure.cache.RedisKeyManager;
 import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.common.utils.ArticleHotScoreCacheHelper;
@@ -15,6 +16,8 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.util.Arrays;
+import java.util.Objects;
 
 @Slf4j
 @Service
@@ -29,15 +32,12 @@ public class LikeService implements ILikeService {
     @Autowired
     private ILikeRepository likeRepository;
 
-    @Autowired
-    private ArticleHotScoreCacheHelper hotScoreCacheHelper;
-
     @Override
     public void like(Long userId, Integer type, Long targetId) {
         checkParams(userId, type, targetId);
 
-        String likeKey = RedisKeyManager.likeRelationKey(LikeType.valueOf(type), targetId);
-        String userKey = userId.toString();
+        String likeKey = RedisKeyManager.likeRelationKey(Objects.requireNonNull(LikeType.valueOf(type)), targetId);
+        String likeCountKey = RedisKeyManager.likeCountKey(Objects.requireNonNull(LikeType.valueOf(type)), targetId);
 
         try {
             Boolean member = redisTemplate.opsForSet().isMember(likeKey, userId.toString());
@@ -47,12 +47,21 @@ public class LikeService implements ILikeService {
 
             if (Boolean.FALSE.equals(member) && likeRepository.checkStatus(userId, type, targetId)) {
                 // 数据库已有点赞，缓存写入并返回异常
-                redisTemplate.opsForSet().add(likeKey, userKey);
+                redisTemplate.opsForSet().add(likeKey, userId.toString());
                 throw new BusinessException("您已经点赞过了！");
             }
 
             // 写入 Redis 缓存点赞状态
-            redisTemplate.opsForSet().add(likeKey, userKey);
+            Long result = redisTemplate.execute(
+                    LuaScriptManager.LIKE_ADD_SCRIPT,
+                    Arrays.asList(likeKey, likeCountKey),
+                    userId.toString()
+            );
+
+            if (result == null || result == 0L) {
+                throw new BusinessException("您已经点赞过了！");
+            }
+
         } catch (Exception e) {
             log.error("点赞失败", e);
             return;
@@ -67,7 +76,8 @@ public class LikeService implements ILikeService {
         checkParams(userId, type, targetId);
 
         // 存储点赞用户的集合
-        String likeKey = RedisKeyManager.likeRelationKey(LikeType.valueOf(type), targetId);
+        String likeKey = RedisKeyManager.likeRelationKey(Objects.requireNonNull(LikeType.valueOf(type)), targetId);
+        String likeCountKey = RedisKeyManager.likeCountKey(Objects.requireNonNull(LikeType.valueOf(type)), targetId);
 
         try {
             // 检查当前用户是否已点赞
@@ -78,7 +88,15 @@ public class LikeService implements ILikeService {
             }
 
             // 删除 Redis 中的点赞记录
-            redisTemplate.opsForSet().remove(likeKey, userId.toString());
+            Long result = redisTemplate.execute(
+                    LuaScriptManager.LIKE_REMOVE_SCRIPT,
+                    Arrays.asList(likeKey, likeCountKey),
+                    userId.toString()
+            );
+
+            if (result == null || result == 0L) {
+                throw new BusinessException("取消点赞失败，请稍后再试！");
+            }
 
         } catch (Exception e) {
             log.error("取消点赞失败", e);

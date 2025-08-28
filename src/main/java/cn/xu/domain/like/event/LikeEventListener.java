@@ -37,7 +37,6 @@ public class LikeEventListener {
 
     private void handleLike(LikeEvent event) {
         likeRepository.saveLike(event.getUserId(), event.getTargetId(), event.getType().getCode());
-        likeRepository.incrementLikeCount(event.getTargetId(), event.getType().getCode());
 
         if (event.getType() == LikeType.ARTICLE) {
             articleService.updateArticleHotScore(event.getTargetId());
@@ -46,7 +45,6 @@ public class LikeEventListener {
 
     private void handleUnlike(LikeEvent event) {
         likeRepository.remove(event.getUserId(), event.getTargetId(), event.getType().getCode());
-        likeRepository.decrementLikeCount(event.getTargetId(), event.getType().getCode());
 
         if (event.getType() == LikeType.ARTICLE) {
             articleService.updateArticleHotScore(event.getTargetId());
