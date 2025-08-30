@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class ArticleEventListener {
 
-    private final cn.xu.article.domain.event.ArticleEventStrategyFactory factory;
+    private final ArticleEventStrategyFactory factory;
 
     @EventListener
     public void onEvent(ArticleEvent event) {

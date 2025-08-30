@@ -1,6 +1,5 @@
-package cn.xu.article.domain.event;
+package cn.xu.domain.article.event;
 
-import cn.xu.domain.article.event.ArticleEvent;
 import cn.xu.domain.article.event.strategy.ArticleEventStrategy;
 import cn.xu.domain.article.event.strategy.CreateArticleStrategy;
 import cn.xu.domain.article.event.strategy.DeleteArticleStrategy;
