@@ -18,7 +18,7 @@ public interface CommentMapper {
     /**
      * 插入评论
      */
-    int insert(Comment comment);
+    Long saveComment(Comment comment);
 
     /**
      * 插入评论图片
@@ -26,7 +26,7 @@ public interface CommentMapper {
      * @param images
      * @return
      */
-    int saveImages(List<CommentImage> images);
+    Long saveImages(List<CommentImage> images);
 
     /**
      * 根据ID删除评论
@@ -252,4 +252,6 @@ public interface CommentMapper {
     List<Comment> findRepliesByParentIdByHot(@Param("parentId") Long parentId, @Param("offset") int offset, @Param("size") int size);
 
     List<Comment> findRepliesByParentIdByTime(@Param("parentId") Long parentId, @Param("offset") int offset, @Param("size") int size);
+
+    List<Comment> selectCommentsByIds(List<Long> commentIdList);
 }

@@ -206,25 +206,24 @@ public class CommentRepositoryImpl implements ICommentRepository {
 
     @Override
     public Long save(CommentEntity commentEntity) {
+        log.info("保存评论 - commentEntity: {}", commentEntity);
+
+        if (commentEntity == null) {
+            throw new BusinessException(ResponseCode.NULL_PARAMETER.getCode(), "评论对象不能为空");
+        }
+
         try {
-//            // 1. 保存评论主体
-//            commentMapper.insertComment(comment);
-//
-//            // 2. 保存关联图片
-//            if (comment.getImages() != null && !comment.getImages().isEmpty()) {
-//                // 设置commentId关联
-//                comment.getImages().forEach(img -> img.setCommentId(comment.getId()));
-//                commentMapper.batchInsertImages(comment.getImages());
-//            }
-//
-//            return comment;
-            log.info("保存评论 - commentEntity: {}", commentEntity);
+            // 1. 构建 Comment 数据对象
             Comment comment = convertToComment(commentEntity);
             comment.setCreateTime(LocalDateTime.now());
             comment.setUpdateTime(LocalDateTime.now());
-            commentMapper.insert(comment);
+
+            // 2. 插入评论主表
+            Long commentId = commentMapper.saveComment(comment);
             log.info("保存评论成功 - id: {}", comment.getId());
+
             return comment.getId();
+
         } catch (Exception e) {
             log.error("保存评论失败 - commentEntity: {}", commentEntity, e);
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "保存评论失败：" + e.getMessage());
@@ -271,13 +270,23 @@ public class CommentRepositoryImpl implements ICommentRepository {
         if (imageUrls == null || imageUrls.isEmpty()) {
             return;
         }
-        List<CommentImage> images = imageUrls.stream()
-                .map(url -> CommentImage.builder()
-                        .commentId(commentId)
-                        .imageUrl(url)
-                        .build())
-                .collect(Collectors.toList());
-        commentMapper.batchSaveImages(images);
+
+        Date now = new Date();
+        List<CommentImage> imageList = new ArrayList<>();
+
+        for (int i = 0; i < imageUrls.size(); i++) {
+            String url = imageUrls.get(i);
+            CommentImage image = CommentImage.builder()
+                    .commentId(commentId)
+                    .imageUrl(url)
+                    .sortOrder(i)  // 按照顺序设置排序字段
+                    .createTime(now)
+                    .build();
+            imageList.add(image);
+        }
+
+        commentMapper.batchSaveImages(imageList); // 请确保你的 Mapper 接口有此方法
+        log.info("保存评论图片成功 - commentId: {}, imageCount: {}", commentId, imageList.size());
     }
 
     @Override
@@ -311,6 +320,15 @@ public class CommentRepositoryImpl implements ICommentRepository {
     public List<CommentEntity> findRepliesByParentIdByTime(Long parentId, int page, int size) {
         List<Comment> repliesByParentIdByTime = commentMapper.findRepliesByParentIdByTime(parentId, (page - 1) * size, size);
         return convertCommentList(repliesByParentIdByTime);
+    }
+
+    @Override
+    public List<CommentEntity> findCommentsByIds(List<Long> commentIdList) {
+        if (commentIdList == null || commentIdList.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<Comment> comments = commentMapper.selectCommentsByIds(commentIdList);
+        return convertCommentList(comments);
     }
 
     private List<CommentEntity> convertCommentList(List<Comment> comments) {

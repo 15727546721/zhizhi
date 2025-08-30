@@ -1,5 +1,6 @@
 package cn.xu.infrastructure.cache;
 
+import cn.xu.domain.comment.model.valueobject.CommentType;
 import cn.xu.domain.like.model.LikeType;
 
 import java.util.Arrays;
@@ -101,30 +102,14 @@ public class RedisKeyManager {
 
     // ===================== 评论模块 =====================
 
-
-    // 评论预览缓存的 Key: comment:preview:{targetType}:{targetId}:{pageNo}:{pageSize}
-    public static String commentPreviewKey(Integer targetType, Long targetId, Integer pageNo, Integer pageSize) {
-        return key("comment", "preview", targetType, targetId, pageNo, pageSize);
+    // 一级评论热点排行 ZSet Key: comment:rank:hot:{type}:{targetId}
+    public static String commentHotRankKey(CommentType type, Long targetId) {
+        return key("comment", "rank", "hot", type.name().toLowerCase(), targetId);
     }
 
-    // 评论回复分页缓存 Key: comment:replies:{commentId}:{pageNo}:{pageSize}
-    public static String commentRepliesKey(Long commentId, Integer pageNo, Integer pageSize) {
-        return key("comment", "replies", commentId, pageNo, pageSize);
-    }
-
-    // 评论最后更新时间 Key: comment:update:last
-    public static String commentLastUpdateKey() {
-        return key("comment", "update", "last");
-    }
-
-    // 一级评论热点排行 ZSet Key: comment:rank:hot:{targetId}
-    public static String commentHotRankKey(Long targetId) {
-        return key("comment", "rank", "hot", targetId);
-    }
-
-    // 二级回复热点排行 ZSet Key: comment:rank:hot:{targetId}:{commentId}
-    public static String replyHotRankKey(Long targetId, Long commentId) {
-        return key("comment", "rank", "hot", targetId, commentId);
+    // 二级回复热点排行 ZSet Key: comment:rank:hot:{type}:{targetId}:{commentId}
+    public static String replyHotRankKey(CommentType type, Long targetId, Long commentId) {
+        return key("comment", "rank", "hot", type.name().toLowerCase(), targetId, commentId);
     }
 
     // 评论数量 Key: comment:count:{targetType}:{targetId}:{commentId}

@@ -7,6 +7,5 @@ import lombok.Data;
 public class FindCommentReq extends PageRequest {
     private Long targetId;
     private Integer targetType;
-    private int page;
     private String sortType;
 }

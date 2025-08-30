@@ -65,7 +65,7 @@ public class SysCommentController {
         @Parameter(name = "pageSize", description = "每页数量", required = true)
     })
     @GetMapping("/replies/{parentId}")
-    public ResponseEntity<List<CommentReplyVO>> getReplies(
+    public ResponseEntity<?> getReplies(
             @PathVariable @NotNull(message = "父评论ID不能为空") Long parentId,
             @Valid PageRequest pageRequest) {
         try {
@@ -93,17 +93,17 @@ public class SysCommentController {
             }
 
             // 4. 调用服务获取数据
-            List<CommentReplyVO> replies = commentServiceImpl.getPagedRepliesWithUser(parentId, pageRequest);
+//            List<CommentEntity> replies = commentServiceImpl.getPagedRepliesWithUser(parentId, pageRequest);
             
             // 5. 记录处理结果
-            log.info("[评论服务] 成功获取二级评论列表 - 父评论ID: {}, 获取到 {} 条回复", 
-                    parentId, replies.size());
+//            log.info("[评论服务] 成功获取二级评论列表 - 父评论ID: {}, 获取到 {} 条回复",
+//                    parentId, replies.size());
 
             // 6. 返回结果
-            return ResponseEntity.<List<CommentReplyVO>>builder()
+            return ResponseEntity.<List<CommentEntity>>builder()
                     .code(ResponseCode.SUCCESS.getCode())
                     .info(ResponseCode.SUCCESS.getMessage())
-                    .data(replies)
+                    .data(null)
                     .build();
 
         } catch (BusinessException be) {

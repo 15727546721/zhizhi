@@ -1,12 +1,10 @@
 package cn.xu.domain.comment.service;
 
 import cn.xu.domain.comment.model.entity.CommentEntity;
+import cn.xu.domain.comment.model.valueobject.CommentType;
 import cn.xu.domain.comment.repository.ICommentRepository;
 import cn.xu.infrastructure.cache.RedisKeyManager;
-import cn.xu.infrastructure.persistent.read.elastic.model.CommentIndex;
-import cn.xu.infrastructure.persistent.read.elastic.repository.CommentElasticRepository;
 import cn.xu.infrastructure.persistent.read.redis.CommentRedisRepository;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
@@ -81,9 +79,9 @@ public class HotScoreService {
         String redisKey;
         // 设计规则：parentId为空是一级评论，存一级ZSet；否则存二级回复ZSet
         if (comment.getParentId() == null) {
-            redisKey = RedisKeyManager.commentHotRankKey(comment.getTargetId());
+            redisKey = RedisKeyManager.commentHotRankKey(CommentType.valueOf(comment.getTargetType()), comment.getTargetId());
         } else {
-            redisKey = RedisKeyManager.replyHotRankKey(comment.getTargetId(), comment.getParentId());
+            redisKey = RedisKeyManager.replyHotRankKey(CommentType.valueOf(comment.getTargetType()), comment.getTargetId(), comment.getParentId());
         }
 
         Long createEpochSecond = comment.getCreateTime().atZone(ZoneId.systemDefault()).toEpochSecond();

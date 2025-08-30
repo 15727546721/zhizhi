@@ -138,4 +138,6 @@ public interface ICommentRepository {
     List<CommentEntity> findRepliesByParentIdByHot(Long parentId, int page, int size);
 
     List<CommentEntity> findRepliesByParentIdByTime(Long parentId, int page, int size);
+
+    List<CommentEntity> findCommentsByIds(List<Long> commentIdList);
 }

@@ -122,7 +122,7 @@
         , target_type, target_id, parent_id, user_id, reply_user_id, `content`, like_count, reply_count, create_time, update_time
     </sql>
 
-    <insert id="insert" parameterType="cn.xu.infrastructure.persistent.po.Comment" useGeneratedKeys="true"
+    <insert id="saveComment" parameterType="cn.xu.infrastructure.persistent.po.Comment" useGeneratedKeys="true"
             keyProperty="id">
         insert into comment (target_type, target_id, parent_id, user_id, reply_user_id, content, create_time,
                              update_time)
@@ -131,7 +131,8 @@
     </insert>
 
     <insert id="saveImages">
-
+        INSERT INTO comment_image (comment_id, url, sort_order)
+        VALUES (#{commentId}, #{url}, #{sortOrder})
     </insert>
 
     <insert id="batchSaveImages">
@@ -710,7 +711,15 @@
         OFFSET #{offset}
     </select>
 
-
+    <select id="selectCommentsByIds" resultType="cn.xu.infrastructure.persistent.po.Comment">
+        SELECT *
+        FROM comment
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </select>
+    
     <!-- 批量更新评论点赞数 -->
     <update id="batchUpdateLikeCount">
         <foreach collection="list" item="item" separator=";">
