@@ -69,8 +69,8 @@ public interface CommentMapper {
             @Param("previewSize") int previewSize
     );
 
-    // 查询评论图片
-    List<String> selectImagesByCommentIds(@Param("commentIds") List<Long> commentIds);
+    // 更新评论图片URL
+    void updateCommentImageUrl(@Param("commentId") Long commentId, @Param("imageUrl") String imageUrl);
 
     /**
      * 根据类型和目标ID查询评论列表
@@ -218,17 +218,6 @@ public interface CommentMapper {
                                                     @Param("offset") int offset,
                                                     @Param("size") int size);
 
-    /**
-     * 根据父评论ID分页查询子评论及用户信息
-     *
-     * @param parentId
-     * @param offset
-     * @param size
-     * @return
-     */
-    List<FindChildCommentItemVO> findReplyPageWithUserByParentId(@Param("parentId") Long parentId,
-                                                                 @Param("offset") int offset,
-                                                                 @Param("size") int size);
 
     /**
      * 分批次查询评论（用于大数据量ES初始化）
@@ -242,16 +231,9 @@ public interface CommentMapper {
 
     Long countByParentId(Long commentId);
 
-    /**
-     * 批量保存评论图片
-     *
-     * @param images
-     */
-    void batchSaveImages(List<CommentImage> images);
-
     List<Comment> findRepliesByParentIdByHot(@Param("parentId") Long parentId, @Param("offset") int offset, @Param("size") int size);
 
     List<Comment> findRepliesByParentIdByTime(@Param("parentId") Long parentId, @Param("offset") int offset, @Param("size") int size);
 
-    List<Comment> selectCommentsByIds(List<Long> commentIdList);
+    List<Comment> selectCommentsByIds(@Param("commentIdList") List<Long> commentIdList);
 }

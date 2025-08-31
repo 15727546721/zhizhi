@@ -56,6 +56,11 @@ public class Comment implements Serializable {
     private String content;
 
     /**
+     * 图片地址url，分隔符号“,”
+     */
+    private String imageUrl;
+
+    /**
      * 点赞数
      */
     private Long likeCount;
@@ -64,6 +69,11 @@ public class Comment implements Serializable {
      * 子评论数
      */
     private Long replyCount;
+
+    /**
+     * 热度分数
+     */
+    private Long hotScore;
 
     /**
      * 创建时间

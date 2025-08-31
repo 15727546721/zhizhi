@@ -6,10 +6,8 @@ import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.comment.model.entity.CommentEntity;
 import cn.xu.domain.comment.repository.ICommentRepository;
 import cn.xu.infrastructure.common.exception.BusinessException;
-import cn.xu.infrastructure.persistent.dao.CommentImageMapper;
 import cn.xu.infrastructure.persistent.dao.CommentMapper;
 import cn.xu.infrastructure.persistent.po.Comment;
-import cn.xu.infrastructure.persistent.po.CommentImage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 
@@ -24,8 +22,6 @@ public class CommentRepositoryImpl implements ICommentRepository {
 
     @Resource
     private CommentMapper commentMapper;
-    @Resource
-    private CommentImageMapper commentImageMapper;
 
     @Override
     public List<CommentEntity> findCommentBatch(int offset, int batchSize) {
@@ -47,19 +43,11 @@ public class CommentRepositoryImpl implements ICommentRepository {
     @Override
     public CommentEntity findById(Long id) {
         try {
-//            // 先查询基础评论
-//            List<Comment> comments = commentMapper.selectCommentsByIds(ids);
-//
-//            // 批量查询图片并关联
-//            Map<Long, List<CommentImage>> imageMap = commentMapper
-//                    .selectImagesByCommentIds(ids)
-//                    .stream()
-//                    .collect(Collectors.groupingBy(CommentImage::getCommentId));
-//
-//            comments.forEach(c -> c.setImages(imageMap.get(c.getId())));
-//            return comments;
             log.info("查询评论 - id: {}", id);
+            // 先查询基础评论
             Comment comment = commentMapper.selectById(id);
+            
+            // 直接使用convertToEntity方法解析图片URL，不再查询CommentImage表
             return convertToEntity(comment);
         } catch (Exception e) {
             log.error("查询评论失败 - id: {}", id, e);
@@ -135,16 +123,6 @@ public class CommentRepositoryImpl implements ICommentRepository {
         }
     }
 
-    public void deleteByTopicId(Long topicId) {
-        try {
-            log.info("删除与话题相关的评论 - topicId: {}", topicId);
-            commentMapper.deleteByTypeAndTargetId(2, topicId);
-        } catch (Exception e) {
-            log.error("删除与话题相关的评论失败 - topicId: {}", topicId, e);
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "删除与话题相关的评论失败");
-        }
-    }
-
     @Override
     public List<CommentEntity> findRootComments(Integer type, Long targetId, int offset, int limit) {
         try {
@@ -186,7 +164,7 @@ public class CommentRepositoryImpl implements ICommentRepository {
         if (entity == null) {
             return null;
         }
-        return Comment.builder()
+        Comment build = Comment.builder()
                 .id(entity.getId())
                 .targetType(entity.getTargetType())
                 .targetId(entity.getTargetId())
@@ -194,9 +172,21 @@ public class CommentRepositoryImpl implements ICommentRepository {
                 .userId(entity.getUserId())
                 .replyUserId(entity.getReplyUserId())
                 .content(entity.getContent())
+                .likeCount(entity.getLikeCount() != null ? entity.getLikeCount() : 0L)
+                .replyCount(entity.getReplyCount() != null ? entity.getReplyCount() : 0L)
+                .hotScore(entity.getHotScore())
                 .createTime(entity.getCreateTime())
                 .updateTime(entity.getUpdateTime())
                 .build();
+
+        // 将图片URL列表转换为逗号分隔的字符串
+        List<String> imageUrls = entity.getImageUrls();
+        if (imageUrls != null && !imageUrls.isEmpty()) {
+            String imageUrlStr = String.join(",", imageUrls);
+            build.setImageUrl(imageUrlStr);
+        }
+
+        return build;
     }
 
     @Override
@@ -222,7 +212,7 @@ public class CommentRepositoryImpl implements ICommentRepository {
             Long commentId = commentMapper.saveComment(comment);
             log.info("保存评论成功 - id: {}", comment.getId());
 
-            return comment.getId();
+            return commentId;
 
         } catch (Exception e) {
             log.error("保存评论失败 - commentEntity: {}", commentEntity, e);
@@ -247,46 +237,6 @@ public class CommentRepositoryImpl implements ICommentRepository {
             log.error("批量查询子评论失败 - parentIds: {}", parentIds, e);
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "查询回复列表失败：" + e.getMessage());
         }
-    }
-
-    @Override
-    public List<FindCommentItemVO> findRootCommentWithUser(Integer targetType, Long targetId, Integer pageNo, Integer pageSize) {
-        int offset = (pageNo - 1) * pageSize;
-        int size = pageSize;
-        List<FindCommentItemVO> vo = commentMapper.findRootCommentWithUser(targetType, targetId, offset, size);
-        return vo;
-    }
-
-    @Override
-    public List<FindChildCommentItemVO> findReplyPageWithUser(Long parentId, Integer pageNo, Integer pageSize) {
-        int offset = (pageNo - 1) * pageSize;
-        int size = pageSize;
-        List<FindChildCommentItemVO> childComment = commentMapper.findReplyPageWithUserByParentId(parentId, offset, size);
-        return childComment;
-    }
-
-    @Override
-    public void saveCommentImages(Long commentId, List<String> imageUrls) {
-        if (imageUrls == null || imageUrls.isEmpty()) {
-            return;
-        }
-
-        Date now = new Date();
-        List<CommentImage> imageList = new ArrayList<>();
-
-        for (int i = 0; i < imageUrls.size(); i++) {
-            String url = imageUrls.get(i);
-            CommentImage image = CommentImage.builder()
-                    .commentId(commentId)
-                    .imageUrl(url)
-                    .sortOrder(i)  // 按照顺序设置排序字段
-                    .createTime(now)
-                    .build();
-            imageList.add(image);
-        }
-
-        commentMapper.batchSaveImages(imageList); // 请确保你的 Mapper 接口有此方法
-        log.info("保存评论图片成功 - commentId: {}, imageCount: {}", commentId, imageList.size());
     }
 
     @Override
@@ -331,6 +281,8 @@ public class CommentRepositoryImpl implements ICommentRepository {
         return convertCommentList(comments);
     }
 
+
+
     private List<CommentEntity> convertCommentList(List<Comment> comments) {
         if (comments == null || comments.isEmpty()) {
             return new ArrayList<>();
@@ -350,6 +302,18 @@ public class CommentRepositoryImpl implements ICommentRepository {
         if (comment == null) {
             return null;
         }
+        
+        // 解析图片URL字符串为列表
+        List<String> imageUrls = new ArrayList<>();
+        if (comment.getImageUrl() != null && !comment.getImageUrl().isEmpty()) {
+            String[] urls = comment.getImageUrl().split(",");
+            for (String url : urls) {
+                if (url != null && !url.trim().isEmpty()) {
+                    imageUrls.add(url.trim());
+                }
+            }
+        }
+        
         return CommentEntity.builder()
                 .id(comment.getId())
                 .userId(comment.getUserId())
@@ -360,6 +324,8 @@ public class CommentRepositoryImpl implements ICommentRepository {
                 .replyUserId(comment.getReplyUserId())
                 .likeCount(comment.getLikeCount() != null ? comment.getLikeCount() : 0L)
                 .replyCount(comment.getReplyCount() != null ? comment.getReplyCount() : 0L)
+                .hotScore(comment.getHotScore() != null ? comment.getHotScore() : 0L)
+                .imageUrls(imageUrls)
                 .createTime(comment.getCreateTime())
                 .updateTime(comment.getUpdateTime())
                 .build();
@@ -370,16 +336,10 @@ public class CommentRepositoryImpl implements ICommentRepository {
             return Collections.emptyList();
         }
 
+        // 直接调用convertToEntity方法处理每个Comment对象，convertToEntity会自动解析图片URL
         return comments.stream()
-                .map(comment -> {
-                    CommentEntity entity = convertToEntity(comment);
-                    List<CommentImage> images = commentImageMapper.selectImagesByCommentId(comment.getId());
-                    List<String> imageUrls = images.stream()
-                            .map(CommentImage::getImageUrl)
-                            .collect(Collectors.toList());
-                    entity.setImageUrls(imageUrls);
-                    return entity;
-                })
+                .map(this::convertToEntity)
                 .collect(Collectors.toList());
     }
+
 }

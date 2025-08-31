@@ -1,6 +1,5 @@
 package cn.xu.domain.comment.service.impl;
 
-import cn.xu.api.system.model.vo.comment.CommentReplyVO;
 import cn.xu.api.web.model.dto.comment.*;
 import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.comment.event.CommentCreatedEvent;
@@ -55,8 +54,9 @@ public class CommentServiceImpl implements ICommentService {
                 .targetId(event.getTargetId())
                 .parentId(event.getParentId())
                 .userId(currentUserId)
-                .replyUserId(event.getReplyUserId())
                 .content(event.getContent())
+                .imageUrls(event.getImageUrls())
+                .replyUserId(event.getReplyUserId())
                 .likeCount(0L)
                 .replyCount(0L)
                 .hotScore(0L)
@@ -67,7 +67,6 @@ public class CommentServiceImpl implements ICommentService {
 
         Long commentId = commentRepository.save(comment);
         comment.setId(commentId);
-        commentRepository.saveCommentImages(commentId, event.getImageUrls());
 
         // 更新 Redis 评论计数
         if (comment.getParentId() != null) {
@@ -122,13 +121,17 @@ public class CommentServiceImpl implements ICommentService {
             rootComments = commentRepository.findRootCommentsByHot(request.getTargetType(), request.getTargetId(), request.getPageNo(), request.getPageSize());
 
             // 写入 Redis 缓存
-            redisTemplate.executePipelined((RedisCallback<Object>) connection -> {
-                for (CommentEntity comment : rootComments) {
-                    connection.zAdd(redisKey.getBytes(), comment.getHotScore(), comment.getId().toString().getBytes());
-                }
-                connection.expire(redisKey.getBytes(), 60); // 缓存 60 秒
-                return null;
-            });
+            try {
+                redisTemplate.executePipelined((RedisCallback<Object>) connection -> {
+                    for (CommentEntity comment : rootComments) {
+                        connection.zAdd(redisKey.getBytes(), comment.getHotScore(), comment.getId().toString().getBytes());
+                    }
+                    connection.expire(redisKey.getBytes(), 60); // 缓存 60 秒
+                    return null;
+                });
+            } catch (Exception e) {
+                log.error("写入 Redis 缓存失败", e);
+            }
         }
 
         if (rootComments.isEmpty()) return Collections.emptyList();

@@ -86,35 +86,6 @@ public interface ICommentRepository {
     List<CommentEntity> findRepliesByParentIds(List<Long> parentIds);
 
     /**
-     * 查询一级评论及用户信息
-     *
-     * @param targetType
-     * @param targetId
-     * @param pageNo
-     * @param pageSize
-     * @return
-     */
-    List<FindCommentItemVO> findRootCommentWithUser(Integer targetType, Long targetId, Integer pageNo, Integer pageSize);
-
-    /**
-     * 根据父评论ID分页查询子评论及用户信息
-     *
-     * @param parentId
-     * @param pageNo
-     * @param pageSize
-     * @return
-     */
-    List<FindChildCommentItemVO> findReplyPageWithUser(Long parentId, Integer pageNo, Integer pageSize);
-
-    /**
-     * 保存评论图片
-     *
-     * @param commentId
-     * @param imageUrls
-     */
-    void saveCommentImages(Long commentId, List<String> imageUrls);
-
-    /**
      * 根据父评论ID列表查询评论列表
      *
      * @param parentIds
