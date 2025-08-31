@@ -9,6 +9,8 @@
         <result column="user_id" property="userId" jdbcType="BIGINT"/>
         <result column="reply_user_id" property="replyUserId" jdbcType="BIGINT"/>
         <result column="content" property="content" jdbcType="VARCHAR"/>
+        <result column="image_url" property="imageUrl" jdbcType="VARCHAR"/>
+        <result column="hot_score" property="hotScore" jdbcType="BIGINT"/>
         <result column="like_count" property="likeCount" jdbcType="BIGINT"/>
         <result column="reply_count" property="replyCount" jdbcType="BIGINT"/>
         <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
@@ -119,50 +121,21 @@
 
     <sql id="Base_Column_List">
         id
-        , target_type, target_id, parent_id, user_id, reply_user_id, `content`, like_count, reply_count, create_time, update_time
+        , target_type, target_id, parent_id, user_id, reply_user_id, `content`, image_url, hot_score, like_count, reply_count, create_time, update_time
     </sql>
 
     <insert id="saveComment" parameterType="cn.xu.infrastructure.persistent.po.Comment" useGeneratedKeys="true"
             keyProperty="id">
-        insert into comment (target_type, target_id, parent_id, user_id, reply_user_id, content, create_time,
+        insert into comment (target_type, target_id, parent_id, user_id, reply_user_id, content, image_url, hot_score, create_time,
                              update_time)
-        values (#{targetType}, #{targetId}, #{parentId}, #{userId}, #{replyUserId}, #{content}, #{createTime},
+        values (#{targetType}, #{targetId}, #{parentId}, #{userId}, #{replyUserId}, #{content}, #{imageUrl}, #{hotScore}, #{createTime},
                 #{updateTime})
     </insert>
 
     <insert id="saveImages">
-        INSERT INTO comment_image (comment_id, url, sort_order)
-        VALUES (#{commentId}, #{url}, #{sortOrder})
+        INSERT INTO comment_image (comment_id, image_url, sort_order)
+        VALUES (#{commentId}, #{imageUrl}, #{sortOrder})
     </insert>
-
-    <insert id="batchSaveImages">
-        INSERT INTO comment_image (comment_id, url, sort_order)
-        VALUES
-        <foreach collection="images" item="image" separator=",">
-            (#{commentId}, #{image.url}, #{image.sortOrder})
-        </foreach>
-    </insert>
-
-    <!--    &lt;!&ndash; 批量查询图片 &ndash;&gt;-->
-    <!--    <select id="selectImagesByCommentIds" resultType="cn.xu.infrastructure.persistent.po.CommentImage">-->
-    <!--        SELECT * FROM comment_image-->
-    <!--        WHERE comment_id IN-->
-    <!--        <foreach item="id" collection="commentIds" open="(" separator="," close=")">-->
-    <!--            #{id}-->
-    <!--        </foreach>-->
-    <!--        ORDER BY comment_id, sort_order-->
-    <!--    </select>-->
-
-    <!--    &lt;!&ndash; 批量查询评论基础信息 &ndash;&gt;-->
-    <!--    <select id="selectCommentsByIds" resultType="Comment">-->
-    <!--        SELECT * FROM comment-->
-    <!--        WHERE id IN-->
-    <!--        <foreach item="id" collection="ids" open="(" separator="," close=")">-->
-    <!--            #{id}-->
-    <!--        </foreach>-->
-    <!--    </select>-->
-
-    <!-- 批量查询评论基础信息 -->
 
     <update id="updateLikeCount">
         UPDATE comment
@@ -234,13 +207,7 @@
         WHERE rn &lt;= #{previewSize}
     </select>
 
-    <!-- 查询评论图片 -->
-    <select id="selectImagesByCommentIds" resultType="string">
-        SELECT url
-        FROM comment_image
-        WHERE comment_id = #{commentIds}
-        ORDER BY sort_order ASC
-    </select>
+
 
     <select id="findByTypeAndTargetId" resultMap="BaseResultMap">
         SELECT
@@ -595,37 +562,6 @@
         OFFSET #{offset};
     </select>
 
-    <select id="findReplyPageWithUserByParentId" resultMap="CommentWithUserAndReplyMap">
-        SELECT c.*,
-               u.id            as user_id,
-               u.username      as user_username,
-               u.nickname      as user_nickname,
-               u.avatar        as user_avatar,
-               u.gender        as user_gender,
-               u.region        as user_region,
-               u.description   as user_description,
-               u.follow_count  as user_follow_count,
-               u.fans_count    as user_fans_count,
-               u.like_count    as user_like_count,
-               ru.id           as reply_user_id,
-               ru.username     as reply_user_username,
-               ru.nickname     as reply_user_nickname,
-               ru.avatar       as reply_user_avatar,
-               ru.gender       as reply_user_gender,
-               ru.region       as reply_user_region,
-               ru.description  as reply_user_description,
-               ru.follow_count as reply_user_follow_count,
-               ru.fans_count   as reply_user_fans_count,
-               ru.like_count   as reply_user_like_count
-        FROM comment c
-                 LEFT JOIN user u ON c.user_id = u.id
-                 LEFT JOIN user ru ON c.reply_user_id = ru.id
-        WHERE c.parent_id = #{parentId}
-        ORDER BY c.create_time ASC
-            LIMIT #{size}
-        OFFSET #{offset};
-    </select>
-
     <select id="findCommentsBatch" resultType="cn.xu.domain.comment.model.entity.CommentEntity">
         SELECT id,
                target_type,
@@ -712,10 +648,10 @@
     </select>
 
     <select id="selectCommentsByIds" resultType="cn.xu.infrastructure.persistent.po.Comment">
-        SELECT *
+        SELECT <include refid="Base_Column_List"/>
         FROM comment
         WHERE id IN
-        <foreach collection="ids" item="id" open="(" separator="," close=")">
+        <foreach collection="commentIdList" item="id" open="(" separator="," close=")">
             #{id}
         </foreach>
     </select>

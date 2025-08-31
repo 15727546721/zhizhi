@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
@@ -16,6 +17,7 @@ import java.util.Set;
 /**
  * JSON 工具类
  **/
+@Slf4j
 public class JsonUtils {
 
     private static ObjectMapper OBJECT_MAPPER = new ObjectMapper();
