@@ -1,6 +1,5 @@
 package cn.xu.domain.file.service;
 
-
 import cn.xu.application.common.ResponseCode;
 import cn.xu.infrastructure.common.exception.BusinessException;
 import com.alibaba.fastjson2.JSONObject;
@@ -40,6 +39,54 @@ public class MinioService implements IFileStorageService {
         this.bucketName = bucketName;
     }
 
+    // Base62 字符集
+    private static final String BASE62_ALPHABET = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+    // Base62 编码方法
+    private String base62Encode(long num) {
+        StringBuilder sb = new StringBuilder();
+        while (num > 0) {
+            sb.append(BASE62_ALPHABET.charAt((int)(num % 62)));
+            num /= 62;
+        }
+        return sb.reverse().toString();
+    }
+
+    // 生成 16 位长度的唯一文件名
+    private String generateUniqueFileName(String originalFileName) {
+        // 组合时间戳和UUID，确保高唯一性
+        long timestamp = System.nanoTime(); // 使用纳秒级时间戳
+        UUID uuid = UUID.randomUUID();
+        long combined = timestamp ^ uuid.getMostSignificantBits() ^ uuid.getLeastSignificantBits();
+
+        String base62FileName = base62Encode(combined);
+
+        // 获取文件扩展名
+        String extension = "";
+        if (originalFileName != null && originalFileName.contains(".")) {
+            extension = originalFileName.substring(originalFileName.lastIndexOf("."));
+        }
+
+        // 确保精确16位长度
+        int targetLength = 16;
+        if (base62FileName.length() < targetLength) {
+            // 左侧填充随机字符到16位
+            int paddingLength = targetLength - base62FileName.length();
+            StringBuilder padded = new StringBuilder();
+            for (int i = 0; i < paddingLength; i++) {
+                padded.append(BASE62_ALPHABET.charAt(
+                        (int)(System.nanoTime() % 62)
+                ));
+            }
+            base62FileName = padded.toString() + base62FileName;
+        } else if (base62FileName.length() > targetLength) {
+            // 取后16位（最新生成的部分）
+            base62FileName = base62FileName.substring(base62FileName.length() - targetLength);
+        }
+
+        return base62FileName + extension;
+    }
+
     @Override
     public String uploadFile(MultipartFile file, String fileName) throws Exception {
         try (InputStream inputStream = file.getInputStream()) {
@@ -48,29 +95,22 @@ public class MinioService implements IFileStorageService {
                 minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucketName).build());
             }
 
-            String uniqueFileName = UUID.randomUUID().toString() + "_" + fileName;
+            // 使用 Base62 编码生成唯一的文件名
+            String uniqueFileName = generateUniqueFileName(Objects.requireNonNull(file.getOriginalFilename()));
+
             // 创建 PutObjectArgs 对象
             PutObjectArgs putObjectArgs = PutObjectArgs.builder()
                     .bucket(bucketName)
                     .object(uniqueFileName)
-                    .stream(inputStream, file.getSize(), -1) // file.getSize() 为文件大小，-1 表示不设定过期时间
+                    .stream(inputStream, file.getSize(), -1)
                     .contentType(file.getContentType())
                     .build();
 
             // 调用 putObject 方法
             minioClient.putObject(putObjectArgs);
 
-            // 生成可访问的 URL，有效期为 1 小时
-//            return minioClient.getPresignedObjectUrl(
-//                    GetPresignedObjectUrlArgs.builder()
-//                            .bucket(bucketName)
-//                            .object(uniqueFileName)
-//                            .expiry(60 * 60) // 1小时有效期
-//                            .build()
-//            );
-//            // 返回永久的可访问URL
+            // 返回生成的文件 URL
             String sharedUrl = minioUrl + "/" + bucketName + "/" + uniqueFileName;
-
             log.info("文件上传成功，可访问URL为：{}", sharedUrl);
             return sharedUrl;
         } catch (MinioException e) {
@@ -106,6 +146,36 @@ public class MinioService implements IFileStorageService {
         }
     }
 
+    // 批量上传文件
+    @Override
+    public List<String> uploadFiles(MultipartFile[] files) {
+        List<String> fileUrls = new ArrayList<>();
+        for (MultipartFile file : files) {
+            String fileUrl = null;
+            try {
+                // 使用生成的唯一文件名来上传
+                String uniqueFileName = generateUniqueFileName(Objects.requireNonNull(file.getOriginalFilename()));
+                fileUrl = uploadFile(file, uniqueFileName);
+            } catch (Exception e) {
+                log.error("上传文件失败: {}", file.getOriginalFilename(), e);
+                throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "上传文件失败：" + e.getMessage());
+            }
+            fileUrls.add(fileUrl);
+        }
+        return fileUrls;
+    }
+
+    // 批量删除文件
+    @Override
+    public void deleteFiles(List<String> fileUrls) {
+        for (String fileUrl : fileUrls) {
+            try {
+                deleteFile(fileUrl);
+            } catch (Exception e) {
+                log.error("删除文件失败: {}", fileUrl, e);
+            }
+        }
+    }
 
     public void downloadFile(String objectName, String localFilePath) throws Exception {
         try {
