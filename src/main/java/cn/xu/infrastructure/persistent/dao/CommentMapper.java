@@ -1,9 +1,7 @@
 package cn.xu.infrastructure.persistent.dao;
 
 import cn.xu.api.web.model.dto.comment.CommentQueryRequest;
-import cn.xu.api.web.model.dto.comment.FindChildCommentItemVO;
 import cn.xu.api.web.model.vo.comment.FindCommentItemVO;
-import cn.xu.application.query.comment.dto.CommentCountDTO;
 import cn.xu.domain.comment.model.entity.CommentEntity;
 import cn.xu.domain.comment.model.valueobject.CommentSortType;
 import cn.xu.infrastructure.persistent.po.Comment;
@@ -69,9 +67,6 @@ public interface CommentMapper {
             @Param("previewSize") int previewSize
     );
 
-    // 更新评论图片URL
-    void updateCommentImageUrl(@Param("commentId") Long commentId, @Param("imageUrl") String imageUrl);
-
     /**
      * 根据类型和目标ID查询评论列表
      *
@@ -131,15 +126,6 @@ public interface CommentMapper {
      * @return 二级评论列表
      */
     List<Comment> findRepliesByPage(@Param("parentId") Long parentId, @Param("offset") int offset, @Param("limit") int limit);
-
-    /**
-     * 统计一级评论总数
-     *
-     * @param type   评论类型（可选）
-     * @param userId 用户ID（可选）
-     * @return 评论总数
-     */
-    long countRootComments(@Param("targetType") Integer targetType, @Param("userId") Long userId);
 
     /**
      * 分页查询一级评论列表
@@ -202,7 +188,7 @@ public interface CommentMapper {
      * @param commentId
      * @return
      */
-    CommentEntity findCommentWithUserById(@Param("id") Long id);
+    CommentEntity findCommentWithUserById(@Param("id") Long commentId);
 
     /**
      * 根据评论ID查询评论及用户信息
@@ -226,8 +212,6 @@ public interface CommentMapper {
      * @return 评论批次
      */
     List<CommentEntity> findCommentsBatch(int offset, int batchSize);
-
-    List<CommentCountDTO> countChildCommentsGroupByParent(@Param("parentIds") List<Long> parentIds);
 
     Long countByParentId(Long commentId);
 

@@ -408,15 +408,6 @@
         LIMIT #{limit}
     </select>
 
-    <!-- 统计一级评论总数 -->
-    <select id="countRootComments" resultType="long">
-        SELECT COUNT(*)
-        FROM comment
-        WHERE target_type = #{targetType}
-          AND target_id = #{targetId}
-          AND parent_id IS NULL
-    </select>
-
     <!-- 统计子评论总数 -->
     <select id="countChildComments" resultType="long">
         SELECT COUNT(*)
@@ -577,16 +568,6 @@
         FROM comment
         ORDER BY id
             LIMIT #{offset}, #{batchSize}
-    </select>
-    <select id="countChildCommentsGroupByParent"
-            resultType="cn.xu.application.query.comment.dto.CommentCountDTO">
-        SELECT parent_id AS parentId, COUNT(*) AS count
-        FROM comment
-        WHERE parent_id IN
-        <foreach collection="parentIds" item="id" open="(" separator="," close=")">
-            #{id}
-        </foreach>
-        GROUP BY parent_id
     </select>
 
     <select id="countByParentId" resultType="java.lang.Long" parameterType="java.lang.Long">
