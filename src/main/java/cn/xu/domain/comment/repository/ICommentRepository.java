@@ -29,9 +29,9 @@ public interface ICommentRepository {
      */
     CommentEntity findById(Long id);
 
-    List<CommentEntity> findRootCommentsByHot(int targetType, long targetId, int offset, int pageSize);
+    List<CommentEntity> findRootCommentsByHot(int targetType, long targetId, int pageNo, int pageSize);
 
-    List<CommentEntity> findRootCommentsByTime(int targetType, long targetId, int offset, int pageSize);
+    List<CommentEntity> findRootCommentsByTime(int targetType, long targetId, int pageNo, int pageSize);
 
     /**
      * 根据ID删除评论

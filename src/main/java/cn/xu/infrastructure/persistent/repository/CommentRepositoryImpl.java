@@ -55,13 +55,15 @@ public class CommentRepositoryImpl implements ICommentRepository {
     }
 
     @Override
-    public List<CommentEntity> findRootCommentsByHot(int targetType, long targetId, int offset, int pageSize) {
+    public List<CommentEntity> findRootCommentsByHot(int targetType, long targetId, int pageNo, int pageSize) {
+        int offset = (pageNo - 1) * pageSize;
         List<Comment> comments = commentMapper.findRootCommentsByHot(targetType, targetId, offset, pageSize);
         return convertAndAttachImages(comments);
     }
 
     @Override
-    public List<CommentEntity> findRootCommentsByTime(int targetType, long targetId, int offset, int pageSize) {
+    public List<CommentEntity> findRootCommentsByTime(int targetType, long targetId, int pageNo, int pageSize) {
+        int offset = (pageNo - 1) * pageSize;
         List<Comment> comments = commentMapper.findRootCommentsByTime(targetType, targetId, offset, pageSize);
         return convertAndAttachImages(comments);
     }

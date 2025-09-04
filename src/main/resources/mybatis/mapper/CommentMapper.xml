@@ -102,7 +102,7 @@
         WHERE c.target_type = #{targetType}
           AND c.target_id = #{targetId}
           AND (c.parent_id IS NULL OR c.parent_id = 0)
-        ORDER BY like_count DESC
+        ORDER BY hot_score DESC
             LIMIT #{offset}, #{pageSize}
     </select>
 
