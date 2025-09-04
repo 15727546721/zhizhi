@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -73,7 +74,7 @@ public class Comment implements Serializable {
     /**
      * 热度分数
      */
-    private Long hotScore;
+    private BigDecimal hotScore;
 
     /**
      * 创建时间

@@ -6,6 +6,8 @@ import cn.xu.domain.comment.event.CommentCreatedEvent;
 import cn.xu.domain.comment.event.CommentDeletedEvent;
 import cn.xu.domain.comment.event.CommentEventPublisher;
 import cn.xu.domain.comment.model.entity.CommentEntity;
+import cn.xu.domain.comment.model.policy.HotScoreStrategy;
+import cn.xu.domain.comment.model.policy.HotScoreStrategyFactory;
 import cn.xu.domain.comment.model.valueobject.CommentSortType;
 import cn.xu.domain.comment.model.valueobject.CommentType;
 import cn.xu.domain.comment.repository.ICommentRepository;
@@ -49,6 +51,9 @@ public class CommentServiceImpl implements ICommentService {
             throw new BusinessException("用户不存在");
         }
 
+        HotScoreStrategy strategy = HotScoreStrategyFactory.getStrategy();
+        double score = HotScoreStrategyFactory.calculateInitialScore(strategy, LocalDateTime.now());
+
         CommentEntity comment = CommentEntity.builder()
                 .targetType(event.getTargetType())
                 .targetId(event.getTargetId())
@@ -59,7 +64,7 @@ public class CommentServiceImpl implements ICommentService {
                 .replyUserId(event.getReplyUserId())
                 .likeCount(0L)
                 .replyCount(0L)
-                .hotScore(0L)
+                .hotScore(score)
                 .isHot(false)
                 .createTime(LocalDateTime.now())
                 .updateTime(LocalDateTime.now())
@@ -70,9 +75,31 @@ public class CommentServiceImpl implements ICommentService {
 
         // 更新 Redis 评论计数
         if (comment.getParentId() != null) {
-            redisTemplate.opsForValue().increment(RedisKeyManager.commentCountKey(CommentType.COMMENT.getValue(), event.getCommentId()), 1);
+            // 使用已生成的commentId而不是event.getCommentId()，因为后者尚未设置
+            redisTemplate.opsForValue().increment(RedisKeyManager.commentCountKey(CommentType.COMMENT.getValue(), comment.getId()), 1);
         }
         redisTemplate.opsForValue().increment(RedisKeyManager.commentCountKey(event.getTargetType(), event.getTargetId()), 1);
+
+        // 写入 Redis 缓存（使用ZSET结构存储评论ID和热度分数）
+        try {
+            if (comment.getParentId() == null) {
+                // 一级评论写入主ZSet
+                redisTemplate.opsForZSet().add(
+                    RedisKeyManager.commentHotRankKey(CommentType.valueOf(event.getTargetType()), event.getTargetId()),
+                    comment.getId(),
+                    comment.getHotScore()
+                );
+            } else {
+                // 二级回复写入对应的回复ZSet
+                redisTemplate.opsForZSet().add(
+                    RedisKeyManager.replyHotRankKey(CommentType.valueOf(event.getTargetType()), event.getTargetId(), comment.getParentId()),
+                    comment.getId(),
+                    comment.getHotScore()
+                );
+            }
+        } catch (Exception e) {
+            log.error("写入 Redis 缓存失败", e);
+        }
 
         event.setCommentId(commentId);
         commentEventPublisher.publishCommentCreatedEvent(event);

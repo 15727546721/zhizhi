@@ -75,6 +75,6 @@ public class CommentEntity {
     private UserEntity replyUser; // 被回复用户信息
     private List<CommentEntity> children = new ArrayList<>(); // 子评论
 
-    private long hotScore; // 热度分数
+    private double hotScore; // 热度分数
     private boolean isHot; // 是否热门评论
 }

@@ -1,11 +1,9 @@
 package cn.xu.infrastructure.persistent.dao;
 
 import cn.xu.api.web.model.dto.comment.CommentQueryRequest;
-import cn.xu.api.web.model.vo.comment.FindCommentItemVO;
 import cn.xu.domain.comment.model.entity.CommentEntity;
 import cn.xu.domain.comment.model.valueobject.CommentSortType;
 import cn.xu.infrastructure.persistent.po.Comment;
-import cn.xu.infrastructure.persistent.po.CommentImage;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -17,14 +15,6 @@ public interface CommentMapper {
      * 插入评论
      */
     Long saveComment(Comment comment);
-
-    /**
-     * 插入评论图片
-     *
-     * @param images
-     * @return
-     */
-    Long saveImages(List<CommentImage> images);
 
     /**
      * 根据ID删除评论
@@ -181,28 +171,6 @@ public interface CommentMapper {
                                       @Param("sortType") CommentSortType sortType,
                                       @Param("pageNo") Integer pageNo,
                                       @Param("pageSize") Integer pageSize);
-
-    /**
-     * 根据评论ID查询评论及用户信息
-     *
-     * @param commentId
-     * @return
-     */
-    CommentEntity findCommentWithUserById(@Param("id") Long commentId);
-
-    /**
-     * 根据评论ID查询评论及用户信息
-     *
-     * @param targetType
-     * @param targetId
-     * @param offset
-     * @param size
-     * @return
-     */
-    List<FindCommentItemVO> findRootCommentWithUser(@Param("targetType") Integer targetType,
-                                                    @Param("targetId") Long targetId,
-                                                    @Param("offset") int offset,
-                                                    @Param("size") int size);
 
 
     /**

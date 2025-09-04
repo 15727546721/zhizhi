@@ -1,7 +1,5 @@
 package cn.xu.infrastructure.persistent.repository;
 
-import cn.xu.api.web.model.dto.comment.FindChildCommentItemVO;
-import cn.xu.api.web.model.vo.comment.FindCommentItemVO;
 import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.comment.model.entity.CommentEntity;
 import cn.xu.domain.comment.repository.ICommentRepository;
@@ -12,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 
 import javax.annotation.Resource;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -174,7 +173,7 @@ public class CommentRepositoryImpl implements ICommentRepository {
                 .content(entity.getContent())
                 .likeCount(entity.getLikeCount() != null ? entity.getLikeCount() : 0L)
                 .replyCount(entity.getReplyCount() != null ? entity.getReplyCount() : 0L)
-                .hotScore(entity.getHotScore())
+                .hotScore(BigDecimal.valueOf(entity.getHotScore()))
                 .createTime(entity.getCreateTime())
                 .updateTime(entity.getUpdateTime())
                 .build();
@@ -324,7 +323,7 @@ public class CommentRepositoryImpl implements ICommentRepository {
                 .replyUserId(comment.getReplyUserId())
                 .likeCount(comment.getLikeCount() != null ? comment.getLikeCount() : 0L)
                 .replyCount(comment.getReplyCount() != null ? comment.getReplyCount() : 0L)
-                .hotScore(comment.getHotScore() != null ? comment.getHotScore() : 0L)
+                .hotScore(comment.getHotScore() != null ? comment.getHotScore().doubleValue() : 0L)
                 .imageUrls(imageUrls)
                 .createTime(comment.getCreateTime())
                 .updateTime(comment.getUpdateTime())

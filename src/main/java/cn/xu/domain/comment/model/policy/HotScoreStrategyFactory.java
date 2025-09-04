@@ -1,5 +1,7 @@
 package cn.xu.domain.comment.model.policy;
 
+import java.time.LocalDateTime;
+
 public class HotScoreStrategyFactory {
 
     public enum StrategyType {
@@ -24,5 +26,21 @@ public class HotScoreStrategyFactory {
             default:
                 return new SimpleHotScoreStrategy();
         }
+    }
+
+    public static double calculateInitialScore(HotScoreStrategy strategy, LocalDateTime createTime) {
+        double rawScore = strategy.calculate(0, 0, createTime);
+
+        if (strategy instanceof SimpleHotScoreStrategy) {
+            return rawScore;
+        } else if (strategy instanceof LinearTimeDecayStrategy) {
+            return Math.max(1.0, rawScore);
+        } else if (strategy instanceof TrendingCommentStrategy) {
+            return Math.max(1.0, rawScore);
+        } else if (strategy instanceof RedditLikeHotScoreStrategy) {
+            return Math.max(0.1, rawScore);
+        }
+
+        return Math.max(1.0, rawScore);
     }
 }
