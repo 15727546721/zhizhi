@@ -3,15 +3,19 @@ package cn.xu.infrastructure.persistent.repository;
 import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.model.entity.UserInfoEntity;
-import cn.xu.domain.user.model.entity.UserRegisterEntity;
 import cn.xu.domain.user.model.valobj.Email;
+import cn.xu.domain.user.model.valobj.Username;
 import cn.xu.domain.user.model.vo.LoginFormVO;
 import cn.xu.domain.user.model.vo.UserFormVO;
 import cn.xu.domain.user.repository.IUserRepository;
 import cn.xu.infrastructure.common.exception.BusinessException;
+import cn.xu.infrastructure.persistent.converter.UserConverter;
+import cn.xu.infrastructure.persistent.converter.RoleConverter;
 import cn.xu.infrastructure.persistent.dao.RoleMapper;
 import cn.xu.infrastructure.persistent.dao.UserMapper;
+import cn.xu.infrastructure.persistent.po.Role;
 import cn.xu.infrastructure.persistent.po.User;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -24,45 +28,46 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Repository
+@RequiredArgsConstructor
 public class UserRepository implements IUserRepository {
 
-    @Resource
-    private UserMapper userDao;
-
-    @Resource
-    private TransactionTemplate transactionTemplate;
-
-    @Resource
-    private RoleMapper roleDao;
+    private final UserMapper userDao;
+    private final TransactionTemplate transactionTemplate;
+    private final RoleMapper roleDao;
+    private final UserConverter userConverter;
+    private final RoleConverter roleConverter;
 
     @Override
     public UserEntity save(UserEntity user) {
-        if (user.getId() == null) {
-            userDao.insert(user);
+        User userPO = userConverter.toDataObject(user);
+        if (userPO.getId() == null) {
+            userDao.insert(userPO);
+            user.setId(userPO.getId());
         } else {
-            userDao.update(user);
+            userDao.update(userPO);
         }
         return user;
     }
 
     @Override
-    public UserEntity findById(Long id) {
-        return userDao.selectById(id);
+    public Optional<UserEntity> findById(Long id) {
+        User user = userDao.selectById(id);
+        return Optional.ofNullable(userConverter.toDomainEntity(user));
     }
 
     @Override
-    public Optional<UserEntity> findByUsername(String username) {
-        return Optional.ofNullable(convertToUserEntity(userDao.selectByUsername(username)));
+    public Optional<UserEntity> findByUsername(Username username) {
+        return Optional.ofNullable(userConverter.toDomainEntity(userDao.selectByUsername(username.getValue())));
     }
 
     @Override
     public Optional<UserEntity> findByEmail(Email email) {
-        return Optional.ofNullable(convertToUserEntity(userDao.selectByEmail(email.getValue())));
+        return Optional.ofNullable(userConverter.toDomainEntity(userDao.selectByEmail(email.getValue())));
     }
 
     @Override
-    public boolean existsByUsername(String username) {
-        return userDao.countByUsername(username) > 0;
+    public boolean existsByUsername(Username username) {
+        return userDao.countByUsername(username.getValue()) > 0;
     }
 
     @Override
@@ -74,7 +79,7 @@ public class UserRepository implements IUserRepository {
     public List<UserEntity> findByPage(Integer page, Integer size) {
         int offset = (page - 1) * size;
         return userDao.selectByPage(offset, size).stream()
-                .map(this::convertToUserEntity)
+                .map(userConverter::toDomainEntity)
                 .collect(Collectors.toList());
     }
 
@@ -82,10 +87,9 @@ public class UserRepository implements IUserRepository {
     public List<UserEntity> findAll() {
         List<User> userEntityList = userDao.selectAll();
         return userEntityList.stream()
-                .map(this::convertToUserEntity)
+                .map(userConverter::toDomainEntity)
                 .collect(Collectors.toList());
     }
-
 
     @Override
     public void deleteById(Long id) {
@@ -94,9 +98,9 @@ public class UserRepository implements IUserRepository {
                 userDao.deleteById(id);
                 return null;
             } catch (Exception e) {
-                log.error("删除用户失败, 用户ID: " + id, e);
+                log.error("Delete user failed, user ID: " + id, e);
                 status.setRollbackOnly();
-                throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "删除用户失败");
+                throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "Delete user failed");
             }
         });
     }
@@ -107,18 +111,18 @@ public class UserRepository implements IUserRepository {
             return new ArrayList<>();
         }
         
-        // 调用DAO层查询
+        // Call DAO layer query
         List<User> users = userDao.findByIds(userIds);
         
-        // 转换为领域实体
+        // Convert to domain entities
         return users.stream()
-                .map(this::convertToEntity)
+                .map(userConverter::toDomainEntity)
                 .collect(Collectors.toList());
     }
 
     @Override
     public UserInfoEntity findUserInfoById(Long userId) {
-        UserEntity user = userDao.selectById(userId);
+        User user = userDao.selectById(userId);
         if (user == null) {
             return null;
         }
@@ -140,79 +144,21 @@ public class UserRepository implements IUserRepository {
     }
 
     @Override
-    public LoginFormVO findUserByUsername(String username) {
-        User user = userDao.selectByUsername(username);
-        if (user == null) {
-            return null;
-        }
-        return new LoginFormVO(user.getUsername(), user.getPassword());
-    }
-
-    @Override
-    public List<String> findRolesByUserId(Long userId) {
-        return roleDao.selectRolesByUserid(userId);
-    }
-
-    @Override
-    public String getNicknameById(Long userId) {
-        return userDao.selectById(userId).getNickname();
-    }
-
-    @Override
     public void update(UserEntity userEntity) {
-        userDao.update(userEntity);
+        User userPO = userConverter.toDataObject(userEntity);
+        userDao.update(userPO);
     }
-
+    
     @Override
     public UserFormVO findUsernameAndPasswordByUsername(String username) {
         return userDao.selectUsernameAndPasswordByUsername(username);
     }
-
+    
     @Override
-    public long register(UserRegisterEntity user) {
-        Long userId = userDao.register(user);
-        if (userId == null) {
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "注册失败");
-        }
-        return userId;
-    }
-
-    private UserEntity convertToUserEntity(User user) {
-        if (user == null) {
-            return null;
-        }
-        return UserEntity.builder()
-                .id(user.getId())
-                .username(user.getUsername())
-                .email(user.getEmail())
-                .nickname(user.getNickname())
-                .avatar(user.getAvatar())
-                .gender(user.getGender())
-                .phone(user.getPhone())
-                .region(user.getRegion())
-                .birthday(user.getBirthday())
-                .status(user.getStatus())
-                .description(user.getDescription())
-                .createTime(user.getCreateTime())
-                .updateTime(user.getUpdateTime())
-                .build();
-    }
-
-    /**
-     * PO转换为领域实体
-     */
-    private UserEntity convertToEntity(User user) {
-        if (user == null) {
-            return null;
-        }
-        return UserEntity.builder()
-                .id(user.getId())
-                .username(user.getUsername())
-                .nickname(user.getNickname())
-                .email(user.getEmail())
-                .avatar(user.getAvatar())
-                .createTime(user.getCreateTime())
-                .updateTime(user.getUpdateTime())
-                .build();
+    public List<String> findRolesByUserId(Long userId) {
+        List<Role> roles = roleDao.findRolesByUserId(userId);
+        return roles.stream()
+                .map(Role::getName)
+                .collect(Collectors.toList());
     }
 }

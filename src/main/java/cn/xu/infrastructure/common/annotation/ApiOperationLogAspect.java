@@ -84,7 +84,10 @@ public class ApiOperationLogAspect {
         ApiOperationLog apiOperationLog = method.getAnnotation(ApiOperationLog.class);
 
         // 4. 获取描述信息
-        return apiOperationLog.description();
+        if (apiOperationLog != null) {
+            return apiOperationLog.description();
+        }
+        return "";
     }
 
     /**

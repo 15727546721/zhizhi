@@ -1,6 +1,5 @@
 package cn.xu.infrastructure.persistent.dao;
 
-import cn.xu.domain.notification.model.entity.NotificationEntity;
 import cn.xu.infrastructure.persistent.po.Notification;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -21,17 +20,17 @@ public interface NotificationMapper {
     /**
      * 更新通知
      */
-    void update(NotificationEntity notification);
+    void update(Notification notification);
     
     /**
      * 根据ID查询通知
      */
-    NotificationEntity selectById(@Param("id") Long id);
+    Notification selectById(@Param("id") Long id);
     
     /**
      * 根据接收者ID和类型分页查询通知
      */
-    List<NotificationEntity> findByReceiverIdAndType(
+    List<Notification> findByReceiverIdAndType(
             @Param("receiverId") Long receiverId,
             @Param("type") int type,
             @Param("pageable") org.springframework.data.domain.Pageable pageable);
@@ -39,7 +38,7 @@ public interface NotificationMapper {
     /**
      * 根据接收者ID和类型分页查询通知（使用offset和limit）
      */
-    List<NotificationEntity> selectByReceiverIdAndType(
+    List<Notification> selectByReceiverIdAndType(
             @Param("receiverId") Long receiverId,
             @Param("type") int type,
             @Param("offset") int offset,

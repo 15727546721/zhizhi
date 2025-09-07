@@ -31,12 +31,23 @@ public class ArticleTagRepository implements IArticleTagRepository {
         }
         articleTagDao.insertBatchByList(articleTagRels);
     }
+    
+    @Override
+    public void saveArticleTags(Long articleId, List<Long> tagIds) {
+        saveArticleTag(articleId, tagIds);
+    }
 
     @Override
     public void deleteByArticleId(Long articleId) {
         log.info("删除文章标签 articleId: {}", articleId);
         articleTagDao.deleteByArticleId(articleId);
-
+    }
+    
+    @Override
+    public List<Long> findTagIdsByArticleId(Long articleId) {
+        // 这里需要实现从数据库查询标签ID的逻辑
+        // 暂时返回空列表，需要在ArticleTagMapper中添加相应的查询方法
+        return new LinkedList<>();
     }
 
 }

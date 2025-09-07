@@ -1,7 +1,6 @@
 package cn.xu.infrastructure.persistent.read.elastic.init;
 
 import cn.xu.domain.comment.model.entity.CommentEntity;
-import cn.xu.domain.comment.model.valueobject.HotScorePolicy;
 import cn.xu.domain.comment.repository.ICommentRepository;
 import cn.xu.infrastructure.persistent.read.elastic.model.CommentIndex;
 import cn.xu.infrastructure.persistent.read.elastic.repository.CommentElasticRepository;
@@ -9,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+@ConditionalOnProperty(name = "spring.elasticsearch.enabled", havingValue = "true", matchIfMissing = false)
 public class CommentDataInitializer implements ApplicationRunner {
 
     private final ICommentRepository commentRepository;
@@ -58,20 +59,17 @@ public class CommentDataInitializer implements ApplicationRunner {
         index.setParentId(entity.getParentId());
         index.setUserId(entity.getUserId());
         index.setReplyUserId(entity.getReplyUserId());
-        index.setContent(entity.getContent());
+        index.setContent(entity.getContentValue());
         index.setLikeCount(entity.getLikeCount() != null ? entity.getLikeCount() : 0);
         index.setReplyCount(entity.getReplyCount() != null ? entity.getReplyCount() : 0);
         index.setCreateTime(entity.getCreateTime());
 
         // 计算热度（确保参与计算的值非 null）
-        long likeCount = entity.getLikeCount() != null ? entity.getLikeCount() : 0;
-        long replyCount = entity.getReplyCount() != null ? entity.getReplyCount() : 0;
-
-        index.setHotScore(HotScorePolicy.calculate(
-                likeCount,
-                replyCount,
-                entity.getCreateTime()
-        ));
+        double hotScore = cn.xu.domain.comment.model.valueobject.HotScorePolicy.calculate(
+                entity.getLikeCount() != null ? entity.getLikeCount() : 0,
+                entity.getReplyCount() != null ? entity.getReplyCount() : 0,
+                entity.getCreateTime());
+        index.setHotScore(hotScore);
 
         return index;
     }

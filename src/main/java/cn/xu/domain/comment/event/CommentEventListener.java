@@ -103,11 +103,19 @@ public class CommentEventListener {
             // 1. 更新目标对象的评论计数
 //            updateTargetCommentCount(event.getTargetType(), event.getTargetId(), -1);
 
-//            // 2. 清理相关数据
+            // 2. 从热度排行中移除评论
+            hotScoreService.removeHotScore(
+                event.getCommentId(), 
+                event.getTargetType(), 
+                event.getTargetId(), 
+                event.isRootComment() ? null : event.getCommentId()
+            );
+
+//            // 3. 清理相关数据
 //            commentImageRepository.deleteByCommentId(event.getCommentId());
 //            commentRedisRepository.clearLikeCount(event.getCommentId());
 //
-//            // 3. 如果是根评论，删除所有子评论
+//            // 4. 如果是根评论，删除所有子评论
 //            if (event.isRootComment()) {
 //                commentRepository.deleteAllReplies(event.getCommentId());
 //            }

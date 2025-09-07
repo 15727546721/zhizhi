@@ -91,6 +91,13 @@ public class NotificationEntity {
     }
 
     /**
+     * 检查状态是否有效
+     */
+    public boolean isStatus() {
+        return Boolean.TRUE.equals(status);
+    }
+
+    /**
      * 验证实体的有效性
      */
     public void validate() {

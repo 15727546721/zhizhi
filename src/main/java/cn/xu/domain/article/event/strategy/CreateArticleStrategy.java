@@ -12,7 +12,12 @@ public class CreateArticleStrategy extends AbstractArticleStrategy {
     public void handle(ArticleEvent event) {
         if (event.getType() != ArticleEvent.ArticleEventType.CREATED) return;
         log.info("处理文章创建事件: {}", event);
+        
+        // 检查Elasticsearch是否可用
+        if (!isElasticsearchAvailable()) {
+            return;
+        }
+        
         elasticService.indexArticle(toEntity(event));
     }
 }
-

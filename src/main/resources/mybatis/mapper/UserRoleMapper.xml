@@ -19,5 +19,19 @@
         FROM user_role
         WHERE user_id = #{userId}
     </delete>
+    
+    <!-- 批量保存用户角色关联 -->
+    <insert id="saveUserRoles">
+        INSERT INTO user_role (user_id, role_id) VALUES
+        <foreach collection="roleIds" item="roleId" separator=",">
+            (#{userId}, #{roleId})
+        </foreach>
+    </insert>
+    
+    <!-- 删除用户角色关联 -->
+    <delete id="deleteByUserId">
+        DELETE FROM user_role
+        WHERE user_id = #{userId}
+    </delete>
 
 </mapper>

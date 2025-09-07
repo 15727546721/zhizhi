@@ -1,11 +1,9 @@
 package cn.xu.domain.comment.service;
 
 import cn.xu.api.web.model.dto.comment.FindReplyReq;
-import cn.xu.api.web.model.vo.comment.FindCommentItemVO;
 import cn.xu.api.web.model.dto.comment.FindCommentReq;
 import cn.xu.domain.comment.event.CommentCreatedEvent;
 import cn.xu.domain.comment.model.entity.CommentEntity;
-import cn.xu.domain.user.model.entity.UserEntity;
 
 import java.util.List;
 

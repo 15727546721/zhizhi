@@ -1,36 +1,44 @@
 package cn.xu.infrastructure.persistent.repository;
 
-
 import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.article.model.aggregate.ArticleAndTagAgg;
 import cn.xu.domain.article.model.entity.TagEntity;
 import cn.xu.domain.article.repository.ITagRepository;
 import cn.xu.infrastructure.common.exception.BusinessException;
+import cn.xu.infrastructure.persistent.converter.TagConverter;
 import cn.xu.infrastructure.persistent.dao.TagMapper;
 import cn.xu.infrastructure.persistent.po.ArticleTag;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 
-import javax.annotation.Resource;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * 标签仓储实现类
+ * 通过TagConverter进行领域实体与持久化对象的转换，遵循DDD防腐层模式
+ * 
+ * @author xu
+ */
 @Slf4j
 @Repository
+@RequiredArgsConstructor
 public class TagRepository implements ITagRepository {
 
-    @Resource
-    private TagMapper tagDao;
+    private final TagMapper tagDao;
+    private final TagConverter tagConverter;
 
     @Override
     public void save(TagEntity tag) {
         log.info("保存标签: {}", tag);
-        ArticleTag build = ArticleTag.builder()
-                .id(tag.getId())
-                .name(tag.getName())
-                .build();
+        if (tag == null) {
+            throw new IllegalArgumentException("标签实体不能为空");
+        }
+        
         try {
-            tagDao.insert(build);
+            ArticleTag articleTagPO = tagConverter.toDataObject(tag);
+            tagDao.insert(articleTagPO);
         } catch (Exception e) {
             log.error("保存标签失败: {}", e.getMessage());
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "保存标签失败");
@@ -42,24 +50,20 @@ public class TagRepository implements ITagRepository {
         // 查询标签列表，使用分页
         List<ArticleTag> articleTagList = tagDao.selectListByPage((page - 1) * size, size);
         log.info("查询标签列表，返回结果：{}", articleTagList);
-
-        // 将 Tag 对象转换为 TagEntity 对象
-        List<TagEntity> tagEntityList = articleTagList.stream()
-                .map(this::convertToTagEntity)
-                .collect(Collectors.toList());
-
-        return tagEntityList;
+        
+        return tagConverter.toDomainEntities(articleTagList);
     }
 
     @Override
     public void update(TagEntity tagEntity) {
         log.info("更新标签: {}", tagEntity);
+        if (tagEntity == null) {
+            throw new IllegalArgumentException("标签实体不能为空");
+        }
+        
         try {
-            ArticleTag articleTag = ArticleTag.builder()
-                    .id(tagEntity.getId())
-                    .name(tagEntity.getName())
-                    .build();
-            tagDao.update(articleTag);
+            ArticleTag articleTagPO = tagConverter.toDataObject(tagEntity);
+            tagDao.update(articleTagPO);
         } catch (Exception e) {
             log.error("更新标签失败: {}", e.getMessage());
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "更新标签失败");
@@ -86,7 +90,7 @@ public class TagRepository implements ITagRepository {
         try {
             ArticleTag articleTag = tagDao.selectById(tagId);
             log.info("查询标签结果: {}", articleTag);
-            return convertToTagEntity(articleTag);
+            return tagConverter.toDomainEntity(articleTag);
         } catch (Exception e) {
             log.error("查询标签失败: {}", e.getMessage());
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "查询标签失败");
@@ -95,51 +99,29 @@ public class TagRepository implements ITagRepository {
 
     @Override
     public List<TagEntity> getTagSelectList() {
-        // 查询标签列表，使用分页
+        // 查询标签列表
         List<ArticleTag> articleTagList = tagDao.selectList();
         log.info("查询标签列表，返回结果：{}", articleTagList);
-
-        // 将 Tag 对象转换为 TagEntity 对象
-        List<TagEntity> tagEntityList = articleTagList.stream()
-                .map(this::convertToTagEntity)
-                .collect(Collectors.toList());
-
-        return tagEntityList;
+        
+        return tagConverter.toDomainEntities(articleTagList);
     }
 
     @Override
     public List<TagEntity> getTagsByArticleId(Long articleId) {
-        List<ArticleTag> articleTag = tagDao.selectByArticleId(articleId);
-        log.info("查询文章ID: {} 对应的标签: {}", articleId, articleTag);
-        List<TagEntity> tagEntityList = articleTag.stream()
-                .map(this::convertToTagEntity)
-                .collect(Collectors.toList());
-        return tagEntityList;
+        List<ArticleTag> articleTagList = tagDao.selectByArticleId(articleId);
+        log.info("查询文章ID: {} 对应的标签: {}", articleId, articleTagList);
+        return tagConverter.toDomainEntities(articleTagList);
     }
 
     @Override
     public List<TagEntity> getTagList() {
         List<ArticleTag> articleTagList = tagDao.selectList();
         log.info("查询标签列表，返回结果：{}", articleTagList);
-        return articleTagList.stream()
-                .map(this::convertToTagEntity)
-                .collect(Collectors.toList());
+        return tagConverter.toDomainEntities(articleTagList);
     }
 
     @Override
     public List<ArticleAndTagAgg> selectByArticleIds(List<Long> articleIds) {
         return tagDao.selectByArticleIds(articleIds);
-    }
-
-    private TagEntity convertToTagEntity(ArticleTag articleTag) {
-        if (articleTag == null) {
-            return null;
-        }
-        TagEntity tagEntity = new TagEntity();
-        tagEntity.setId(articleTag.getId());
-        tagEntity.setName(articleTag.getName());
-        tagEntity.setCreateTime(articleTag.getCreateTime());
-        tagEntity.setUpdateTime(articleTag.getUpdateTime());
-        return tagEntity;
     }
 }

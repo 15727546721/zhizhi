@@ -8,15 +8,18 @@ import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
-public class DeleteArticleStrategy implements ArticleEventStrategy {
-
-    @Autowired
-    private ArticleElasticService elasticService;
+public class DeleteArticleStrategy extends AbstractArticleStrategy {
 
     @Override
     public void handle(ArticleEvent event) {
         if (event.getType() != ArticleEvent.ArticleEventType.DELETED) return;
         log.info("处理文章删除事件: {}", event);
+        
+        // 检查Elasticsearch是否可用
+        if (!isElasticsearchAvailable()) {
+            return;
+        }
+        
         elasticService.removeIndexedArticle(event.getArticleId());
     }
 }

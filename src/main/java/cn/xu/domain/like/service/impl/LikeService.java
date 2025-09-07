@@ -6,6 +6,7 @@ import cn.xu.domain.like.event.LikeEventPublisher;
 import cn.xu.domain.like.model.LikeType;
 import cn.xu.domain.like.repository.ILikeRepository;
 import cn.xu.domain.like.service.ILikeService;
+import cn.xu.domain.like.service.LikeDomainService;
 import cn.xu.infrastructure.cache.LuaScriptManager;
 import cn.xu.infrastructure.cache.RedisKeyManager;
 import cn.xu.infrastructure.common.exception.BusinessException;
@@ -31,6 +32,9 @@ public class LikeService implements ILikeService {
 
     @Autowired
     private ILikeRepository likeRepository;
+    
+    @Autowired
+    private LikeDomainService likeDomainService;
 
     @Override
     public void like(Long userId, Integer type, Long targetId) {
@@ -45,7 +49,7 @@ public class LikeService implements ILikeService {
                 throw new BusinessException("您已经点赞过了！");
             }
 
-            if (Boolean.FALSE.equals(member) && likeRepository.checkStatus(userId, type, targetId)) {
+            if (Boolean.FALSE.equals(member) && likeRepository.checkStatus(userId, Objects.requireNonNull(LikeType.valueOf(type)), targetId)) {
                 // 数据库已有点赞，缓存写入并返回异常
                 redisTemplate.opsForSet().add(likeKey, userId.toString());
                 throw new BusinessException("您已经点赞过了！");
@@ -64,7 +68,7 @@ public class LikeService implements ILikeService {
 
         } catch (Exception e) {
             log.error("点赞失败", e);
-            return;
+            throw new BusinessException("点赞失败，请稍后再试！");
         }
 
         // 发布异步事件（写库等后续处理）
@@ -113,7 +117,7 @@ public class LikeService implements ILikeService {
             // 未登录用户默认未点赞
             return false;
         }
-        return likeRepository.checkStatus(userId, type, targetId);
+        return likeRepository.checkStatus(userId, Objects.requireNonNull(LikeType.valueOf(type)), targetId);
     }
 
     /**

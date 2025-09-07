@@ -19,24 +19,10 @@ spring:
       connection-timeout: 30000 #数据库连接超时时间,默认30秒，即30000
       connection-test-query: SELECT 1
   elasticsearch:
-#      uris: http://124.222.71.27:9200  # 您的ES服务器地址
-      uris: 124.222.71.27:9200  # 您的ES服务器地址
-      connection-timeout: 5s
-      read-timeout: 30s
-  flyway:
-    # flyway 开启/关闭
-    enabled: true
-    # 当迁移时发现目标schema非空，而且带有没有元数据的表时，是否自动执行基准迁移，默认false.
-    baseline-on-migrate: true
-    # 是否允许无序的迁移，默认false.
-    out-of-order: true
-    # 迁移时是否校验，默认为true
-    validate-on-migrate: false
-    # 迁移脚本的位置，默认db/migration.
-    #    locations: classpath:db/migration
-    # flyway 基线版本号
-    baseline-version: 2025
-
+    enabled: true  # 开发环境中默认禁用Elasticsearch
+    uris: 124.222.71.27:9200  # ES服务器地址
+    connection-timeout: 5s
+    read-timeout: 30s
 # 可选：配置索引名称
 app:
   elasticsearch:
@@ -84,7 +70,7 @@ sa-token:
   # token风格
   token-style: uuid
   # 是否输出操作日志
-  is-log: false
+  is-log: true
   # 配置 Sa-Token 单独使用的 Redis 连接
   alone-redis:
     # Redis数据库索引（默认为0）
@@ -102,7 +88,8 @@ minio:
   url: http://localhost:5000
   accessKey: admin
   secretKey: superadmin
-  bucketName: your-bucket-name
+  bucketName: zhizhi
+  enabled: true  # 在开发环境中启用MinIO
 
 
 # 日志

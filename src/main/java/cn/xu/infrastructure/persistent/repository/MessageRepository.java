@@ -3,25 +3,33 @@ package cn.xu.infrastructure.persistent.repository;
 import cn.xu.domain.message.model.entity.MessageEntity;
 import cn.xu.domain.message.model.entity.MessageType;
 import cn.xu.domain.message.repository.IMessageRepository;
+import cn.xu.infrastructure.persistent.converter.MessageConverter;
 import cn.xu.infrastructure.persistent.dao.MessageMapper;
 import cn.xu.infrastructure.persistent.po.Message;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
+/**
+ * 消息仓储实现类
+ * 通过MessageConverter进行领域实体与持久化对象的转换，遵循DDD防腐层模式
+ * 
+ * @author xu
+ */
 @Repository
 @RequiredArgsConstructor
 public class MessageRepository implements IMessageRepository {
 
     private final MessageMapper messageDao;
+    private final MessageConverter messageConverter;
 
     @Override
     public void save(MessageEntity entity) {
-        Message po = convertToPO(entity);
+        Message po = messageConverter.toDataObject(entity);
         if (po.getId() == null) {
             messageDao.insert(po);
+            entity.setId(po.getId());
         } else {
             messageDao.update(po);
         }
@@ -30,15 +38,13 @@ public class MessageRepository implements IMessageRepository {
     @Override
     public MessageEntity findById(Long id) {
         Message po = messageDao.selectById(id);
-        return po != null ? convertToEntity(po) : null;
+        return messageConverter.toDomainEntity(po);
     }
 
     @Override
     public List<MessageEntity> findByUserId(Long userId, MessageType type, int offset, int limit) {
         List<Message> messages = messageDao.selectByUserId(userId, type != null ? type.getCode() : null, offset, limit);
-        return messages.stream()
-                .map(this::convertToEntity)
-                .collect(Collectors.toList());
+        return messageConverter.toDomainEntities(messages);
     }
 
     @Override
@@ -66,33 +72,5 @@ public class MessageRepository implements IMessageRepository {
         return messageDao.exists(id);
     }
 
-    private Message convertToPO(MessageEntity entity) {
-        return Message.builder()
-                .id(entity.getId())
-                .type(entity.getType().getCode())
-                .senderId(entity.getSenderId())
-                .receiverId(entity.getReceiverId())
-                .title(entity.getTitle())
-                .content(entity.getContent())
-                .targetId(entity.getTargetId())
-                .isRead(entity.getIsRead() ? 1 : 0)
-                .createTime(entity.getCreateTime())
-                .updateTime(entity.getUpdateTime())
-                .build();
-    }
 
-    private MessageEntity convertToEntity(Message po) {
-        return MessageEntity.builder()
-                .id(po.getId())
-                .type(MessageType.fromCode(po.getType()))
-                .senderId(po.getSenderId())
-                .receiverId(po.getReceiverId())
-                .title(po.getTitle())
-                .content(po.getContent())
-                .targetId(po.getTargetId())
-                .isRead(po.getIsRead() == 1)
-                .createTime(po.getCreateTime())
-                .updateTime(po.getUpdateTime())
-                .build();
-    }
 } 

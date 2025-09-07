@@ -30,4 +30,14 @@ public enum BusinessType {
         throw new BusinessException("[通知服务]: 不存在的业务类型");
     }
 
+    /**
+     * 根据值获取业务类型（兼容Repository层调用）
+     */
+    public static BusinessType fromValue(Integer value) {
+        if (value == null) {
+            return null;
+        }
+        return getType(value);
+    }
+
 }

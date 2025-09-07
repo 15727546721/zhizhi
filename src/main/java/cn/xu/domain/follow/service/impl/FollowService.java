@@ -26,22 +26,20 @@ public class FollowService implements IFollowService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void follow(Long followerId, Long followedId) {
-        // 不能关注自己
-        if (followerId.equals(followedId)) {
-            throw new BusinessException("不能关注自己");
-        }
+        // 使用领域实体的验证方法
+        UserFollowEntity.validateFollowRelation(followerId, followedId);
 
         UserFollowEntity existingFollow = userFollowRepository.getByFollowerAndFollowed(followerId, followedId);
         if (existingFollow != null) {
             if (existingFollow.getStatus() == FollowStatus.FOLLOWED) {
                 return;
             }
+            // 使用领域实体的业务方法
+            existingFollow.follow();
             userFollowRepository.updateStatus(followerId, followedId, FollowStatus.FOLLOWED.getValue());
         } else {
-            UserFollowEntity newFollow = new UserFollowEntity()
-                    .setFollowerId(followerId)
-                    .setFollowedId(followedId)
-                    .setStatus(FollowStatus.FOLLOWED);
+            // 使用领域实体的静态工厂方法
+            UserFollowEntity newFollow = UserFollowEntity.createFollow(followerId, followedId);
             userFollowRepository.save(newFollow);
         }
         // 推送关注事件
@@ -57,6 +55,8 @@ public class FollowService implements IFollowService {
     public void unfollow(Long followerId, Long followedId) {
         UserFollowEntity existingFollow = userFollowRepository.getByFollowerAndFollowed(followerId, followedId);
         if (existingFollow != null && existingFollow.getStatus() == FollowStatus.FOLLOWED) {
+            // 使用领域实体的业务方法
+            existingFollow.unfollow();
             userFollowRepository.updateStatus(followerId, followedId, FollowStatus.UNFOLLOWED.getValue());
         }
         // 推送取消关注事件
@@ -70,7 +70,8 @@ public class FollowService implements IFollowService {
     @Override
     public boolean isFollowing(Long followerId, Long followedId) {
         UserFollowEntity follow = userFollowRepository.getByFollowerAndFollowed(followerId, followedId);
-        return follow != null && follow.getStatus() == FollowStatus.FOLLOWED;
+        // 使用领域实体的业务方法
+        return follow != null && follow.isFollowed();
     }
 
     @Override

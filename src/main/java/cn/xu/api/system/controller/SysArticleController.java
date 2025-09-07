@@ -12,6 +12,8 @@ import cn.xu.domain.article.model.aggregate.ArticleAndAuthorAggregate;
 import cn.xu.domain.article.model.entity.ArticleEntity;
 import cn.xu.domain.article.model.entity.CategoryEntity;
 import cn.xu.domain.article.model.entity.TagEntity;
+import cn.xu.domain.article.model.valobj.ArticleTitle;
+import cn.xu.domain.article.model.valobj.ArticleContent;
 import cn.xu.domain.article.service.IArticleService;
 import cn.xu.domain.article.service.IArticleTagService;
 import cn.xu.domain.article.service.ICategoryService;
@@ -24,6 +26,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -48,7 +51,7 @@ public class SysArticleController {
     private ICategoryService categoryService;
     @Resource
     private TransactionTemplate transactionTemplate;
-    @Resource
+    @Autowired(required = false) // 设置为非必需，允许Elasticsearch不可用
     private ArticleElasticService articleElasticService;
     @Resource
     private ArticleEventPublisher eventPublisher;
@@ -71,9 +74,9 @@ public class SysArticleController {
                 //1. 保存文章和分类id
                 ArticleEntity article = ArticleEntity.builder()
                         .categoryId(createArticleRequest.getCategoryId())
-                        .title(createArticleRequest.getTitle())
+                        .title(new ArticleTitle(createArticleRequest.getTitle()))
                         .coverUrl(createArticleRequest.getCoverUrl())
-                        .content(createArticleRequest.getContent())
+                        .content(new ArticleContent(createArticleRequest.getContent()))
                         .description(createArticleRequest.getDescription())
                         .userId(StpUtil.getLoginIdAsLong())
                         .build();
@@ -114,9 +117,9 @@ public class SysArticleController {
                 ArticleEntity article = ArticleEntity.builder()
                         .id(createArticleRequest.getId())
                         .categoryId(createArticleRequest.getCategoryId())
-                        .title(createArticleRequest.getTitle())
+                        .title(new ArticleTitle(createArticleRequest.getTitle()))
                         .coverUrl(createArticleRequest.getCoverUrl())
-                        .content(createArticleRequest.getContent())
+                        .content(new ArticleContent(createArticleRequest.getContent()))
                         .description(createArticleRequest.getDescription())
                         .userId(StpUtil.getLoginIdAsLong())
                         .build();
@@ -223,14 +226,21 @@ public class SysArticleController {
 
     }
 
-    @GetMapping("/search")
-    @Operation(summary = "搜索文章")
+    @PostMapping("/search")
     public ResponseEntity<List<ArticleEntity>> searchArticles(@RequestParam String title) {
         try {
             if (StringUtils.isBlank(title)) {
                 return ResponseEntity.<List<ArticleEntity>>builder()
                     .code(ResponseCode.ILLEGAL_PARAMETER.getCode())
                     .info("搜索关键词不能为空")
+                    .build();
+            }
+
+            // 检查Elasticsearch是否可用
+            if (articleElasticService == null) {
+                return ResponseEntity.<List<ArticleEntity>>builder()
+                    .code(ResponseCode.UN_ERROR.getCode())
+                    .info("搜索服务不可用")
                     .build();
             }
 
@@ -262,9 +272,9 @@ public class SysArticleController {
                 //1. 保存文章和分类id
                 ArticleEntity article = ArticleEntity.builder()
                         .categoryId(publishArticleRequest.getCategoryId())
-                        .title(publishArticleRequest.getTitle())
+                        .title(new ArticleTitle(publishArticleRequest.getTitle()))
                         .coverUrl(publishArticleRequest.getCoverUrl())
-                        .content(publishArticleRequest.getContent())
+                        .content(new ArticleContent(publishArticleRequest.getContent()))
                         .description(publishArticleRequest.getDescription())
                         .userId(userId)
                         .build();

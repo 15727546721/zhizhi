@@ -2,32 +2,35 @@ package cn.xu.infrastructure.persistent.repository;
 
 import cn.xu.domain.permission.model.entity.RoleEntity;
 import cn.xu.domain.permission.repository.IRoleRepository;
+import cn.xu.infrastructure.persistent.converter.RoleConverter;
 import cn.xu.infrastructure.persistent.dao.RoleMapper;
 import cn.xu.infrastructure.persistent.po.Role;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import javax.annotation.Resource;
 import java.util.List;
-import java.util.stream.Collectors;
 
+/**
+ * 角色仓储实现类
+ * 通过RoleConverter进行领域实体与持久化对象的转换，遵循DDD防腐层模式
+ * 
+ * @author xu
+ */
 @Slf4j
 @Repository
+@RequiredArgsConstructor
 public class RoleRepository implements IRoleRepository {
 
-    @Resource
-    private RoleMapper roleDao;
-
-    @Resource
-    private TransactionTemplate transactionTemplate;
+    private final RoleMapper roleDao;
+    private final TransactionTemplate transactionTemplate;
+    private final RoleConverter roleConverter;
 
     @Override
     public List<RoleEntity> findRolePage(String name, Integer offset, Integer size) {
-        return roleDao.selectRolePage(name, offset, size)
-                .stream()
-                .map(this::convertToRoleEntity)
-                .collect(Collectors.toList());
+        List<Role> roles = roleDao.selectRolePage(name, offset, size);
+        return roleConverter.toDomainEntities(roles);
     }
 
     @Override
@@ -37,20 +40,21 @@ public class RoleRepository implements IRoleRepository {
 
     @Override
     public RoleEntity findById(Long id) {
-        return convertToRoleEntity(roleDao.selectRoleById(id));
+        Role role = roleDao.selectRoleById(id);
+        return roleConverter.toDomainEntity(role);
     }
 
     @Override
     public RoleEntity save(RoleEntity role) {
-        Role rolePO = convertToRolePO(role);
+        Role rolePO = roleConverter.toDataObject(role);
         if (role.getId() == null) {
             roleDao.insertRole(rolePO);
+            role.setId(rolePO.getId());
         } else {
             roleDao.updateRole(rolePO);
         }
-        return convertToRoleEntity(rolePO);
+        return role;
     }
-
     @Override
     public void deleteByIds(List<Long> ids) {
         transactionTemplate.execute(status -> {
@@ -64,30 +68,5 @@ public class RoleRepository implements IRoleRepository {
                 throw e;
             }
         });
-    }
-
-    private RoleEntity convertToRoleEntity(Role role) {
-        if (role == null) {
-            return null;
-        }
-        return RoleEntity.builder()
-                .id(role.getId())
-                .code(role.getCode())
-                .name(role.getName())
-                .remark(role.getRemark())
-                .createTime(role.getCreateTime())
-                .updateTime(role.getUpdateTime())
-                .build();
-    }
-
-    private Role convertToRolePO(RoleEntity role) {
-        return Role.builder()
-                .id(role.getId())
-                .code(role.getCode())
-                .name(role.getName())
-                .remark(role.getRemark())
-                .createTime(role.getCreateTime())
-                .updateTime(role.getUpdateTime())
-                .build();
     }
 } 

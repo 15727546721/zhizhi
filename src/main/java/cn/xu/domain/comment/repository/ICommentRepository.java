@@ -16,8 +16,10 @@ public interface ICommentRepository {
     Long save(CommentEntity commentEntity);
 
     /**
-     * 查询所有评论（用于ES数据初始化）
-     * @return 所有评论列表
+     * 查询所有评论（用于ES数据初始化和缓存预热）
+     * @param offset 偏移量
+     * @param batchSize 批量大小
+     * @return 评论列表
      */
     List<CommentEntity> findCommentBatch(int offset, int batchSize);
 
@@ -29,8 +31,24 @@ public interface ICommentRepository {
      */
     CommentEntity findById(Long id);
 
+    /**
+     * 根据热度查询根评论
+     * @param targetType 目标类型
+     * @param targetId 目标ID
+     * @param pageNo 页码
+     * @param pageSize 每页数量
+     * @return 评论列表
+     */
     List<CommentEntity> findRootCommentsByHot(int targetType, long targetId, int pageNo, int pageSize);
 
+    /**
+     * 根据时间查询根评论
+     * @param targetType 目标类型
+     * @param targetId 目标ID
+     * @param pageNo 页码
+     * @param pageSize 每页数量
+     * @return 评论列表
+     */
     List<CommentEntity> findRootCommentsByTime(int targetType, long targetId, int pageNo, int pageSize);
 
     /**
@@ -88,8 +106,8 @@ public interface ICommentRepository {
     /**
      * 根据父评论ID列表查询评论列表
      *
-     * @param parentIds
-     * @return
+     * @param parentIds 父评论ID列表
+     * @return 评论列表
      */
     List<CommentEntity> findByParentIds(List<Long> parentIds);
 
@@ -108,7 +126,13 @@ public interface ICommentRepository {
      */
     List<CommentEntity> findRepliesByParentIdByHot(Long parentId, int page, int size);
 
+    /**
+     * 根据评论ID查询最新子评论
+     */
     List<CommentEntity> findRepliesByParentIdByTime(Long parentId, int page, int size);
 
+    /**
+     * 根据评论ID列表查询评论
+     */
     List<CommentEntity> findCommentsByIds(List<Long> commentIdList);
 }

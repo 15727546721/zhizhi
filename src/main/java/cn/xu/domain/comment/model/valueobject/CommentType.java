@@ -29,4 +29,8 @@ public enum CommentType {
         }
         throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "评论类型不正确");
     }
-} 
+    
+    public String getDescription() {
+        return description;
+    }
+}

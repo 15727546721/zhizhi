@@ -3,7 +3,6 @@ package cn.xu.infrastructure.persistent.dao;
 import cn.xu.api.system.model.dto.article.ArticleRequest;
 import cn.xu.api.web.model.vo.article.ArticleListVO;
 import cn.xu.api.web.model.vo.article.ArticlePageVO;
-import cn.xu.domain.article.model.entity.ArticleEntity;
 import cn.xu.infrastructure.persistent.po.Article;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -22,7 +21,7 @@ public interface ArticleMapper {
 
     void update(Article article);
 
-    List<ArticleEntity> queryArticleByPage(@Param("page") int page, @Param("size") int size);
+    List<Article> queryArticleByPage(@Param("page") int page, @Param("size") int size);
 
     List<ArticleListVO> queryByCategoryId(Long categoryId);
 
@@ -94,6 +93,26 @@ public interface ArticleMapper {
     /**
      * 获取文章
      */
-    List<ArticleEntity> getArticlePageList(@Param("offset") Integer offset,
-                                           @Param("size") Integer size);
+    List<Article> getArticlePageList(@Param("offset") Integer offset,
+                                     @Param("size") Integer size);
+    
+    /**
+     * 检查文章是否存在
+     */
+    boolean existsById(@Param("id") Long id);
+    
+    /**
+     * 统计用户已发布文章数量
+     */
+    Long countPublishedByUserId(@Param("userId") Long userId);
+    
+    /**
+     * 获取已发布文章列表（分页）
+     */
+    List<Article> getPublishedArticlePageList(@Param("offset") Integer offset, @Param("size") Integer size);
+    
+    /**
+     * 根据用户ID查询文章列表
+     */
+    List<Article> findByUserId(@Param("userId") Long userId);
 }

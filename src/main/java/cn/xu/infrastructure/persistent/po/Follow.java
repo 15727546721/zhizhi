@@ -1,5 +1,6 @@
 package cn.xu.infrastructure.persistent.po;
 
+import lombok.Builder;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
@@ -7,6 +8,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Data
+@Builder
 @Accessors(chain = true)
 public class Follow implements Serializable {
     /**

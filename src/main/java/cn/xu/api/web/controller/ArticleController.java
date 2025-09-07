@@ -11,7 +11,10 @@ import cn.xu.api.web.model.vo.article.FindArticlePageListVO;
 import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.article.model.aggregate.ArticleAndTagAgg;
 import cn.xu.domain.article.model.entity.ArticleEntity;
+import cn.xu.domain.article.model.valobj.ArticleContent;
 import cn.xu.domain.article.model.valobj.ArticleStatus;
+import cn.xu.domain.article.model.valobj.ArticleTitle;
+import cn.xu.domain.article.service.ArticleQueryDomainService;
 import cn.xu.domain.article.service.IArticleService;
 import cn.xu.domain.article.service.IArticleTagService;
 import cn.xu.domain.article.service.ITagService;
@@ -23,11 +26,14 @@ import cn.xu.domain.user.service.IUserService;
 import cn.xu.infrastructure.common.annotation.ApiOperationLog;
 import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.common.response.ResponseEntity;
-import cn.xu.infrastructure.persistent.read.elastic.service.ArticleElasticService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.bind.annotation.*;
 
@@ -52,7 +58,7 @@ public class ArticleController {
     @Resource
     private TransactionTemplate transactionTemplate;
     @Resource
-    private ArticleElasticService articleElasticService;
+    private ArticleQueryDomainService articleQueryDomainService; // 注入文章查询领域服务
     @Resource
     private IUserService userService;
     @Resource
@@ -117,9 +123,9 @@ public class ArticleController {
                 //1. 保存文章和分类id
                 long id = articleService.createArticle(ArticleEntity.builder()
                         .categoryId(publishArticleRequest.getCategoryId())
-                        .title(publishArticleRequest.getTitle())
+                        .title(new ArticleTitle(publishArticleRequest.getTitle()))
                         .coverUrl(publishArticleRequest.getCoverUrl())
-                        .content(publishArticleRequest.getContent())
+                        .content(new ArticleContent(publishArticleRequest.getContent()))
                         .description(publishArticleRequest.getDescription())
                         .userId(userId) // 当前登录用户ID
                         .status(ArticleStatus.PUBLISHED)
@@ -167,9 +173,9 @@ public class ArticleController {
                 articleService.publishArticle(ArticleEntity.builder()
                         .id(publishArticleRequest.getId())
                         .categoryId(publishArticleRequest.getCategoryId())
-                        .title(publishArticleRequest.getTitle())
+                        .title(new ArticleTitle(publishArticleRequest.getTitle()))
                         .coverUrl(publishArticleRequest.getCoverUrl())
-                        .content(publishArticleRequest.getContent())
+                        .content(new ArticleContent(publishArticleRequest.getContent()))
                         .description(publishArticleRequest.getDescription())
                         .userId(userId) // 当前登录用户ID
                         .status(ArticleStatus.PUBLISHED)
@@ -207,8 +213,8 @@ public class ArticleController {
         //1. 保存文章，并将状态设置为草稿
         Long articleId = articleService.createOrUpdateArticleDraft(ArticleEntity.builder()
                 .id(draftRequest.getId())
-                .title(draftRequest.getTitle())
-                .content(draftRequest.getContent())
+                .title(draftRequest.getTitle() != null ? new ArticleTitle(draftRequest.getTitle()) : null)
+                .content(draftRequest.getContent() != null ? new ArticleContent(draftRequest.getContent()) : null)
                 .userId(userId)
                 .status(ArticleStatus.DRAFT)
                 .build());
@@ -246,24 +252,28 @@ public class ArticleController {
 
     @GetMapping("/search")
     @Operation(summary = "搜索文章")
-    public ResponseEntity<List<ArticleEntity>> searchArticles(@RequestParam String title) {
+    public ResponseEntity<Page<ArticleEntity>> searchArticles(@RequestParam String title,
+                                                              @RequestParam(defaultValue = "0") int page,
+                                                              @RequestParam(defaultValue = "10") int size) {
         try {
             if (StringUtils.isBlank(title)) {
-                return ResponseEntity.<List<ArticleEntity>>builder()
+                return ResponseEntity.<Page<ArticleEntity>>builder()
                         .code(ResponseCode.ILLEGAL_PARAMETER.getCode())
                         .info("搜索关键词不能为空")
                         .build();
             }
 
-            List<ArticleEntity> articles = articleElasticService.searchArticles(title);
-            return ResponseEntity.<List<ArticleEntity>>builder()
+            Pageable pageable = PageRequest.of(page, size);
+            Page<ArticleEntity> articles = articleQueryDomainService.searchArticlesByTitle(title, pageable);
+            
+            return ResponseEntity.<Page<ArticleEntity>>builder()
                     .data(articles)
                     .code(ResponseCode.SUCCESS.getCode())
                     .info("搜索成功")
                     .build();
         } catch (Exception e) {
             log.error("文章搜索失败: {}", e.getMessage(), e);
-            return ResponseEntity.<List<ArticleEntity>>builder()
+            return ResponseEntity.<Page<ArticleEntity>>builder()
                     .code(ResponseCode.UN_ERROR.getCode())
                     .info("搜索失败")
                     .build();

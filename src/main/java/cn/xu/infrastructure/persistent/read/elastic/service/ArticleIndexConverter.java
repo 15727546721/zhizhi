@@ -9,7 +9,7 @@ public class ArticleIndexConverter {
     public static ArticleIndex from(ArticleEntity article) {
         ArticleIndex index = new ArticleIndex();
         index.setId(article.getId());
-        index.setTitle(article.getTitle());
+        index.setTitle(article.getTitleValue());
         index.setDescription(article.getDescription());
         index.setCoverUrl(article.getCoverUrl());
         index.setUserId(article.getUserId());

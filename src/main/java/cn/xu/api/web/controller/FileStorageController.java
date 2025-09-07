@@ -1,7 +1,7 @@
 package cn.xu.api.web.controller;
 
 import cn.xu.application.common.ResponseCode;
-import cn.xu.domain.file.service.IFileStorageService;
+import cn.xu.application.service.FileApplicationService;
 import cn.xu.infrastructure.common.annotation.ApiOperationLog;
 import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.common.response.ResponseEntity;
@@ -18,7 +18,7 @@ import java.util.List;
 public class FileStorageController {
 
     @Resource
-    private IFileStorageService fileStorageService;
+    private FileApplicationService fileApplicationService;
 
     /**
      * 通用文件上传
@@ -27,7 +27,10 @@ public class FileStorageController {
     @ApiOperationLog(description = "文件上传")
     public ResponseEntity<List<String>> uploadFiles(@RequestParam("files") MultipartFile[] files) {
         try {
-            List<String> fileUrls = fileStorageService.uploadFiles(files);
+            // TODO: 从上下文获取用户ID，这里暂时使用默认值
+            Long uploadUserId = 1L;
+            
+            List<String> fileUrls = fileApplicationService.uploadFiles(files, uploadUserId);
             return ResponseEntity.success(fileUrls);
         } catch (Exception e) {
             log.error("文件上传失败", e);
@@ -45,7 +48,10 @@ public class FileStorageController {
             throw new BusinessException(ResponseCode.PARAM_ERROR.getCode(), "fileUrls不能为空");
         }
         try {
-            fileStorageService.deleteFiles(fileUrls);
+            // TODO: 从上下文获取用户ID，这里暂时使用默认值
+            Long operatorUserId = 1L;
+            
+            fileApplicationService.deleteFiles(fileUrls, operatorUserId);
             return ResponseEntity.success();
         } catch (Exception e) {
             log.error("批量删除文件失败", e);

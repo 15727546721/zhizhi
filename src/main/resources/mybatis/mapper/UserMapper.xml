@@ -32,7 +32,7 @@
     </sql>
 
 
-    <insert id="insert" parameterType="cn.xu.domain.user.model.entity.UserEntity" useGeneratedKeys="true"
+    <insert id="insert" parameterType="cn.xu.infrastructure.persistent.po.User" useGeneratedKeys="true"
             keyProperty="id">
         INSERT INTO user (username, password, email, nickname, avatar, gender, phone, region, birthday, description,
                           status)
@@ -42,14 +42,11 @@
 
     <insert id="register" useGeneratedKeys="true" keyProperty="id">
         insert into `user`
-        (username, password, nickname, email, avatar, status, create_time, update_time, gender, phone, region, birthday,
-         description, follow_count, fans_count, like_count, last_login_time, last_login_ip)
-        values (#{username}, #{password}, #{nickname}, #{email}, #{avatar}, #{status}, now(), now(), #{gender},
-                #{phone}, #{region}, #{birthday}, #{description}, #{followCount}, #{fansCount}, #{likeCount},
-                #{lastLoginTime}, #{lastLoginIp})
+        (username, password, nickname, email, status, create_time, update_time)
+        values (#{username}, #{password}, #{nickname}, #{email}, 0, now(), now())
     </insert>
 
-    <update id="update" parameterType="cn.xu.domain.user.model.entity.UserEntity">
+    <update id="update" parameterType="cn.xu.infrastructure.persistent.po.User">
         UPDATE user
         <set>
             <if test="username != null">username = #{username},</if>
@@ -78,7 +75,7 @@
         WHERE id = #{followeeId}
     </update>
 
-    <select id="selectById" resultType="cn.xu.domain.user.model.entity.UserEntity">
+    <select id="selectById" resultMap="userMap">
         SELECT
         <include refid="Base_Column_List"/>
         FROM user
@@ -136,7 +133,7 @@
     </select>
 
     <!-- 根据用户ID查询用户信息和角色 -->
-    <select id="getUserInfoWithRoles" resultType="cn.xu.domain.user.model.entity.UserInfoEntity">
+    <select id="getUserInfoWithRoles" resultMap="userMap">
         SELECT u.id,
                u.username,
                u.nickname,
@@ -155,7 +152,7 @@
     </select>
 
     <!-- 根据用户名查询用户信息和角色 -->
-    <select id="getUserInfoWithRolesByUsername" resultType="cn.xu.domain.user.model.entity.UserInfoEntity">
+    <select id="getUserInfoWithRolesByUsername" resultMap="userMap">
         SELECT u.id,
                u.username,
                u.nickname,

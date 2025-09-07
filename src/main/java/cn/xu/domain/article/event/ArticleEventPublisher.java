@@ -31,9 +31,9 @@ public class ArticleEventPublisher {
     private void publish(ArticleEntity article, ArticleEvent.ArticleEventType type) {
         publisher.publishEvent(ArticleEvent.builder()
                 .articleId(article.getId())
-                .title(article.getTitle())
+                .title(article.getTitle() != null ? article.getTitle().getValue() : null)
                 .description(article.getDescription())
-                .content(article.getContent())
+                .content(article.getContent() != null ? article.getContent().getValue() : null)
                 .userId(article.getUserId())
                 .type(type)
                 .build());

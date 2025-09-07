@@ -11,6 +11,11 @@ import cn.xu.domain.comment.model.policy.HotScoreStrategyFactory;
 import cn.xu.domain.comment.model.valueobject.CommentSortType;
 import cn.xu.domain.comment.model.valueobject.CommentType;
 import cn.xu.domain.comment.repository.ICommentRepository;
+import cn.xu.domain.comment.service.CommentAggregateDomainService;
+import cn.xu.domain.comment.service.CommentCacheDomainService;
+import cn.xu.domain.comment.service.CommentCreationDomainService;
+import cn.xu.domain.comment.service.CommentManagementDomainService;
+import cn.xu.domain.comment.service.CommentQueryDomainService;
 import cn.xu.domain.comment.service.ICommentService;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.service.IUserService;
@@ -37,6 +42,12 @@ public class CommentServiceImpl implements ICommentService {
 
     private final ICommentRepository commentRepository;
     private final CommentEventPublisher commentEventPublisher;
+    private final CommentQueryDomainService commentQueryDomainService;
+    private final CommentCacheDomainService commentCacheDomainService;
+    private final CommentAggregateDomainService commentAggregateDomainService;
+    private final CommentManagementDomainService commentManagementDomainService;
+    private final CommentCreationDomainService commentCreationDomainService;
+    
     @Resource
     private IUserService userService;
     @Resource
@@ -45,130 +56,110 @@ public class CommentServiceImpl implements ICommentService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Long saveComment(CommentCreatedEvent event) {
-        Long currentUserId = userService.getCurrentUserId();
-        UserEntity currentUser = userService.getUserById(currentUserId);
-        if (currentUser == null) {
-            throw new BusinessException("用户不存在");
-        }
-
-        HotScoreStrategy strategy = HotScoreStrategyFactory.getStrategy();
-        double score = HotScoreStrategyFactory.calculateInitialScore(strategy, LocalDateTime.now());
-
-        CommentEntity comment = CommentEntity.builder()
-                .targetType(event.getTargetType())
-                .targetId(event.getTargetId())
-                .parentId(event.getParentId())
-                .userId(currentUserId)
-                .content(event.getContent())
-                .imageUrls(event.getImageUrls())
-                .replyUserId(event.getReplyUserId())
-                .likeCount(0L)
-                .replyCount(0L)
-                .hotScore(score)
-                .isHot(false)
-                .createTime(LocalDateTime.now())
-                .updateTime(LocalDateTime.now())
-                .build();
-
-        Long commentId = commentRepository.save(comment);
-        comment.setId(commentId);
-
-        // 更新 Redis 评论计数
-        if (comment.getParentId() != null) {
-            // 使用已生成的commentId而不是event.getCommentId()，因为后者尚未设置
-            redisTemplate.opsForValue().increment(RedisKeyManager.commentCountKey(CommentType.COMMENT.getValue(), comment.getId()), 1);
-        }
-        redisTemplate.opsForValue().increment(RedisKeyManager.commentCountKey(event.getTargetType(), event.getTargetId()), 1);
-
-        // 写入 Redis 缓存（使用ZSET结构存储评论ID和热度分数）
-        try {
-            if (comment.getParentId() == null) {
-                // 一级评论写入主ZSet
-                redisTemplate.opsForZSet().add(
-                    RedisKeyManager.commentHotRankKey(CommentType.valueOf(event.getTargetType()), event.getTargetId()),
-                    comment.getId(),
-                    comment.getHotScore()
-                );
-            } else {
-                // 二级回复写入对应的回复ZSet
-                redisTemplate.opsForZSet().add(
-                    RedisKeyManager.replyHotRankKey(CommentType.valueOf(event.getTargetType()), event.getTargetId(), comment.getParentId()),
-                    comment.getId(),
-                    comment.getHotScore()
-                );
-            }
-        } catch (Exception e) {
-            log.error("写入 Redis 缓存失败", e);
-        }
-
-        event.setCommentId(commentId);
-        commentEventPublisher.publishCommentCreatedEvent(event);
-        return commentId;
+        return commentCreationDomainService.createComment(event);
     }
 
     @Override
     public List<CommentEntity> findCommentListWithPreview(FindCommentReq request) {
-        if (request == null) return Collections.emptyList();
-        if (StringUtils.isBlank(request.getSortType())) {
-            request.setSortType(CommentSortType.HOT.name());
+        if (request == null) {
+            return Collections.emptyList();
         }
-
-        CommentSortType sortType = CommentSortType.valueOf(request.getSortType().toUpperCase());
-        return (sortType == CommentSortType.HOT) ? sortByHot(request) : sortByTime(request);
+        
+        // 参数校验和排序类型确定
+        CommentSortType sortType = commentQueryDomainService.validateAndGetSortType(request.getSortType());
+        
+        try {
+            List<CommentEntity> rootComments = (sortType == CommentSortType.HOT) 
+                ? findCommentsByHotSort(request) 
+                : findCommentsByTimeSort(request);
+            
+            if (rootComments.isEmpty()) {
+                return Collections.emptyList();
+            }
+            
+            // 获取子评论并组装
+            enrichCommentsWithChildren(rootComments, sortType);
+            
+            // 填充用户信息
+            commentAggregateDomainService.fillUserInfo(rootComments);
+            
+            return rootComments;
+        } catch (Exception e) {
+            log.error("查询评论列表失败: targetType={}, targetId={}, sortType={}", 
+                    request.getTargetType(), request.getTargetId(), sortType, e);
+            return Collections.emptyList();
+        }
     }
 
-    private List<CommentEntity> sortByTime(FindCommentReq request) {
-        List<CommentEntity> rootComments = commentRepository.findRootCommentsByTime(
-                request.getTargetType(), request.getTargetId(), request.getPageNo(), request.getPageSize());
-
-        if (rootComments.isEmpty()) return Collections.emptyList();
-
-        List<Long> parentIds = rootComments.stream().map(CommentEntity::getId).collect(Collectors.toList());
-        List<CommentEntity> childComments = commentRepository.findRepliesByParentIdsByTime(parentIds, 2);
-
-        mergeChildren(rootComments, childComments);
-        fillUserInfo(rootComments);
-        return rootComments;
+    /**
+     * 按时间排序查询评论
+     */
+    private List<CommentEntity> findCommentsByTimeSort(FindCommentReq request) {
+        return commentQueryDomainService.findRootCommentsByTime(
+                request.getTargetType(), 
+                request.getTargetId(), 
+                request.getPageNo(), 
+                request.getPageSize());
     }
 
-    private List<CommentEntity> sortByHot(FindCommentReq request) {
-        String redisKey = RedisKeyManager.commentHotRankKey(CommentType.valueOf(request.getTargetType()), request.getTargetId());
+    /**
+     * 按热度排序查询评论
+     */
+    private List<CommentEntity> findCommentsByHotSort(FindCommentReq request) {
+        CommentType commentType = CommentType.valueOf(request.getTargetType());
         int start = (request.getPageNo() - 1) * request.getPageSize();
         int end = start + request.getPageSize() - 1;
 
-        Set<Object> commentIds = redisTemplate.opsForZSet().reverseRange(redisKey, start, end);
-        List<CommentEntity> rootComments;
-
-        if (commentIds != null && !commentIds.isEmpty()) {
-            List<Long> ids = commentIds.stream().map(id -> Long.parseLong(id.toString())).collect(Collectors.toList());
-            Map<Long, CommentEntity> map = commentRepository.findCommentsByIds(ids)
-                    .stream().collect(Collectors.toMap(CommentEntity::getId, Function.identity()));
-            rootComments = ids.stream().map(map::get).filter(Objects::nonNull).collect(Collectors.toList());
-        } else {
-            rootComments = commentRepository.findRootCommentsByHot(request.getTargetType(), request.getTargetId(), request.getPageNo(), request.getPageSize());
-
-            // 写入 Redis 缓存
-            try {
-                redisTemplate.executePipelined((RedisCallback<Object>) connection -> {
-                    for (CommentEntity comment : rootComments) {
-                        connection.zAdd(redisKey.getBytes(), comment.getHotScore(), comment.getId().toString().getBytes());
-                    }
-                    connection.expire(redisKey.getBytes(), 60); // 缓存 60 秒
-                    return null;
-                });
-            } catch (Exception e) {
-                log.error("写入 Redis 缓存失败", e);
-            }
+        // 检查是否为空结果缓存
+        if (commentCacheDomainService.isEmptyResultCached(commentType, request.getTargetId())) {
+            return Collections.emptyList();
         }
 
-        if (rootComments.isEmpty()) return Collections.emptyList();
+        // 尝试从缓存获取
+        List<Long> cachedIds = commentCacheDomainService.getHotCommentIdsFromCache(
+                commentType, request.getTargetId(), start, end);
 
-        List<Long> parentIds = rootComments.stream().map(CommentEntity::getId).collect(Collectors.toList());
-        List<CommentEntity> childComments = commentRepository.findRepliesByParentIdsByHot(parentIds, 2);
+        if (!cachedIds.isEmpty()) {
+            // 缓存命中：查询评论详情并按缓存顺序返回
+            List<CommentEntity> comments = commentQueryDomainService.findCommentsByIds(cachedIds);
+            List<CommentEntity> sortedComments = commentCacheDomainService.sortCommentsByIds(cachedIds, comments);
+            
+            // 如果有无效数据，清理缓存
+            if (sortedComments.size() < cachedIds.size()) {
+                commentCacheDomainService.cleanupInvalidCacheData(
+                        commentType, request.getTargetId(), cachedIds, sortedComments);
+            }
+            
+            return sortedComments;
+        }
 
-        mergeChildren(rootComments, childComments);
-        fillUserInfo(rootComments);
-        return rootComments;
+        // 缓存未命中：从数据库查询并更新缓存
+        List<CommentEntity> comments = commentQueryDomainService.findRootCommentsByHot(
+                request.getTargetType(), request.getTargetId(), 
+                request.getPageNo(), request.getPageSize());
+
+        // 异步更新缓存
+        commentCacheDomainService.cacheHotCommentRank(commentType, request.getTargetId(), comments);
+
+        return comments;
+    }
+
+    /**
+     * 为评论添加子评论
+     */
+    private void enrichCommentsWithChildren(List<CommentEntity> rootComments, CommentSortType sortType) {
+        if (rootComments.isEmpty()) {
+            return;
+        }
+        
+        List<Long> parentIds = rootComments.stream()
+                .map(CommentEntity::getId)
+                .collect(Collectors.toList());
+        
+        List<CommentEntity> childComments = commentQueryDomainService.findChildComments(
+                parentIds, sortType, 2);
+        
+        commentAggregateDomainService.mergeChildren(rootComments, childComments);
     }
 
     @Override
@@ -180,87 +171,25 @@ public class CommentServiceImpl implements ICommentService {
             replies = commentRepository.findRepliesByParentIdByTime(request.getParentId(), request.getPageNo(), request.getPageSize());
         }
 
-        fillUserInfo(replies);
+        commentAggregateDomainService.fillUserInfo(replies);
         return replies;
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void deleteComment(Long commentId) {
-        CommentEntity comment = validateCommentExists(commentId);
-        validateDeletePermission(comment);
-        deleteCommentInternal(comment);
+        commentManagementDomainService.deleteUserComment(commentId);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void deleteCommentByAdmin(Long commentId) {
-        CommentEntity comment = validateCommentExists(commentId);
-        deleteCommentInternal(comment);
+        commentManagementDomainService.deleteCommentByAdmin(commentId);
     }
 
     @Override
     public CommentEntity getCommentById(Long commentId) {
-        return commentRepository.findById(commentId);
+        return commentManagementDomainService.validateCommentExists(commentId);
     }
 
-    private void deleteCommentInternal(CommentEntity comment) {
-        int deletedCount = 1;
-        if (comment.getParentId() == null) {
-            deletedCount += commentRepository.deleteByParentId(comment.getId());
-        }
-        commentRepository.deleteById(comment.getId());
-
-        commentEventPublisher.publishCommentDeletedEvent(CommentDeletedEvent.builder()
-                .commentId(comment.getId())
-                .targetType(comment.getTargetType())
-                .targetId(comment.getTargetId())
-                .isRootComment(comment.getParentId() == null)
-                .build());
-
-        log.info("评论删除成功 - commentId: {}, 删除数量: {}", comment.getId(), deletedCount);
-    }
-
-    private void mergeChildren(List<CommentEntity> parents, List<CommentEntity> children) {
-        Map<Long, List<CommentEntity>> childMap = children.stream().collect(Collectors.groupingBy(CommentEntity::getParentId));
-        parents.forEach(parent -> parent.setChildren(childMap.getOrDefault(parent.getId(), Collections.emptyList())));
-    }
-
-    private void fillUserInfo(List<CommentEntity> comments) {
-        Set<Long> userIds = new HashSet<>();
-        comments.forEach(comment -> collectUserIdsRecursive(comment, userIds));
-        Map<Long, UserEntity> userMap = userService.getBatchUserInfo(userIds);
-        comments.forEach(comment -> fillUserInfoRecursive(comment, userMap));
-    }
-
-    private void collectUserIdsRecursive(CommentEntity comment, Set<Long> userIds) {
-        if (comment.getUserId() != null) userIds.add(comment.getUserId());
-        if (comment.getReplyUserId() != null) userIds.add(comment.getReplyUserId());
-        if (comment.getChildren() != null) {
-            comment.getChildren().forEach(child -> collectUserIdsRecursive(child, userIds));
-        }
-    }
-
-    private void fillUserInfoRecursive(CommentEntity comment, Map<Long, UserEntity> userMap) {
-        comment.setUser(userMap.get(comment.getUserId()));
-        comment.setReplyUser(userMap.get(comment.getReplyUserId()));
-        if (comment.getChildren() != null) {
-            comment.getChildren().forEach(child -> fillUserInfoRecursive(child, userMap));
-        }
-    }
-
-    private CommentEntity validateCommentExists(Long commentId) {
-        CommentEntity comment = commentRepository.findById(commentId);
-        if (comment == null) {
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "评论不存在");
-        }
-        return comment;
-    }
-
-    private void validateDeletePermission(CommentEntity comment) {
-        Long currentUserId = userService.getCurrentUserId();
-        if (!comment.getUserId().equals(currentUserId)) {
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "只能删除自己发布的评论");
-        }
-    }
 }

@@ -24,7 +24,7 @@
     </resultMap>
 
     <resultMap id="ArticleListResultMap" type="cn.xu.api.web.model.vo.article.ArticleListVO">
-        <association property="article" javaType="cn.xu.domain.article.model.entity.ArticleEntity">
+        <association property="article" javaType="cn.xu.infrastructure.persistent.po.Article">
             <result property="id" column="id"/>
             <result property="title" column="title"/>
             <result property="description" column="description"/>
@@ -36,7 +36,7 @@
             <result property="createTime" column="create_time"/>
             <result property="updateTime" column="update_time"/>
         </association>
-        <association property="user" javaType="cn.xu.domain.user.model.entity.UserEntity">
+        <association property="user" javaType="cn.xu.infrastructure.persistent.po.User">
             <result property="id" column="user_id"/>
             <result property="nickname" column="nickname"/>
             <result property="avatar" column="avatar"/>
@@ -179,13 +179,13 @@
         FROM article
         WHERE id = #{id}
     </select>
-    <select id="queryArticleByPage" resultType="cn.xu.domain.article.model.entity.ArticleEntity">
+    <select id="queryArticleByPage" resultType="cn.xu.infrastructure.persistent.po.Article">
         SELECT
         <include refid="Base_Column_List"/>
         FROM article
         WHERE status = 1
         ORDER BY
-            a.create_time DESC;
+            create_time DESC
     </select>
 
     <!-- 分页查询文章列表 -->
@@ -334,13 +334,46 @@
         LIMIT #{offset}, #{size}
     </select>
 
-    <select id="getArticlePageList" resultType="cn.xu.domain.article.model.entity.ArticleEntity">
+    <select id="getArticlePageList" resultType="cn.xu.infrastructure.persistent.po.Article">
         SELECT
         <include refid="Base_Column_List"/>
         FROM article
         WHERE status = 1
         ORDER BY create_time DESC
         LIMIT #{offset}, #{size}
+    </select>
+    
+    <!-- 检查文章是否存在 -->
+    <select id="existsById" resultType="java.lang.Boolean">
+        SELECT COUNT(1) > 0
+        FROM article
+        WHERE id = #{id}
+    </select>
+    
+    <!-- 统计用户已发布文章数量 -->
+    <select id="countPublishedByUserId" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM article
+        WHERE user_id = #{userId} AND status = 1
+    </select>
+    
+    <!-- 获取已发布文章列表（分页） -->
+    <select id="getPublishedArticlePageList" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM article
+        WHERE status = 1
+        ORDER BY create_time DESC
+        LIMIT #{offset}, #{size}
+    </select>
+    
+    <!-- 根据用户ID查询文章列表 -->
+    <select id="findByUserId" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM article
+        WHERE user_id = #{userId}
+        ORDER BY create_time DESC
     </select>
 
 </mapper>

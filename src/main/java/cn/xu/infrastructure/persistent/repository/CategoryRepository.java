@@ -1,34 +1,38 @@
 package cn.xu.infrastructure.persistent.repository;
 
-
 import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.article.model.entity.CategoryEntity;
 import cn.xu.domain.article.repository.ICategoryRepository;
 import cn.xu.infrastructure.common.exception.BusinessException;
+import cn.xu.infrastructure.persistent.converter.CategoryConverter;
 import cn.xu.infrastructure.persistent.dao.CategoryMapper;
 import cn.xu.infrastructure.persistent.po.ArticleCategory;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 
-import javax.annotation.Resource;
 import java.util.List;
-import java.util.stream.Collectors;
 
+/**
+ * 分类仓储实现类
+ * 通过CategoryConverter进行领域实体与持久化对象的转换，遵循DDD防腐层模式
+ * 
+ * @author xu
+ */
 @Slf4j
 @Repository
+@RequiredArgsConstructor
 public class CategoryRepository implements ICategoryRepository {
 
-    @Resource
-    private CategoryMapper categoryDao;
+    private final CategoryMapper categoryDao;
+    private final CategoryConverter categoryConverter;
 
     @Override
     public void save(CategoryEntity category) {
-
         try {
-            categoryDao.insert(ArticleCategory.builder()
-                    .id(category.getId())
-                    .name(category.getName())
-                    .build());
+            ArticleCategory articleCategory = categoryConverter.toDataObject(category);
+            categoryDao.insert(articleCategory);
+            category.setId(articleCategory.getId());
         } catch (Exception e) {
             log.error("保存分类失败", e);
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "保存分类失败");
@@ -39,20 +43,14 @@ public class CategoryRepository implements ICategoryRepository {
     public List<CategoryEntity> queryCategoryList(int page, int size) {
         List<ArticleCategory> articleCategoryList = categoryDao.selectListByPage((page - 1) * size, size);
         log.info("查询分类列表，返回结果：{}", articleCategoryList);
-        List<CategoryEntity> categoryEntityList = articleCategoryList.stream()
-                .map(this::convertToCategoryEntity)
-                .collect(Collectors.toList());
-
-        return categoryEntityList;
+        return categoryConverter.toDomainEntities(articleCategoryList);
     }
 
     @Override
     public void update(CategoryEntity categoryEntity) {
         try {
-            categoryDao.update(ArticleCategory.builder()
-                    .id(categoryEntity.getId())
-                    .name(categoryEntity.getName())
-                    .build());
+            ArticleCategory articleCategory = categoryConverter.toDataObject(categoryEntity);
+            categoryDao.update(articleCategory);
         } catch (Exception e) {
             log.error("更新分类失败", e);
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "更新分类失败");
@@ -73,11 +71,7 @@ public class CategoryRepository implements ICategoryRepository {
     public List<CategoryEntity> getCategorySelect() {
         List<ArticleCategory> articleCategoryList = categoryDao.selectList();
         log.info("查询分类列表，返回结果：{}", articleCategoryList);
-        List<CategoryEntity> categoryEntityList = articleCategoryList.stream()
-                .map(this::convertToCategoryEntity)
-                .collect(Collectors.toList());
-
-        return categoryEntityList;
+        return categoryConverter.toDomainEntities(articleCategoryList);
     }
 
     @Override
@@ -85,30 +79,16 @@ public class CategoryRepository implements ICategoryRepository {
         log.info("查询文章分类，文章ID：{}", id);
         ArticleCategory articleCategory = categoryDao.selectByArticleId(id);
         log.info("查询文章分类，返回结果：{}", articleCategory);
-        return convertToCategoryEntity(articleCategory);
+        return categoryConverter.toDomainEntity(articleCategory);
     }
 
     @Override
     public List<CategoryEntity> getCategoryList() {
-
         List<ArticleCategory> articleCategoryList = categoryDao.selectList();
         log.info("查询分类列表，返回结果：{}", articleCategoryList);
-
-        return articleCategoryList.stream()
-                .map(this::convertToCategoryEntity)
-                .collect(Collectors.toList());
+        return categoryConverter.toDomainEntities(articleCategoryList);
     }
 
 
-    private CategoryEntity convertToCategoryEntity(ArticleCategory articleCategory) {
-        if (articleCategory == null) {
-            return null;
-        }
-        CategoryEntity categoryEntity = new CategoryEntity();
-        categoryEntity.setId(articleCategory.getId());
-        categoryEntity.setName(articleCategory.getName());
-        categoryEntity.setCreateTime(articleCategory.getCreateTime());
-        categoryEntity.setUpdateTime(articleCategory.getUpdateTime());
-        return categoryEntity;
-    }
+
 }

@@ -67,7 +67,7 @@ public interface TopicMapper {
      * @param pageSize
      * @return
      */
-    List<TopicEntity> getPageByName(@Param("name") String name,
-                                    @Param("offset") int offset,
-                                    @Param("pageSize") Integer pageSize);
+    List<Topic> getPageByName(@Param("name") String name,
+                              @Param("offset") int offset,
+                              @Param("pageSize") Integer pageSize);
 }

@@ -69,7 +69,12 @@ public interface RoleMapper {
     void deleteRoleMenuByRoleIds(@Param("roleIds") List<Long> roleIds);
 
     /**
-     * 根据角色编码查询数量
+     * 根据编码查询数量
      */
     int countByCode(@Param("code") String code);
+    
+    /**
+     * 根据用户ID查询角色列表
+     */
+    List<Role> findRolesByUserId(@Param("userId") Long userId);
 }

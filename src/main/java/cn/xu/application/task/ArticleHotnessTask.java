@@ -12,6 +12,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 @Slf4j
@@ -44,7 +45,8 @@ public class ArticleHotnessTask {
                 Long articleId = Long.parseLong((String) Objects.requireNonNull(article.getValue()));
 
                 // 从数据库中获取文章实体
-                ArticleEntity articleEntity = articleRepository.findById(articleId);
+                Optional<ArticleEntity> articleOptional = articleRepository.findById(articleId);
+                ArticleEntity articleEntity = articleOptional.orElse(null);
 
                 // 如果文章存在，重新计算热度分数
                 if (articleEntity != null) {

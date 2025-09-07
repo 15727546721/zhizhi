@@ -2,10 +2,12 @@ package cn.xu.infrastructure.persistent.repository;
 
 import cn.xu.domain.notification.model.aggregate.NotificationAggregate;
 import cn.xu.domain.notification.model.entity.NotificationEntity;
+import cn.xu.domain.notification.model.valueobject.BusinessType;
 import cn.xu.domain.notification.model.valueobject.NotificationType;
 import cn.xu.domain.notification.repository.INotificationRepository;
 import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.persistent.dao.NotificationMapper;
+import cn.xu.infrastructure.persistent.converter.NotificationConverter;
 import cn.xu.infrastructure.persistent.po.Notification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +28,7 @@ import java.util.stream.Collectors;
 public class NotificationRepository implements INotificationRepository {
 
     private final NotificationMapper notificationMapper;
+    private final NotificationConverter notificationConverter;
 
     /**
      * 保存通知
@@ -44,24 +47,14 @@ public class NotificationRepository implements INotificationRepository {
             if (entity.getId() == null) {
                 log.info("[通知服务] 开始新增通知, receiverId={}, type={}", entity.getReceiverId(), entity.getType());
                 entity.setStatus(true); // 设置为有效状态
-                notificationMapper.insert(
-                        Notification.builder()
-                                .receiverId(entity.getReceiverId())
-                                .senderId(entity.getSenderId())
-                                .type(entity.getType().getValue())
-                                .title(entity.getTitle())
-                                .content(entity.getContent())
-                                .businessType(entity.getBusinessType().getValue())
-                                .businessId(entity.getBusinessId())
-                                .isRead(0)
-                                .status(0)
-                                .createTime(entity.getCreateTime())
-                                .build()
-                );
+                Notification notification = notificationConverter.toDataObject(entity);
+                notificationMapper.insert(notification);
+                entity.setId(notification.getId());
                 log.info("[通知服务] 新增通知成功, id={}", entity.getId());
             } else {
                 log.info("[通知服务] 开始更新通知, id={}", entity.getId());
-                notificationMapper.update(entity);
+                Notification notification = notificationConverter.toDataObject(entity);
+                notificationMapper.update(notification);
                 log.info("[通知服务] 更新通知成功");
             }
             return NotificationAggregate.from(entity);
@@ -82,13 +75,13 @@ public class NotificationRepository implements INotificationRepository {
     public NotificationEntity findById(Long id) {
         try {
             log.info("[通知服务] 开始查询通知, id={}", id);
-            NotificationEntity entity = notificationMapper.selectById(id);
-            if (entity == null) {
+            Notification notification = notificationMapper.selectById(id);
+            if (notification == null) {
                 log.info("[通知服务] 通知不存在, id={}", id);
                 throw new BusinessException("通知不存在");
             }
             log.info("[通知服务] 查询通知成功");
-            return entity;
+            return notificationConverter.toDomainEntity(notification);
         } catch (Exception e) {
             log.error("[通知服务] 查询通知失败, id={}", id, e);
             throw new BusinessException("查询通知失败");
@@ -108,13 +101,14 @@ public class NotificationRepository implements INotificationRepository {
     public List<NotificationAggregate> findByUserIdAndType(Long userId, NotificationType type, Pageable pageable) {
         try {
             log.info("[通知服务] 开始分页查询用户通知, userId={}, type={}, pageable={}", userId, type, pageable);
-            List<NotificationEntity> entities = notificationMapper.findByReceiverIdAndType(userId, type.getValue(), pageable);
-            if (entities.isEmpty()) {
+            List<Notification> notifications = notificationMapper.findByReceiverIdAndType(userId, type.getValue(), pageable);
+            if (notifications.isEmpty()) {
                 log.info("[通知服务] 未查询到通知记录");
                 return Collections.emptyList();
             }
-            log.info("[通知服务] 查询到{}条通知记录", entities.size());
-            return entities.stream()
+            log.info("[通知服务] 查询到{}条通知记录", notifications.size());
+            return notifications.stream()
+                    .map(notificationConverter::toDomainEntity)
                     .map(NotificationAggregate::from)
                     .collect(Collectors.toList());
         } catch (Exception e) {
@@ -176,13 +170,14 @@ public class NotificationRepository implements INotificationRepository {
     public List<NotificationAggregate> findByUserIdAndType(Long userId, NotificationType type, int offset, int limit) {
         try {
             log.info("[通知服务] 开始分页查询用户通知, userId={}, type={}, offset={}, limit={}", userId, type, offset, limit);
-            List<NotificationEntity> entities = notificationMapper.selectByReceiverIdAndType(userId, type.getValue(), offset, limit);
-            if (entities.isEmpty()) {
+            List<Notification> notifications = notificationMapper.selectByReceiverIdAndType(userId, type.getValue(), offset, limit);
+            if (notifications.isEmpty()) {
                 log.info("[通知服务] 未查询到通知记录");
                 return Collections.emptyList();
             }
-            log.info("[通知服务] 查询到{}条通知记录", entities.size());
-            return entities.stream()
+            log.info("[通知服务] 查询到{}条通知记录", notifications.size());
+            return notifications.stream()
+                    .map(notificationConverter::toDomainEntity)
                     .map(NotificationAggregate::from)
                     .collect(Collectors.toList());
         } catch (Exception e) {

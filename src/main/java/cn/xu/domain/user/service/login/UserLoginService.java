@@ -53,7 +53,8 @@ public class UserLoginService implements IUserLoginService {
                     UserErrorCode.ILLEGAL_TOKEN.getMessage());
         }
 
-        UserEntity user = userRepository.findById(Long.valueOf(userId.toString()));
+        UserEntity user = userRepository.findById(Long.valueOf(userId.toString()))
+                .orElse(null);
         if (user == null) {
             throw new BusinessException(ResponseCode.NULL_RESPONSE.getCode(), "用户不存在");
         }
@@ -64,16 +65,16 @@ public class UserLoginService implements IUserLoginService {
     private UserInfoEntity convertToUserInfoEntity(UserEntity user) {
         return UserInfoEntity.builder()
                 .id(user.getId())
-                .username(user.getUsername())
-                .email(user.getEmail())
+                .username(user.getUsernameValue())
+                .email(user.getEmailValue())
                 .nickname(user.getNickname())
                 .avatar(user.getAvatar())
                 .gender(user.getGender())
-                .phone(user.getPhone())
+                .phone(user.getPhoneValue())
                 .region(user.getRegion())
                 .birthday(user.getBirthday())
                 .description(user.getDescription())
-                .status(user.getStatus())
+                .status(user.getStatusCode())
                 .createTime(user.getCreateTime())
                 .updateTime(user.getUpdateTime())
                 .build();
@@ -88,7 +89,8 @@ public class UserLoginService implements IUserLoginService {
                     UserErrorCode.ILLEGAL_TOKEN.getMessage());
         }
 
-        UserEntity user = userRepository.findById(userId);
+        UserEntity user = userRepository.findById(userId)
+                .orElse(null);
         if (user == null) {
             throw new BusinessException(ResponseCode.NULL_RESPONSE.getCode(), "用户不存在");
         }

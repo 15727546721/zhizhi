@@ -8,6 +8,10 @@ public interface IArticleTagRepository {
     void save(ArticleTagRel articleTagRel);
 
     void saveArticleTag(Long articleId, List<Long> tagIds);
+    
+    void saveArticleTags(Long articleId, List<Long> tagIds);
 
     void deleteByArticleId(Long articleId);
+    
+    List<Long> findTagIdsByArticleId(Long articleId);
 }

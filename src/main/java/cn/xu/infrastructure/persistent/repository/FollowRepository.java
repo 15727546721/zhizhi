@@ -1,27 +1,33 @@
 package cn.xu.infrastructure.persistent.repository;
 
 import cn.xu.domain.follow.model.entity.UserFollowEntity;
-import cn.xu.domain.follow.model.valueobject.FollowStatus;
 import cn.xu.domain.follow.repository.IFollowRepository;
+import cn.xu.infrastructure.persistent.converter.FollowConverter;
 import cn.xu.infrastructure.persistent.dao.FollowMapper;
 import cn.xu.infrastructure.persistent.po.Follow;
-import org.springframework.beans.BeanUtils;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
-import javax.annotation.Resource;
 import java.util.List;
-import java.util.stream.Collectors;
 
+/**
+ * 关注关系仓储实现类
+ * 通过FollowConverter进行领域实体与持久化对象的转换，遵循DDD防腐层模式
+ * 
+ * @author xu
+ */
 @Repository
+@RequiredArgsConstructor
 public class FollowRepository implements IFollowRepository {
 
-    @Resource
-    private FollowMapper userFollowDao;
+    private final FollowMapper userFollowDao;
+    private final FollowConverter followConverter;
 
     @Override
     public void save(UserFollowEntity entity) {
-        Follow po = convertToPO(entity);
+        Follow po = followConverter.toDataObject(entity);
         userFollowDao.insert(po);
+        entity.setId(po.getId());
     }
 
     @Override
@@ -32,21 +38,19 @@ public class FollowRepository implements IFollowRepository {
     @Override
     public UserFollowEntity getByFollowerAndFollowed(Long followerId, Long followedId) {
         Follow po = userFollowDao.getByFollowerAndFollowed(followerId, followedId);
-        return convertToEntity(po);
+        return followConverter.toDomainEntity(po);
     }
 
     @Override
     public List<UserFollowEntity> listByFollowerId(Long followerId) {
-        return userFollowDao.listByFollowerId(followerId).stream()
-                .map(this::convertToEntity)
-                .collect(Collectors.toList());
+        List<Follow> follows = userFollowDao.listByFollowerId(followerId);
+        return followConverter.toDomainEntities(follows);
     }
 
     @Override
     public List<UserFollowEntity> listByFollowedId(Long followedId) {
-        return userFollowDao.listByFollowedId(followedId).stream()
-                .map(this::convertToEntity)
-                .collect(Collectors.toList());
+        List<Follow> follows = userFollowDao.listByFollowedId(followedId);
+        return followConverter.toDomainEntities(follows);
     }
 
     @Override
@@ -64,23 +68,5 @@ public class FollowRepository implements IFollowRepository {
         return userFollowDao.findStatus(followerId, followedId);
     }
 
-    private Follow convertToPO(UserFollowEntity entity) {
-        if (entity == null) {
-            return null;
-        }
-        Follow po = new Follow();
-        BeanUtils.copyProperties(entity, po);
-        po.setStatus(entity.getStatus().getValue());
-        return po;
-    }
 
-    private UserFollowEntity convertToEntity(Follow po) {
-        if (po == null) {
-            return null;
-        }
-        UserFollowEntity entity = new UserFollowEntity();
-        BeanUtils.copyProperties(po, entity);
-        entity.setStatus(FollowStatus.valueOf(po.getStatus()));
-        return entity;
-    }
 } 

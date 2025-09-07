@@ -1,8 +1,5 @@
 package cn.xu.infrastructure.persistent.dao;
 
-import cn.xu.domain.user.model.entity.UserEntity;
-import cn.xu.domain.user.model.entity.UserInfoEntity;
-import cn.xu.domain.user.model.entity.UserRegisterEntity;
 import cn.xu.domain.user.model.vo.UserFormVO;
 import cn.xu.infrastructure.persistent.po.User;
 import org.apache.ibatis.annotations.Mapper;
@@ -16,17 +13,17 @@ public interface UserMapper {
     /**
      * 插入用户
      */
-    void insert(UserEntity user);
+    void insert(User user);
 
     /**
      * 更新用户
      */
-    void update(UserEntity user);
+    void update(User user);
 
     /**
      * 根据ID查询用户
      */
-    UserEntity selectById(Long id);
+    User selectById(Long id);
 
     /**
      * 根据用户名查询用户
@@ -64,16 +61,6 @@ public interface UserMapper {
     List<User> selectByIds(Set<Long> ids);
 
     /**
-     * 根据用户ID查询用户信息和角色
-     */
-    UserInfoEntity getUserInfoWithRoles(@Param("userId") Long userId);
-
-    /**
-     * 根据用户名查询用户信息和角色
-     */
-    UserInfoEntity getUserInfoWithRolesByUsername(@Param("username") String username);
-
-    /**
      * 批量查询用户信息
      *
      * @param userIds 用户ID集合
@@ -98,26 +85,17 @@ public interface UserMapper {
     void updateFansCount(@Param("followeeId") Long followeeId, @Param("count") int count);
 
     /**
-     * 根据用户名查询用户名和密码
-     *
-     * @param username
-     * @return
-     */
-    UserFormVO selectUsernameAndPasswordByUsername(@Param("username") String username);
-
-    /**
-     * 注册用户
-     * @param user
-     * @return
-     */
-    Long register(UserRegisterEntity user);
-
-    List<User> selectAll();
-
-
-    /**
      * 查询全部用户
      *
-     * @return
+     * @return 用户列表
      */
+    List<User> selectAll();
+    
+    /**
+     * 根据用户名查找用户名和密码
+     *
+     * @param username 用户名
+     * @return 用户表单值对象
+     */
+    UserFormVO selectUsernameAndPasswordByUsername(@Param("username") String username);
 }

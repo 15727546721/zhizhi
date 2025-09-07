@@ -52,7 +52,7 @@ public interface CommentMapper {
 
 
     // 预览回复查询（带图片）
-    List<CommentEntity> selectPreviewRepliesByParentIds(
+    List<Comment> selectPreviewRepliesByParentIds(
             @Param("parentIds") List<Long> parentIds,
             @Param("previewSize") int previewSize
     );
@@ -179,7 +179,7 @@ public interface CommentMapper {
      * @param batchSize 每批大小
      * @return 评论批次
      */
-    List<CommentEntity> findCommentsBatch(int offset, int batchSize);
+    List<Comment> findCommentsBatch(int offset, int batchSize);
 
     Long countByParentId(Long commentId);
 

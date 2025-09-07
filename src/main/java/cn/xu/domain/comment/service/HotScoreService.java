@@ -1,10 +1,11 @@
 package cn.xu.domain.comment.service;
 
 import cn.xu.domain.comment.model.entity.CommentEntity;
+import cn.xu.domain.comment.model.policy.HotScoreStrategy;
+import cn.xu.domain.comment.model.policy.HotScoreStrategyFactory;
 import cn.xu.domain.comment.model.valueobject.CommentType;
 import cn.xu.domain.comment.repository.ICommentRepository;
 import cn.xu.infrastructure.cache.RedisKeyManager;
-import cn.xu.infrastructure.persistent.read.redis.CommentRedisRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
@@ -13,8 +14,8 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.util.Collections;
 import java.util.Set;
 
@@ -45,9 +46,11 @@ public class HotScoreService {
                     "local maxSize = tonumber(ARGV[5])\n" +
                     "\n" +
                     "local now = tonumber(redis.call('TIME')[1])\n" +
-                    "local hours = (now - createTime) / 3600\n" +
-                    "local decay = hours + 2\n" +
-                    "local hotScore = (likeCount * 2 + replyCount * 3) / decay\n" +
+                    "local hoursSincePublish = (now - createTime) / 3600\n" +
+                    "local timeDecay = math.max(0, 1 - hoursSincePublish / 72)\n" +
+                    "local timeWeight = timeDecay * 5\n" +
+                    "local replyWeight = replyCount * 2\n" +
+                    "local hotScore = likeCount + replyWeight + timeWeight\n" +
                     "\n" +
                     "redis.call('ZADD', zsetKey, hotScore, commentId)\n" +
                     "\n" +
@@ -103,6 +106,26 @@ public class HotScoreService {
             log.info("更新热度成功 commentId={} hotScore={}", commentId, hotScore);
         } else {
             log.warn("更新热度失败 commentId={}", commentId);
+        }
+    }
+
+    /**
+     * 根据commentId从缓存中删除该评论的热度数据
+     */
+    public void removeHotScore(Long commentId, Integer targetType, Long targetId, Long parentId) {
+        String redisKey;
+        // 设计规则：parentId为空是一级评论，存一级ZSet；否则存二级回复ZSet
+        if (parentId == null) {
+            redisKey = RedisKeyManager.commentHotRankKey(CommentType.valueOf(targetType), targetId);
+        } else {
+            redisKey = RedisKeyManager.replyHotRankKey(CommentType.valueOf(targetType), targetId, parentId);
+        }
+
+        try {
+            redisTemplate.opsForZSet().remove(redisKey, commentId.toString());
+            log.info("删除评论热度成功 commentId={} key={}", commentId, redisKey);
+        } catch (Exception e) {
+            log.error("删除评论热度失败 commentId={} key={}", commentId, redisKey, e);
         }
     }
 

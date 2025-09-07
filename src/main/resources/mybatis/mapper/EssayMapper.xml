@@ -14,8 +14,8 @@
         <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
     </resultMap>
 
-    <!-- 定义 UserEntity 的结果映射 -->
-    <resultMap id="UserResultMap" type="cn.xu.domain.user.model.entity.UserEntity">
+    <!-- 定义 User PO 的结果映射 -->
+    <resultMap id="UserPOResultMap" type="cn.xu.infrastructure.persistent.po.User">
         <id property="id" column="user_id"/>
         <result property="username" column="username"/>
         <result property="nickname" column="nickname"/>
@@ -36,9 +36,10 @@
         <result property="lastLoginIp" column="last_login_ip"/>
     </resultMap>
 
-    <!-- 定义 EssayVO 的结果映射，包括嵌套的 UserEntity -->
-    <resultMap id="EssayWithUserResultMap" type="cn.xu.domain.essay.model.entity.EssayWithUserAggregation">
+    <!-- 定义 EssayWithUser 的结果映射，包括嵌套的 User PO -->
+    <resultMap id="EssayWithUserPOResultMap" type="cn.xu.infrastructure.persistent.po.EssayWithUserPO">
         <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
         <result property="content" column="content"/>
         <result property="images" column="images"/>
         <result property="topics" column="topics"/>
@@ -46,30 +47,37 @@
         <result property="commentCount" column="comment_count"/>
         <result property="createTime" column="create_time"/>
         <result property="updateTime" column="update_time"/>
-        <association property="user" resultMap="UserResultMap"/>
+        <association property="user" resultMap="UserPOResultMap"/>
     </resultMap>
     <sql id="Base_Column_List">
-        id
-        , user_id, content, images, topics, lile_count, comment_count, create_time, update_time
+        id, user_id, content, images, topics, like_count, comment_count, create_time, update_time
     </sql>
 
-    <insert id="insert" parameterType="cn.xu.domain.essay.model.entity.EssayEntity" useGeneratedKeys="true"
+    <insert id="insert" parameterType="cn.xu.infrastructure.persistent.po.Essay" useGeneratedKeys="true"
             keyProperty="id">
         insert into essay
-        (user_id, content, images, topics, create_time, update_time)
+        (user_id, content, images, topics, like_count, comment_count, create_time, update_time)
         values
-        (#{userId}, #{content}, #{images}, #{topics}, now(), now())
+        (#{userId}, #{content}, #{images}, #{topics}, #{likeCount}, #{commentCount}, #{createTime}, #{updateTime})
     </insert>
 
-    <update id="update" parameterType="cn.xu.domain.essay.model.entity.EssayEntity">
+    <update id="update" parameterType="cn.xu.infrastructure.persistent.po.Essay">
         update `essay`
         <set>
-            content = #{content},
+            <if test="content != null">
+                content = #{content},
+            </if>
             <if test="images != null">
-                images = #{images,jdbcType=VARCHAR},
+                images = #{images},
             </if>
             <if test="topics != null">
                 topics = #{topics},
+            </if>
+            <if test="likeCount != null">
+                like_count = #{likeCount},
+            </if>
+            <if test="commentCount != null">
+                comment_count = #{commentCount},
             </if>
             update_time = now()
         </set>
@@ -79,6 +87,12 @@
         update `essay`
         set comment_count = comment_count + #{count}
         where id = #{targetId}
+    </update>
+    
+    <update id="updateLikeCount">
+        update `essay`
+        set like_count = like_count + #{count}
+        where id = #{essayId}
     </update>
 
     <delete id="deleteById" parameterType="java.lang.Long">
@@ -115,7 +129,7 @@
         from `essay`
     </select>
 
-    <select id="findEssayList" resultMap="EssayWithUserResultMap">
+    <select id="findEssayList" resultMap="EssayWithUserPOResultMap">
         select
         e.id, e.user_id, e.content, e.images, e.topics, e.like_count, e.comment_count, e.create_time, e.update_time,
         u.*
@@ -137,6 +151,24 @@
                 order by e.create_time asc
             </otherwise>
         </choose>
+        limit #{offset}, #{size}
+    </select>
+    
+    <select id="findByUserId" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from `essay`
+        where user_id = #{userId}
+        order by create_time desc
+        limit #{offset}, #{size}
+    </select>
+    
+    <select id="findByTopic" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from `essay`
+        where topics like concat('%', #{topic}, '%')
+        order by create_time desc
         limit #{offset}, #{size}
     </select>
 </mapper> 

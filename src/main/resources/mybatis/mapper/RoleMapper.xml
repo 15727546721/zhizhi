@@ -122,5 +122,14 @@
         FROM role
         WHERE code = #{code}
     </select>
+    
+    <!-- 根据用户ID查询角色列表 -->
+    <select id="findRolesByUserId" resultMap="BaseResultMap">
+        SELECT r.id, r.code, r.name, r.remark, r.create_time, r.update_time
+        FROM role r
+        INNER JOIN user_role ur ON r.id = ur.role_id
+        WHERE ur.user_id = #{userId}
+        ORDER BY r.create_time DESC
+    </select>
 
 </mapper>

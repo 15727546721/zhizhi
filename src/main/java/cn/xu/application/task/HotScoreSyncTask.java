@@ -6,6 +6,7 @@ import cn.xu.infrastructure.persistent.read.elastic.service.ArticleElasticServic
 import cn.xu.infrastructure.persistent.repository.ArticleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -25,11 +26,18 @@ public class HotScoreSyncTask {
 
     private final RedisTemplate<String, Object> redisTemplate;
     private final ArticleRepository articleRepository;
-    private final ArticleElasticService articleElasticService;
+    @Autowired(required = false) // 设置为非必需，允许Elasticsearch不可用
+    private ArticleElasticService articleElasticService;
     private final ArticleHotScoreCacheHelper hotScoreHelper;
 
     @Scheduled(cron = "0 */5 * * * ?") // 每5分钟执行一次
     public void syncToElastic() {
+        // 检查Elasticsearch是否可用
+        if (articleElasticService == null) {
+            log.debug("Elasticsearch服务不可用，跳过热度同步任务");
+            return;
+        }
+        
         Set<String> keys = redisTemplate.keys("article:hot:*");
         if (keys.isEmpty()) {
             return;

@@ -1,6 +1,7 @@
 package cn.xu.domain.like.event;
 
 import cn.xu.domain.article.service.IArticleService;
+import cn.xu.domain.like.model.LikeEntity;
 import cn.xu.domain.like.model.LikeType;
 import cn.xu.infrastructure.persistent.repository.LikeRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -36,7 +37,14 @@ public class LikeEventListener {
     }
 
     private void handleLike(LikeEvent event) {
-        likeRepository.saveLike(event.getUserId(), event.getTargetId(), event.getType().getCode());
+        // 创建点赞实体
+        LikeEntity likeEntity = LikeEntity.createLike(
+                event.getUserId(), 
+                event.getTargetId(), 
+                event.getType()
+        );
+        
+        likeRepository.saveLike(likeEntity);
 
         if (event.getType() == LikeType.ARTICLE) {
             articleService.updateArticleHotScore(event.getTargetId());
@@ -44,7 +52,7 @@ public class LikeEventListener {
     }
 
     private void handleUnlike(LikeEvent event) {
-        likeRepository.remove(event.getUserId(), event.getTargetId(), event.getType().getCode());
+        likeRepository.remove(event.getUserId(), event.getTargetId(), event.getType());
 
         if (event.getType() == LikeType.ARTICLE) {
             articleService.updateArticleHotScore(event.getTargetId());
