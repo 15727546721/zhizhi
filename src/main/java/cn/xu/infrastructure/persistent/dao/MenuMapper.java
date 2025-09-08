@@ -44,8 +44,12 @@ public interface MenuMapper {
      * @return 菜单权限列表
      */
     List<String> findPermissionsByUserid(@Param("userId") Long userId);
+    
+    /**
+     * 根据用户id获取用户直接关联的菜单权限
+     *
+     * @param userId 用户id
+     * @return 直接菜单权限列表
+     */
+    List<String> findDirectPermissionsByUserid(@Param("userId") Long userId);
 }
-
-
-
-

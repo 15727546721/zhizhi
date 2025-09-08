@@ -22,7 +22,7 @@ import java.util.List;
  * 权限仓储实现类
  * 通过Converter进行领域实体与持久化对象的转换，遵循DDD防腐层模式
  * 
- * @author xu
+ * @author Lily
  */
 @Slf4j
 @Repository
@@ -168,9 +168,19 @@ public class PermissionRepository implements IPermissionRepository {
     public List<String> findPermissionsByUserid(Long userId) {
         return menuDao.findPermissionsByUserid(userId);
     }
-
+    
+    @Override
+    public List<String> findDirectPermissionsByUserid(Long userId) {
+        return menuDao.findDirectPermissionsByUserid(userId);
+    }
+    
     @Override
     public boolean existsByCode(String code) {
         return roleDao.countByCode(code) > 0;
+    }
+    
+    @Override
+    public List<Long> findUserIdsByRoleId(Long roleId) {
+        return roleDao.findUserIdsByRoleId(roleId);
     }
 }

@@ -8,6 +8,7 @@ import cn.xu.infrastructure.persistent.po.Role;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.List;
@@ -28,23 +29,27 @@ public class RoleRepository implements IRoleRepository {
     private final RoleConverter roleConverter;
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public List<RoleEntity> findRolePage(String name, Integer offset, Integer size) {
         List<Role> roles = roleDao.selectRolePage(name, offset, size);
         return roleConverter.toDomainEntities(roles);
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public long countRole(String name) {
         return roleDao.countRole(name);
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public RoleEntity findById(Long id) {
         Role role = roleDao.selectRoleById(id);
         return roleConverter.toDomainEntity(role);
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public RoleEntity save(RoleEntity role) {
         Role rolePO = roleConverter.toDataObject(role);
         if (role.getId() == null) {
@@ -55,7 +60,9 @@ public class RoleRepository implements IRoleRepository {
         }
         return role;
     }
+    
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void deleteByIds(List<Long> ids) {
         transactionTemplate.execute(status -> {
             try {
@@ -69,4 +76,15 @@ public class RoleRepository implements IRoleRepository {
             }
         });
     }
-} 
+    
+    /**
+     * 根据角色编码查询角色
+     * @param code 角色编码
+     * @return 角色实体
+     */
+    @Override
+    public RoleEntity findByCode(String code) {
+        Role role = roleDao.selectRoleByCode(code);
+        return role != null ? roleConverter.toDomainEntity(role) : null;
+    }
+}

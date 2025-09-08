@@ -131,5 +131,28 @@
         WHERE ur.user_id = #{userId}
         ORDER BY r.create_time DESC
     </select>
+    
+    <!-- 根据用户ID查询角色ID列表 -->
+    <select id="findRoleIdsByUserId" resultType="java.lang.Long">
+        SELECT r.id
+        FROM role r
+        INNER JOIN user_role ur ON r.id = ur.role_id
+        WHERE ur.user_id = #{userId}
+        ORDER BY r.create_time DESC
+    </select>
+    
+    <!-- 根据角色ID查询关联的用户ID列表 -->
+    <select id="findUserIdsByRoleId" resultType="java.lang.Long">
+        SELECT ur.user_id
+        FROM user_role ur
+        WHERE ur.role_id = #{roleId}
+    </select>
+    
+    <!-- 根据角色编码查询角色 -->
+    <select id="selectRoleByCode" resultMap="BaseResultMap">
+        SELECT id, code, name, remark, create_time, update_time
+        FROM role
+        WHERE code = #{code}
+    </select>
 
 </mapper>

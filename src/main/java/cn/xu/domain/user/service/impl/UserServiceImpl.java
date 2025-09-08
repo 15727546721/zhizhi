@@ -70,6 +70,7 @@ public class UserServiceImpl implements IUserService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void update(UpdateUserReq user) {
         UserEntity userEntity = getUserById(user.getId());
         if (userEntity == null) {
@@ -93,7 +94,7 @@ public class UserServiceImpl implements IUserService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void register(RegisterRequest request) {
         try {
             log.info("[用户服务] 开始用户注册 - username: {}", request.getUsername());
@@ -161,7 +162,7 @@ public class UserServiceImpl implements IUserService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void updateUserInfo(UserInfoEntity userInfoEntity) {
         try {
             log.info("[用户服务] 开始更新用户信息 - userId: {}", userInfoEntity.getId());
@@ -203,18 +204,18 @@ public class UserServiceImpl implements IUserService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void changePassword(Long userId, String oldPassword, String newPassword) {
         UserEntity user = getUserInfo(userId);
         if (!validatePassword(user, oldPassword)) {
             throw new BusinessException("旧密码错误");
         }
-//        user.setPassword(SaSecureUtil.sha256(newPassword));
+        user.setPassword(new Password(newPassword));
         userRepository.save(user);
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void banUser(Long userId) {
         UserEntity user = getUserInfo(userId);
         user.setStatus(UserEntity.UserStatus.fromCode(1));
@@ -222,7 +223,7 @@ public class UserServiceImpl implements IUserService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void unbanUser(Long userId) {
         UserEntity user = getUserInfo(userId);
         user.setStatus(UserEntity.UserStatus.fromCode(0));
@@ -235,12 +236,13 @@ public class UserServiceImpl implements IUserService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void addUser(UserRequest userRequest) {
         validateUsernameAndEmail(userRequest.getUsername(), userRequest.getEmail());
 
         UserEntity user = UserEntity.builder()
                 .username(userRequest.getUsername() != null ? new Username(userRequest.getUsername()) : null)
+                .password(userRequest.getPassword() != null ? new Password(userRequest.getPassword()) : null)
                 .email(userRequest.getEmail() != null ? new Email(userRequest.getEmail()) : null)
                 .nickname(userRequest.getNickname())
                 .avatar(userRequest.getAvatar())
@@ -256,7 +258,7 @@ public class UserServiceImpl implements IUserService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void updateUser(UserRequest userRequest) {
         UserEntity user = getUserInfo(userRequest.getId());
         user.setUsername(userRequest.getUsername() != null ? new Username(userRequest.getUsername()) : null);
@@ -271,14 +273,14 @@ public class UserServiceImpl implements IUserService {
         user.setDescription(userRequest.getDescription());
 
         if (userRequest.getPassword() != null && !userRequest.getPassword().isEmpty()) {
-//            user.setPassword(SaSecureUtil.sha256(userRequest.getPassword()));
+            user.setPassword(new Password(userRequest.getPassword()));
         }
 
         userRepository.save(user);
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void deleteUser(Long userId) {
         userRepository.deleteById(userId);
     }
@@ -400,8 +402,7 @@ public class UserServiceImpl implements IUserService {
     }
 
     private boolean validatePassword(UserEntity user, String password) {
-//        return user.getPassword().equals(SaSecureUtil.sha256(password));
-        return true;
+        return user.validatePassword(password);
     }
 
     private UserInfoEntity convertToUserInfoEntity(UserEntity user) {
@@ -426,4 +427,4 @@ public class UserServiceImpl implements IUserService {
         Long userId = StpUtil.getLoginIdAsLong();
         return getUserInfo(userId);
     }
-} 
+}

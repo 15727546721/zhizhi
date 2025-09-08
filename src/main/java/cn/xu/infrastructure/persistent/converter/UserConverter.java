@@ -1,7 +1,9 @@
 package cn.xu.infrastructure.persistent.converter;
 
+import cn.dev33.satoken.secure.SaSecureUtil;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.model.valobj.Email;
+import cn.xu.domain.user.model.valobj.Password;
 import cn.xu.domain.user.model.valobj.Phone;
 import cn.xu.domain.user.model.valobj.Username;
 import cn.xu.infrastructure.persistent.po.User;
@@ -30,7 +32,7 @@ public class UserConverter {
             return null;
         }
         
-        return User.builder()
+        User user = User.builder()
                 .id(entity.getId())
                 .username(entity.getUsernameValue())
                 .email(entity.getEmailValue())
@@ -50,6 +52,14 @@ public class UserConverter {
                 .createTime(entity.getCreateTime() != null ? entity.getCreateTime() : LocalDateTime.now())
                 .updateTime(entity.getUpdateTime() != null ? entity.getUpdateTime() : LocalDateTime.now())
                 .build();
+        
+        // 处理密码字段
+        if (entity.getPassword() != null) {
+            // 使用SaSecureUtil对密码进行加密
+            user.setPassword(SaSecureUtil.sha256(entity.getPassword().getValue()));
+        }
+        
+        return user;
     }
 
     /**
@@ -187,6 +197,12 @@ public class UserConverter {
         
         if (source.getLastLoginIp() != null) {
             target.setLastLoginIp(source.getLastLoginIp());
+        }
+        
+        // 处理密码字段
+        if (source.getPassword() != null) {
+            // 使用SaSecureUtil对密码进行加密
+            target.setPassword(SaSecureUtil.sha256(source.getPassword().getValue()));
         }
 
         // 始终将更新时间设置为当前时间

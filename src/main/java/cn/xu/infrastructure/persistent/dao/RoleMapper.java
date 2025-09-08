@@ -6,6 +6,11 @@ import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
+/**
+ * 角色Mapper接口
+ * 
+ * @author Lily
+ */
 @Mapper
 public interface RoleMapper {
     /**
@@ -77,4 +82,19 @@ public interface RoleMapper {
      * 根据用户ID查询角色列表
      */
     List<Role> findRolesByUserId(@Param("userId") Long userId);
+    
+    /**
+     * 根据用户ID查询角色ID列表
+     */
+    List<Long> findRoleIdsByUserId(@Param("userId") Long userId);
+    
+    /**
+     * 根据角色ID查询关联的用户ID列表
+     */
+    List<Long> findUserIdsByRoleId(@Param("roleId") Long roleId);
+    
+    /**
+     * 根据角色编码查询角色
+     */
+    Role selectRoleByCode(@Param("code") String code);
 }

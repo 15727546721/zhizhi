@@ -6,6 +6,11 @@ import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
+/**
+ * 用户角色Mapper接口
+ * 
+ * @author Lily
+ */
 @Mapper
 public interface UserRoleMapper {
     int insert(UserRole userRole);

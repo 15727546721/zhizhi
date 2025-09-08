@@ -1,5 +1,6 @@
 package cn.xu.domain.user.model.valobj;
 
+import cn.dev33.satoken.secure.SaSecureUtil;
 import cn.xu.infrastructure.common.exception.BusinessException;
 import lombok.Getter;
 
@@ -42,7 +43,8 @@ public class Password {
             throw new BusinessException("密码强度过弱，请使用更复杂的密码");
         }
         
-        this.value = password;
+        // 在构造函数中对密码进行加密
+        this.value = SaSecureUtil.sha256(password);
     }
 
     private boolean isWeakPassword(String password) {
@@ -75,9 +77,9 @@ public class Password {
      * @return 是否匹配
      */
     public static boolean matches(String inputPassword, String encodedPassword) {
-        // 这里应该使用加密算法进行比较，简化示例
-        // 实际项目中应该使用BCrypt等安全的加密方式
-        return inputPassword.equals(encodedPassword);
+        // 使用SaSecureUtil对输入密码进行加密后比较
+        String encryptedInput = SaSecureUtil.sha256(inputPassword);
+        return encryptedInput.equals(encodedPassword);
     }
 
     /**
@@ -85,8 +87,7 @@ public class Password {
      * @return 加密后的密码
      */
     public String getEncodedValue() {
-        // 这里应该使用真实的加密算法，如BCrypt
-        // 简化示例，实际项目中不应该这样做
+        // 返回已经加密的密码值
         return this.value;
     }
 

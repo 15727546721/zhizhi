@@ -71,11 +71,11 @@
         FROM menu
     </select>
     <select id="getMenuById" resultType="java.lang.Long">
-        select rm.menu_id
-        from user
-        where u.id = #{id} join user_role ur
-        on u.id = ur.user_id
-            join role_menu rm on rm.role_id = ru.id
+        SELECT rm.menu_id
+        FROM user u
+        JOIN user_role ur ON u.id = ur.user_id
+        JOIN role_menu rm ON ur.role_id = rm.role_id
+        WHERE u.id = #{userId}
     </select>
     <select id="listByIds" resultMap="BaseResultMap">
         SELECT
@@ -89,8 +89,17 @@
     <select id="findPermissionsByUserid" resultType="java.lang.String">
         SELECT m.perm
         FROM menu m
-                 INNER JOIN user_role ur ON m.id = ur.menu_id
+        INNER JOIN role_menu rm ON m.id = rm.menu_id
+        INNER JOIN user_role ur ON rm.role_id = ur.role_id
         WHERE ur.user_id = #{userId}
+          AND m.perm IS NOT NULL
+    </select>
+    
+    <select id="findDirectPermissionsByUserid" resultType="java.lang.String">
+        SELECT m.perm
+        FROM menu m
+        INNER JOIN user_permission up ON m.id = up.permission_id
+        WHERE up.user_id = #{userId}
           AND m.perm IS NOT NULL
     </select>
 </mapper>

@@ -6,6 +6,7 @@ import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.user.constant.UserErrorCode;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.model.entity.UserInfoEntity;
+import cn.xu.domain.user.model.valobj.Password;
 import cn.xu.domain.user.model.vo.LoginFormVO;
 import cn.xu.domain.user.model.vo.UserFormVO;
 import cn.xu.domain.user.repository.IUserRepository;
@@ -18,6 +19,11 @@ import org.springframework.util.ObjectUtils;
 import javax.annotation.Resource;
 import java.util.List;
 
+/**
+ * 用户登录服务实现类
+ * 
+ * @author Lily
+ */
 @Slf4j
 @Service
 public class UserLoginService implements IUserLoginService {
@@ -34,8 +40,9 @@ public class UserLoginService implements IUserLoginService {
         if (ObjectUtils.isEmpty(userFormVO)) {
             throw new BusinessException(UserErrorCode.USER_NOT_FOUND.getCode(), "用户不存在");
         }
-        String password = SaSecureUtil.sha256(loginFormVO.getPassword());
-        if (!userFormVO.getPassword().equals(password)) {
+        
+        // 使用Password.matches方法验证密码
+        if (!Password.matches(loginFormVO.getPassword(), userFormVO.getPassword())) {
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "密码错误");
         }
 
@@ -62,6 +69,12 @@ public class UserLoginService implements IUserLoginService {
         return convertToUserInfoEntity(user);
     }
 
+    /**
+     * 将用户实体转换为用户信息实体
+     *
+     * @param user 用户实体
+     * @return 用户信息实体
+     */
     private UserInfoEntity convertToUserInfoEntity(UserEntity user) {
         return UserInfoEntity.builder()
                 .id(user.getId())

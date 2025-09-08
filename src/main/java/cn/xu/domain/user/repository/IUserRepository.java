@@ -12,6 +12,8 @@ import java.util.Optional;
 /**
  * 用户仓储接口
  * 遵循DDD原则，只处理用户实体的基本CRUD操作
+ * 
+ * @author Lily
  */
 public interface IUserRepository {
     /**
@@ -99,6 +101,46 @@ public interface IUserRepository {
     List<String> findRolesByUserId(Long userId);
     
     /**
+     * 根据用户ID查找角色ID列表
+     *
+     * @param userId 用户ID
+     * @return 角色ID列表
+     */
+    List<Long> findRoleIdsByUserId(Long userId);
+    
+    /**
+     * 为用户分配角色
+     *
+     * @param userId  用户ID
+     * @param roleIds 角色ID列表
+     */
+    void assignRolesToUser(Long userId, List<Long> roleIds);
+    
+    /**
+     * 为用户直接分配权限
+     *
+     * @param userId  用户ID
+     * @param permissionIds 权限ID列表
+     */
+    void assignPermissionsToUser(Long userId, List<Long> permissionIds);
+    
+    /**
+     * 获取用户的直接权限ID列表
+     *
+     * @param userId 用户ID
+     * @return 权限ID列表
+     */
+    List<Long> findPermissionIdsByUserId(Long userId);
+    
+    /**
+     * 移除用户的直接权限
+     *
+     * @param userId  用户ID
+     * @param permissionIds 权限ID列表
+     */
+    void removeUserPermissions(Long userId, List<Long> permissionIds);
+    
+    /**
      * 更新用户的关注数
      * 
      * @param userId 用户ID
@@ -113,4 +155,14 @@ public interface IUserRepository {
      * @param fansCount 粉丝数
      */
     void updateFansCount(Long userId, Long fansCount);
+    
+    /**
+     * 根据用户名查找用户实体
+     * 
+     * @param username 用户名
+     * @return 用户实体
+     */
+    default UserEntity findUserEntityByUsername(String username) {
+        return findByUsername(new Username(username)).orElse(null);
+    }
 }

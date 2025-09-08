@@ -5,6 +5,11 @@ import cn.xu.domain.permission.model.entity.RoleEntity;
 
 import java.util.List;
 
+/**
+ * 权限仓储接口
+ * 
+ * @author Lily
+ */
 public interface IPermissionRepository {
 
     List<String> findRolesByUserid(Long userid);
@@ -62,10 +67,18 @@ public interface IPermissionRepository {
     /**
      * 根据用户ID获取用户的权限列表
      *
-     * @param userId
-     * @return
+     * @param userId 用户ID
+     * @return 权限列表
      */
     List<String> findPermissionsByUserid(Long userId);
+
+    /**
+     * 根据用户ID获取用户直接关联的权限列表
+     *
+     * @param userId 用户ID
+     * @return 直接权限列表
+     */
+    List<String> findDirectPermissionsByUserid(Long userId);
 
     /**
      * 检查角色编码是否存在
@@ -74,4 +87,11 @@ public interface IPermissionRepository {
      * @return 是否存在
      */
     boolean existsByCode(String code);
+    
+    /**
+     * 根据角色ID查询关联的用户ID列表
+     * @param roleId 角色ID
+     * @return 用户ID列表
+     */
+    List<Long> findUserIdsByRoleId(Long roleId);
 }
