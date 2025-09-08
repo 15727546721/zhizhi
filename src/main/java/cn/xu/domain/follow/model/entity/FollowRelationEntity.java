@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Accessors(chain = true)
-public class UserFollowEntity {
+public class FollowRelationEntity {
     /**
      * 关注关系ID
      */
@@ -55,10 +55,10 @@ public class UserFollowEntity {
      * @param followedId 被关注者ID
      * @return 关注关系实体
      */
-    public static UserFollowEntity createFollow(Long followerId, Long followedId) {
+    public static FollowRelationEntity createFollow(Long followerId, Long followedId) {
         validateFollowRelation(followerId, followedId);
         
-        return UserFollowEntity.builder()
+        return FollowRelationEntity.builder()
                 .followerId(followerId)
                 .followedId(followedId)
                 .status(FollowStatus.FOLLOWED)
@@ -93,7 +93,7 @@ public class UserFollowEntity {
     }
     
     /**
-     * 判断是否为有效的关注关系
+     * 判断关注关系是否有效
      * 
      * @return true表示有效，false表示无效
      */

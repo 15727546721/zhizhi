@@ -36,9 +36,9 @@ public class UserEntity {
     private String region;
     private String birthday;
     private String description;
-    private Integer followCount; // 关注数量
-    private Integer fansCount;   // 粉丝数量
-    private Integer likeCount;   // 获赞数量
+    private Long followCount; // 关注数量
+    private Long fansCount;   // 粉丝数量
+    private Long likeCount;   // 获赞数量
     private LocalDateTime lastLoginTime; // 最后登录时间
     private String lastLoginIp; // 最后登录IP
     private Integer failedLoginAttempts; // 登录失败次数
@@ -93,9 +93,9 @@ public class UserEntity {
                 .email(new Email(email))
                 .nickname(nickname)
                 .status(UserStatus.NORMAL)
-                .followCount(0)
-                .fansCount(0)
-                .likeCount(0)
+                .followCount(0L)
+                .fansCount(0L)
+                .likeCount(0L)
                 .createTime(LocalDateTime.now())
                 .updateTime(LocalDateTime.now())
                 .build();
@@ -162,7 +162,7 @@ public class UserEntity {
      * 增加关注数
      */
     public void increaseFollowCount() {
-        this.followCount = (this.followCount == null ? 0 : this.followCount) + 1;
+        this.followCount = (this.followCount == null ? 0L : this.followCount) + 1L;
         this.updateTime = LocalDateTime.now();
     }
 
@@ -170,7 +170,7 @@ public class UserEntity {
      * 减少关注数
      */
     public void decreaseFollowCount() {
-        this.followCount = Math.max(0, (this.followCount == null ? 0 : this.followCount) - 1);
+        this.followCount = Math.max(0L, (this.followCount == null ? 0L : this.followCount) - 1L);
         this.updateTime = LocalDateTime.now();
     }
 
@@ -178,7 +178,7 @@ public class UserEntity {
      * 增加粉丝数
      */
     public void increaseFansCount() {
-        this.fansCount = (this.fansCount == null ? 0 : this.fansCount) + 1;
+        this.fansCount = (this.fansCount == null ? 0L : this.fansCount) + 1L;
         this.updateTime = LocalDateTime.now();
     }
 
@@ -186,7 +186,7 @@ public class UserEntity {
      * 减少粉丝数
      */
     public void decreaseFansCount() {
-        this.fansCount = Math.max(0, (this.fansCount == null ? 0 : this.fansCount) - 1);
+        this.fansCount = Math.max(0L, (this.fansCount == null ? 0L : this.fansCount) - 1L);
         this.updateTime = LocalDateTime.now();
     }
 
@@ -194,7 +194,7 @@ public class UserEntity {
      * 增加获赞数
      */
     public void increaseLikeCount() {
-        this.likeCount = (this.likeCount == null ? 0 : this.likeCount) + 1;
+        this.likeCount = (this.likeCount == null ? 0L : this.likeCount) + 1L;
         this.updateTime = LocalDateTime.now();
     }
 
@@ -202,7 +202,27 @@ public class UserEntity {
      * 减少获赞数
      */
     public void decreaseLikeCount() {
-        this.likeCount = Math.max(0, (this.likeCount == null ? 0 : this.likeCount) - 1);
+        this.likeCount = Math.max(0L, (this.likeCount == null ? 0L : this.likeCount) - 1L);
+        this.updateTime = LocalDateTime.now();
+    }
+    
+    /**
+     * 设置关注数
+     * 
+     * @param followCount 关注数
+     */
+    public void setFollowCount(Long followCount) {
+        this.followCount = followCount;
+        this.updateTime = LocalDateTime.now();
+    }
+    
+    /**
+     * 设置粉丝数
+     * 
+     * @param fansCount 粉丝数
+     */
+    public void setFansCount(Long fansCount) {
+        this.fansCount = fansCount;
         this.updateTime = LocalDateTime.now();
     }
 

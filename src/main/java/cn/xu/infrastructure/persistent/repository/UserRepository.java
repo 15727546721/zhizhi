@@ -149,6 +149,26 @@ public class UserRepository implements IUserRepository {
         userDao.update(userPO);
     }
     
+    /**
+     * 更新用户的关注数
+     * 
+     * @param userId 用户ID
+     * @param followCount 关注数
+     */
+    public void updateFollowCount(Long userId, Long followCount) {
+        userDao.updateUserFollowCount(userId, followCount);
+    }
+    
+    /**
+     * 更新用户的粉丝数
+     * 
+     * @param userId 用户ID
+     * @param fansCount 粉丝数
+     */
+    public void updateFansCount(Long userId, Long fansCount) {
+        userDao.updateUserFansCount(userId, fansCount);
+    }
+    
     @Override
     public UserFormVO findUsernameAndPasswordByUsername(String username) {
         return userDao.selectUsernameAndPasswordByUsername(username);

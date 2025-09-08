@@ -1,44 +1,28 @@
 package cn.xu.domain.follow.event;
 
-import cn.xu.infrastructure.persistent.dao.UserMapper;
+import cn.xu.domain.follow.service.IFollowService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.support.TransactionTemplate;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class FollowEventListener {
 
-    private final UserMapper userMapper;
-    private final TransactionTemplate transactionTemplate;
+    private final IFollowService followService;
 
     @EventListener
     public void handleFollowEvent(FollowEvent followEvent) {
         log.info("[关注事件] 开始处理：{}", followEvent);
-        //关注者的关注数+1
-        //被关注者的粉丝数+1
-        transactionTemplate.execute(status -> {
-            try {
-                switch (followEvent.getStatus()) {
-                    case FOLLOWED:
-                        userMapper.updateFollowCount(followEvent.getFollowerId(), 1);
-                        userMapper.updateFansCount(followEvent.getFolloweeId(), 1);
-                        break;
-                    case UNFOLLOWED:
-                        userMapper.updateFollowCount(followEvent.getFollowerId(), -1);
-                        userMapper.updateFansCount(followEvent.getFolloweeId(), -1);
-                        break;
-                    default:
-                        break;
-                }
-            } catch (Exception e) {
-                log.error("关注事件处理异常", e);
-                status.setRollbackOnly();
-            }
-            return null;
-        });
+        // 关注事件的处理已经在FollowService中完成，这里可以添加其他需要的处理逻辑
+        // 比如发送通知、更新缓存等
+        
+        // 示例：记录关注行为到日志或统计系统
+        log.info("[关注事件] 用户 {} {} 用户 {}", 
+            followEvent.getFollowerId(), 
+            followEvent.getStatus() == cn.xu.domain.follow.model.valueobject.FollowStatus.FOLLOWED ? "关注了" : "取消关注了",
+            followEvent.getFolloweeId());
     }
 }

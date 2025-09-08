@@ -51,4 +51,58 @@ public interface FollowMapper {
      * @return
      */
     Integer findStatus(@Param("followerId") long followerId, @Param("followedId") long followedId);
+    
+    /**
+     * 根据ID查询关注关系
+     * 
+     * @param id 关注关系ID
+     * @return 关注关系
+     */
+    Follow findById(@Param("id") Long id);
+    
+    /**
+     * 根据ID删除关注关系
+     * 
+     * @param id 关注关系ID
+     * @return 删除记录数
+     */
+    int deleteById(@Param("id") Long id);
+    
+    /**
+     * 批量删除关注关系
+     * 
+     * @param ids 关注关系ID列表
+     * @return 删除记录数
+     */
+    int deleteByIds(@Param("ids") List<Long> ids);
+    
+    /**
+     * 分页查询用户的关注列表
+     * 
+     * @param followerId 关注者ID
+     * @param offset 偏移量
+     * @param limit 限制数量
+     * @return 关注关系列表
+     */
+    List<Follow> listFollowingByPage(@Param("followerId") Long followerId, @Param("offset") int offset, @Param("limit") int limit);
+    
+    /**
+     * 分页查询用户的粉丝列表
+     * 
+     * @param followedId 被关注者ID
+     * @param offset 偏移量
+     * @param limit 限制数量
+     * @return 关注关系列表
+     */
+    List<Follow> listFollowersByPage(@Param("followedId") Long followedId, @Param("offset") int offset, @Param("limit") int limit);
+    
+    /**
+     * 查询互相关注的用户ID列表
+     * 
+     * @param userId 用户ID
+     * @param offset 偏移量
+     * @param limit 限制数量
+     * @return 互相关注的用户ID列表
+     */
+    List<Long> findMutualFollows(@Param("userId") Long userId, @Param("offset") int offset, @Param("limit") int limit);
 }

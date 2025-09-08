@@ -1,6 +1,7 @@
 package cn.xu.infrastructure.persistent.converter;
 
 import cn.xu.domain.follow.model.entity.UserFollowEntity;
+import cn.xu.domain.follow.model.entity.FollowRelationEntity;
 import cn.xu.domain.follow.model.valueobject.FollowStatus;
 import cn.xu.infrastructure.persistent.po.Follow;
 import org.springframework.stereotype.Component;
@@ -22,6 +23,23 @@ public class FollowConverter {
      * 领域实体转换为持久化对象
      */
     public Follow toDataObject(UserFollowEntity entity) {
+        if (entity == null) {
+            return null;
+        }
+        return Follow.builder()
+                .id(entity.getId())
+                .followerId(entity.getFollowerId())
+                .followedId(entity.getFollowedId())
+                .status(entity.getStatus() != null ? entity.getStatus().getValue() : null)
+                .createTime(entity.getCreateTime())
+                .updateTime(entity.getUpdateTime())
+                .build();
+    }
+
+    /**
+     * 关注关系实体转换为持久化对象
+     */
+    public Follow toDataObjectFromFollowRelation(FollowRelationEntity entity) {
         if (entity == null) {
             return null;
         }
@@ -73,6 +91,18 @@ public class FollowConverter {
         }
         return entityList.stream()
                 .map(this::toDataObject)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 批量转换关注关系实体列表为持久化对象列表
+     */
+    public List<Follow> toDataObjectsFromFollowRelation(List<FollowRelationEntity> entityList) {
+        if (entityList == null || entityList.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return entityList.stream()
+                .map(this::toDataObjectFromFollowRelation)
                 .collect(Collectors.toList());
     }
 }

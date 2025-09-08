@@ -75,6 +75,18 @@
         WHERE id = #{followeeId}
     </update>
 
+    <update id="updateUserFollowCount">
+        UPDATE user
+        SET follow_count = #{followCount}
+        WHERE id = #{id}
+    </update>
+    
+    <update id="updateUserFansCount">
+        UPDATE user
+        SET fans_count = #{fansCount}
+        WHERE id = #{id}
+    </update>
+
     <select id="selectById" resultMap="userMap">
         SELECT
         <include refid="Base_Column_List"/>

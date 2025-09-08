@@ -161,6 +161,42 @@ public class UserAggregate {
     public void loseFollower() {
         user.decreaseFansCount();
     }
+    
+    /**
+     * 直接设置关注数
+     * 
+     * @param followCount 关注数
+     */
+    public void setFollowCount(Long followCount) {
+        user.setFollowCount(followCount);
+    }
+    
+    /**
+     * 直接设置粉丝数
+     * 
+     * @param fansCount 粉丝数
+     */
+    public void setFansCount(Long fansCount) {
+        user.setFansCount(fansCount);
+    }
+    
+    /**
+     * 获取关注数
+     * 
+     * @return 关注数
+     */
+    public Long getFollowCount() {
+        return user.getFollowCount();
+    }
+    
+    /**
+     * 获取粉丝数
+     * 
+     * @return 粉丝数
+     */
+    public Long getFansCount() {
+        return user.getFansCount();
+    }
 
     /**
      * 获得点赞

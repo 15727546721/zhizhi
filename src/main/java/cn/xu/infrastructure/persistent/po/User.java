@@ -64,15 +64,15 @@ public class User implements Serializable {
     /**
      * 关注数量
      */
-    private Integer followCount;
+    private Long followCount;
     /**
      * 粉丝数量
      */
-    private Integer fansCount;
+    private Long fansCount;
     /**
      * 获赞数量
      */
-    private Integer likeCount;
+    private Long likeCount;
     /**
      * 最后登录时间
      */

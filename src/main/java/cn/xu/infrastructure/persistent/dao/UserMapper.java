@@ -85,6 +85,22 @@ public interface UserMapper {
     void updateFansCount(@Param("followeeId") Long followeeId, @Param("count") int count);
 
     /**
+     * 更新用户关注数
+     *
+     * @param id 用户ID
+     * @param followCount 关注数
+     */
+    void updateUserFollowCount(@Param("id") Long id, @Param("followCount") Long followCount);
+    
+    /**
+     * 更新用户粉丝数
+     *
+     * @param id 用户ID
+     * @param fansCount 粉丝数
+     */
+    void updateUserFansCount(@Param("id") Long id, @Param("fansCount") Long fansCount);
+
+    /**
      * 查询全部用户
      *
      * @return 用户列表

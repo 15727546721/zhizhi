@@ -97,4 +97,20 @@ public interface IUserRepository {
      * @return 角色名称列表
      */
     List<String> findRolesByUserId(Long userId);
+    
+    /**
+     * 更新用户的关注数
+     * 
+     * @param userId 用户ID
+     * @param followCount 关注数
+     */
+    void updateFollowCount(Long userId, Long followCount);
+    
+    /**
+     * 更新用户的粉丝数
+     * 
+     * @param userId 用户ID
+     * @param fansCount 粉丝数
+     */
+    void updateFansCount(Long userId, Long fansCount);
 }
