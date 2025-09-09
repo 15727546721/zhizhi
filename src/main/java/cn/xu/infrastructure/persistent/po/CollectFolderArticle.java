@@ -6,20 +6,21 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * 文章收藏表
- * @TableName article_collect
+ * 收藏夹文章关联持久化对象
+ *
+ * @TableName collect_folder_article
  */
 @Data
-public class ArticleCollect implements Serializable {
+public class CollectFolderArticle implements Serializable {
     /**
-     * 收藏文章ID
+     * 主键ID
      */
     private Long id;
 
     /**
-     * 用户ID
+     * 收藏夹ID
      */
-    private Long userId;
+    private Long folderId;
 
     /**
      * 文章ID
@@ -27,18 +28,14 @@ public class ArticleCollect implements Serializable {
     private Long articleId;
 
     /**
-     * 收藏状态：1-收藏，0-未收藏
+     * 用户ID
      */
-    private Integer status;
+    private Long userId;
 
     /**
      * 收藏时间
      */
     private LocalDateTime createTime;
-    
-    /**
-     * 更新时间
-     */
-    private LocalDateTime updateTime;
 
+    private static final long serialVersionUID = 1L;
 }

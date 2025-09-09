@@ -17,4 +17,7 @@ public interface ArticleTagMapper {
     void insertBatchByList(List<ArticleTagRel> articleTagRels);
 
     void deleteByArticleId(@Param("articleId") Long articleId);
+    
+    // 添加根据文章ID查询标签ID的方法
+    List<Long> selectTagIdsByArticleId(@Param("articleId") Long articleId);
 }

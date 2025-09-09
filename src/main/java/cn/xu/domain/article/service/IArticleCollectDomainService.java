@@ -6,18 +6,9 @@ import java.util.List;
 
 /**
  * 文章收藏领域服务接口
- * 处理文章收藏相关的业务逻辑
+ * 处理文章收藏相关的核心业务逻辑
  */
-public interface IArticleCollectService {
-    /**
-     * 判断当前用户是否收藏了该文章
-     *
-     * @param currentUserId 用户ID
-     * @param articleId     文章ID
-     * @return 是否已收藏
-     */
-    boolean checkStatus(Long currentUserId, Long articleId);
-
+public interface IArticleCollectDomainService {
     /**
      * 收藏文章
      *
@@ -36,22 +27,13 @@ public interface IArticleCollectService {
     void uncollectArticle(Long userId, Long articleId);
 
     /**
-     * 批量收藏文章
+     * 检查文章是否已收藏
      *
-     * @param userId     用户ID
-     * @param articleIds 文章ID列表
-     * @return 成功收藏的文章数量
+     * @param userId    用户ID
+     * @param articleId 文章ID
+     * @return 是否已收藏
      */
-    int collectArticles(Long userId, List<Long> articleIds);
-
-    /**
-     * 批量取消收藏文章
-     *
-     * @param userId     用户ID
-     * @param articleIds 文章ID列表
-     * @return 成功取消收藏的文章数量
-     */
-    int uncollectArticles(Long userId, List<Long> articleIds);
+    boolean isArticleCollected(Long userId, Long articleId);
 
     /**
      * 获取用户收藏的文章数量
@@ -68,4 +50,22 @@ public interface IArticleCollectService {
      * @return 收藏的文章ID列表
      */
     List<Long> getCollectArticleIds(Long userId);
+
+    /**
+     * 批量收藏文章
+     *
+     * @param userId     用户ID
+     * @param articleIds 文章ID列表
+     * @return 成功收藏的文章数量
+     */
+    int collectArticles(Long userId, List<Long> articleIds);
+
+    /**
+     * 批量取消收藏文章
+     *
+     * @param userId     用户ID
+     * @param articleIds 文章ID列表
+     * @return 成功取消收藏的文章数量
+     */
+    int uncollectArticles(Long userId, List<Long> articleIds);
 }

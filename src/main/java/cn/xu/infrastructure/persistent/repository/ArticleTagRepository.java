@@ -45,9 +45,10 @@ public class ArticleTagRepository implements IArticleTagRepository {
     
     @Override
     public List<Long> findTagIdsByArticleId(Long articleId) {
-        // 这里需要实现从数据库查询标签ID的逻辑
-        // 暂时返回空列表，需要在ArticleTagMapper中添加相应的查询方法
-        return new LinkedList<>();
+        if (articleId == null) {
+            return new LinkedList<>();
+        }
+        return articleTagDao.selectTagIdsByArticleId(articleId);
     }
 
 }
