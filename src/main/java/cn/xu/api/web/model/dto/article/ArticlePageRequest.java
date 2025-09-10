@@ -21,12 +21,6 @@ public class ArticlePageRequest {
 
     /**
      * 排序方式
-     * newest: 最新
-     * hottest: 最热
-     * most_commented: 最多评论
-     * most_bookmarked: 最多收藏
-     * most_liked: 最多点赞
-     * popular: 最受欢迎（浏览量）
      */
     private String sortBy = "hottest";
 }

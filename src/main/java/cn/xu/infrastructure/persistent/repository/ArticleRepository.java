@@ -137,7 +137,12 @@ public class ArticleRepository implements IArticleRepository {
         return articleConverter.toDomainEntities(articles);
     }
 
-    @Override
+    /**
+     * 分页查询文章列表
+     * @param pageNo 页码
+     * @param pageSize 页面大小
+     * @return 文章列表
+     */
     public List<ArticleEntity> getArticlePageList(Integer pageNo, Integer pageSize) {
         int offset = (pageNo - 1) * pageSize;
         List<Article> articles = articleDao.getArticlePageList(offset, pageSize);

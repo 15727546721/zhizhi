@@ -88,20 +88,22 @@ public interface ArticleMapper {
     /**
      * 分页查询文章列表
      */
-    List<Article> getArticlePageByCategory(Long categoryId, int offset, int size);
-
+    List<Article> getArticlePageList(@Param("offset") Integer offset,
+                                     @Param("size") Integer size);
+    
+    /**
+     * 分页查询分类下的文章列表
+     */
+    List<Article> getArticlePageByCategory(@Param("categoryId") Long categoryId, 
+                                          @Param("offset") int offset, 
+                                          @Param("size") int size);
+    
     /**
      * 分页查询文章列表（支持排序）
      */
     List<Article> getArticlePageListWithSort(@Param("offset") Integer offset,
                                             @Param("size") Integer size,
                                             @Param("sortBy") String sortBy);
-
-    /**
-     * 获取文章
-     */
-    List<Article> getArticlePageList(@Param("offset") Integer offset,
-                                     @Param("size") Integer size);
     
     /**
      * 检查文章是否存在

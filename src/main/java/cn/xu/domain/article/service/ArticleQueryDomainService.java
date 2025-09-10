@@ -5,6 +5,8 @@ import cn.xu.api.web.model.vo.article.ArticleListVO;
 import cn.xu.api.web.model.vo.article.ArticlePageVO;
 import cn.xu.domain.article.model.aggregate.ArticleAggregate;
 import cn.xu.domain.article.model.entity.ArticleEntity;
+import cn.xu.domain.article.model.policy.ArticleSortPolicy;
+import cn.xu.domain.article.model.policy.ArticleSortPolicyFactory;
 import cn.xu.domain.article.repository.IArticleAggregateRepository;
 import cn.xu.domain.article.repository.IArticleRepository;
 import cn.xu.domain.user.model.entity.UserEntity;
@@ -74,20 +76,6 @@ public class ArticleQueryDomainService {
         
         validatePageRequest(request);
         return articleRepository.queryArticle(request);
-    }
-    
-    /**
-     * 分页查询文章列表（支持排序）
-     * @param request 查询请求
-     * @return 文章实体列表
-     */
-    public List<ArticleEntity> queryArticleByPageWithSort(ArticleRequest request) {
-        if (request == null) {
-            throw new IllegalArgumentException("查询请求不能为空");
-        }
-        
-        validatePageRequest(request);
-        return articleRepository.getArticlePageListWithSort(request.getPageNo(), request.getPageSize(), request.getSortBy());
     }
 
     /**
@@ -337,5 +325,24 @@ public class ArticleQueryDomainService {
     public ArticleEntity getArticleDetail(Long articleId) {
         ArticleQueryStrategy strategy = strategyFactory.getCurrentStrategy();
         return strategy.getArticleDetail(articleId);
+    }
+    
+    /**
+     * 分页查询文章列表（支持排序）
+     * @param request 查询请求
+     * @return 文章实体列表
+     */
+    public List<ArticleEntity> queryArticleByPageWithSort(ArticleRequest request) {
+        if (request == null) {
+            throw new IllegalArgumentException("查询请求不能为空");
+        }
+        
+        validatePageRequest(request);
+        
+        // 使用排序策略工厂获取排序策略
+        ArticleSortPolicy sortPolicy = ArticleSortPolicyFactory.getPolicyByCode(request.getSortBy());
+        
+        // 将排序策略传递给仓储层
+        return articleRepository.getArticlePageListWithSort(request.getPageNo(), request.getPageSize(), sortPolicy.getSortType().getCode());
     }
 }
