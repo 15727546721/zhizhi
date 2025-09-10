@@ -14,14 +14,21 @@ import cn.xu.domain.permission.repository.IPermissionRepository;
 import cn.xu.domain.permission.service.IPermissionService;
 import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.common.response.PageResponse;
+import cn.xu.infrastructure.config.satoken.UserPermission;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.annotation.Resource;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * 权限服务实现类
+ * 
+ * @author Lily
+ */
 @Slf4j
 @Service
 public class PermissionServiceImpl implements IPermissionService {
@@ -30,8 +37,11 @@ public class PermissionServiceImpl implements IPermissionService {
     private IPermissionRepository permissionRepository;
     @Resource
     private TransactionTemplate transactionTemplate;
+    @Resource
+    private UserPermission userPermission;
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public List<MenuEntity> selectMenuTreeList() {
         // 1查询所有菜单
         List<MenuEntity> menuEntityList = permissionRepository.selectMenuList();
@@ -116,12 +126,15 @@ public class PermissionServiceImpl implements IPermissionService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void assignRoleMenus(RoleMenuRequest roleMenuRequest) {
         Long roleId = roleMenuRequest.getRoleId();
         List<Long> menuIds = roleMenuRequest.getMenuIds();
         if (roleId != null && menuIds.isEmpty()) {
             // 将角色绑定的权限菜单清空
             permissionRepository.deleteRoleMenuByRoleId(roleId);
+            // 清除与该角色关联的用户的权限缓存
+            clearUserPermissionsCacheByRoleId(roleId);
             return;
         }
         if (roleId == null || menuIds.isEmpty()) {
@@ -137,6 +150,8 @@ public class PermissionServiceImpl implements IPermissionService {
                 permissionRepository.deleteRoleMenuByRoleId(roleId);
                 // 再插入新菜单权限
                 permissionRepository.insertRoleMenu(roleId, menuIds);
+                // 清除与该角色关联的用户的权限缓存
+                clearUserPermissionsCacheByRoleId(roleId);
                 return null;
             } catch (Exception e) {
                 // 回滚事务
@@ -148,6 +163,7 @@ public class PermissionServiceImpl implements IPermissionService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void addRole(RoleAddOrUpdateRequest role) {
         // 1. 检查角色编码是否已存在
         if (permissionRepository.existsByCode(role.getCode())) {
@@ -166,6 +182,7 @@ public class PermissionServiceImpl implements IPermissionService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void updateRole(RoleAddOrUpdateRequest role) {
         // 1. 检查角色是否存在
         RoleEntity existingRole = permissionRepository.selectRoleById(role.getId());
@@ -191,11 +208,13 @@ public class PermissionServiceImpl implements IPermissionService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void deleteRoleByIds(List<Long> ids) {
         permissionRepository.deleteRoleByIds(ids);
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void addMenu(MenuEntity menu) {
         if (menu.getType().equals(MenuTypeVO.CATALOG.getCode())) {
             menu.setComponent(MenuComponentVO.Layout.getName());
@@ -204,11 +223,13 @@ public class PermissionServiceImpl implements IPermissionService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void updateMenu(MenuEntity menu) {
         permissionRepository.updateMenu(menu);
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void deleteMenu(Long id) {
         permissionRepository.deleteMenu(id);
     }
@@ -233,9 +254,10 @@ public class PermissionServiceImpl implements IPermissionService {
     }
 
     /**
-     * 构建树形结构
+     * 构建菜单树形结构
      *
-     * @return
+     * @param menuList 菜单列表
+     * @return 树形结构的菜单列表
      */
     public List<MenuEntity> buildMenuTree(List<MenuEntity> menuList) {
         // 创建一个Map以便快速查找
@@ -264,11 +286,11 @@ public class PermissionServiceImpl implements IPermissionService {
     }
 
     /**
-     * 分配角色权限-下拉菜单树
+     * 构建菜单选项树的子节点
      *
-     * @param pid
-     * @param menus
-     * @return
+     * @param pid 菜单父ID
+     * @param menus 菜单列表
+     * @return 子菜单选项列表
      */
     private List<MenuOptionsEntity> getOptionsChild(Long pid, List<MenuEntity> menus) {
         if (menus == null) {
@@ -297,6 +319,9 @@ public class PermissionServiceImpl implements IPermissionService {
 
     /**
      * 构建路由树
+     *
+     * @param menus 菜单列表
+     * @return 路由树列表
      */
     private List<RouterEntity> buildRouterTree(List<MenuEntity> menus) {
         if (menus == null || menus.isEmpty()) {
@@ -318,6 +343,10 @@ public class PermissionServiceImpl implements IPermissionService {
 
     /**
      * 获取路由菜单树的子节点
+     *
+     * @param parentId 父节点ID
+     * @param menus 菜单列表
+     * @return 子节点路由列表
      */
     private List<RouterEntity> getRouterChild(Long parentId, List<MenuEntity> menus) {
         if (menus == null || menus.isEmpty()) {
@@ -339,6 +368,9 @@ public class PermissionServiceImpl implements IPermissionService {
 
     /**
      * 将菜单实体转换为路由实体
+     *
+     * @param menu 菜单实体
+     * @return 路由实体
      */
     private RouterEntity convertMenuToRouter(MenuEntity menu) {
         RouterEntity.MetaEntity meta = new RouterEntity.MetaEntity(
@@ -361,5 +393,33 @@ public class PermissionServiceImpl implements IPermissionService {
     @Override
     public long countRole(String name) {
         return permissionRepository.countRole(name);
+    }
+
+    /**
+     * 根据角色ID清除相关用户的权限缓存
+     * @param roleId 角色ID
+     */
+    private void clearUserPermissionsCacheByRoleId(Long roleId) {
+        try {
+            // 根据角色ID查询所有关联的用户ID
+            List<Long> userIds = permissionRepository.findUserIdsByRoleId(roleId);
+            // 清除这些用户的权限缓存
+            clearUserPermissionsCacheByUserIds(userIds);
+            log.info("角色 [{}] 的菜单权限已变更，已清除 {} 个相关用户的权限缓存", roleId, userIds.size());
+        } catch (Exception e) {
+            log.error("清除角色相关用户权限缓存失败, roleId: {}", roleId, e);
+        }
+    }
+    
+    /**
+     * 清除指定用户ID列表的权限缓存
+     * @param userIds 用户ID列表
+     */
+    private void clearUserPermissionsCacheByUserIds(List<Long> userIds) {
+        if (userIds != null && !userIds.isEmpty()) {
+            for (Long userId : userIds) {
+                userPermission.clearUserPermissionCache(userId);
+            }
+        }
     }
 }

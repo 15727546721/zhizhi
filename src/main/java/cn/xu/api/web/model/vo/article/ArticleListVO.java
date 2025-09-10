@@ -1,20 +1,14 @@
 package cn.xu.api.web.model.vo.article;
 
+import cn.xu.domain.article.model.entity.ArticleEntity;
+import cn.xu.domain.user.model.entity.UserEntity;
 import lombok.Data;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
 public class ArticleListVO {
-    private int id;
-    private String title;
-    private String coverUrl;
-    private String description;
-    private String nickname;
-    private LocalDateTime createTime;
-    private LocalDateTime publishTime;
-    private long viewCount;
-    private long likeCount;
+    ArticleEntity article;
+    UserEntity user;
     private List<String> tagNameList;
 }

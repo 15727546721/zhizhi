@@ -1,56 +1,45 @@
 package cn.xu.domain.like.repository;
 
-import cn.xu.domain.like.model.Like;
+import cn.xu.domain.like.model.LikeEntity;
 import cn.xu.domain.like.model.LikeType;
-
-import java.util.Set;
 
 /**
  * 点赞仓储接口
+ * 遵循DDD原则，只处理点赞领域实体的操作
  */
 public interface ILikeRepository {
     /**
      * 保存点赞记录
      */
-    void save(Like like);
-
-    /**
-     * 获取点赞数量
-     */
-    Long getLikeCount(Long targetId, LikeType type);
-
-    /**
-     * 检查是否已点赞
-     */
-    boolean isLiked(Long userId, Long targetId, LikeType type);
+    void saveLike(LikeEntity likeEntity);
 
     /**
      * 删除点赞记录
      */
-    void delete(Long userId, Long targetId, LikeType type);
+    void remove(Long userId, Long targetId, LikeType type);
 
     /**
-     * 获取点赞用户ID列表
+     * 更新点赞状态
      */
-    Set<Long> getLikedUserIds(Long targetId, LikeType type);
+    void updateStatus(Long userId, LikeType type, Long targetId, Integer status);
 
     /**
-     * 分页获取指定类型的点赞记录
+     * 根据用户ID、类型、目标ID查询点赞记录
      */
-    Set<Like> getPageByType(LikeType type, Integer offset, Integer limit);
+    LikeEntity findByUserIdAndTypeAndTargetId(Long userId, LikeType type, Long targetId);
 
     /**
-     * 获取指定类型的点赞记录总数
+     * 检查点赞状态
      */
-    Long countByType(LikeType type);
+    boolean checkStatus(Long userId, LikeType type, Long targetId);
 
     /**
-     * 同步数据到缓存
+     * 增加点赞数
      */
-    void syncToCache(Long targetId, LikeType type);
+    void incrementLikeCount(Long targetId, LikeType type);
 
     /**
-     * 清理过期缓存
+     * 减少点赞数
      */
-    void cleanExpiredCache();
-} 
+    void decrementLikeCount(Long targetId, LikeType type);
+}

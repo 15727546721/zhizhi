@@ -1,14 +1,15 @@
 package cn.xu.domain.comment.service;
 
-import cn.xu.api.web.model.dto.comment.CommentRequest;
+import cn.xu.api.web.model.dto.comment.FindReplyReq;
+import cn.xu.api.web.model.dto.comment.FindCommentReq;
+import cn.xu.domain.comment.event.CommentCreatedEvent;
 import cn.xu.domain.comment.model.entity.CommentEntity;
-import cn.xu.domain.comment.model.valueobject.CommentType;
 
 import java.util.List;
 
+
 /**
  * 评论服务接口
- *
  */
 public interface ICommentService {
     /**
@@ -16,18 +17,15 @@ public interface ICommentService {
      *
      * @param request 评论请求参数
      */
-    void saveComment(CommentRequest request);
+    Long saveComment(CommentCreatedEvent request);
 
     /**
-     * 分页获取评论列表
+     * 获取评论列表（带预览）
      *
-     * @param type     评论类型
-     * @param targetId 目标ID（文章ID或话题ID）
-     * @param pageNum  页码
-     * @param pageSize 每页数量
-     * @return 评论列表（已构建好父子关系）
+     * @param request
+     * @return
      */
-    List<CommentEntity> getPagedComments(CommentType type, Long targetId, Integer pageNum, Integer pageSize);
+    List<CommentEntity> findCommentListWithPreview(FindCommentReq request);
 
     /**
      * 删除评论
@@ -38,6 +36,7 @@ public interface ICommentService {
 
     /**
      * 删除评论（管理员操作）
+     *
      * @param commentId
      */
     void deleteCommentByAdmin(Long commentId);
@@ -49,4 +48,9 @@ public interface ICommentService {
      * @return 评论实体
      */
     CommentEntity getCommentById(Long commentId);
+
+    /**
+     * 获取评论的子评论列表
+     */
+    List<CommentEntity> findChildCommentList(FindReplyReq request);
 }

@@ -6,7 +6,9 @@ import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.user.constant.UserErrorCode;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.model.entity.UserInfoEntity;
-import cn.xu.domain.user.model.valobj.LoginFormVO;
+import cn.xu.domain.user.model.valobj.Password;
+import cn.xu.domain.user.model.vo.LoginFormVO;
+import cn.xu.domain.user.model.vo.UserFormVO;
 import cn.xu.domain.user.repository.IUserRepository;
 import cn.xu.domain.user.service.IUserLoginService;
 import cn.xu.infrastructure.common.exception.BusinessException;
@@ -17,6 +19,11 @@ import org.springframework.util.ObjectUtils;
 import javax.annotation.Resource;
 import java.util.List;
 
+/**
+ * 用户登录服务实现类
+ * 
+ * @author Lily
+ */
 @Slf4j
 @Service
 public class UserLoginService implements IUserLoginService {
@@ -29,17 +36,18 @@ public class UserLoginService implements IUserLoginService {
         if (ObjectUtils.isEmpty(loginFormVO)) {
             throw new BusinessException(ResponseCode.NULL_PARAMETER.getCode(), "登录参数不能为空");
         }
-
-        UserEntity user = userRepository.findByUsername(loginFormVO.getUsername())
-                .orElseThrow(() -> new BusinessException(ResponseCode.NULL_RESPONSE.getCode(), "该用户不存在"));
-
-        String password = SaSecureUtil.sha256(loginFormVO.getPassword());
-        if (!user.getPassword().equals(password)) {
+        UserFormVO userFormVO = userRepository.findUsernameAndPasswordByUsername(loginFormVO.getUsername());
+        if (ObjectUtils.isEmpty(userFormVO)) {
+            throw new BusinessException(UserErrorCode.USER_NOT_FOUND.getCode(), "用户不存在");
+        }
+        
+        // 使用Password.matches方法验证密码
+        if (!Password.matches(loginFormVO.getPassword(), userFormVO.getPassword())) {
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "密码错误");
         }
 
         // 登录
-        StpUtil.login(user.getId());
+        StpUtil.login(userFormVO.getId());
         // 返回token
         return StpUtil.getTokenValue();
     }
@@ -53,24 +61,33 @@ public class UserLoginService implements IUserLoginService {
         }
 
         UserEntity user = userRepository.findById(Long.valueOf(userId.toString()))
-                .orElseThrow(() -> new BusinessException(ResponseCode.NULL_RESPONSE.getCode(), "用户不存在"));
+                .orElse(null);
+        if (user == null) {
+            throw new BusinessException(ResponseCode.NULL_RESPONSE.getCode(), "用户不存在");
+        }
 
         return convertToUserInfoEntity(user);
     }
 
+    /**
+     * 将用户实体转换为用户信息实体
+     *
+     * @param user 用户实体
+     * @return 用户信息实体
+     */
     private UserInfoEntity convertToUserInfoEntity(UserEntity user) {
         return UserInfoEntity.builder()
                 .id(user.getId())
-                .username(user.getUsername())
-                .email(user.getEmail())
+                .username(user.getUsernameValue())
+                .email(user.getEmailValue())
                 .nickname(user.getNickname())
                 .avatar(user.getAvatar())
                 .gender(user.getGender())
-                .phone(user.getPhone())
+                .phone(user.getPhoneValue())
                 .region(user.getRegion())
                 .birthday(user.getBirthday())
                 .description(user.getDescription())
-                .status(user.getStatus())
+                .status(user.getStatusCode())
                 .createTime(user.getCreateTime())
                 .updateTime(user.getUpdateTime())
                 .build();
@@ -86,7 +103,10 @@ public class UserLoginService implements IUserLoginService {
         }
 
         UserEntity user = userRepository.findById(userId)
-                .orElseThrow(() -> new BusinessException(ResponseCode.NULL_RESPONSE.getCode(), "用户不存在"));
+                .orElse(null);
+        if (user == null) {
+            throw new BusinessException(ResponseCode.NULL_RESPONSE.getCode(), "用户不存在");
+        }
 
         List<String> roles = userRepository.findRolesByUserId(userId);
 

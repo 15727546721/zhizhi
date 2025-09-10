@@ -34,7 +34,6 @@ public class SysCategoryController {
         }
         CategoryEntity categoryEntity = CategoryEntity.builder()
                 .name(categoryRequest.getName())
-                .description(categoryRequest.getDescription())
                 .build();
         categoryService.save(categoryEntity);
         return ResponseEntity.builder()
@@ -78,7 +77,6 @@ public class SysCategoryController {
         CategoryEntity categoryEntity = CategoryEntity.builder()
                 .id(categoryRequest.getId())
                 .name(categoryRequest.getName())
-                .description(categoryRequest.getDescription())
                 .build();
         categoryService.update(categoryEntity);
         return ResponseEntity.builder()

@@ -13,7 +13,7 @@ public class MessageEvent {
     private String title;
     private String content;
     private Long targetId;
-    
+
     public static MessageEvent createCommentEvent(Long senderId, Long receiverId, String content, Long articleId) {
         return MessageEvent.builder()
                 .type(MessageType.COMMENT)
@@ -23,7 +23,7 @@ public class MessageEvent {
                 .targetId(articleId)
                 .build();
     }
-    
+
     public static MessageEvent createLikeEvent(Long senderId, Long receiverId, String content, Long targetId) {
         return MessageEvent.builder()
                 .type(MessageType.LIKE)
@@ -33,7 +33,7 @@ public class MessageEvent {
                 .targetId(targetId)
                 .build();
     }
-    
+
     public static MessageEvent createFollowEvent(Long senderId, Long receiverId) {
         return MessageEvent.builder()
                 .type(MessageType.FOLLOW)

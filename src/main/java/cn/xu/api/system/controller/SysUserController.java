@@ -8,7 +8,7 @@ import cn.xu.api.system.model.dto.user.UserRequest;
 import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.model.entity.UserInfoEntity;
-import cn.xu.domain.user.model.valobj.LoginFormVO;
+import cn.xu.domain.user.model.vo.LoginFormVO;
 import cn.xu.domain.user.service.IUserLoginService;
 import cn.xu.domain.user.service.IUserService;
 import cn.xu.infrastructure.common.exception.BusinessException;
@@ -56,7 +56,14 @@ public class SysUserController {
     public ResponseEntity<UserInfoEntity> getInfoByToken(@RequestHeader(required = false, value = "Authorization")
                                                          String token) {
         log.info("获取用户信息: {}", token);
-        UserInfoEntity userInfo = userLoginService.getInfoByToken(token.substring("Bearer".length() + 1));
+        
+        // 处理 token 前缀，使其更加健壮
+        String actualToken = token;
+        if (token != null && token.startsWith("Bearer ")) {
+            actualToken = token.substring(7); // "Bearer ".length() = 7
+        }
+        
+        UserInfoEntity userInfo = userLoginService.getInfoByToken(actualToken);
         return ResponseEntity.<UserInfoEntity>builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .info("获取用户信息成功")
@@ -90,6 +97,7 @@ public class SysUserController {
         List<UserEntity> users = userService.queryUserList(pageRequest);
         return ResponseEntity.<List<UserEntity>>builder()
                 .code(ResponseCode.SUCCESS.getCode())
+                .info("查询成功")
                 .data(users)
                 .build();
     }
@@ -100,7 +108,7 @@ public class SysUserController {
         userService.addUser(userRequest);
         return ResponseEntity.<Void>builder()
                 .code(ResponseCode.SUCCESS.getCode())
-                .info("用户添加成功")
+                .info("添加成功")
                 .build();
     }
 
@@ -110,77 +118,28 @@ public class SysUserController {
         userService.updateUser(userRequest);
         return ResponseEntity.<Void>builder()
                 .code(ResponseCode.SUCCESS.getCode())
-                .info("用户更新成功")
+                .info("更新成功")
                 .build();
     }
 
-    @DeleteMapping("/user/delete")
+    @PostMapping("/user/delete/{id}")
     @Operation(summary = "删除用户")
-    public ResponseEntity<Void> deleteUser(@RequestParam Long userId) {
-        userService.deleteUser(userId);
+    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
+        userService.deleteUser(id);
         return ResponseEntity.<Void>builder()
                 .code(ResponseCode.SUCCESS.getCode())
-                .info("用户删除成功")
+                .info("删除成功")
                 .build();
     }
 
-    @GetMapping("/user/profile/info")
-    @Operation(summary = "查询用户个人信息")
-    public ResponseEntity<UserInfoEntity> queryUserInfo() {
-        UserInfoEntity userInfo = userService.queryUserInfo();
-        return ResponseEntity.<UserInfoEntity>builder()
-                .code(ResponseCode.SUCCESS.getCode())
-                .data(userInfo)
-                .build();
-    }
-
-    @PostMapping("/user/profile/update")
-    @Operation(summary = "更新用户个人信息")
-    public ResponseEntity<Void> updateUserInfo(@RequestBody UserInfoEntity userInfoEntity) {
-        userService.updateUserInfo(userInfoEntity);
-        return ResponseEntity.<Void>builder()
-                .code(ResponseCode.SUCCESS.getCode())
-                .info("用户个人信息更新成功")
-                .build();
-    }
-
-    @PostMapping("/user/profile/avatar")
+    @PostMapping("/upload")
     @Operation(summary = "上传用户头像")
-    public ResponseEntity<String> uploadAvatar(@RequestParam("file") MultipartFile file) {
-        if (file.isEmpty()) {
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "请选择要上传的头像文件");
-        }
-        
-        // 校验文件类型
-        String contentType = file.getContentType();
-        if (contentType == null || !contentType.startsWith("image/")) {
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "只能上传图片文件");
-        }
-        
-        // 校验文件大小（2MB）
-        long maxSize = 2 * 1024 * 1024;
-        if (file.getSize() > maxSize) {
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "头像文件大小不能超过2MB");
-        }
-
-        String avatarUrl = userService.uploadAvatar(file);
+    public ResponseEntity<String> upload(@RequestParam("file") MultipartFile file) {
+        String url = userService.uploadAvatar(file);
         return ResponseEntity.<String>builder()
                 .code(ResponseCode.SUCCESS.getCode())
-                .info("头像上传成功")
-                .data(avatarUrl)
-                .build();
-    }
-
-    @GetMapping("/user/info/roles")
-    @Operation(summary = "获取用户信息及角色")
-    @SaCheckLogin
-    public ResponseEntity<UserInfoEntity> getUserInfoAndRoles() {
-        log.info("获取当前登录用户信息及角色");
-        UserInfoEntity userInfo = userLoginService.getCurrentUserInfoAndRoles();
-        return ResponseEntity.<UserInfoEntity>builder()
-                .code(ResponseCode.SUCCESS.getCode())
-                .info("获取用户信息及角色成功")
-                .data(userInfo)
+                .info("上传成功")
+                .data(url)
                 .build();
     }
 }

@@ -1,7 +1,7 @@
 package cn.xu.domain.user.service;
 
 import cn.xu.domain.user.model.entity.UserInfoEntity;
-import cn.xu.domain.user.model.valobj.LoginFormVO;
+import cn.xu.domain.user.model.vo.LoginFormVO;
 
 public interface IUserLoginService {
 

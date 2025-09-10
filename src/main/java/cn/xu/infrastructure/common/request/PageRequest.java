@@ -13,9 +13,9 @@ public class PageRequest {
     @Min(value = 1, message = "页码不能小于1")
     private Integer pageNo = 1;
 
-    @Schema(description = "每页数量", defaultValue = "20")
+    @Schema(description = "每页数量", defaultValue = "10")
     @Min(value = 1, message = "每页数量不能小于1")
     @Max(value = 100, message = "每页数量不能大于100")
-    private Integer pageSize = 20;
+    private Integer pageSize = 10;
 }
 

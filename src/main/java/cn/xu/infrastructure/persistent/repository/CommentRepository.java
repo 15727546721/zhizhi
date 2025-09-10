@@ -1,340 +1,168 @@
 package cn.xu.infrastructure.persistent.repository;
 
-import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.comment.model.entity.CommentEntity;
-import cn.xu.domain.comment.model.valueobject.CommentType;
 import cn.xu.domain.comment.repository.ICommentRepository;
-import cn.xu.infrastructure.common.exception.BusinessException;
-import cn.xu.infrastructure.persistent.dao.ICommentDao;
+import cn.xu.infrastructure.persistent.converter.CommentConverter;
+import cn.xu.infrastructure.persistent.dao.CommentMapper;
 import cn.xu.infrastructure.persistent.po.Comment;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 
-import javax.annotation.Resource;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Slf4j
 @Repository
+@RequiredArgsConstructor
 public class CommentRepository implements ICommentRepository {
 
-    @Resource
-    private ICommentDao commentDao;
+    private final CommentMapper commentMapper;
+    private final CommentConverter commentConverter;
 
     @Override
-    public Long addComment(CommentEntity commentEntity) {
-        Comment comment = convertToComment(commentEntity);
-        comment.setCreateTime(LocalDateTime.now());
-        comment.setUpdateTime(LocalDateTime.now());
-        commentDao.insert(comment);
-        return comment.getId();
+    public Long save(CommentEntity commentEntity) {
+        Comment comment = commentConverter.toDataObject(commentEntity);
+        if (comment.getId() == null) {
+            return commentMapper.saveComment(comment);
+        } else {
+            // 对于更新操作，我们使用saveComment方法，因为它会处理插入和更新
+            return commentMapper.saveComment(comment);
+        }
     }
 
     @Override
-    public Long replyComment(CommentEntity commentEntity) {
-        Comment comment = convertToComment(commentEntity);
-        comment.setCreateTime(LocalDateTime.now());
-        comment.setUpdateTime(LocalDateTime.now());
-        commentDao.insert(comment);
-        return comment.getId();
-    }
-
-    @Override
-    public List<CommentEntity> getArticleComments(Long articleId) {
-        return commentDao.findByTypeAndTargetId(1, articleId)
-                .stream()
-                .map(this::convertToCommentEntity)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public List<CommentEntity> getTopicComments(Long topicId) {
-        return commentDao.findByTypeAndTargetId(2, topicId)
-                .stream()
-                .map(this::convertToCommentEntity)
+    public List<CommentEntity> findCommentBatch(int offset, int batchSize) {
+        List<Comment> comments = commentMapper.findCommentsBatch(offset, batchSize);
+        return comments.stream()
+                .map(commentConverter::toDomainEntity)
                 .collect(Collectors.toList());
     }
 
     @Override
     public CommentEntity findById(Long id) {
-        try {
-            log.info("查询评论 - id: {}", id);
-            Comment comment = commentDao.selectById(id);
-            return convertToEntity(comment);
-        } catch (Exception e) {
-            log.error("查询评论失败 - id: {}", id, e);
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "查询评论失败：" + e.getMessage());
-        }
+        Comment comment = commentMapper.selectById(id);
+        return comment != null ? commentConverter.toDomainEntity(comment) : null;
+    }
+
+    @Override
+    public List<CommentEntity> findRootCommentsByHot(int targetType, long targetId, int pageNo, int pageSize) {
+        int offset = (pageNo - 1) * pageSize;
+        List<Comment> comments = commentMapper.findRootCommentsByHot(targetType, targetId, offset, pageSize);
+        return comments.stream()
+                .map(commentConverter::toDomainEntity)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<CommentEntity> findRootCommentsByTime(int targetType, long targetId, int pageNo, int pageSize) {
+        int offset = (pageNo - 1) * pageSize;
+        List<Comment> comments = commentMapper.findRootCommentsByTime(targetType, targetId, offset, pageSize);
+        return comments.stream()
+                .map(commentConverter::toDomainEntity)
+                .collect(Collectors.toList());
     }
 
     @Override
     public void deleteById(Long id) {
-        try {
-            log.info("删除评论 - id: {}", id);
-            commentDao.deleteById(id);
-            log.info("删除评论成功 - id: {}", id);
-        } catch (Exception e) {
-            log.error("删除评论失败 - id: {}", id, e);
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "删除评论失败：" + e.getMessage());
-        }
-    }
-
-    @Override
-    public List<CommentEntity> findByTypeAndTargetId(Integer type, Long targetId) {
-        try {
-            log.info("查询评论列表 - type: {}, targetId: {}", type, targetId);
-
-            List<Comment> comments = commentDao.findByTypeAndTargetId(type, targetId);
-            if (comments == null || comments.isEmpty()) {
-                return new ArrayList<>();
-            }
-
-            List<CommentEntity> commentEntities = comments.stream()
-                    .map(this::convertToCommentEntity)
-                    .collect(Collectors.toList());
-
-            log.info("查询到评论数量: {}", commentEntities.size());
-            return commentEntities;
-
-        } catch (Exception e) {
-            log.error("查询评论列表失败 - type: {}, targetId: {}", type, targetId, e);
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "查询评论列表失败：" + e.getMessage());
-        }
+        commentMapper.deleteById(id);
     }
 
     @Override
     public List<CommentEntity> findByParentId(Long parentId) {
-        try {
-            log.info("查询子评论列表 - parentId: {}", parentId);
-
-            List<Comment> comments = commentDao.findByParentId(parentId);
-            if (comments == null || comments.isEmpty()) {
-                return new ArrayList<>();
-            }
-
-            List<CommentEntity> commentEntities = comments.stream()
-                    .map(this::convertToCommentEntity)
-                    .collect(Collectors.toList());
-
-            log.info("查询到子评论数量: {}", commentEntities.size());
-            return commentEntities;
-
-        } catch (Exception e) {
-            log.error("查询子评论列表失败 - parentId: {}", parentId, e);
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "查询子评论列表失败：" + e.getMessage());
-        }
+        List<Comment> comments = commentMapper.findByParentId(parentId);
+        return comments.stream()
+                .map(commentConverter::toDomainEntity)
+                .collect(Collectors.toList());
     }
 
     @Override
     public void batchDelete(List<Long> commentIds) {
-        if (commentIds == null || commentIds.isEmpty()) {
-            return;
-        }
-        try {
-            log.info("开始批量删除评论 - commentIds: {}", commentIds);
-            int deletedCount = commentDao.batchDelete(commentIds);
-            log.info("批量删除评论完成 - 删除数量: {}", deletedCount);
-
-            // 如果删除数量与预期不符，抛出异常
-            if (deletedCount != commentIds.size()) {
-                log.error("批量删除评论数量不匹配 - 预期: {}, 实际: {}", commentIds.size(), deletedCount);
-                throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "删除评论数量不匹配");
-            }
-        } catch (Exception e) {
-            log.error("批量删除评论失败 - commentIds: {}", commentIds, e);
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "批量删除评论失败：" + e.getMessage());
+        if (commentIds != null && !commentIds.isEmpty()) {
+            commentMapper.batchDelete(commentIds);
         }
     }
 
-    public void deleteByTopicId(Long topicId) {
-        try {
-            log.info("删除与话题相关的评论 - topicId: {}", topicId);
-            commentDao.deleteByTypeAndTargetId(2, topicId);
-        } catch (Exception e) {
-            log.error("删除与话题相关的评论失败 - topicId: {}", topicId, e);
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "删除与话题相关的评论失败");
-        }
+    @Override
+    public List<CommentEntity> findRootComments(Integer type, Long targetId, int offset, int limit) {
+        List<Comment> comments = commentMapper.findRootCommentsByPage(type, targetId, offset, limit);
+        return comments.stream()
+                .map(commentConverter::toDomainEntity)
+                .collect(Collectors.toList());
     }
 
-    public List<CommentEntity> findRootComments(Long targetId, Integer type) {
-        try {
-            log.info("查询一级评论列表 - targetId: {}, type: {}", targetId, type);
-            List<Comment> comments = commentDao.findRootComments(targetId, type);
-            if (comments == null || comments.isEmpty()) {
-                return new ArrayList<>();
-            }
-            return comments.stream()
-                    .map(this::convertToCommentEntity)
-                    .collect(Collectors.toList());
-        } catch (Exception e) {
-            log.error("查询一级评论列表失败 - targetId: {}, type: {}", targetId, type, e);
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "查询评论列表失败：" + e.getMessage());
-        }
-    }
-
+    @Override
     public List<CommentEntity> findRepliesByPage(Long parentId, int offset, int limit) {
-        try {
-            log.info("分页查询二级评论列表 - parentId: {}, offset: {}, limit: {}", parentId, offset, limit);
-            List<Comment> replies = commentDao.findRepliesByPage(parentId, offset, limit);
-            if (replies == null || replies.isEmpty()) {
-                return new ArrayList<>();
-            }
-            return replies.stream()
-                    .map(this::convertToCommentEntity)
-                    .collect(Collectors.toList());
-        } catch (Exception e) {
-            log.error("分页查询二级评论列表失败 - parentId: {}", parentId, e);
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "查询回复列表失败：" + e.getMessage());
-        }
-    }
-
-    /**
-     * 统计一级评论总数
-     *
-     * @param type 评论类型（可选）
-     * @return 评论总数
-     */
-    @Override
-    public long countRootComments(Integer type, Long userId) {
-        return commentDao.countRootComments(type, userId);
-    }
-
-    /**
-     * 分页查询一级评论列表
-     *
-     * @param type   评论类型（可选）
-     * @param targetId 业务目标ID
-     * @param offset 偏移量
-     * @param limit  每页数量
-     * @return 一级评论列表
-     */
-    @Override
-    public List<CommentEntity> findRootCommentsByPage(Integer type, Long targetId, int offset, int limit) {
-        try {
-            log.info("分页查询一级评论列表 - type: {}, targetId: {}, offset: {}, limit: {}", type, targetId, offset, limit);
-            
-            // 参数校验
-            if (offset < 0) {
-                offset = 0;
-            }
-            if (limit <= 0) {
-                limit = 10;
-            }
-            
-            List<Comment> comments = commentDao.findRootCommentsByPage(type, targetId, offset, limit);
-            if (comments == null || comments.isEmpty()) {
-                return new ArrayList<>();
-            }
-            
-            // 批量转换为实体对象
-            List<CommentEntity> commentEntities = comments.stream()
-                    .map(this::convertToCommentEntity)
-                    .collect(Collectors.toList());
-                    
-            log.info("查询到评论数量: {}", commentEntities.size());
-            return commentEntities;
-            
-        } catch (Exception e) {
-            log.error("分页查询一级评论列表失败 - type: {}, targetId: {}", type, targetId, e);
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "查询评论列表失败：" + e.getMessage());
-        }
-    }
-
-    /**
-     * 将PO对象转换为领域实体对象
-     */
-    private CommentEntity convertToEntity(Comment comment) {
-        if (comment == null) {
-            return null;
-        }
-        CommentEntity entity = CommentEntity.builder()
-                .id(comment.getId())
-                .userId(comment.getUserId())
-                .targetId(comment.getTargetId())
-                .content(comment.getContent())
-                .parentId(comment.getParentId())
-                .replyUserId(comment.getReplyUserId())
-                .createTime(comment.getCreateTime())
-                .updateTime(comment.getUpdateTime())
-                .build();
-        
-        if (comment.getType() != null) {
-            entity.setType(CommentType.of(comment.getType()));
-        }
-        
-        return entity;
-    }
-
-    /**
-     * 将评论实体转换为Comment
-     */
-    private Comment convertToComment(CommentEntity entity) {
-        if (entity == null) {
-            return null;
-        }
-        return Comment.builder()
-                .id(entity.getId())
-                .type(entity.getType() != null ? entity.getType().getValue() : null)
-                .targetId(entity.getTargetId())
-                .parentId(entity.getParentId())
-                .userId(entity.getUserId())
-                .replyUserId(entity.getReplyUserId())
-                .content(entity.getContent())
-                .createTime(entity.getCreateTime())
-                .updateTime(entity.getUpdateTime())
-                .build();
-    }
-
-    private CommentEntity convertToCommentEntity(Comment comment) {
-        return convertToEntity(comment);
+        List<Comment> comments = commentMapper.findRepliesByPage(parentId, offset, limit);
+        return comments.stream()
+                .map(commentConverter::toDomainEntity)
+                .collect(Collectors.toList());
     }
 
     @Override
-    public void deleteByParentId(Long parentId) {
-        try {
-            log.info("删除子评论 - parentId: {}", parentId);
-            commentDao.deleteByParentId(parentId);
-            log.info("删除子评论成功 - parentId: {}", parentId);
-        } catch (Exception e) {
-            log.error("删除子评论失败 - parentId: {}", parentId, e);
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "删除子评论失败：" + e.getMessage());
-        }
-    }
-
-    @Override
-    public Long save(CommentEntity commentEntity) {
-        try {
-            log.info("保存评论 - commentEntity: {}", commentEntity);
-            Comment comment = convertToComment(commentEntity);
-            comment.setCreateTime(LocalDateTime.now());
-            comment.setUpdateTime(LocalDateTime.now());
-            commentDao.insert(comment);
-            log.info("保存评论成功 - id: {}", comment.getId());
-            return comment.getId();
-        } catch (Exception e) {
-            log.error("保存评论失败 - commentEntity: {}", commentEntity, e);
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "保存评论失败：" + e.getMessage());
-        }
+    public int deleteByParentId(Long parentId) {
+        return commentMapper.deleteByParentId(parentId);
     }
 
     @Override
     public List<CommentEntity> findRepliesByParentIds(List<Long> parentIds) {
-        try {
-            log.info("批量查询子评论 - parentIds: {}", parentIds);
-            if (parentIds == null || parentIds.isEmpty()) {
-                return new ArrayList<>();
-            }
-            List<Comment> replies = commentDao.findByParentIds(parentIds);
-            List<CommentEntity> replyEntities = replies.stream()
-                    .map(this::convertToCommentEntity)
-                    .collect(Collectors.toList());
-            log.info("批量查询子评论成功 - parentIds: {}, count: {}", parentIds, replyEntities.size());
-            return replyEntities;
-        } catch (Exception e) {
-            log.error("批量查询子评论失败 - parentIds: {}", parentIds, e);
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "查询回复列表失败：" + e.getMessage());
+        List<Comment> comments = commentMapper.findByParentIds(parentIds);
+        return comments.stream()
+                .map(commentConverter::toDomainEntity)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<CommentEntity> findByParentIds(List<Long> parentIds) {
+        List<Comment> comments = commentMapper.findByParentIds(parentIds);
+        return comments.stream()
+                .map(commentConverter::toDomainEntity)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<CommentEntity> findRepliesByParentIdsByHot(List<Long> parentIds, int size) {
+        List<Comment> comments = commentMapper.findRepliesByParentIdsByHot(parentIds, size);
+        return comments.stream()
+                .map(commentConverter::toDomainEntity)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<CommentEntity> findRepliesByParentIdsByTime(List<Long> parentIds, int size) {
+        List<Comment> comments = commentMapper.findRepliesByParentIdsByTime(parentIds, size);
+        return comments.stream()
+                .map(commentConverter::toDomainEntity)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<CommentEntity> findRepliesByParentIdByHot(Long parentId, int page, int size) {
+        int offset = (page - 1) * size;
+        List<Comment> comments = commentMapper.findRepliesByParentIdByHot(parentId, offset, size);
+        return comments.stream()
+                .map(commentConverter::toDomainEntity)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<CommentEntity> findRepliesByParentIdByTime(Long parentId, int page, int size) {
+        int offset = (page - 1) * size;
+        List<Comment> comments = commentMapper.findRepliesByParentIdByTime(parentId, offset, size);
+        return comments.stream()
+                .map(commentConverter::toDomainEntity)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<CommentEntity> findCommentsByIds(List<Long> commentIdList) {
+        if (commentIdList == null || commentIdList.isEmpty()) {
+            return java.util.Collections.emptyList();
         }
+        
+        List<Comment> comments = commentMapper.selectCommentsByIds(commentIdList);
+        return comments.stream()
+                .map(commentConverter::toDomainEntity)
+                .collect(Collectors.toList());
     }
 }

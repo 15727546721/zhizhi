@@ -4,44 +4,39 @@ import cn.xu.api.system.model.dto.article.ArticleRequest;
 import cn.xu.api.web.model.vo.article.ArticleListVO;
 import cn.xu.api.web.model.vo.article.ArticlePageVO;
 import cn.xu.domain.article.model.entity.ArticleEntity;
-import cn.xu.domain.article.model.entity.ArticleRecommendOrNew;
 import cn.xu.domain.article.repository.IArticleRepository;
-import cn.xu.infrastructure.persistent.dao.IArticleDao;
-import cn.xu.infrastructure.persistent.dao.IArticleTagDao;
+import cn.xu.infrastructure.persistent.converter.ArticleConverter;
+import cn.xu.infrastructure.persistent.dao.ArticleMapper;
+import cn.xu.infrastructure.persistent.dao.ArticleTagMapper;
 import cn.xu.infrastructure.persistent.po.Article;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import javax.annotation.Resource;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
+/**
+ * 文章仓储实现
+ * 遵循DDD原则，处理文章实体级别的操作
+ * 注意：对于聚合根级别的操作，应使用ArticleAggregateRepositoryImpl
+ */
 @Slf4j
 @Repository
+@RequiredArgsConstructor
 public class ArticleRepository implements IArticleRepository {
 
-    @Resource
-    private IArticleDao articleDao;
-    @Resource
-    private IArticleTagDao articleTagDao;
-
-    @Resource
-    private TransactionTemplate transactionTemplate;
+    private final ArticleMapper articleDao;
+    private final ArticleTagMapper articleTagDao;
+    private final TransactionTemplate transactionTemplate;
+    private final ArticleConverter articleConverter;
 
     @Override
     public Long save(ArticleEntity articleEntity) {
-        log.info("保存文章 {}: ", articleEntity);
-        Article article = Article.builder()
-                .title(articleEntity.getTitle())
-                .userId(articleEntity.getUserId())
-                .description(articleEntity.getDescription())
-                .content(articleEntity.getContent())
-                .coverUrl(articleEntity.getCoverUrl())
-                .status(articleEntity.getStatus().getValue())
-                .build();
-        //插入后得到的id值会赋给article的id属性
+        Article article = articleConverter.toDataObject(articleEntity);
         articleDao.insert(article);
         return article.getId();
     }
@@ -49,55 +44,43 @@ public class ArticleRepository implements IArticleRepository {
     @Override
     public List<ArticlePageVO> queryArticle(ArticleRequest articleRequest) {
         articleRequest.setPageNo(articleRequest.getPageNo() - 1);
-        List<ArticlePageVO> articles = articleDao.queryByPage(articleRequest);
-        log.info("查询文章结果: {}", articles);
-
-        return articles;
+        return articleDao.queryByPage(articleRequest);
     }
 
     @Override
     public void deleteByIds(List<Long> articleIds) {
-        log.info("Deleting articles by IDs: {}", articleIds);
-
-        // 编程式事务
         transactionTemplate.execute(status -> {
             try {
-                // 批量删除文章标签
                 articleTagDao.deleteByArticleIds(articleIds);
-                // 批量删除文章
                 articleDao.deleteByIds(articleIds);
-                return 1; // 返回成功
+                return 1;
             } catch (Exception e) {
-                log.error("删除文章失败: {}", e.getMessage(), e);
-                status.setRollbackOnly(); // 设置事务回滚
-                return 0; // 返回失败
+                status.setRollbackOnly();
+                throw new RuntimeException("删除文章失败", e);
             }
         });
     }
 
     @Override
-    public ArticleEntity findById(Long id) {
-        return convert(articleDao.findById(id));
+    public Optional<ArticleEntity> findById(Long id) {
+        Article article = articleDao.findById(id);
+        return article != null ? Optional.of(articleConverter.toDomainEntity(article)) : Optional.empty();
+    }
+
+    public Article findPoById(Long id) {
+        return articleDao.findById(id);
     }
 
     @Override
     public void update(ArticleEntity articleEntity) {
-        log.info("更新文章 {}", articleEntity);
-        Article article = Article.builder()
-                .id(articleEntity.getId())
-                .title(articleEntity.getTitle())
-                .userId(articleEntity.getUserId())
-                .description(articleEntity.getDescription())
-                .content(articleEntity.getContent())
-                .coverUrl(articleEntity.getCoverUrl())
-                .status(articleEntity.getStatus().getValue())
-                .build();
+        Article article = articleConverter.toDataObject(articleEntity);
         articleDao.update(article);
     }
 
     @Override
-    public List<ArticleRecommendOrNew> queryArticleByPage() {
-        return articleDao.queryArticleByPage(0, 10);
+    public List<ArticleEntity> queryArticleByPage(int page, int size) {
+        List<Article> articles = articleDao.queryArticleByPage(page, size);
+        return articleConverter.toDomainEntities(articles);
     }
 
     @Override
@@ -118,17 +101,13 @@ public class ArticleRepository implements IArticleRepository {
     @Override
     public List<ArticleEntity> findAllPublishedArticles() {
         List<Article> articles = articleDao.findAllPublishedArticles();
-        return articles.stream()
-                .map(this::convert)
-                .collect(Collectors.toList());
+        return articleConverter.toDomainEntities(articles);
     }
 
     @Override
     public List<ArticleEntity> findAll() {
         List<Article> articles = articleDao.findAll();
-        return articles.stream()
-                .map(this::convert)
-                .collect(Collectors.toList());
+        return articleConverter.toDomainEntities(articles);
     }
 
     @Override
@@ -148,24 +127,23 @@ public class ArticleRepository implements IArticleRepository {
 
     @Override
     public void deleteById(Long id) {
-        log.info("Deleting article by ID: {}", id);
         articleDao.deleteById(id);
     }
 
-    private ArticleEntity convert(Article article) {
-        return ArticleEntity.builder()
-                .id(article.getId())
-                .title(article.getTitle())
-                .description(article.getDescription())
-                .content(article.getContent())
-                .coverUrl(article.getCoverUrl())
-                .userId(article.getUserId())
-                .createTime(article.getCreateTime())
-                .updateTime(article.getUpdateTime())
-                .viewCount(article.getViewCount())
-                .likeCount(article.getLikeCount())
-                .collectCount(article.getCollectCount())
-                .build();
+    @Override
+    public List<ArticleEntity> getArticlePageListByCategoryId(Long categoryId, Integer pageNo, Integer pageSize) {
+        int offset = (pageNo - 1) * pageSize;
+        List<Article> articles = articleDao.getArticlePageByCategory(categoryId, offset, pageSize);
+        return articleConverter.toDomainEntities(articles);
     }
+
+    @Override
+    public List<ArticleEntity> getArticlePageList(Integer pageNo, Integer pageSize) {
+        int offset = (pageNo - 1) * pageSize;
+        List<Article> articles = articleDao.getArticlePageList(offset, pageSize);
+        return articleConverter.toDomainEntities(articles);
+    }
+
+
 
 }

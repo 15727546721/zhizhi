@@ -3,6 +3,7 @@ package cn.xu.domain.user.service;
 import cn.xu.api.system.model.dto.user.UserRequest;
 import cn.xu.api.web.model.dto.user.LoginRequest;
 import cn.xu.api.web.model.dto.user.RegisterRequest;
+import cn.xu.api.web.model.dto.user.UpdateUserReq;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.model.entity.UserInfoEntity;
 import cn.xu.infrastructure.common.request.PageRequest;
@@ -23,7 +24,7 @@ public interface IUserService {
     /**
      * 用户注册
      */
-    UserEntity register(RegisterRequest request);
+    void register(RegisterRequest request);
 
     /**
      * 用户登录
@@ -82,6 +83,7 @@ public interface IUserService {
 
     /**
      * 上传用户头像
+     *
      * @param file 头像文件
      * @return 头像访问URL
      */
@@ -115,4 +117,19 @@ public interface IUserService {
      * @return 用户名
      */
     String getNicknameById(Long userId);
+
+    /**
+     * 更新用户信息
+     *
+     * @param user
+     */
+    void update(UpdateUserReq user);
+
+    /**
+     * 批量获取用户信息
+     *
+     * @param userIds 用户ID集合
+     * @return 用户信息集合
+     */
+    List<UserEntity> batchGetUserInfo(List<Long> userIds);
 }

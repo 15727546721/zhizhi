@@ -5,7 +5,7 @@ import cn.xu.api.web.model.dto.comment.CommentRequest;
 import cn.xu.api.web.model.vo.comment.CommentVO;
 import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.comment.model.entity.CommentEntity;
-import cn.xu.domain.comment.service.impl.CommentService;
+import cn.xu.domain.comment.service.impl.CommentServiceImpl;
 import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.common.request.PageRequest;
 import cn.xu.infrastructure.common.response.PageResponse;
@@ -29,12 +29,12 @@ import java.util.List;
 public class SysCommentController {
 
     @Resource
-    private CommentService commentService;
+    private CommentServiceImpl commentServiceImpl;
 
     @Operation(summary = "管理员删除评论")
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<Void> deleteComment(@PathVariable @NotNull(message = "评论ID不能为空") Long id) {
-        commentService.deleteCommentByAdmin(id);
+        commentServiceImpl.deleteCommentByAdmin(id);
         return ResponseEntity.<Void>builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .info(ResponseCode.SUCCESS.getMessage())
@@ -50,11 +50,11 @@ public class SysCommentController {
     @GetMapping("/list")
     public ResponseEntity<PageResponse<List<CommentVO>>> getComments(@Valid CommentRequest request) {
         log.info("分页获取一级评论列表, request: {}", request);
-        PageResponse<List<CommentVO>> pageResponse = commentService.getRootCommentsWithUserByPage(request);
+//        PageResponse<List<CommentVO>> pageResponse = commentServiceImpl.getRootCommentsWithUserByPage(request);
         return ResponseEntity.<PageResponse<List<CommentVO>>>builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .info(ResponseCode.SUCCESS.getMessage())
-                .data(pageResponse)
+                .data(null)
                 .build();
     }
 
@@ -65,7 +65,7 @@ public class SysCommentController {
         @Parameter(name = "pageSize", description = "每页数量", required = true)
     })
     @GetMapping("/replies/{parentId}")
-    public ResponseEntity<List<CommentReplyVO>> getReplies(
+    public ResponseEntity<?> getReplies(
             @PathVariable @NotNull(message = "父评论ID不能为空") Long parentId,
             @Valid PageRequest pageRequest) {
         try {
@@ -74,7 +74,7 @@ public class SysCommentController {
                     parentId, pageRequest.getPageNo(), pageRequest.getPageSize());
 
             // 2. 业务处理前校验父评论是否存在
-            CommentEntity parentComment = commentService.getCommentById(parentId);
+            CommentEntity parentComment = commentServiceImpl.getCommentById(parentId);
             if (parentComment == null) {
                 log.error("[评论服务] 父评论不存在 - ID: {}", parentId);
                 return ResponseEntity.<List<CommentReplyVO>>builder()
@@ -93,17 +93,17 @@ public class SysCommentController {
             }
 
             // 4. 调用服务获取数据
-            List<CommentReplyVO> replies = commentService.getPagedRepliesWithUser(parentId, pageRequest);
+//            List<CommentEntity> replies = commentServiceImpl.getPagedRepliesWithUser(parentId, pageRequest);
             
             // 5. 记录处理结果
-            log.info("[评论服务] 成功获取二级评论列表 - 父评论ID: {}, 获取到 {} 条回复", 
-                    parentId, replies.size());
+//            log.info("[评论服务] 成功获取二级评论列表 - 父评论ID: {}, 获取到 {} 条回复",
+//                    parentId, replies.size());
 
             // 6. 返回结果
-            return ResponseEntity.<List<CommentReplyVO>>builder()
+            return ResponseEntity.<List<CommentEntity>>builder()
                     .code(ResponseCode.SUCCESS.getCode())
                     .info(ResponseCode.SUCCESS.getMessage())
-                    .data(replies)
+                    .data(null)
                     .build();
 
         } catch (BusinessException be) {

@@ -4,22 +4,29 @@ import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.api.system.model.dto.article.ArticleRequest;
 import cn.xu.api.system.model.dto.article.CreateArticleRequest;
 import cn.xu.api.system.model.dto.article.PublishArticleRequest;
-import cn.xu.api.system.model.vo.ArticleDetailsVO;
+import cn.xu.api.system.model.vo.SysArticleDetailVO;
 import cn.xu.api.web.model.vo.article.ArticlePageVO;
 import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.article.event.ArticleEventPublisher;
+import cn.xu.domain.article.model.aggregate.ArticleAndAuthorAggregate;
 import cn.xu.domain.article.model.entity.ArticleEntity;
 import cn.xu.domain.article.model.entity.CategoryEntity;
 import cn.xu.domain.article.model.entity.TagEntity;
-import cn.xu.domain.article.service.*;
-import cn.xu.domain.article.service.search.ArticleIndexService;
+import cn.xu.domain.article.model.valobj.ArticleTitle;
+import cn.xu.domain.article.model.valobj.ArticleContent;
+import cn.xu.domain.article.service.IArticleService;
+import cn.xu.domain.article.service.IArticleTagService;
+import cn.xu.domain.article.service.ICategoryService;
+import cn.xu.domain.article.service.ITagService;
 import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.common.response.PageResponse;
 import cn.xu.infrastructure.common.response.ResponseEntity;
+import cn.xu.infrastructure.persistent.read.elastic.service.ArticleElasticService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -37,8 +44,6 @@ public class SysArticleController {
     @Resource
     private IArticleService articleService;
     @Resource
-    private IArticleCategoryService articleCategoryService;
-    @Resource
     private IArticleTagService articleTagService;
     @Resource
     private ITagService tagService;
@@ -46,8 +51,8 @@ public class SysArticleController {
     private ICategoryService categoryService;
     @Resource
     private TransactionTemplate transactionTemplate;
-    @Resource
-    private ArticleIndexService articleIndexService;
+    @Autowired(required = false) // 设置为非必需，允许Elasticsearch不可用
+    private ArticleElasticService articleElasticService;
     @Resource
     private ArticleEventPublisher eventPublisher;
 
@@ -66,21 +71,19 @@ public class SysArticleController {
         log.info("文章创建参数: {}", createArticleRequest);
         transactionTemplate.execute(status -> {
             try {
-                //1. 保存文章
+                //1. 保存文章和分类id
                 ArticleEntity article = ArticleEntity.builder()
-                        .title(createArticleRequest.getTitle())
+                        .categoryId(createArticleRequest.getCategoryId())
+                        .title(new ArticleTitle(createArticleRequest.getTitle()))
                         .coverUrl(createArticleRequest.getCoverUrl())
-                        .content(createArticleRequest.getContent())
+                        .content(new ArticleContent(createArticleRequest.getContent()))
                         .description(createArticleRequest.getDescription())
                         .userId(StpUtil.getLoginIdAsLong())
                         .build();
                 Long articleId = articleService.createArticle(article);
                 article.setId(articleId);
                 
-                //2. 保存文章分类
-                articleCategoryService.saveArticleCategory(articleId, createArticleRequest.getCategoryId());
-                
-                //3. 保存文章标签
+                //2. 保存文章标签
                 if (createArticleRequest.getTagIds() == null || createArticleRequest.getTagIds().isEmpty()) {
                     throw new BusinessException(ResponseCode.NULL_PARAMETER.getCode(), "标签不能为空");
                 }
@@ -90,7 +93,7 @@ public class SysArticleController {
                 articleTagService.saveArticleTag(articleId, createArticleRequest.getTagIds());
 
                 //4. 发布文章创建事件
-                eventPublisher.publishArticleCreated(article);
+                eventPublisher.publishCreated(article);
 
                 return 1;
             } catch (Exception e) {
@@ -110,21 +113,19 @@ public class SysArticleController {
         log.info("文章更新参数: {}", createArticleRequest);
         transactionTemplate.execute(status -> {
             try {
-                //1. 更新文章
+                //1. 更新文章和分类id
                 ArticleEntity article = ArticleEntity.builder()
                         .id(createArticleRequest.getId())
-                        .title(createArticleRequest.getTitle())
+                        .categoryId(createArticleRequest.getCategoryId())
+                        .title(new ArticleTitle(createArticleRequest.getTitle()))
                         .coverUrl(createArticleRequest.getCoverUrl())
-                        .content(createArticleRequest.getContent())
+                        .content(new ArticleContent(createArticleRequest.getContent()))
                         .description(createArticleRequest.getDescription())
                         .userId(StpUtil.getLoginIdAsLong())
                         .build();
                 articleService.updateArticle(article);
 
-                //2. 更新文章分类
-                articleCategoryService.updateArticleCategory(createArticleRequest.getId(), createArticleRequest.getCategoryId());
-
-                //3. 更新文章标签
+                //2. 更新文章标签
                 if (createArticleRequest.getTagIds() == null || createArticleRequest.getTagIds().isEmpty()) {
                     throw new BusinessException(ResponseCode.NULL_PARAMETER.getCode(), "标签不能为空");
                 }
@@ -134,7 +135,7 @@ public class SysArticleController {
                 articleTagService.updateArticleTag(createArticleRequest.getId(), createArticleRequest.getTagIds());
 
                 //4. 发布文章更新事件
-                eventPublisher.publishArticleUpdated(article);
+                eventPublisher.publishUpdated(article);
 
                 return 1;
             } catch (Exception e) {
@@ -158,7 +159,7 @@ public class SysArticleController {
                 ArticleEntity article = ArticleEntity.builder()
                         .id(articleId)
                         .build();
-                eventPublisher.publishArticleDeleted(articleId);
+                eventPublisher.publishDeleted(articleId);
             }
             return ResponseEntity.builder()
                     .code(ResponseCode.SUCCESS.getCode())
@@ -204,33 +205,28 @@ public class SysArticleController {
      * @return
      */
     @GetMapping("info/{id}")
-    public ResponseEntity<ArticleDetailsVO> getArticle(@PathVariable("id") Long id) {
+    public ResponseEntity<SysArticleDetailVO> getArticle(@PathVariable("id") Long id) {
         log.info("文章详情获取参数: id={}", id);
         if (id == null) {
             throw new BusinessException(ResponseCode.NULL_PARAMETER.getCode(), "文章ID不能为空");
         }
-        ArticleEntity article = articleService.getArticleById(id);
+        ArticleAndAuthorAggregate article = articleService.getArticleDetailById(id);
         CategoryEntity category = categoryService.getCategoryByArticleId(id);
         List<TagEntity> tag = tagService.getTagsByArticleId(id);
-        ArticleDetailsVO articleDetailsVO = ArticleDetailsVO.builder()
-                .id(article.getId())
-                .title(article.getTitle())
-                .content(article.getContent())
-                .coverUrl(article.getCoverUrl())
-                .description(article.getDescription())
-                .categoryId(category == null ? null : category.getId())
-                .tagIds(tag.isEmpty() ? null : tag.stream().map(TagEntity::getId).collect(Collectors.toList()))
-                .build();
-        log.info("文章详情获取结果: {}", articleDetailsVO);
-        return ResponseEntity.<ArticleDetailsVO>builder()
-                .data(articleDetailsVO)
+
+        return ResponseEntity.<SysArticleDetailVO>builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .info("文章获取成功")
+                .data(SysArticleDetailVO.builder()
+                        .articleAndAuthorAggregate(article)
+                        .categoryName(category.getName())
+                        .tags(tag.stream().map(TagEntity::getName).collect(Collectors.toList()))
+                        .build())
                 .build();
+
     }
 
-    @GetMapping("/search")
-    @Operation(summary = "搜索文章")
+    @PostMapping("/search")
     public ResponseEntity<List<ArticleEntity>> searchArticles(@RequestParam String title) {
         try {
             if (StringUtils.isBlank(title)) {
@@ -240,7 +236,15 @@ public class SysArticleController {
                     .build();
             }
 
-            List<ArticleEntity> articles = articleIndexService.searchArticles(title);
+            // 检查Elasticsearch是否可用
+            if (articleElasticService == null) {
+                return ResponseEntity.<List<ArticleEntity>>builder()
+                    .code(ResponseCode.UN_ERROR.getCode())
+                    .info("搜索服务不可用")
+                    .build();
+            }
+
+            List<ArticleEntity> articles = articleElasticService.searchArticles(title);
             return ResponseEntity.<List<ArticleEntity>>builder()
                 .data(articles)
                 .code(ResponseCode.SUCCESS.getCode())
@@ -265,11 +269,12 @@ public class SysArticleController {
         
         transactionTemplate.execute(status -> {
             try {
-                //1. 保存文章
+                //1. 保存文章和分类id
                 ArticleEntity article = ArticleEntity.builder()
-                        .title(publishArticleRequest.getTitle())
+                        .categoryId(publishArticleRequest.getCategoryId())
+                        .title(new ArticleTitle(publishArticleRequest.getTitle()))
                         .coverUrl(publishArticleRequest.getCoverUrl())
-                        .content(publishArticleRequest.getContent())
+                        .content(new ArticleContent(publishArticleRequest.getContent()))
                         .description(publishArticleRequest.getDescription())
                         .userId(userId)
                         .build();
@@ -277,10 +282,7 @@ public class SysArticleController {
                 articleId[0] = articleService.createArticle(article);
                 article.setId(articleId[0]);
                 
-                //2. 保存文章分类
-                articleCategoryService.saveArticleCategory(articleId[0], publishArticleRequest.getCategoryId());
-                
-                //3. 保存文章标签
+                //2. 保存文章标签
                 if (publishArticleRequest.getTagIds() == null || publishArticleRequest.getTagIds().isEmpty()) {
                     throw new BusinessException(ResponseCode.NULL_PARAMETER.getCode(), "标签不能为空");
                 }
@@ -290,7 +292,7 @@ public class SysArticleController {
                 articleTagService.saveArticleTag(articleId[0], publishArticleRequest.getTagIds());
                 
                 // 4. 发布文章创建事件
-                eventPublisher.publishArticleCreated(article);
+                eventPublisher.publishCreated(article);
                 
                 return 1;
             } catch (Exception e) {

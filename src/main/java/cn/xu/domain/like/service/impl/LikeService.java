@@ -1,0 +1,138 @@
+package cn.xu.domain.like.service.impl;
+
+import cn.hutool.core.util.RandomUtil;
+import cn.xu.application.common.ResponseCode;
+import cn.xu.domain.like.event.LikeEventPublisher;
+import cn.xu.domain.like.model.LikeType;
+import cn.xu.domain.like.repository.ILikeRepository;
+import cn.xu.domain.like.service.ILikeService;
+import cn.xu.domain.like.service.LikeDomainService;
+import cn.xu.infrastructure.cache.LuaScriptManager;
+import cn.xu.infrastructure.cache.RedisKeyManager;
+import cn.xu.infrastructure.common.exception.BusinessException;
+import cn.xu.infrastructure.common.utils.ArticleHotScoreCacheHelper;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Service;
+
+import javax.annotation.Resource;
+import java.util.Arrays;
+import java.util.Objects;
+
+@Slf4j
+@Service
+public class LikeService implements ILikeService {
+
+    @Autowired
+    private RedisTemplate<String, String> redisTemplate;
+
+    @Resource
+    private LikeEventPublisher likeEventPublisher;
+
+    @Autowired
+    private ILikeRepository likeRepository;
+    
+    @Autowired
+    private LikeDomainService likeDomainService;
+
+    @Override
+    public void like(Long userId, Integer type, Long targetId) {
+        checkParams(userId, type, targetId);
+
+        String likeKey = RedisKeyManager.likeRelationKey(Objects.requireNonNull(LikeType.valueOf(type)), targetId);
+        String likeCountKey = RedisKeyManager.likeCountKey(Objects.requireNonNull(LikeType.valueOf(type)), targetId);
+
+        try {
+            Boolean member = redisTemplate.opsForSet().isMember(likeKey, userId.toString());
+            if (Boolean.TRUE.equals(member)) {
+                throw new BusinessException("您已经点赞过了！");
+            }
+
+            if (Boolean.FALSE.equals(member) && likeRepository.checkStatus(userId, Objects.requireNonNull(LikeType.valueOf(type)), targetId)) {
+                // 数据库已有点赞，缓存写入并返回异常
+                redisTemplate.opsForSet().add(likeKey, userId.toString());
+                throw new BusinessException("您已经点赞过了！");
+            }
+
+            // 写入 Redis 缓存点赞状态
+            Long result = redisTemplate.execute(
+                    LuaScriptManager.LIKE_ADD_SCRIPT,
+                    Arrays.asList(likeKey, likeCountKey),
+                    userId.toString()
+            );
+
+            if (result == null || result == 0L) {
+                throw new BusinessException("您已经点赞过了！");
+            }
+
+        } catch (Exception e) {
+            log.error("点赞失败", e);
+            throw new BusinessException("点赞失败，请稍后再试！");
+        }
+
+        // 发布异步事件（写库等后续处理）
+        likeEventPublisher.publish(userId, targetId, LikeType.valueOf(type), true);
+    }
+
+    @Override
+    public void unlike(Long userId, Integer type, Long targetId) {
+        checkParams(userId, type, targetId);
+
+        // 存储点赞用户的集合
+        String likeKey = RedisKeyManager.likeRelationKey(Objects.requireNonNull(LikeType.valueOf(type)), targetId);
+        String likeCountKey = RedisKeyManager.likeCountKey(Objects.requireNonNull(LikeType.valueOf(type)), targetId);
+
+        try {
+            // 检查当前用户是否已点赞
+            Boolean member = redisTemplate.opsForSet().isMember(likeKey, userId.toString());
+
+            if (Boolean.FALSE.equals(member)) {
+                throw new BusinessException("您还未点赞，无法取消！");
+            }
+
+            // 删除 Redis 中的点赞记录
+            Long result = redisTemplate.execute(
+                    LuaScriptManager.LIKE_REMOVE_SCRIPT,
+                    Arrays.asList(likeKey, likeCountKey),
+                    userId.toString()
+            );
+
+            if (result == null || result == 0L) {
+                throw new BusinessException("取消点赞失败，请稍后再试！");
+            }
+
+        } catch (Exception e) {
+            log.error("取消点赞失败", e);
+            throw new BusinessException("取消点赞失败，请稍后再试！");
+        }
+
+        // 发布异步事件（更新数据库等操作）
+        likeEventPublisher.publish(userId, targetId, LikeType.valueOf(type), false);
+    }
+
+    @Override
+    public boolean checkStatus(Long userId, Integer type, Long targetId) {
+        if (userId == null || type == null || targetId == null) {
+            // 未登录用户默认未点赞
+            return false;
+        }
+        return likeRepository.checkStatus(userId, Objects.requireNonNull(LikeType.valueOf(type)), targetId);
+    }
+
+    /**
+     * 校验入参
+     */
+    private void checkParams(Long userId, Integer type, Long targetId) {
+        if (userId == null || type == null || targetId == null) {
+            throw new BusinessException(ResponseCode.NULL_PARAMETER.getCode(), ResponseCode.NULL_PARAMETER.getMessage());
+        }
+    }
+
+    /**
+     * 随机过期时间，防止缓存雪崩
+     */
+    private int randomExpire() {
+        return RandomUtil.randomInt(3600, 86400); // 1小时至24小时随机过期秒数
+    }
+}

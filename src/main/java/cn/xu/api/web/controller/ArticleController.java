@@ -3,15 +3,25 @@ package cn.xu.api.web.controller;
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.api.web.model.dto.article.DraftRequest;
+import cn.xu.api.web.model.dto.article.FindArticlePageByCategoryReq;
 import cn.xu.api.web.model.dto.article.PublishOrDraftArticleRequest;
+import cn.xu.api.web.model.vo.article.ArticleDetailVO;
 import cn.xu.api.web.model.vo.article.ArticleListVO;
+import cn.xu.api.web.model.vo.article.FindArticlePageListVO;
 import cn.xu.application.common.ResponseCode;
+import cn.xu.domain.article.model.aggregate.ArticleAndTagAgg;
 import cn.xu.domain.article.model.entity.ArticleEntity;
+import cn.xu.domain.article.model.valobj.ArticleContent;
 import cn.xu.domain.article.model.valobj.ArticleStatus;
-import cn.xu.domain.article.service.IArticleCategoryService;
+import cn.xu.domain.article.model.valobj.ArticleTitle;
+import cn.xu.domain.article.service.ArticleQueryDomainService;
 import cn.xu.domain.article.service.IArticleService;
 import cn.xu.domain.article.service.IArticleTagService;
-import cn.xu.domain.article.service.search.ArticleIndexService;
+import cn.xu.domain.article.service.ITagService;
+import cn.xu.domain.follow.service.IFollowService;
+import cn.xu.domain.like.model.LikeType;
+import cn.xu.domain.like.service.ILikeService;
+import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.service.IUserService;
 import cn.xu.infrastructure.common.annotation.ApiOperationLog;
 import cn.xu.infrastructure.common.exception.BusinessException;
@@ -20,11 +30,18 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 @RequestMapping("api/article")
 @RestController
@@ -35,70 +52,93 @@ public class ArticleController {
     @Resource
     private IArticleService articleService;
     @Resource
-    private IArticleCategoryService articleCategoryService;
-    @Resource
     private IArticleTagService articleTagService;
+    @Resource
+    private ITagService tagService;
     @Resource
     private TransactionTemplate transactionTemplate;
     @Resource
-    private ArticleIndexService articleIndexService;
+    private ArticleQueryDomainService articleQueryDomainService; // 注入文章查询领域服务
     @Resource
     private IUserService userService;
+    @Resource
+    private ILikeService likeService;
+    @Resource
+    private IFollowService followService;
 
-    @GetMapping("/category")
+    @PostMapping("/page/category")
+    @ApiOperationLog(description = "通过分类获取文章列表")
     @Operation(summary = "通过分类获取文章列表")
-    public ResponseEntity<List<ArticleListVO>> getArticleByCategory(Long categoryId) {
-        log.info("获取文章列表，分类ID：{}", categoryId);
-        if (categoryId == null || categoryId == 0) {
-            categoryId = null;
+    public ResponseEntity<List<FindArticlePageListVO>> getArticleByCategoryId(@RequestBody FindArticlePageByCategoryReq request) {
+        List<FindArticlePageListVO> result = new LinkedList<>();
+        List<ArticleEntity> articleList;
+        if (request.getCategoryId() == null) {
+            articleList = articleService.getArticlePageList(request.getPageNo(), request.getPageSize());
+        } else {
+            articleList = articleService.getArticlePageListByCategoryId(request.getCategoryId(), request.getPageNo(), request.getPageSize());
         }
-        List<ArticleListVO> articleEntityList = articleService.getArticleByCategoryId(categoryId);
-        return ResponseEntity.<List<ArticleListVO>>builder()
+        List<Long> articleIds = articleList.stream().map(ArticleEntity::getId).collect(Collectors.toList());
+        List<Long> userIds = articleList.stream().map(ArticleEntity::getUserId).collect(Collectors.toList());
+        List<UserEntity> userList = userService.batchGetUserInfo(userIds);
+        List<ArticleAndTagAgg> articleAndTagAggs = tagService.batchGetTagListByArticleIds(articleIds);
+        articleList.stream().forEach(article -> {
+            result.add(FindArticlePageListVO.builder()
+                    .article(article)
+                    .user(userList.stream().filter(user -> user.getId().equals(article.getUserId())).findFirst().get())
+                    .tags(articleAndTagAggs.stream().filter(agg -> agg.getArticleId().equals(article.getId())).findFirst().get().getTags().split(","))
+                    .build());
+        });
+        return ResponseEntity.<List<FindArticlePageListVO>>builder()
                 .code(ResponseCode.SUCCESS.getCode())
-                .data(articleEntityList)
+                .data(result)
                 .build();
     }
 
 
     @GetMapping("/{id}")
     @Operation(summary = "获取文章详情")
-    public ResponseEntity<ArticleEntity> getArticleDetail(@PathVariable("id") Long id) {
+    public ResponseEntity<?> getArticleDetail(@PathVariable("id") Long id) {
         log.info("获取文章详情，文章ID：{}", id);
-        ArticleEntity articleById = articleService.getArticleById(id);
-        log.info("文章详情：{}", articleById);
-        return ResponseEntity.<ArticleEntity>builder()
+        Long currentUserId = StpUtil.isLogin() ? StpUtil.getLoginIdAsLong() : null;
+
+        // 调用服务层获取文章详情
+        ArticleDetailVO articleDetailVO = articleService.getArticleDetail(id, currentUserId);
+
+        return ResponseEntity.builder()
                 .code(ResponseCode.SUCCESS.getCode())
-                .data(articleById)
+                .info("文章获取成功")
+                .data(articleDetailVO)
                 .build();
     }
 
     @PostMapping("/create")
     @Operation(summary = "创建文章")
     @ApiOperationLog(description = "创建文章")
-    public ResponseEntity createArticle(@RequestBody PublishOrDraftArticleRequest publishArticleRequest) {
+    public ResponseEntity<Long> createArticle(@RequestBody PublishOrDraftArticleRequest publishArticleRequest) {
         Long userId = StpUtil.getLoginIdAsLong();
+        AtomicLong articleId = new AtomicLong();
         transactionTemplate.execute(status -> {
             // 事务开始
             try {
-                //1. 保存文章
-                Long articleId = articleService.createArticle(ArticleEntity.builder()
-                        .title(publishArticleRequest.getTitle())
+                //1. 保存文章和分类id
+                long id = articleService.createArticle(ArticleEntity.builder()
+                        .categoryId(publishArticleRequest.getCategoryId())
+                        .title(new ArticleTitle(publishArticleRequest.getTitle()))
                         .coverUrl(publishArticleRequest.getCoverUrl())
-                        .content(publishArticleRequest.getContent())
+                        .content(new ArticleContent(publishArticleRequest.getContent()))
                         .description(publishArticleRequest.getDescription())
                         .userId(userId) // 当前登录用户ID
                         .status(ArticleStatus.PUBLISHED)
                         .build());
-                //2. 保存文章分类
-                articleCategoryService.saveArticleCategory(articleId, publishArticleRequest.getCategoryId());
-                //3. 保存文章标签
+                articleId.set(id);
+                //2. 保存文章标签
                 if (publishArticleRequest.getTagIds() == null || publishArticleRequest.getTagIds().isEmpty()) {
                     throw new BusinessException(ResponseCode.NULL_PARAMETER.getCode(), "标签不能为空");
                 }
                 if (publishArticleRequest.getTagIds().size() > 3) {
                     throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "标签不能超过3个");
                 }
-                articleTagService.saveArticleTag(articleId, publishArticleRequest.getTagIds());
+                articleTagService.saveArticleTag(articleId.get(), publishArticleRequest.getTagIds());
                 // 事务提交
                 return 1;
             } catch (Exception e) {
@@ -111,12 +151,14 @@ public class ArticleController {
         log.info("文章创建成功");
         return ResponseEntity.<Long>builder()
                 .code(ResponseCode.SUCCESS.getCode())
+                .data(articleId.longValue())
                 .info("文章创建成功")
                 .build();
     }
 
     @PostMapping("/publish")
     @Operation(summary = "发布文章")
+    @SaCheckLogin
     public ResponseEntity pushArticle(@RequestBody PublishOrDraftArticleRequest publishArticleRequest) {
         log.info("发布文章，文章内容：{}", publishArticleRequest);
         if (publishArticleRequest != null && publishArticleRequest.getId() != null) {
@@ -127,19 +169,18 @@ public class ArticleController {
             // 事务开始
             try {
                 Long articleId = publishArticleRequest.getId();
-                //1. 保存文章
+                //1. 保存文章和分类id
                 articleService.publishArticle(ArticleEntity.builder()
                         .id(publishArticleRequest.getId())
-                        .title(publishArticleRequest.getTitle())
+                        .categoryId(publishArticleRequest.getCategoryId())
+                        .title(new ArticleTitle(publishArticleRequest.getTitle()))
                         .coverUrl(publishArticleRequest.getCoverUrl())
-                        .content(publishArticleRequest.getContent())
+                        .content(new ArticleContent(publishArticleRequest.getContent()))
                         .description(publishArticleRequest.getDescription())
                         .userId(userId) // 当前登录用户ID
                         .status(ArticleStatus.PUBLISHED)
                         .build(), userId);
-                //2. 保存文章分类
-                articleCategoryService.saveArticleCategory(articleId, publishArticleRequest.getCategoryId());
-                //3. 保存文章标签
+                //2. 保存文章标签
                 if (publishArticleRequest.getTagIds() == null || publishArticleRequest.getTagIds().isEmpty()) {
                     throw new BusinessException(ResponseCode.NULL_PARAMETER.getCode(), "标签不能为空");
                 }
@@ -165,14 +206,15 @@ public class ArticleController {
 
     @PostMapping("/saveDraft")
     @Operation(summary = "保存文章草稿")
+    @SaCheckLogin
     public ResponseEntity saveArticleDraft(@RequestBody DraftRequest draftRequest) {
         log.info("保存文章草稿，文章内容：{}", draftRequest);
         Long userId = StpUtil.getLoginIdAsLong();
         //1. 保存文章，并将状态设置为草稿
         Long articleId = articleService.createOrUpdateArticleDraft(ArticleEntity.builder()
                 .id(draftRequest.getId())
-                .title(draftRequest.getTitle())
-                .content(draftRequest.getContent())
+                .title(draftRequest.getTitle() != null ? new ArticleTitle(draftRequest.getTitle()) : null)
+                .content(draftRequest.getContent() != null ? new ArticleContent(draftRequest.getContent()) : null)
                 .userId(userId)
                 .status(ArticleStatus.DRAFT)
                 .build());
@@ -208,58 +250,30 @@ public class ArticleController {
                 .build();
     }
 
-    @GetMapping("/hot")
-    @Operation(summary = "获取热门文章列表")
-    public ResponseEntity<List<ArticleListVO>> getHotArticles(@RequestParam(defaultValue = "10") int limit) {
-        List<ArticleListVO> hotArticles = articleService.getHotArticles(limit);
-        return ResponseEntity.<List<ArticleListVO>>builder()
-                .code(ResponseCode.SUCCESS.getCode())
-                .data(hotArticles)
-                .build();
-    }
-
-    @GetMapping("/user/likes")
-    @Operation(summary = "获取用户点赞的文章列表")
-    @SaCheckLogin
-    public ResponseEntity<List<ArticleListVO>> getUserLikedArticles() {
-        Long userId = StpUtil.getLoginIdAsLong();
-        List<ArticleListVO> likedArticles = articleService.getUserLikedArticles(userId);
-        return ResponseEntity.<List<ArticleListVO>>builder()
-                .code(ResponseCode.SUCCESS.getCode())
-                .data(likedArticles)
-                .build();
-    }
-
-    @GetMapping("/{id}/liked-users")
-    @Operation(summary = "获取文章的点赞用户列表")
-    public ResponseEntity<List<Long>> getArticleLikedUsers(@PathVariable("id") Long articleId) {
-        List<Long> likedUsers = articleService.getArticleLikedUsers(articleId);
-        return ResponseEntity.<List<Long>>builder()
-                .code(ResponseCode.SUCCESS.getCode())
-                .data(likedUsers)
-                .build();
-    }
-
     @GetMapping("/search")
     @Operation(summary = "搜索文章")
-    public ResponseEntity<List<ArticleEntity>> searchArticles(@RequestParam String title) {
+    public ResponseEntity<Page<ArticleEntity>> searchArticles(@RequestParam String title,
+                                                              @RequestParam(defaultValue = "0") int page,
+                                                              @RequestParam(defaultValue = "10") int size) {
         try {
             if (StringUtils.isBlank(title)) {
-                return ResponseEntity.<List<ArticleEntity>>builder()
+                return ResponseEntity.<Page<ArticleEntity>>builder()
                         .code(ResponseCode.ILLEGAL_PARAMETER.getCode())
                         .info("搜索关键词不能为空")
                         .build();
             }
 
-            List<ArticleEntity> articles = articleIndexService.searchArticles(title);
-            return ResponseEntity.<List<ArticleEntity>>builder()
+            Pageable pageable = PageRequest.of(page, size);
+            Page<ArticleEntity> articles = articleQueryDomainService.searchArticlesByTitle(title, pageable);
+            
+            return ResponseEntity.<Page<ArticleEntity>>builder()
                     .data(articles)
                     .code(ResponseCode.SUCCESS.getCode())
                     .info("搜索成功")
                     .build();
         } catch (Exception e) {
             log.error("文章搜索失败: {}", e.getMessage(), e);
-            return ResponseEntity.<List<ArticleEntity>>builder()
+            return ResponseEntity.<Page<ArticleEntity>>builder()
                     .code(ResponseCode.UN_ERROR.getCode())
                     .info("搜索失败")
                     .build();
@@ -267,15 +281,47 @@ public class ArticleController {
     }
 
     @GetMapping("/user/articles")
+    @SaCheckLogin
     @Operation(summary = "根据用户ID查询发布的文章列表")
     public ResponseEntity<List<ArticleListVO>> getArticlesByUserId() {
-        Long userId = userService.getCurrentUserId();
-
+        Long userId = StpUtil.getLoginIdAsLong();
         log.info("根据用户ID查询发布的文章列表，用户ID：{}", userId);
         List<ArticleListVO> articles = articleService.getArticlesByUserId(userId);
         return ResponseEntity.<List<ArticleListVO>>builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .data(articles)
+                .build();
+    }
+
+    @GetMapping("/view")
+    @Operation(summary = "文章阅读数+1")
+    public ResponseEntity<?> viewArticle(@RequestParam Long articleId) {
+        articleService.viewArticle(articleId);
+        return ResponseEntity.builder()
+                .code(ResponseCode.SUCCESS.getCode())
+                .info("文章阅读数+1成功")
+                .build();
+    }
+
+    @GetMapping("/like/{id}")
+    @Operation(summary = "文章点赞")
+    public ResponseEntity<?> likeArticle(@PathVariable("id") Long id) {
+        Long userId = StpUtil.getLoginIdAsLong();
+        likeService.like(userId, LikeType.ARTICLE.getCode(), id);
+        return ResponseEntity.builder()
+                .code(ResponseCode.SUCCESS.getCode())
+                .info("文章点赞成功")
+                .build();
+    }
+
+    @GetMapping("/unlike/{id}")
+    @Operation(summary = "取消文章点赞")
+    public ResponseEntity<?> unlikeArticle(@PathVariable("id") Long articleId) {
+        Long userId = StpUtil.getLoginIdAsLong();
+        likeService.unlike(userId, LikeType.ARTICLE.getCode(), articleId);
+        return ResponseEntity.builder()
+                .code(ResponseCode.SUCCESS.getCode())
+                .info("文章取消点赞成功")
                 .build();
     }
 }

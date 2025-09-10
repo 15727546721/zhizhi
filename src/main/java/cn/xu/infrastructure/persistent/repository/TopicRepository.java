@@ -1,150 +1,142 @@
 package cn.xu.infrastructure.persistent.repository;
 
-import cn.xu.domain.topic.model.entity.TopicEntity;
-import cn.xu.domain.topic.repository.ITopicRepository;
-import cn.xu.infrastructure.persistent.dao.ITopicDao;
+import cn.xu.api.web.model.dto.essay.TopicQueryRequest;
+import cn.xu.application.common.ResponseCode;
+import cn.xu.domain.essay.model.entity.TopicEntity;
+import cn.xu.domain.essay.repository.ITopicRepository;
+import cn.xu.infrastructure.common.exception.BusinessException;
+import cn.xu.infrastructure.persistent.converter.TopicConverter;
+import cn.xu.infrastructure.persistent.dao.TopicMapper;
 import cn.xu.infrastructure.persistent.po.Topic;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
-import javax.annotation.Resource;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * 话题仓储实现类
+ * 通过TopicConverter进行领域实体与持久化对象的转换，遵循DDD防腐层模式
+ * 
+ * @author xu
+ */
 @Slf4j
 @Repository
+@RequiredArgsConstructor
 public class TopicRepository implements ITopicRepository {
 
-    @Resource
-    private ITopicDao topicDao;
+    private final TopicMapper topicDao;
+    private final TopicConverter topicConverter;
 
     @Override
-    public Long save(TopicEntity topicEntity) {
-        Topic topic = convertToTopicPO(topicEntity);
-        topicDao.insert(topic);
-        return topic.getId();
+    @Transactional(rollbackFor = BusinessException.class)
+    public Long save(TopicEntity topic) {
+        if (topic == null) {
+            throw new IllegalArgumentException("话题实体不得为空");
+        }
+        try {
+            Topic topicPO = topicConverter.toDataObject(topic);
+            int rowsAffected = topicDao.insert(topicPO);
+            if (rowsAffected <= 0) {
+                throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "保存话题失败");
+            }
+            log.info("成功保存话题: {}", topic);
+            return topicPO.getId();
+        } catch (Exception e) {
+            log.error("保存话题失败: {}", topic, e);
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "保存话题失败");
+        }
     }
 
     @Override
+    @Transactional(rollbackFor = BusinessException.class)
     public void update(TopicEntity topicEntity) {
-        topicDao.update(convertToTopicPO(topicEntity));
+        if (topicEntity == null) {
+            throw new IllegalArgumentException("话题实体不得为空");
+        }
+        try {
+            Topic topicPO = topicConverter.toDataObject(topicEntity);
+            int rowsAffected = topicDao.update(topicPO);
+            if (rowsAffected <= 0) {
+                throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "更新话题失败");
+            }
+            log.info("成功更新话题: {}", topicEntity);
+        } catch (Exception e) {
+            log.error("更新话题失败: {}", topicEntity, e);
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "更新话题失败");
+        }
     }
 
     @Override
+    @Transactional(rollbackFor = BusinessException.class)
     public void deleteById(Long id) {
-        topicDao.deleteById(id);
-    }
-
-    @Override
-    public void deleteByIds(List<Long> ids) {
-        topicDao.deleteByIds(ids);
+        if (id == null) {
+            throw new IllegalArgumentException("话题ID不得为空");
+        }
+        try {
+            int rowsAffected = topicDao.deleteById(id);
+            if (rowsAffected <= 0) {
+                throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "删除话题失败");
+            }
+            log.info("成功删除话题: {}", id);
+        } catch (Exception e) {
+            log.error("删除话题失败: {}", id, e);
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "删除话题失败");
+        }
     }
 
     @Override
     public TopicEntity findById(Long id) {
-        Topic topic = topicDao.findById(id);
-        return topic != null ? convertToTopicEntity(topic) : null;
+        if (id == null) {
+            throw new IllegalArgumentException("话题ID不得为空");
+        }
+        try {
+            Topic topicPO = topicDao.findById(id);
+            TopicEntity topicEntity = topicConverter.toDomainEntity(topicPO);
+            log.info("查询话题结果: {}", topicEntity);
+            return topicEntity;
+        } catch (Exception e) {
+            log.error("查询话题失败: {}", id, e);
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "查询话题失败");
+        }
     }
 
     @Override
     public List<TopicEntity> findAll() {
         try {
-            log.info("查询所有话题列表");
-            List<Topic> topics = topicDao.findAll();
-            if (topics == null || topics.isEmpty()) {
-                return Collections.emptyList();
-            }
-            return topics.stream()
-                    .map(this::convertToTopicEntity)
-                    .collect(Collectors.toList());
+            List<Topic> topicPOs = topicDao.findAll();
+            List<TopicEntity> topicEntities = topicConverter.toDomainEntities(topicPOs);
+            log.info("查询所有话题结果: {}", topicEntities);
+            return topicEntities.isEmpty() ? Collections.emptyList() : topicEntities;
         } catch (Exception e) {
-            log.error("查询所有话题列表失败", e);
-            return Collections.emptyList();
+            log.error("查询所有话题失败", e);
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "查询所有话题失败");
         }
     }
 
     @Override
-    public List<TopicEntity> findHotTopics(int limit) {
-        return topicDao.findHotTopics(limit).stream()
-                .map(this::convertToTopicEntity)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public List<TopicEntity> findByCategoryId(Long categoryId) {
-        return topicDao.findByCategoryId(categoryId).stream()
-                .map(this::convertToTopicEntity)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public List<TopicEntity> findByPage(int offset, int limit) {
+    public TopicEntity findByName(String name) {
+        if (name == null || name.isEmpty()) {
+            throw new IllegalArgumentException("话题名称不得为空");
+        }
         try {
-            log.info("分页查询话题列表, offset: {}, limit: {}", offset, limit);
-            List<Topic> topics = topicDao.findByPage(offset, limit);
-            if (topics == null || topics.isEmpty()) {
-                return Collections.emptyList();
-            }
-            return topics.stream()
-                    .map(this::convertToTopicEntity)
-                    .collect(Collectors.toList());
+            Topic topic = topicDao.findByName(name);
+            TopicEntity topicEntity = topicConverter.toDomainEntity(topic);
+            log.info("根据名称查询话题结果: {}", topicEntity);
+            return topicEntity;
         } catch (Exception e) {
-            log.error("分页查询话题列表失败", e);
-            return Collections.emptyList();
+            log.error("根据名称查询话题失败: {}", name, e);
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "根据名称查询话题失败");
         }
     }
 
     @Override
-    public Long count() {
-        try {
-            return topicDao.count();
-        } catch (Exception e) {
-            log.error("查询话题总数失败", e);
-            return 0L;
-        }
+    public List<TopicEntity> getPageByName(TopicQueryRequest request) {
+        int offset = (request.getPageNo() - 1) * request.getPageSize();
+        List<Topic> topicPOs = topicDao.getPageByName(request.getName(), offset, request.getPageSize());
+        return topicConverter.toDomainEntities(topicPOs);
     }
-
-    /**
-     * 将领域实体转换为PO对象
-     */
-    private Topic convertToTopicPO(TopicEntity topicEntity) {
-        if (topicEntity == null) {
-            return null;
-        }
-
-        Topic topic = Topic.builder()
-                .id(topicEntity.getId())
-                .userId(topicEntity.getUserId())
-                .content(topicEntity.getContent())
-                .categoryId(topicEntity.getCategoryId())
-                .createTime(topicEntity.getCreateTime())
-                .updateTime(topicEntity.getUpdateTime())
-                .build();
-
-        // 设置图片列表
-        if (topicEntity.getImages() != null && !topicEntity.getImages().isEmpty()) {
-            topic.setImageList(topicEntity.getImages());
-        }
-        return topic;
-    }
-
-    /**
-     * 将PO对象转换为领域实体
-     */
-    private TopicEntity convertToTopicEntity(Topic topic) {
-        if (topic == null) {
-            return null;
-        }
-
-        return TopicEntity.builder()
-                .id(topic.getId())
-                .userId(topic.getUserId())
-                .content(topic.getContent())
-                .images(topic.getImageList())  // 使用getImageList获取图片列表
-                .categoryId(topic.getCategoryId())
-                .createTime(topic.getCreateTime())
-                .updateTime(topic.getUpdateTime())
-                .build();
-    }
-} 
+}

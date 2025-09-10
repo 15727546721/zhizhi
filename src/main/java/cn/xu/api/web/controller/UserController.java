@@ -1,13 +1,16 @@
 package cn.xu.api.web.controller;
 
+import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.api.web.model.dto.user.LoginRequest;
 import cn.xu.api.web.model.dto.user.RegisterRequest;
+import cn.xu.api.web.model.dto.user.UpdateUserReq;
 import cn.xu.api.web.model.vo.user.UserLoginVO;
 import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.user.model.entity.UserEntity;
-import cn.xu.domain.user.model.valueobject.Email;
+import cn.xu.domain.user.model.valobj.Email;
 import cn.xu.domain.user.service.IUserService;
+import cn.xu.infrastructure.common.annotation.ApiOperationLog;
 import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.common.response.ResponseEntity;
 import io.swagger.v3.oas.annotations.Operation;
@@ -32,10 +35,7 @@ public class UserController {
         validateRegisterRequest(registerRequest);
 
         // 注册用户
-        UserEntity user = userService.register(registerRequest);
-
-        // 自动登录
-        StpUtil.login(user.getId());
+        userService.register(registerRequest);
 
         return ResponseEntity.<Void>builder()
                 .code(ResponseCode.SUCCESS.getCode())
@@ -87,8 +87,9 @@ public class UserController {
 
     @PostMapping("/logout")
     public ResponseEntity<Void> logout() {
+        long useId = StpUtil.getLoginIdAsLong();
         StpUtil.logout();
-        log.info("用户退出成功: {}", StpUtil.getLoginIdAsLong());
+        log.info("用户退出成功: {}", useId);
         return ResponseEntity.<Void>builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .info("退出成功")
@@ -97,10 +98,26 @@ public class UserController {
 
     @GetMapping("/info/{id}")
     public ResponseEntity<UserEntity> getUserInfo(@PathVariable Long id) {
+        log.info("获取用户信息，用户ID：{}", id);
         UserEntity user = userService.getUserInfo(id);
         return ResponseEntity.<UserEntity>builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .data(user)
+                .build();
+    }
+
+    @PostMapping("/update")
+    @ApiOperationLog(description = "更新用户信息")
+    @SaCheckLogin
+    public ResponseEntity<Void> updateUser(@RequestBody UpdateUserReq user) {
+        long userId = StpUtil.getLoginIdAsLong();
+        if (userId != user.getId()) {
+            throw new BusinessException("只能更新自己的信息");
+        }
+        userService.update(user);
+        return ResponseEntity.<Void>builder()
+                .code(ResponseCode.SUCCESS.getCode())
+                .info("用户信息更新成功")
                 .build();
     }
 }

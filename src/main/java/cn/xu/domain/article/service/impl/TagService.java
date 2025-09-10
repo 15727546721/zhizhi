@@ -1,5 +1,6 @@
 package cn.xu.domain.article.service.impl;
 
+import cn.xu.domain.article.model.aggregate.ArticleAndTagAgg;
 import cn.xu.domain.article.model.entity.TagEntity;
 import cn.xu.domain.article.repository.ITagRepository;
 import cn.xu.domain.article.service.ITagService;
@@ -50,4 +51,12 @@ public class TagService implements ITagService {
     public List<TagEntity> getTagList() {
         return tagRepository.getTagList();
     }
+
+    @Override
+    public List<ArticleAndTagAgg> batchGetTagListByArticleIds(List<Long> articleIds) {
+        List<ArticleAndTagAgg> articleAndTagAggs = tagRepository.selectByArticleIds(articleIds);
+
+        return articleAndTagAggs;
+    }
+
 }

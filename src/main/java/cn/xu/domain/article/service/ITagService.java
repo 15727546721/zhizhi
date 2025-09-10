@@ -1,5 +1,6 @@
 package cn.xu.domain.article.service;
 
+import cn.xu.domain.article.model.aggregate.ArticleAndTagAgg;
 import cn.xu.domain.article.model.entity.TagEntity;
 
 import java.util.List;
@@ -23,4 +24,6 @@ public interface ITagService {
      * @return
      */
     List<TagEntity> getTagList();
+
+    List<ArticleAndTagAgg> batchGetTagListByArticleIds(List<Long> articleIds);
 }

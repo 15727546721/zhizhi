@@ -1,46 +1,58 @@
 spring:
-  config:
-    name: zhizhi-app
+  application:
+    name: zhizhi
+  main:
+    allow-bean-definition-overriding: true
+  # 激活开发环境配置
   profiles:
     active: dev
 
-  servlet:
-    multipart:
-      max-file-size: 10MB
-      max-request-size: 10MB
+server:
+  port: 8091
 
-# 热点数据配置
-hot-data:
-  items:
-    # 热门文章的点赞数据
-    - targetId: 1
-      type: ARTICLE
-      needWarmup: true
-      needRebuild: true
-    - targetId: 2
-      type: ARTICLE
-      needWarmup: true
-      needRebuild: true
-    # 热门话题的点赞数据
-    - targetId: 1
-      type: TOPIC
-      needWarmup: true
-      needRebuild: true
+# 日志配置
+logging:
+  config: classpath:logback-spring.xml
+  level:
+    cn.xu.infrastructure.persistent.repository: debug
 
-upload:
+# 评论热度计算策略配置
+comment:
+  hot:
+    score:
+      strategy: SIMPLE  # 可选值: SIMPLE, REDDIT, TRENDING, LINEAR
+
+# MinIO配置
+minio:
+  url: http://localhost:5000
+  accessKey: admin
+  secretKey: superadmin
+  bucketName: zhizhi
+  enabled: true  # 启用MinIO
+
+# Sa-Token配置
+sa-token:
+  # token 名称 (同时也是cookie名称)
+  token-name: Authorization
+  # token 有效期，单位s 默认30天, -1代表永不过期
+  timeout: 2592000
+  # token 临时有效期 (指定时间内无操作就视为token过期) 单位: 秒
+  active-timeout: -1
+  # 是否允许同一账号并发登录 (为true时允许一起登录, 为false时新登录挤掉旧登录)
+  is-concurrent: true
+  # 在多人登录同一账号时，是否共用一个token (为true时所有登录共用一个token, 为false时每次登录新建一个token)
+  is-share: true
+  # token风格
+  token-style: uuid
+  # 是否输出操作日志 (启用日志便于调试)
+  is-log: true
+
+# 可选：配置索引名称
+app:
+  elasticsearch:
+    index:
+      comments: comments
+      articles: articles
   article:
-    cover:
-      path: ${user.home}/zhizhi/upload/article/cover/
-      url-prefix: /upload/article/cover/
-
-lucene:
-  index:
-#    path: /data/lucene/article
-    path: D:/data/lucene/article # lucene 索引存放的位置
-
-mybatis:
-  type-handlers-package: cn.xu.infrastructure.persistent.handler
-  configuration:
-    map-underscore-to-camel-case: true
-    default-enum-type-handler: org.apache.ibatis.type.EnumTypeHandler
-  mapper-locations: classpath:mapper/*.xml
+    query:
+      strategy: mysql  # 文章查询策略：elasticsearch 或 mysql

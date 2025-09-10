@@ -8,16 +8,27 @@ spring:
     password: 123456
     url: jdbc:mysql://127.0.0.1:13306/zhizhi?useUnicode=true&characterEncoding=utf8&autoReconnect=true&zeroDateTimeBehavior=convertToNull&serverTimezone=UTC&useSSL=true
     driver-class-name: com.mysql.cj.jdbc.Driver
-  hikari:
-    pool-name: Retail_HikariCP
-    minimum-idle: 15 #最小空闲连接数量
-    idle-timeout: 180000 #空闲连接存活最大时间，默认600000（10分钟）
-    maximum-pool-size: 25 #连接池最大连接数，默认是10
-    auto-commit: true  #此属性控制从池返回的连接的默认自动提交行为,默认值：true
-    max-lifetime: 1800000 #此属性控制池中连接的最长生命周期，值0表示无限生命周期，默认1800000即30分钟
-    connection-timeout: 30000 #数据库连接超时时间,默认30秒，即30000
-    connection-test-query: SELECT 1
-  type: com.zaxxer.hikari.HikariDataSource
+    type: com.zaxxer.hikari.HikariDataSource
+    hikari:
+      pool-name: Retail_HikariCP
+      minimum-idle: 15 #最小空闲连接数量
+      idle-timeout: 180000 #空闲连接存活最大时间，默认600000（10分钟）
+      maximum-pool-size: 25 #连接池最大连接数，默认是10
+      auto-commit: true  #此属性控制从池返回的连接的默认自动提交行为,默认值：true
+      max-lifetime: 1800000 #此属性控制池中连接的最长生命周期，值0表示无限生命周期，默认1800000即30分钟
+      connection-timeout: 30000 #数据库连接超时时间,默认30秒，即30000
+      connection-test-query: SELECT 1
+  elasticsearch:
+    enabled: true  # 开发环境中默认禁用Elasticsearch
+    uris: 124.222.71.27:9200  # ES服务器地址
+    connection-timeout: 5s
+    read-timeout: 30s
+# 可选：配置索引名称
+app:
+  elasticsearch:
+    index:
+      comments: comments
+      articles: articles
 
 # 线程池配置
 thread:
@@ -59,7 +70,7 @@ sa-token:
   # token风格
   token-style: uuid
   # 是否输出操作日志
-  is-log: false
+  is-log: true
   # 配置 Sa-Token 单独使用的 Redis 连接
   alone-redis:
     # Redis数据库索引（默认为0）
@@ -77,7 +88,8 @@ minio:
   url: http://localhost:5000
   accessKey: admin
   secretKey: superadmin
-  bucketName: your-bucket-name
+  bucketName: zhizhi
+  enabled: true  # 在开发环境中启用MinIO
 
 
 # 日志

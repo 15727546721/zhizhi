@@ -48,6 +48,16 @@ public class Article implements Serializable {
     private Long userId;
 
     /**
+     * 分类ID
+     */
+    private Long categoryId;
+
+    /**
+     * 发布文章次数
+     */
+    private Long articleCount;
+
+    /**
      * 阅读次数
      */
     private Long viewCount;
@@ -56,6 +66,11 @@ public class Article implements Serializable {
      * 收藏次数
      */
     private Long collectCount;
+
+    /**
+     * 评论次数
+     */
+    private Long commentCount;
 
     /**
      * 点赞次数

@@ -1,8 +1,10 @@
 package cn.xu.domain.article.service;
 
 import cn.xu.api.system.model.dto.article.ArticleRequest;
+import cn.xu.api.web.model.vo.article.ArticleDetailVO;
 import cn.xu.api.web.model.vo.article.ArticleListVO;
 import cn.xu.api.web.model.vo.article.ArticlePageVO;
+import cn.xu.domain.article.model.aggregate.ArticleAndAuthorAggregate;
 import cn.xu.domain.article.model.entity.ArticleEntity;
 import cn.xu.infrastructure.common.response.PageResponse;
 import org.springframework.web.multipart.MultipartFile;
@@ -52,51 +54,8 @@ public interface IArticleService {
 
     /**
      * 更新文章
-     *
-     * @param articleEntity
      */
     void updateArticle(ArticleEntity articleEntity);
-
-    /**
-     * 根据分类ID获取文章列表
-     *
-     * @param categoryId
-     * @return
-     */
-    List<ArticleListVO> getArticleByCategoryId(Long categoryId);
-
-    /**
-     * 获取热门文章列表
-     *
-     * @param limit 限制数量
-     * @return 热门文章列表
-     */
-    List<ArticleListVO> getHotArticles(int limit);
-
-    /**
-     * 获取用户点赞的文章列表
-     *
-     * @param userId 用户ID
-     * @return 文章列表
-     */
-    List<ArticleListVO> getUserLikedArticles(Long userId);
-
-    /**
-     * 获取文章的点赞用户列表
-     *
-     * @param articleId 文章ID
-     * @return 用户ID列表
-     */
-    List<Long> getArticleLikedUsers(Long articleId);
-
-    /**
-     * 获取文章的点赞状态
-     *
-     * @param articleId 文章ID
-     * @param userId    用户ID
-     * @return 是否已点赞
-     */
-    boolean isArticleLiked(Long articleId, Long userId);
 
     /**
      * 获取全部文章（已发布）
@@ -111,20 +70,12 @@ public interface IArticleService {
     List<ArticleEntity> getAllArticles();
 
     /**
-     * 获取文章作者ID
-     *
-     * @param articleId 文章ID
-     * @return 作者ID，如果文章不存在则返回null
-     */
-    Long getArticleAuthorId(Long articleId);
-
-    /**
      * 获取文章详细信息
      *
      * @param articleId 文章ID
      * @return 文章实体，不存在则返回null
      */
-    ArticleEntity getArticleById(Long articleId);
+    ArticleAndAuthorAggregate getArticleDetailById(Long articleId);
 
     List<ArticleListVO> getArticlesByUserId(Long userId);
 
@@ -151,4 +102,43 @@ public interface IArticleService {
      * @param userId 用户ID
      */
     void deleteArticle(Long id, Long userId);
+
+    /**
+     * 文章阅读数+1
+     *
+     * @param articleId
+     */
+    void viewArticle(Long articleId);
+
+    /**
+     * 更新文章热度
+     *
+     * @param articleId
+     */
+    void updateArticleHotScore(Long articleId);
+
+    /**
+     * 根据分类ID获取文章列表
+     *
+     * @param categoryId
+     * @return
+     */
+    List<ArticleEntity> getArticlePageListByCategoryId(Long categoryId, Integer pageNo, Integer pageSize);
+
+    /**
+     * 获取文章分页列表
+     *
+     * @param pageNo
+     * @param pageSize
+     * @return
+     */
+    List<ArticleEntity> getArticlePageList(Integer pageNo, Integer pageSize);
+
+    /**
+     * 获取文章详情
+     * @param articleId 文章ID
+     * @param currentUserId 当前用户ID，如果未登录则为null
+     * @return 文章详情对象
+     */
+    ArticleDetailVO getArticleDetail(Long id, Long currentUserId);
 }

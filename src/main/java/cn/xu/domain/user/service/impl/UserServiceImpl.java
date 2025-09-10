@@ -5,11 +5,15 @@ import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.api.system.model.dto.user.UserRequest;
 import cn.xu.api.web.model.dto.user.LoginRequest;
 import cn.xu.api.web.model.dto.user.RegisterRequest;
+import cn.xu.api.web.model.dto.user.UpdateUserReq;
 import cn.xu.application.common.ResponseCode;
 import cn.xu.domain.file.service.IFileStorageService;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.model.entity.UserInfoEntity;
-import cn.xu.domain.user.model.valueobject.Email;
+import cn.xu.domain.user.model.valobj.Email;
+import cn.xu.domain.user.model.valobj.Password;
+import cn.xu.domain.user.model.valobj.Phone;
+import cn.xu.domain.user.model.valobj.Username;
 import cn.xu.domain.user.repository.IUserRepository;
 import cn.xu.domain.user.service.IUserService;
 import cn.xu.infrastructure.common.exception.BusinessException;
@@ -25,16 +29,14 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
  * 用户服务实现类
  * 负责用户相关的核心业务逻辑，包括用户信息的增删改查、认证授权等
- *
+ * 
+ * @author xu
  */
 @Service
 @RequiredArgsConstructor
@@ -43,9 +45,7 @@ public class UserServiceImpl implements IUserService {
     private static final Logger log = LoggerFactory.getLogger(UserServiceImpl.class);
 
     private final IUserRepository userRepository;
-
-    @Resource
-    private IFileStorageService fileStorageService;
+    private final IFileStorageService fileStorageService;
 
     @Override
     public UserEntity getUserById(Long userId) {
@@ -57,7 +57,7 @@ public class UserServiceImpl implements IUserService {
         try {
             log.info("[用户服务] 开始获取用户信息 - userId: {}", userId);
             return userRepository.findById(userId)
-                    .orElse(null);
+                    .orElseThrow(() -> new BusinessException(ResponseCode.UN_ERROR.getCode(), "用户不存在"));
         } catch (Exception e) {
             log.error("[用户服务] 获取用户信息失败 - userId: {}", userId, e);
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "获取用户信息失败：" + e.getMessage());
@@ -66,34 +66,63 @@ public class UserServiceImpl implements IUserService {
 
     @Override
     public String getNicknameById(Long userId) {
-        return userRepository.getNicknameById(userId);
+        return getUserById(userId).getNickname();
     }
 
     @Override
-    @Transactional
-    public UserEntity register(RegisterRequest request) {
+    @Transactional(rollbackFor = Exception.class)
+    public void update(UpdateUserReq user) {
+        UserEntity userEntity = getUserById(user.getId());
+        if (userEntity == null) {
+            log.error("[用户服务] 更新用户信息失败：用户不存在");
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "用户不存在");
+        }
+        userEntity.setNickname(user.getNickname());
+        userEntity.setAvatar(user.getAvatar());
+        userEntity.setGender(user.getGender());
+        userEntity.setRegion(user.getRegion());
+        userEntity.setBirthday(user.getBirthday());
+        userEntity.setDescription(user.getDescription());
+        userEntity.setPhone(user.getPhone() != null ? new Phone(user.getPhone()) : null);
+        userEntity.setUpdateTime(LocalDateTime.now());
+        userRepository.update(userEntity);
+    }
+
+    @Override
+    public List<UserEntity> batchGetUserInfo(List<Long> userIds) {
+        return userRepository.findByIds(userIds);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void register(RegisterRequest request) {
         try {
             log.info("[用户服务] 开始用户注册 - username: {}", request.getUsername());
+
+            // 1. 验证用户名和邮箱是否已存在
+            Username username = new Username(request.getUsername());
+            Email email = new Email(request.getEmail());
             
-            // 1. 验证用户名是否已存在
-            if (userRepository.existsByUsername(request.getUsername())) {
+            if (userRepository.existsByUsername(username)) {
                 throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "用户名已存在");
             }
             
+            if (userRepository.existsByEmail(email)) {
+                throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "邮箱已被注册");
+            }
+
             // 2. 创建用户实体
-            UserEntity user = UserEntity.builder()
-                    .username(request.getUsername())
-                    .password(SaSecureUtil.sha256(request.getPassword()))
-                    .nickname(request.getNickname())
-                    .createTime(LocalDateTime.now())
-                    .updateTime(LocalDateTime.now())
-                    .build();
-            
+            UserEntity user = UserEntity.createNewUser(
+                    request.getUsername(),
+                    request.getPassword(),
+                    request.getEmail(),
+                    request.getNickname()
+            );
+
             // 3. 保存用户
-            userRepository.save(user);
-            log.info("[用户服务] 用户注册成功 - userId: {}", user.getId());
-            
-            return user;
+            UserEntity savedUser = userRepository.save(user);
+            log.info("[用户服务] 用户注册成功 - userId: {}", savedUser.getId());
+
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
@@ -106,12 +135,12 @@ public class UserServiceImpl implements IUserService {
     public UserEntity login(LoginRequest request) {
         try {
             log.info("[用户服务] 用户登录请求 - email: {}", request.getEmail());
-            
+
             // 1. 获取用户信息
             UserEntity user = userRepository.findByEmail(new Email(request.getEmail()))
                     .filter(u -> validatePassword(u, request.getPassword()))
                     .orElseThrow(() -> new BusinessException(ResponseCode.UN_ERROR.getCode(), "用户名或密码错误"));
-            
+
             log.info("[用户服务] 用户登录成功 - userId: {}", user.getId());
             StpUtil.login(user.getId());
             return user;
@@ -133,22 +162,22 @@ public class UserServiceImpl implements IUserService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void updateUserInfo(UserInfoEntity userInfoEntity) {
         try {
             log.info("[用户服务] 开始更新用户信息 - userId: {}", userInfoEntity.getId());
-            
+
             // 1. 获取当前用户
             Long userId = StpUtil.getLoginIdAsLong();
             UserEntity user = getUserInfo(userId);
-            
+
             // 2. 更新用户信息
             updateUserFields(user, userInfoEntity);
-            
+
             // 3. 保存更新
             userRepository.save(user);
             log.info("[用户服务] 用户信息更新成功 - userId: {}", userId);
-            
+
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
@@ -159,8 +188,8 @@ public class UserServiceImpl implements IUserService {
 
     /**
      * 更新用户字段信息
-     * 
-     * @param user 用户实体
+     *
+     * @param user     用户实体
      * @param userInfo 用户信息实体
      */
     private void updateUserFields(UserEntity user, UserInfoEntity userInfo) {
@@ -170,58 +199,58 @@ public class UserServiceImpl implements IUserService {
         user.setRegion(userInfo.getRegion());
         user.setBirthday(userInfo.getBirthday());
         user.setDescription(userInfo.getDescription());
-        user.setPhone(userInfo.getPhone());
+        user.setPhone(userInfo.getPhone() != null ? new Phone(userInfo.getPhone()) : null);
         user.setUpdateTime(LocalDateTime.now());
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void changePassword(Long userId, String oldPassword, String newPassword) {
         UserEntity user = getUserInfo(userId);
         if (!validatePassword(user, oldPassword)) {
             throw new BusinessException("旧密码错误");
         }
-        user.setPassword(SaSecureUtil.sha256(newPassword));
+        user.setPassword(new Password(newPassword));
         userRepository.save(user);
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void banUser(Long userId) {
         UserEntity user = getUserInfo(userId);
-        user.setStatus(1);
+        user.setStatus(UserEntity.UserStatus.fromCode(1));
         userRepository.save(user);
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void unbanUser(Long userId) {
         UserEntity user = getUserInfo(userId);
-        user.setStatus(0);
+        user.setStatus(UserEntity.UserStatus.fromCode(0));
         userRepository.save(user);
     }
 
     @Override
     public List<UserEntity> queryUserList(PageRequest pageRequest) {
-        return userRepository.findAll(pageRequest.getPageNo(), pageRequest.getPageSize());
+        return userRepository.findByPage(pageRequest.getPageNo(), pageRequest.getPageSize());
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void addUser(UserRequest userRequest) {
         validateUsernameAndEmail(userRequest.getUsername(), userRequest.getEmail());
 
         UserEntity user = UserEntity.builder()
-                .username(userRequest.getUsername())
-                .password(SaSecureUtil.sha256(userRequest.getPassword()))
-                .email(userRequest.getEmail())
+                .username(userRequest.getUsername() != null ? new Username(userRequest.getUsername()) : null)
+                .password(userRequest.getPassword() != null ? new Password(userRequest.getPassword()) : null)
+                .email(userRequest.getEmail() != null ? new Email(userRequest.getEmail()) : null)
                 .nickname(userRequest.getNickname())
                 .avatar(userRequest.getAvatar())
                 .gender(userRequest.getGender())
-                .phone(userRequest.getPhone())
+                .phone(userRequest.getPhone() != null ? new Phone(userRequest.getPhone()) : null)
                 .region(userRequest.getRegion())
                 .birthday(userRequest.getBirthday())
-                .status(userRequest.getStatus())
+                .status(UserEntity.UserStatus.fromCode(userRequest.getStatus()))
                 .description(userRequest.getDescription())
                 .build();
 
@@ -229,29 +258,29 @@ public class UserServiceImpl implements IUserService {
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void updateUser(UserRequest userRequest) {
         UserEntity user = getUserInfo(userRequest.getId());
-        user.setUsername(userRequest.getUsername());
-        user.setEmail(userRequest.getEmail());
+        user.setUsername(userRequest.getUsername() != null ? new Username(userRequest.getUsername()) : null);
+        user.setEmail(userRequest.getEmail() != null ? new Email(userRequest.getEmail()) : null);
         user.setNickname(userRequest.getNickname());
         user.setAvatar(userRequest.getAvatar());
         user.setGender(userRequest.getGender());
-        user.setPhone(userRequest.getPhone());
+        user.setPhone(userRequest.getPhone() != null ? new Phone(userRequest.getPhone()) : null);
         user.setRegion(userRequest.getRegion());
         user.setBirthday(userRequest.getBirthday());
-        user.setStatus(userRequest.getStatus());
+        user.setStatus(UserEntity.UserStatus.fromCode(userRequest.getStatus()));
         user.setDescription(userRequest.getDescription());
 
         if (userRequest.getPassword() != null && !userRequest.getPassword().isEmpty()) {
-            user.setPassword(SaSecureUtil.sha256(userRequest.getPassword()));
+            user.setPassword(new Password(userRequest.getPassword()));
         }
 
         userRepository.save(user);
     }
 
     @Override
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public void deleteUser(Long userId) {
         userRepository.deleteById(userId);
     }
@@ -267,9 +296,9 @@ public class UserServiceImpl implements IUserService {
     @Transactional(rollbackFor = Exception.class)
     public String uploadAvatar(MultipartFile file) {
         try {
-            log.info("[用户服务] 开始上传用户头像 - fileName: {}, size: {}", 
+            log.info("[用户服务] 开始上传用户头像 - fileName: {}, size: {}",
                     file.getOriginalFilename(), file.getSize());
-            
+
             // 获取当前用户
             UserEntity currentUser = getCurrentUser();
             if (currentUser == null) {
@@ -277,10 +306,10 @@ public class UserServiceImpl implements IUserService {
             }
 
             // 生成文件存储路径
-            String fileName = String.format("avatar/%s/%s_%s", 
-                LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMM")),
-                currentUser.getId(),
-                file.getOriginalFilename()
+            String fileName = String.format("avatar/%s/%s_%s",
+                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMM")),
+                    currentUser.getId(),
+                    file.getOriginalFilename()
             );
 
             // 上传新头像
@@ -303,7 +332,7 @@ public class UserServiceImpl implements IUserService {
                 }
             }
 
-            log.info("[用户服务] 用户头像上传成功 - url: {}", avatarUrl);
+            log.info("[用户服务] 用户头像上传成功 - imageUrl: {}", avatarUrl);
             return avatarUrl;
         } catch (Exception e) {
             log.error("[用户服务] 上传用户头像失败", e);
@@ -313,7 +342,8 @@ public class UserServiceImpl implements IUserService {
 
     @Override
     public Map<Long, UserEntity> getBatchUserInfo(Set<Long> userIds) {
-        return userRepository.findByIds(userIds).stream()
+        List<Long> collect = new ArrayList<>(userIds);
+        return userRepository.findByIds(collect).stream()
                 .collect(Collectors.toMap(UserEntity::getId, user -> user));
     }
 
@@ -332,11 +362,12 @@ public class UserServiceImpl implements IUserService {
 
         try {
             log.info("[用户服务] 开始批量获取用户信息 - userIds: {}", userIds);
-            List<UserEntity> users = userRepository.findByIds(userIds);
-            
+            List<Long> collect = new ArrayList<>(userIds);
+            List<UserEntity> users = userRepository.findByIds(collect);
+
             Map<Long, UserEntity> userMap = users.stream()
                     .collect(Collectors.toMap(UserEntity::getId, user -> user));
-            
+
             log.debug("[用户服务] 批量获取用户信息成功 - 请求数量: {}, 实际获取: {}", userIds.size(), users.size());
             return userMap;
         } catch (Exception e) {
@@ -359,31 +390,34 @@ public class UserServiceImpl implements IUserService {
     }
 
     private void validateUsernameAndEmail(String username, String email) {
-        if (userRepository.existsByUsername(username)) {
+        Username usernameObj = new Username(username);
+        Email emailObj = new Email(email);
+        
+        if (userRepository.existsByUsername(usernameObj)) {
             throw new BusinessException("用户名已存在");
         }
-        if (userRepository.existsByEmail(new Email(email))) {
+        if (userRepository.existsByEmail(emailObj)) {
             throw new BusinessException("邮箱已被注册");
         }
     }
 
     private boolean validatePassword(UserEntity user, String password) {
-        return user.getPassword().equals(SaSecureUtil.sha256(password));
+        return user.validatePassword(password);
     }
 
     private UserInfoEntity convertToUserInfoEntity(UserEntity user) {
         return UserInfoEntity.builder()
                 .id(user.getId())
-                .username(user.getUsername())
-                .email(user.getEmail())
+                .username(user.getUsernameValue())
+                .email(user.getEmailValue())
                 .nickname(user.getNickname())
                 .avatar(user.getAvatar())
                 .gender(user.getGender())
-                .phone(user.getPhone())
+                .phone(user.getPhoneValue())
                 .region(user.getRegion())
                 .birthday(user.getBirthday())
                 .description(user.getDescription())
-                .status(user.getStatus())
+                .status(user.getStatusCode())
                 .createTime(user.getCreateTime())
                 .updateTime(user.getUpdateTime())
                 .build();
@@ -393,4 +427,4 @@ public class UserServiceImpl implements IUserService {
         Long userId = StpUtil.getLoginIdAsLong();
         return getUserInfo(userId);
     }
-} 
+}

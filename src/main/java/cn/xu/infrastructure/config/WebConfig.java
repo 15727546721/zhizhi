@@ -32,7 +32,17 @@ public class WebConfig implements WebMvcConfigurer {
         // 注册 Sa-Token 拦截器，打开注解式鉴权功能
         registry.addInterceptor(new SaInterceptor())
                 .addPathPatterns("/**")
-                .excludePathPatterns("system/login", "system/login", "system/logout", "/register", "/doc.html", "/webjars/**");
+                .excludePathPatterns(
+                        "/system/login", 
+                        "/system/logout", 
+                        "/register", 
+                        "/doc.html", 
+                        "/webjars/**",
+                        "/favicon.ico",
+                        "/error",
+                        "/swagger-resources/**",
+                        "/v3/api-docs/**"
+                );
 
     }
 
@@ -45,4 +55,3 @@ public class WebConfig implements WebMvcConfigurer {
 //        registry.addResourceHandler("/img/**").addResourceLocations("file:" + UPLOAD_FOLDER);
     }
 }
-

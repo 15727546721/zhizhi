@@ -1,11 +1,11 @@
 package cn.xu.api.web.controller;
 
+import cn.xu.api.web.model.dto.like.LikeCountResponse;
 import cn.xu.api.web.model.dto.like.LikeRequest;
-import cn.xu.api.web.model.vo.like.LikeCountVO;
 import cn.xu.application.common.ResponseCode;
-import cn.xu.domain.like.command.LikeCommand;
+import cn.xu.application.service.LikeApplicationService;
 import cn.xu.domain.like.model.LikeType;
-import cn.xu.domain.like.service.LikeService;
+import cn.xu.domain.like.service.LikeStatisticsService;
 import cn.xu.infrastructure.common.response.ResponseEntity;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -14,6 +14,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Tag(name = "点赞接口")
@@ -22,115 +24,124 @@ import javax.validation.Valid;
 @RequiredArgsConstructor
 public class LikeController {
 
-    private final LikeService likeService;
+    private final LikeApplicationService likeApplicationService;
+    private final LikeStatisticsService likeStatisticsService;
 
     @Operation(summary = "点赞")
     @PostMapping("/like")
     public ResponseEntity<Void> like(@Valid @RequestBody LikeRequest request) {
-        try {
-            LikeCommand command = LikeCommand.builder()
-                    .userId(request.getUserId())
-                    .targetId(request.getTargetId())
-                    .type(LikeType.valueOf(request.getType().toUpperCase()))
-                    .build();
-
-            likeService.like(command);
-            return ResponseEntity.<Void>builder()
-                    .code(ResponseCode.SUCCESS.getCode())
-                    .info("点赞成功")
-                    .build();
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.<Void>builder()
-                    .code(ResponseCode.ILLEGAL_PARAMETER.getCode())
-                    .info("非法的点赞类型")
-                    .build();
-        } catch (Exception e) {
-            return ResponseEntity.<Void>builder()
-                    .code(ResponseCode.UN_ERROR.getCode())
-                    .info("点赞失败：" + e.getMessage())
-                    .build();
-        }
+        // 将String类型的type转换为Integer
+        LikeType likeType = LikeType.valueOf(Integer.parseInt(request.getType()));
+        likeApplicationService.doLike(
+                request.getUserId(),
+                request.getTargetId(),
+                likeType.getCode());
+        return ResponseEntity.<Void>builder()
+                .code(ResponseCode.SUCCESS.getCode())
+                .info("点赞成功")
+                .build();
     }
 
     @Operation(summary = "取消点赞")
     @PostMapping("/unlike")
     public ResponseEntity<Void> unlike(@Valid @RequestBody LikeRequest request) {
-        try {
-            LikeCommand command = LikeCommand.builder()
-                    .userId(request.getUserId())
-                    .targetId(request.getTargetId())
-                    .type(LikeType.valueOf(request.getType().toUpperCase()))
-                    .build();
-
-            likeService.unlike(command);
-            return ResponseEntity.<Void>builder()
-                    .code(ResponseCode.SUCCESS.getCode())
-                    .info("取消点赞成功")
-                    .build();
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.<Void>builder()
-                    .code(ResponseCode.ILLEGAL_PARAMETER.getCode())
-                    .info("非法的点赞类型")
-                    .build();
-        } catch (Exception e) {
-            return ResponseEntity.<Void>builder()
-                    .code(ResponseCode.UN_ERROR.getCode())
-                    .info("取消点赞失败：" + e.getMessage())
-                    .build();
-        }
+        // 将String类型的type转换为Integer
+        LikeType likeType = LikeType.valueOf(Integer.parseInt(request.getType()));
+        likeApplicationService.cancelLike(
+                request.getUserId(),
+                request.getTargetId(),
+                likeType.getCode());
+        return ResponseEntity.<Void>builder()
+                .code(ResponseCode.SUCCESS.getCode())
+                .info("取消点赞成功")
+                .build();
     }
-
+    
+    @Operation(summary = "检查点赞状态")
+    @GetMapping("/status")
+    public ResponseEntity<Boolean> checkStatus(
+            @RequestParam Long userId,
+            @RequestParam Long targetId,
+            @RequestParam String type) {
+        LikeType likeType = LikeType.valueOf(Integer.parseInt(type));
+        boolean status = likeApplicationService.checkLikeStatus(userId, targetId, likeType.getCode());
+        return ResponseEntity.<Boolean>builder()
+                .code(ResponseCode.SUCCESS.getCode())
+                .info(ResponseCode.SUCCESS.getMessage())
+                .data(status)
+                .build();
+    }
+    
     @Operation(summary = "获取点赞数")
     @GetMapping("/count")
-    public ResponseEntity<LikeCountVO> getLikeCount(@RequestParam String type,
-                                                    @RequestParam Long targetId) {
-        try {
-            Long count = likeService.getLikeCount(targetId, type);
-            LikeCountVO response = new LikeCountVO(count, type, targetId);
-            log.info("获取点赞数成功：" + response);
-            return ResponseEntity.<LikeCountVO>builder()
-                    .code(ResponseCode.SUCCESS.getCode())
-                    .info(ResponseCode.SUCCESS.getMessage())
-                    .data(response)
-                    .build();
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.<LikeCountVO>builder()
-                    .code(ResponseCode.ILLEGAL_PARAMETER.getCode())
-                    .info("非法的点赞类型")
-                    .build();
-        } catch (Exception e) {
-            return ResponseEntity.<LikeCountVO>builder()
-                    .code(ResponseCode.UN_ERROR.getCode())
-                    .info("获取点赞数失败：" + e.getMessage())
-                    .build();
+    public ResponseEntity<LikeCountResponse> getLikeCount(
+            @RequestParam Long targetId,
+            @RequestParam String type,
+            @RequestParam(required = false) Long userId) {
+        LikeType likeType = LikeType.valueOf(Integer.parseInt(type));
+        Long count = likeApplicationService.getLikeCount(targetId, likeType.getCode());
+        
+        // 如果提供了userId，检查是否已点赞
+        Boolean liked = null;
+        if (userId != null) {
+            liked = likeApplicationService.checkLikeStatus(userId, targetId, likeType.getCode());
         }
+        
+        LikeCountResponse response = new LikeCountResponse(targetId, type, count, liked);
+        return ResponseEntity.<LikeCountResponse>builder()
+                .code(ResponseCode.SUCCESS.getCode())
+                .info(ResponseCode.SUCCESS.getMessage())
+                .data(response)
+                .build();
     }
-
-    @Operation(summary = "检查是否已点赞")
-    @PostMapping("/check")
-    public ResponseEntity<Boolean> checkLike(@Valid @RequestBody LikeRequest request) {
-        try {
-            boolean liked = likeService.isLiked(
-                    request.getUserId(),
-                    request.getTargetId(),
-                    request.getType()
-            );
-
-            return ResponseEntity.<Boolean>builder()
-                    .code(ResponseCode.SUCCESS.getCode())
-                    .info(ResponseCode.SUCCESS.getMessage())
-                    .data(liked)
-                    .build();
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.<Boolean>builder()
-                    .code(ResponseCode.ILLEGAL_PARAMETER.getCode())
-                    .info("非法的点赞类型")
-                    .build();
-        } catch (Exception e) {
-            return ResponseEntity.<Boolean>builder()
-                    .code(ResponseCode.UN_ERROR.getCode())
-                    .info("检查点赞状态失败：" + e.getMessage())
-                    .build();
-        }
+    
+    @Operation(summary = "批量获取点赞数")
+    @PostMapping("/counts")
+    public ResponseEntity<List<LikeCountResponse>> getLikeCounts(
+            @RequestBody List<LikeRequest> requests) {
+        List<LikeCountResponse> responses = requests.stream()
+                .map(request -> {
+                    LikeType likeType = LikeType.valueOf(Integer.parseInt(request.getType()));
+                    Long count = likeApplicationService.getLikeCount(
+                            request.getTargetId(), 
+                            likeType.getCode()
+                    );
+                    
+                    Boolean liked = null;
+                    if (request.getUserId() != null) {
+                        liked = likeApplicationService.checkLikeStatus(
+                                request.getUserId(), 
+                                request.getTargetId(), 
+                                likeType.getCode()
+                        );
+                    }
+                    
+                    return new LikeCountResponse(
+                            request.getTargetId(), 
+                            request.getType(), 
+                            count, 
+                            liked
+                    );
+                })
+                .collect(Collectors.toList());
+                
+        return ResponseEntity.<List<LikeCountResponse>>builder()
+                .code(ResponseCode.SUCCESS.getCode())
+                .info(ResponseCode.SUCCESS.getMessage())
+                .data(responses)
+                .build();
     }
-} 
+    
+    @Operation(summary = "获取用户点赞统计")
+    @GetMapping("/user/statistics")
+    public ResponseEntity<LikeStatisticsService.UserLikeStatistics> getUserStatistics(
+            @RequestParam Long userId) {
+        LikeStatisticsService.UserLikeStatistics statistics = 
+                likeApplicationService.getUserLikeStatistics(userId);
+        return ResponseEntity.<LikeStatisticsService.UserLikeStatistics>builder()
+                .code(ResponseCode.SUCCESS.getCode())
+                .info(ResponseCode.SUCCESS.getMessage())
+                .data(statistics)
+                .build();
+    }
+}

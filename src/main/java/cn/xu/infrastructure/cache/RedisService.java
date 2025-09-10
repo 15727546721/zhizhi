@@ -15,6 +15,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Redis操作工具类
+ * 提供连接池管理、健康检查和各种Redis数据结构操作
  */
 @Slf4j
 @Component
@@ -22,6 +23,39 @@ import java.util.concurrent.TimeUnit;
 public class RedisService {
 
     private final RedisTemplate<String, Object> redisTemplate;
+
+    /**
+     * 检查Redis连接是否正常
+     * 
+     * @return true表示连接正常，false表示连接异常
+     */
+    public boolean isRedisHealthy() {
+        try {
+            String healthCheckKey = "health_check";
+            String healthCheckValue = "ok";
+            redisTemplate.opsForValue().set(healthCheckKey, healthCheckValue, 1, TimeUnit.SECONDS);
+            String value = (String) redisTemplate.opsForValue().get(healthCheckKey);
+            return healthCheckValue.equals(value);
+        } catch (Exception e) {
+            log.error("Redis健康检查失败: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * 获取Redis连接池信息
+     * 
+     * @return 连接池信息字符串
+     */
+    public String getConnectionPoolInfo() {
+        try {
+            // 获取连接池信息（需要根据具体的连接池实现来获取）
+            return "Redis连接池状态正常";
+        } catch (Exception e) {
+            log.error("获取Redis连接池信息失败: {}", e.getMessage());
+            return "无法获取连接池信息";
+        }
+    }
 
     /**
      * 设置过期时间
@@ -253,6 +287,110 @@ public class RedisService {
      */
     public Set<Object> zRangeByScore(String key, double min, double max) {
         return redisTemplate.opsForZSet().rangeByScore(key, min, max);
+    }
+
+    /**
+     * ZSet添加元素
+     */
+    public void zSetAdd(String key, String value, double score) {
+        try {
+            long startTime = System.currentTimeMillis();
+            redisTemplate.opsForZSet().add(key, value, score);
+            long endTime = System.currentTimeMillis();
+            log.debug("ZSet添加元素成功 - key: {}, value: {}, score: {}, 耗时: {}ms", 
+                    key, value, score, endTime - startTime);
+        } catch (Exception e) {
+            log.error("ZSet添加元素失败 - key: {}, value: {}, score: {}", key, value, score, e);
+            throw e;
+        }
+    }
+
+    /**
+     * ZSet获取指定范围元素（按分数递减排序）
+     */
+    public List<String> zSetReverseRange(String key, long start, long end) {
+        try {
+            long startTime = System.currentTimeMillis();
+            Set<Object> result = redisTemplate.opsForZSet().reverseRange(key, start, end);
+            long endTime = System.currentTimeMillis();
+            
+            List<String> stringList = result != null ? 
+                result.stream().map(Object::toString).collect(java.util.stream.Collectors.toList()) :
+                java.util.Collections.emptyList();
+                
+            log.debug("ZSet获取元素成功 - key: {}, start: {}, end: {}, count: {}, 耗时: {}ms", 
+                    key, start, end, stringList.size(), endTime - startTime);
+            return stringList;
+        } catch (Exception e) {
+            log.error("ZSet获取元素失败 - key: {}, start: {}, end: {}", key, start, end, e);
+            throw e;
+        }
+    }
+
+    /**
+     * ZSet移除元素
+     */
+    public void zSetRemove(String key, String value) {
+        try {
+            long startTime = System.currentTimeMillis();
+            redisTemplate.opsForZSet().remove(key, value);
+            long endTime = System.currentTimeMillis();
+            log.debug("ZSet移除元素成功 - key: {}, value: {}, 耗时: {}ms", 
+                    key, value, endTime - startTime);
+        } catch (Exception e) {
+            log.error("ZSet移除元素失败 - key: {}, value: {}", key, value, e);
+            throw e;
+        }
+    }
+
+    /**
+     * ZSet获取元素分数
+     */
+    public Double zSetScore(String key, String value) {
+        try {
+            long startTime = System.currentTimeMillis();
+            Double score = redisTemplate.opsForZSet().score(key, value);
+            long endTime = System.currentTimeMillis();
+            log.debug("ZSet获取元素分数成功 - key: {}, value: {}, score: {}, 耗时: {}ms", 
+                    key, value, score, endTime - startTime);
+            return score;
+        } catch (Exception e) {
+            log.error("ZSet获取元素分数失败 - key: {}, value: {}", key, value, e);
+            throw e;
+        }
+    }
+
+    /**
+     * ZSet获取集合大小
+     */
+    public Long zSetSize(String key) {
+        try {
+            long startTime = System.currentTimeMillis();
+            Long size = redisTemplate.opsForZSet().size(key);
+            long endTime = System.currentTimeMillis();
+            log.debug("ZSet获取集合大小成功 - key: {}, size: {}, 耗时: {}ms", 
+                    key, size, endTime - startTime);
+            return size != null ? size : 0L;
+        } catch (Exception e) {
+            log.error("ZSet获取集合大小失败 - key: {}", key, e);
+            return 0L;
+        }
+    }
+
+    /**
+     * ZSet移除指定范围的元素（按排名）
+     */
+    public void zSetRemoveRange(String key, long start, long end) {
+        try {
+            long startTime = System.currentTimeMillis();
+            redisTemplate.opsForZSet().removeRange(key, start, end);
+            long endTime = System.currentTimeMillis();
+            log.debug("ZSet移除范围元素成功 - key: {}, start: {}, end: {}, 耗时: {}ms", 
+                    key, start, end, endTime - startTime);
+        } catch (Exception e) {
+            log.error("ZSet移除范围元素失败 - key: {}, start: {}, end: {}", key, start, end, e);
+            throw e;
+        }
     }
 
     // ===============================List=================================

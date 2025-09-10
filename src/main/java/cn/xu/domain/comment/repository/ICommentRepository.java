@@ -1,5 +1,7 @@
 package cn.xu.domain.comment.repository;
 
+import cn.xu.api.web.model.dto.comment.FindChildCommentItemVO;
+import cn.xu.api.web.model.vo.comment.FindCommentItemVO;
 import cn.xu.domain.comment.model.entity.CommentEntity;
 
 import java.util.List;
@@ -14,24 +16,12 @@ public interface ICommentRepository {
     Long save(CommentEntity commentEntity);
 
     /**
-     * 添加评论
+     * 查询所有评论（用于ES数据初始化和缓存预热）
+     * @param offset 偏移量
+     * @param batchSize 批量大小
+     * @return 评论列表
      */
-    Long addComment(CommentEntity commentEntity);
-
-    /**
-     * 回复评论
-     */
-    Long replyComment(CommentEntity commentEntity);
-
-    /**
-     * 获取文章评论列表
-     */
-    List<CommentEntity> getArticleComments(Long articleId);
-
-    /**
-     * 获取话题评论列表
-     */
-    List<CommentEntity> getTopicComments(Long topicId);
+    List<CommentEntity> findCommentBatch(int offset, int batchSize);
 
     /**
      * 根据ID获取评论
@@ -42,16 +32,31 @@ public interface ICommentRepository {
     CommentEntity findById(Long id);
 
     /**
+     * 根据热度查询根评论
+     * @param targetType 目标类型
+     * @param targetId 目标ID
+     * @param pageNo 页码
+     * @param pageSize 每页数量
+     * @return 评论列表
+     */
+    List<CommentEntity> findRootCommentsByHot(int targetType, long targetId, int pageNo, int pageSize);
+
+    /**
+     * 根据时间查询根评论
+     * @param targetType 目标类型
+     * @param targetId 目标ID
+     * @param pageNo 页码
+     * @param pageSize 每页数量
+     * @return 评论列表
+     */
+    List<CommentEntity> findRootCommentsByTime(int targetType, long targetId, int pageNo, int pageSize);
+
+    /**
      * 根据ID删除评论
      *
      * @param id 评论ID
      */
     void deleteById(Long id);
-
-    /**
-     * 根据类型和目标ID查询评论列表
-     */
-    List<CommentEntity> findByTypeAndTargetId(Integer type, Long targetId);
 
     /**
      * 根据父评论ID查询子评论列表
@@ -69,9 +74,14 @@ public interface ICommentRepository {
     void batchDelete(List<Long> commentIds);
 
     /**
-     * 查询一级评论列表
+     * 查询一级评论的分页列表
+     * @param type 评论目标类型
+     * @param targetId 目标ID
+     * @param offset 偏移量
+     * @param limit 每页数量
+     * @return 一级评论实体列表
      */
-    List<CommentEntity> findRootComments(Long targetId, Integer type);
+    List<CommentEntity> findRootComments(Integer type, Long targetId, int offset, int limit);
 
     /**
      * 分页查询二级评论列表
@@ -79,31 +89,11 @@ public interface ICommentRepository {
     List<CommentEntity> findRepliesByPage(Long parentId, int offset, int limit);
 
     /**
-     * 分页查询一级评论列表
-     *
-     * @param type   评论类型（可选）
-     * @param userId 用户ID（可选）
-     * @param offset 偏移量
-     * @param limit  每页数量
-     * @return 一级评论列表
-     */
-    List<CommentEntity> findRootCommentsByPage(Integer type, Long userId, int offset, int limit);
-
-    /**
-     * 统计一级评论总数
-     *
-     * @param type   评论类型（可选）
-     * @param userId 用户ID（可选）
-     * @return 评论总数
-     */
-    long countRootComments(Integer type, Long userId);
-
-    /**
      * 根据父评论ID删除所有子评论
      *
      * @param parentId 父评论ID
      */
-    void deleteByParentId(Long parentId);
+    int deleteByParentId(Long parentId);
 
     /**
      * 根据父评论ID列表批量查询子评论
@@ -112,4 +102,37 @@ public interface ICommentRepository {
      * @return 子评论列表
      */
     List<CommentEntity> findRepliesByParentIds(List<Long> parentIds);
+
+    /**
+     * 根据父评论ID列表查询评论列表
+     *
+     * @param parentIds 父评论ID列表
+     * @return 评论列表
+     */
+    List<CommentEntity> findByParentIds(List<Long> parentIds);
+
+    /**
+     * 查询热门评论的子评论, size为子评论数量
+     */
+    List<CommentEntity> findRepliesByParentIdsByHot(List<Long> parentIds, int size);
+
+    /**
+     * 查询最新评论的子评论, size为子评论数量
+     */
+    List<CommentEntity> findRepliesByParentIdsByTime(List<Long> parentIds, int size);
+
+    /**
+     * 根据评论ID查询热门子评论
+     */
+    List<CommentEntity> findRepliesByParentIdByHot(Long parentId, int page, int size);
+
+    /**
+     * 根据评论ID查询最新子评论
+     */
+    List<CommentEntity> findRepliesByParentIdByTime(Long parentId, int page, int size);
+
+    /**
+     * 根据评论ID列表查询评论
+     */
+    List<CommentEntity> findCommentsByIds(List<Long> commentIdList);
 }

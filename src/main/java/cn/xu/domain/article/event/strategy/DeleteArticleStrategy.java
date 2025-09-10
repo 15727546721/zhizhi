@@ -1,17 +1,25 @@
 package cn.xu.domain.article.event.strategy;
 
 import cn.xu.domain.article.event.ArticleEvent;
-import cn.xu.domain.article.service.search.ArticleIndexService;
+import cn.xu.infrastructure.persistent.read.elastic.service.ArticleElasticService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Slf4j
-@Component("deleteArticleStrategy")
-public class DeleteArticleStrategy implements ArticleEventStrategy {
-    
+@Component
+public class DeleteArticleStrategy extends AbstractArticleStrategy {
+
     @Override
-    public void handleEvent(ArticleEvent event, ArticleIndexService indexService) {
+    public void handle(ArticleEvent event) {
+        if (event.getType() != ArticleEvent.ArticleEventType.DELETED) return;
         log.info("处理文章删除事件: {}", event);
-        indexService.deleteFromIndex(event.getArticleId());
+        
+        // 检查Elasticsearch是否可用
+        if (!isElasticsearchAvailable()) {
+            return;
+        }
+        
+        elasticService.removeIndexedArticle(event.getArticleId());
     }
-} 
+}

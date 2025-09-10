@@ -1,6 +1,9 @@
 package cn.xu.infrastructure.persistent.po;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -11,6 +14,9 @@ import java.time.LocalDateTime;
  * @TableName like
  */
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class Like implements Serializable {
     /**
      * 点赞ID
@@ -41,9 +47,4 @@ public class Like implements Serializable {
      * 点赞时间
      */
     private LocalDateTime createTime;
-
-    /**
-     * 更新点赞时间
-     */
-    private LocalDateTime updateTime;
-} 
+}

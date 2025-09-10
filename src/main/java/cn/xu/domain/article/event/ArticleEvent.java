@@ -1,23 +1,30 @@
 package cn.xu.domain.article.event;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@AllArgsConstructor
+@Builder
 @NoArgsConstructor
-public abstract class ArticleEvent {
+@AllArgsConstructor
+public class ArticleEvent {
+
     private Long articleId;
     private String title;
     private String description;
     private String content;
     private Long userId;
-    private EventType eventType;
 
-    public enum EventType {
-        CREATED,    // 创建事件
-        UPDATED,    // 更新事件
-        DELETED     // 删除事件
+    /**
+     * 事件类型
+     */
+    private ArticleEventType type;
+
+    public enum ArticleEventType {
+        CREATED,
+        UPDATED,
+        DELETED
     }
-} 
+}

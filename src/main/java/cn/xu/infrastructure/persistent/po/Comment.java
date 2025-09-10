@@ -1,6 +1,5 @@
 package cn.xu.infrastructure.persistent.po;
 
-import cn.xu.domain.comment.model.valueobject.CommentType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -8,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -29,7 +29,7 @@ public class Comment implements Serializable {
     /**
      * 评论类型，如1-文章；2-话题
      */
-    private Integer type;
+    private Integer targetType;
 
     /**
      * 评论来源的标识符
@@ -57,6 +57,26 @@ public class Comment implements Serializable {
     private String content;
 
     /**
+     * 图片地址url，分隔符号“,”
+     */
+    private String imageUrl;
+
+    /**
+     * 点赞数
+     */
+    private Long likeCount;
+
+    /**
+     * 子评论数
+     */
+    private Long replyCount;
+
+    /**
+     * 热度分数
+     */
+    private BigDecimal hotScore;
+
+    /**
      * 创建时间
      */
     private LocalDateTime createTime;
@@ -66,11 +86,4 @@ public class Comment implements Serializable {
      */
     private LocalDateTime updateTime;
 
-    public CommentType getCommentType() {
-        return type != null ? CommentType.of(type) : null;
-    }
-
-    public void setCommentType(CommentType commentType) {
-        this.type = commentType != null ? commentType.getValue() : null;
-    }
 }

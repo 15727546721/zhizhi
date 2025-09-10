@@ -2,28 +2,26 @@ package cn.xu.domain.notification.event;
 
 import cn.xu.domain.notification.model.entity.NotificationEntity;
 import cn.xu.domain.notification.repository.INotificationRepository;
-import com.lmax.disruptor.EventHandler;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
-
-
 /**
- * 调用NotificationEventPublisher.publish方法发布通知领域事件，通知事件会被NotificationEventHandler处理通知领域事件
+ * 监听通知事件并处理（保存通知实体）
  */
 @Slf4j
 @Component
-public class NotificationEventHandler implements EventHandler<NotificationEvent> {
+@RequiredArgsConstructor
+public class NotificationEventHandler {
 
-    @Resource
-    private INotificationRepository notificationRepository;
+    private final INotificationRepository notificationRepository;
 
-    @Override
-    public void onEvent(NotificationEvent event, long sequence, boolean endOfBatch) {
-        log.info("[通知服务] NotificationEventHandler received event: {}", event);
+    @EventListener
+    public void handleNotificationEvent(NotificationEvent event) {
+        log.info("[通知服务] 接收到通知事件: {}", event);
 
-        NotificationEntity notificationEntity = NotificationEntity.builder()
+        NotificationEntity entity = NotificationEntity.builder()
                 .type(event.getType())
                 .senderId(event.getSenderId())
                 .receiverId(event.getReceiverId())
@@ -33,6 +31,6 @@ public class NotificationEventHandler implements EventHandler<NotificationEvent>
                 .createTime(event.getCreateTime())
                 .build();
 
-        notificationRepository.save(notificationEntity);
+        notificationRepository.save(entity);
     }
 }
