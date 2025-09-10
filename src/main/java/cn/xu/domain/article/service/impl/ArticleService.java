@@ -123,6 +123,11 @@ public class ArticleService implements IArticleService {
     public List<ArticleEntity> getArticlePageList(Integer pageNo, Integer pageSize) {
         return articleApplicationService.getArticlePageList(null, pageNo, pageSize);
     }
+    
+    @Override
+    public List<ArticleEntity> getArticlePageList(cn.xu.api.web.model.dto.article.ArticlePageRequest request) {
+        return articleApplicationService.getArticlePageList(request);
+    }
 
     public ArticleDetailVO getArticleDetail(Long articleId, Long currentUserId) {
         return articleApplicationService.getArticleDetail(articleId, currentUserId);

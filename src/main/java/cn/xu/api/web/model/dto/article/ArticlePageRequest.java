@@ -1,10 +1,32 @@
 package cn.xu.api.web.model.dto.article;
 
-import cn.xu.infrastructure.common.request.PageRequest;
 import lombok.Data;
 
 @Data
-public class ArticlePageRequest extends PageRequest {
+public class ArticlePageRequest {
+    /**
+     * 页码
+     */
+    private Integer pageNo = 1;
+
+    /**
+     * 页面大小
+     */
+    private Integer pageSize = 10;
+
+    /**
+     * 分类ID
+     */
     private Long categoryId;
-    private String articleType;
+
+    /**
+     * 排序方式
+     * newest: 最新
+     * hottest: 最热
+     * most_commented: 最多评论
+     * most_bookmarked: 最多收藏
+     * most_liked: 最多点赞
+     * popular: 最受欢迎（浏览量）
+     */
+    private String sortBy = "hottest";
 }

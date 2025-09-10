@@ -75,6 +75,20 @@ public class ArticleQueryDomainService {
         validatePageRequest(request);
         return articleRepository.queryArticle(request);
     }
+    
+    /**
+     * 分页查询文章列表（支持排序）
+     * @param request 查询请求
+     * @return 文章实体列表
+     */
+    public List<ArticleEntity> queryArticleByPageWithSort(ArticleRequest request) {
+        if (request == null) {
+            throw new IllegalArgumentException("查询请求不能为空");
+        }
+        
+        validatePageRequest(request);
+        return articleRepository.getArticlePageListWithSort(request.getPageNo(), request.getPageSize(), request.getSortBy());
+    }
 
     /**
      * 根据用户ID查询文章列表

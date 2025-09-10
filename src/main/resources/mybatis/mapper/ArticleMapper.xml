@@ -158,7 +158,27 @@
             </if>
         </where>
         GROUP BY a.id, c.name, u.nickname
-        ORDER BY a.create_time DESC
+        ORDER BY
+        <choose>
+            <when test='sortBy == "newest"'>
+                a.create_time DESC
+            </when>
+            <when test='sortBy == "most_commented"'>
+                a.comment_count DESC, a.create_time DESC
+            </when>
+            <when test='sortBy == "most_bookmarked"'>
+                a.collect_count DESC, a.create_time DESC
+            </when>
+            <when test='sortBy == "most_liked"'>
+                a.like_count DESC, a.create_time DESC
+            </when>
+            <when test='sortBy == "popular"'>
+                a.view_count DESC, a.create_time DESC
+            </when>
+            <otherwise>
+                (a.like_count + a.comment_count * 2) DESC, a.create_time DESC
+            </otherwise>
+        </choose>
         LIMIT #{pageNo}, #{pageSize}
     </select>
 
@@ -340,6 +360,36 @@
         FROM article
         WHERE status = 1
         ORDER BY create_time DESC
+        LIMIT #{offset}, #{size}
+    </select>
+    
+    <!-- 分页查询文章列表（支持排序） -->
+    <select id="getArticlePageListWithSort" resultType="cn.xu.infrastructure.persistent.po.Article">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM article
+        WHERE status = 1
+        ORDER BY
+        <choose>
+            <when test='sortBy == "newest"'>
+                create_time DESC
+            </when>
+            <when test='sortBy == "most_commented"'>
+                comment_count DESC, create_time DESC
+            </when>
+            <when test='sortBy == "most_bookmarked"'>
+                collect_count DESC, create_time DESC
+            </when>
+            <when test='sortBy == "most_liked"'>
+                like_count DESC, create_time DESC
+            </when>
+            <when test='sortBy == "popular"'>
+                view_count DESC, create_time DESC
+            </when>
+            <otherwise>
+                (like_count + comment_count * 2) DESC, create_time DESC
+            </otherwise>
+        </choose>
         LIMIT #{offset}, #{size}
     </select>
     

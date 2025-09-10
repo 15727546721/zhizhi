@@ -1,6 +1,7 @@
 package cn.xu.application.service;
 
 import cn.xu.api.system.model.dto.article.ArticleRequest;
+import cn.xu.api.web.model.dto.article.ArticlePageRequest;
 import cn.xu.api.web.model.vo.article.ArticleDetailVO;
 import cn.xu.api.web.model.vo.article.ArticleListVO;
 import cn.xu.api.web.model.vo.article.ArticlePageVO;
@@ -294,6 +295,24 @@ public class ArticleApplicationService {
         log.info("[文章应用服务] 分页查询文章 - categoryId: {}, pageNo: {}, pageSize: {}", 
                 categoryId, pageNo, pageSize);
         return articleQueryDomainService.queryArticleEntitiesByCategoryId(categoryId, pageNo, pageSize);
+    }
+    
+    /**
+     * 分页查询文章（支持排序）
+     * @param request 分页请求
+     * @return 文章实体列表
+     */
+    public List<ArticleEntity> getArticlePageList(ArticlePageRequest request) {
+        log.info("[文章应用服务] 分页查询文章（支持排序） - categoryId: {}, pageNo: {}, pageSize: {}, sortBy: {}", 
+                request.getCategoryId(), request.getPageNo(), request.getPageSize(), request.getSortBy());
+        
+        ArticleRequest articleRequest = new ArticleRequest();
+        articleRequest.setPageNo(request.getPageNo());
+        articleRequest.setPageSize(request.getPageSize());
+        articleRequest.setCategoryId(request.getCategoryId());
+        articleRequest.setSortBy(request.getSortBy());
+        
+        return articleQueryDomainService.queryArticleByPageWithSort(articleRequest);
     }
 
     /**

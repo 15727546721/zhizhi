@@ -133,4 +133,13 @@ public interface IArticleRepository {
      * @return 文章列表
      */
     List<ArticleEntity> getArticlePageList(Integer pageNo, Integer pageSize);
+    
+    /**
+     * 分页查询文章列表（支持排序）
+     * @param pageNo 页码
+     * @param pageSize 页面大小
+     * @param sortBy 排序方式
+     * @return 文章列表
+     */
+    List<ArticleEntity> getArticlePageListWithSort(Integer pageNo, Integer pageSize, String sortBy);
 }

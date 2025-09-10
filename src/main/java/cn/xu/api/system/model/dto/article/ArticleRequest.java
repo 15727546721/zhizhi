@@ -1,21 +1,43 @@
 package cn.xu.api.system.model.dto.article;
 
-import cn.xu.infrastructure.common.request.PageRequest;
-import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 @Data
-@EqualsAndHashCode(callSuper = true)
-@Schema(description = "文章查询请求参数")
-public class ArticleRequest extends PageRequest {
+public class ArticleRequest {
 
-    @Schema(description = "文章标题")
+    /**
+     * 当前页码
+     */
+    private Integer pageNo = 1;
+
+    /**
+     * 页面大小
+     */
+    private Integer pageSize = 10;
+
+    /**
+     * 文章标题
+     */
     private String title;
 
-    @Schema(description = "分类ID")
+    /**
+     * 分类ID
+     */
     private Long categoryId;
 
-    @Schema(description = "标签ID")
+    /**
+     * 标签ID
+     */
     private Long tagId;
+    
+    /**
+     * 排序方式
+     * newest: 最新
+     * hottest: 最热
+     * most_commented: 最多评论
+     * most_bookmarked: 最多收藏
+     * most_liked: 最多点赞
+     * popular: 最受欢迎（浏览量）
+     */
+    private String sortBy = "hottest";
 }

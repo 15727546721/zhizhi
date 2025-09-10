@@ -2,9 +2,11 @@ package cn.xu.api.web.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.stp.StpUtil;
+import cn.xu.api.system.model.dto.article.ArticleRequest;
 import cn.xu.api.web.model.dto.article.DraftRequest;
 import cn.xu.api.web.model.dto.article.FindArticlePageByCategoryReq;
 import cn.xu.api.web.model.dto.article.PublishOrDraftArticleRequest;
+import cn.xu.api.web.model.dto.article.ArticlePageRequest;
 import cn.xu.api.web.model.vo.article.ArticleDetailVO;
 import cn.xu.api.web.model.vo.article.ArticleListVO;
 import cn.xu.api.web.model.vo.article.FindArticlePageListVO;
@@ -93,7 +95,51 @@ public class ArticleController {
                 .data(result)
                 .build();
     }
-
+    
+    @PostMapping("/page")
+    @ApiOperationLog(description = "分页获取文章列表（支持排序）")
+    @Operation(summary = "分页获取文章列表（支持排序）")
+    public ResponseEntity<List<FindArticlePageListVO>> getArticleByPage(@RequestBody ArticlePageRequest request) {
+        try {
+            // 构造ArticleRequest对象
+            ArticleRequest articleRequest = new ArticleRequest();
+            articleRequest.setPageNo(request.getPageNo());
+            articleRequest.setPageSize(request.getPageSize());
+            articleRequest.setCategoryId(request.getCategoryId());
+            articleRequest.setSortBy(request.getSortBy());
+            
+            // 调用服务层获取文章列表
+            List<ArticleEntity> articleList = articleQueryDomainService.queryArticleByPageWithSort(articleRequest);
+            
+            List<Long> articleIds = articleList.stream().map(ArticleEntity::getId).collect(Collectors.toList());
+            List<Long> userIds = articleList.stream().map(ArticleEntity::getUserId).collect(Collectors.toList());
+            List<UserEntity> userList = userService.batchGetUserInfo(userIds);
+            List<ArticleAndTagAgg> articleAndTagAggs = tagService.batchGetTagListByArticleIds(articleIds);
+            
+            List<FindArticlePageListVO> result = articleList.stream().map(article -> {
+                return FindArticlePageListVO.builder()
+                        .article(article)
+                        .user(userList.stream().filter(user -> user.getId().equals(article.getUserId())).findFirst().orElse(null))
+                        .tags(articleAndTagAggs.stream()
+                                .filter(agg -> agg.getArticleId().equals(article.getId()))
+                                .findFirst()
+                                .map(agg -> agg.getTags().split(","))
+                                .orElse(new String[0]))
+                        .build();
+            }).collect(Collectors.toList());
+            
+            return ResponseEntity.<List<FindArticlePageListVO>>builder()
+                    .code(ResponseCode.SUCCESS.getCode())
+                    .data(result)
+                    .build();
+        } catch (Exception e) {
+            log.error("分页获取文章列表失败", e);
+            return ResponseEntity.<List<FindArticlePageListVO>>builder()
+                    .code(ResponseCode.UN_ERROR.getCode())
+                    .info("获取文章列表失败")
+                    .build();
+        }
+    }
 
     @GetMapping("/{id}")
     @Operation(summary = "获取文章详情")

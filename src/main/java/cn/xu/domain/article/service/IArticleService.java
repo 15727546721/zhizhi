@@ -1,6 +1,7 @@
 package cn.xu.domain.article.service;
 
 import cn.xu.api.system.model.dto.article.ArticleRequest;
+import cn.xu.api.web.model.dto.article.ArticlePageRequest;
 import cn.xu.api.web.model.vo.article.ArticleDetailVO;
 import cn.xu.api.web.model.vo.article.ArticleListVO;
 import cn.xu.api.web.model.vo.article.ArticlePageVO;
@@ -133,6 +134,14 @@ public interface IArticleService {
      * @return
      */
     List<ArticleEntity> getArticlePageList(Integer pageNo, Integer pageSize);
+    
+    /**
+     * 获取文章分页列表（支持排序）
+     *
+     * @param request 分页请求
+     * @return
+     */
+    List<ArticleEntity> getArticlePageList(ArticlePageRequest request);
 
     /**
      * 获取文章详情

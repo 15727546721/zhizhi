@@ -144,6 +144,12 @@ public class ArticleRepository implements IArticleRepository {
         return articleConverter.toDomainEntities(articles);
     }
 
-
-
+    /**
+     * 分页查询文章列表（支持排序）
+     */
+    public List<ArticleEntity> getArticlePageListWithSort(Integer pageNo, Integer pageSize, String sortBy) {
+        int offset = (pageNo - 1) * pageSize;
+        List<Article> articles = articleDao.getArticlePageListWithSort(offset, pageSize, sortBy);
+        return articleConverter.toDomainEntities(articles);
+    }
 }

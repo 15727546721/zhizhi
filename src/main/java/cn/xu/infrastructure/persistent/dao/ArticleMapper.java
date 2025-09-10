@@ -91,6 +91,13 @@ public interface ArticleMapper {
     List<Article> getArticlePageByCategory(Long categoryId, int offset, int size);
 
     /**
+     * 分页查询文章列表（支持排序）
+     */
+    List<Article> getArticlePageListWithSort(@Param("offset") Integer offset,
+                                            @Param("size") Integer size,
+                                            @Param("sortBy") String sortBy);
+
+    /**
      * 获取文章
      */
     List<Article> getArticlePageList(@Param("offset") Integer offset,
