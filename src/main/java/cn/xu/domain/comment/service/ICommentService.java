@@ -1,7 +1,7 @@
 package cn.xu.domain.comment.service;
 
-import cn.xu.api.web.model.dto.comment.FindReplyReq;
-import cn.xu.api.web.model.dto.comment.FindCommentReq;
+import cn.xu.api.web.model.dto.comment.FindCommentRequest;
+import cn.xu.api.web.model.dto.comment.FindReplyRequest;
 import cn.xu.domain.comment.event.CommentCreatedEvent;
 import cn.xu.domain.comment.model.entity.CommentEntity;
 
@@ -25,7 +25,7 @@ public interface ICommentService {
      * @param request
      * @return
      */
-    List<CommentEntity> findCommentListWithPreview(FindCommentReq request);
+    List<CommentEntity> findCommentListWithPreview(FindCommentRequest request);
 
     /**
      * 删除评论
@@ -52,5 +52,5 @@ public interface ICommentService {
     /**
      * 获取评论的子评论列表
      */
-    List<CommentEntity> findChildCommentList(FindReplyReq request);
+    List<CommentEntity> findChildCommentList(FindReplyRequest request);
 }

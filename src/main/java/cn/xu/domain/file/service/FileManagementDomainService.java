@@ -1,8 +1,6 @@
 package cn.xu.domain.file.service;
 
 import cn.xu.domain.file.model.aggregate.FileAggregate;
-import cn.xu.domain.file.model.entity.FileEntity;
-import cn.xu.domain.file.model.valobj.FileUrl;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;

@@ -50,9 +50,9 @@ public class UserPermission implements StpInterface {
                 Long userId = Long.valueOf(String.valueOf(loginId));
                 
                 // 获取通过角色关联的权限
-                List<String> rolePermissions = new ArrayList<>(permissionRepository.findPermissionsByUserid(userId));
+                List<String> rolePermissions = new ArrayList<>(permissionRepository.findPermissionsByUserId(userId));
                 
-                // 获取用户直接关联的权限（这里需要实现具体的查询逻辑）
+                // 获取用户直接关联的权限
                 List<String> directPermissions = getDirectPermissionsByUserId(userId);
                 
                 // 合并两种权限，去重
@@ -82,7 +82,7 @@ public class UserPermission implements StpInterface {
      */
     private List<String> getDirectPermissionsByUserId(Long userId) {
         // 获取用户直接关联的权限
-        return permissionRepository.findDirectPermissionsByUserid(userId);
+        return permissionRepository.findDirectPermissionsByUserId(userId);
     }
 
     /**
@@ -104,7 +104,7 @@ public class UserPermission implements StpInterface {
             SaSession session = StpUtil.getSessionByLoginId(loginId);
             return session.get(ROLE_LIST_KEY, () -> {
                 Long userId = Long.valueOf(String.valueOf(loginId));
-                List<String> roles = permissionRepository.findRolesByUserid(userId);
+                List<String> roles = permissionRepository.findRolesByUserId(userId);
 
                 log.info("用户 [{}] 加载角色列表: {}", loginId, roles);
                 log.debug("用户 [{}] 角色列表加载完成，共 {} 个角色", loginId, roles.size());

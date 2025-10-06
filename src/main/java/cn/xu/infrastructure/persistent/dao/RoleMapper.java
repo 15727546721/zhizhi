@@ -8,13 +8,14 @@ import java.util.List;
 
 /**
  * 角色Mapper接口
+ * 负责角色相关的数据库操作
  * 
  * @author Lily
  */
 @Mapper
 public interface RoleMapper {
     /**
-     * 根据用户ID查询角色列表
+     * 根据用户ID查询角色编码列表
      */
     List<String> selectRolesByUserid(@Param("userId") Long userId);
 

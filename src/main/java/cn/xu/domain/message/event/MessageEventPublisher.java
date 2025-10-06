@@ -1,6 +1,5 @@
 package cn.xu.domain.message.event;
 
-import cn.xu.domain.message.event.BaseMessageEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 

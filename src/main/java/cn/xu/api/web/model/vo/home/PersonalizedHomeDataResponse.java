@@ -1,0 +1,24 @@
+package cn.xu.api.web.model.vo.home;
+
+import cn.xu.api.web.model.vo.post.PostListResponse;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.util.List;
+
+/**
+ * 个性化主页数据Response
+ * 用于封装用户个性化的主页数据
+ */
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class PersonalizedHomeDataResponse {
+    /**
+     * 关注用户的帖子列表
+     */
+    private List<PostListResponse> followingPosts;
+}

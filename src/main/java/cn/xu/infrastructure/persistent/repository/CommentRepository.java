@@ -165,4 +165,36 @@ public class CommentRepository implements ICommentRepository {
                 .map(commentConverter::toDomainEntity)
                 .collect(Collectors.toList());
     }
+    
+    @Override
+    public Long countByTargetTypeAndTargetId(Integer targetType, Long targetId) {
+        if (targetType == null || targetId == null) {
+            return 0L;
+        }
+        Long count = commentMapper.countByTargetTypeAndTargetId(targetType, targetId);
+        return count != null ? count : 0L;
+    }
+    
+    @Override
+    public java.util.Map<Long, Long> batchCountByTargetIds(Integer targetType, List<Long> targetIds) {
+        if (targetType == null || targetIds == null || targetIds.isEmpty()) {
+            return new java.util.HashMap<>();
+        }
+        List<CommentMapper.CommentCountResult> results = commentMapper.batchCountByTargetIds(targetType, targetIds);
+        java.util.Map<Long, Long> resultMap = new java.util.HashMap<>();
+        for (CommentMapper.CommentCountResult result : results) {
+            resultMap.put(result.getTargetId(), result.getCount());
+        }
+        return resultMap;
+    }
+
+    @Override
+    public void update(CommentEntity commentEntity) {
+        if (commentEntity == null || commentEntity.getId() == null) {
+            return;
+        }
+
+        Comment comment = commentConverter.toDataObject(commentEntity);
+        commentMapper.updateComment(comment);
+    }
 }

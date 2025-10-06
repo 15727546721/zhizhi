@@ -1,22 +1,42 @@
 package cn.xu.domain.permission.repository;
 
+import cn.xu.common.response.PageResponse;
 import cn.xu.domain.permission.model.entity.MenuEntity;
 import cn.xu.domain.permission.model.entity.RoleEntity;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * 权限仓储接口
+ * 遵循DDD规范，定义领域层仓储接口
  * 
  * @author Lily
  */
 public interface IPermissionRepository {
 
-    List<String> findRolesByUserid(Long userid);
+    /**
+     * 根据用户ID查询角色编码列表
+     *
+     * @param userId 用户ID
+     * @return 角色编码列表
+     */
+    List<String> findRolesByUserId(Long userId);
 
-    List<MenuEntity> selectMenuList();
+    /**
+     * 查询所有菜单列表
+     *
+     * @return 菜单列表
+     */
+    List<MenuEntity> findAllMenus();
 
-    MenuEntity selectMenuById(Long id);
+    /**
+     * 根据ID查询菜单
+     *
+     * @param id 菜单ID
+     * @return 菜单实体
+     */
+    Optional<MenuEntity> findMenuById(Long id);
 
     /**
      * 分页查询角色列表
@@ -24,45 +44,100 @@ public interface IPermissionRepository {
      * @param name   角色名称（模糊查询）
      * @param offset 偏移量
      * @param size   每页数量
-     * @return 角色列表
+     * @return 角色分页结果
      */
-    List<RoleEntity> selectRolePage(String name, int offset, int size);
+    PageResponse<List<RoleEntity>> findRolePage(String name, int offset, int size);
 
     /**
-     * 查询角色总数
+     * 根据用户ID查询角色ID
      *
-     * @param name 角色名称（模糊查询）
-     * @return 总数
+     * @param userId 用户ID
+     * @return 角色ID
      */
-    long countRole(String name);
+    Optional<Long> findRoleIdByUserId(long userId);
 
-    Long selectRoleIdByUserId(long userId);
+    /**
+     * 根据角色ID查询菜单ID列表
+     *
+     * @param roleId 角色ID
+     * @return 菜单ID列表
+     */
+    List<Long> findMenuIdsByRoleId(Long roleId);
 
-    List<Long> selectMenuIdByRoleMenu(Long roleId);
+    /**
+     * 根据角色ID查询角色信息
+     *
+     * @param roleId 角色ID
+     * @return 角色实体
+     */
+    Optional<RoleEntity> findRoleById(Long roleId);
 
-    RoleEntity selectRoleById(Long roleId);
+    /**
+     * 查询所有菜单ID
+     *
+     * @return 菜单ID列表
+     */
+    List<Long> findAllMenuIds();
 
-    List<Long> selectAllMenuId();
-
+    /**
+     * 删除角色的菜单权限
+     *
+     * @param roleId 角色ID
+     */
     void deleteRoleMenuByRoleId(Long roleId);
 
+    /**
+     * 批量插入角色的菜单权限
+     *
+     * @param roleId  角色ID
+     * @param menuIds 菜单ID列表
+     */
     void insertRoleMenu(Long roleId, List<Long> menuIds);
 
-    void addRole(RoleEntity roleEntity);
+    /**
+     * 保存角色
+     *
+     * @param roleEntity 角色实体
+     * @return 保存后的角色实体
+     */
+    RoleEntity saveRole(RoleEntity roleEntity);
 
-    void updateRole(RoleEntity roleEntity);
-
+    /**
+     * 删除角色
+     *
+     * @param ids 角色ID列表
+     */
     void deleteRoleByIds(List<Long> ids);
 
-    void addMenu(MenuEntity build);
+    /**
+     * 保存菜单
+     *
+     * @param menuEntity 菜单实体
+     */
+    void saveMenu(MenuEntity menuEntity);
 
-    void updateMenu(MenuEntity menu);
-
+    /**
+     * 删除菜单
+     *
+     * @param id 菜单ID
+     */
     void deleteMenu(Long id);
 
-    List<Long> getMenuById(long userId);
+    /**
+     * 根据用户ID获取用户的菜单ID列表
+     *
+     * @param userId 用户ID
+     * @return 菜单ID列表
+     */
+    List<Long> findMenuIdsByUserId(long userId);
 
-    List<MenuEntity> listByIds(List<Long> menuIds);
+    /**
+     * 根据菜单ID列表获取菜单列表
+     *
+     * @param menuIds 菜单ID列表
+     * @return 菜单列表
+     */
+    List<MenuEntity> findMenusByIds(List<Long> menuIds);
 
     /**
      * 根据用户ID获取用户的权限列表
@@ -70,7 +145,7 @@ public interface IPermissionRepository {
      * @param userId 用户ID
      * @return 权限列表
      */
-    List<String> findPermissionsByUserid(Long userId);
+    List<String> findPermissionsByUserId(Long userId);
 
     /**
      * 根据用户ID获取用户直接关联的权限列表
@@ -78,7 +153,7 @@ public interface IPermissionRepository {
      * @param userId 用户ID
      * @return 直接权限列表
      */
-    List<String> findDirectPermissionsByUserid(Long userId);
+    List<String> findDirectPermissionsByUserId(Long userId);
 
     /**
      * 检查角色编码是否存在

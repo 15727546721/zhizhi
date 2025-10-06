@@ -1,6 +1,6 @@
 package cn.xu.domain.user.model.entity;
 
-import cn.xu.infrastructure.common.exception.BusinessException;
+import cn.xu.common.exception.BusinessException;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

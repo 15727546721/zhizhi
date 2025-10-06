@@ -1,10 +1,10 @@
 package cn.xu.domain.report.model.entity;
 
-import cn.xu.infrastructure.common.exception.BusinessException;
-import lombok.Data;
-import lombok.Builder;
-import lombok.NoArgsConstructor;
+import cn.xu.common.exception.BusinessException;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 

@@ -4,7 +4,6 @@ import cn.xu.domain.cache.ICacheService;
 import cn.xu.domain.like.model.LikeEntity;
 import cn.xu.domain.like.model.LikeStatus;
 import cn.xu.domain.like.model.LikeType;
-import cn.xu.domain.like.repository.ILikeRepository;
 import cn.xu.infrastructure.cache.LikeCacheRepository;
 import cn.xu.infrastructure.cache.RedisKeyManager;
 import cn.xu.infrastructure.persistent.converter.LikeConverter;
@@ -16,11 +15,13 @@ import org.springframework.stereotype.Repository;
 
 /**
  * MySQL点赞仓储实现 - 只存储点赞关系，不存储点赞数量
+ * @deprecated 请使用LikeAggregateRepositoryImpl替代
  */
 @Slf4j
 @Repository
 @RequiredArgsConstructor
-public class LikeRepository implements ILikeRepository {
+@Deprecated
+public class LikeRepository implements cn.xu.domain.like.repository.ILikeRepository {
 
     private final LikeMapper likeDao; // MySQL操作类
     private final ICacheService cacheService; // 使用领域层缓存服务接口

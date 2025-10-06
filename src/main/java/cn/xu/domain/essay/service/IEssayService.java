@@ -4,7 +4,7 @@ import cn.xu.api.web.model.dto.essay.EssayQueryRequest;
 import cn.xu.api.web.model.dto.essay.TopicResponse;
 import cn.xu.domain.essay.command.CreateEssayCommand;
 import cn.xu.domain.essay.model.entity.EssayEntity;
-import cn.xu.domain.essay.model.vo.EssayVO;
+import cn.xu.domain.essay.model.vo.EssayResponse;
 
 import java.util.List;
 
@@ -23,7 +23,7 @@ public interface IEssayService {
      * @param request
      * @return
      */
-    List<EssayVO> getEssayList(EssayQueryRequest request);
+    List<EssayResponse> getEssayList(EssayQueryRequest request);
 
     /**
      * 删除话题

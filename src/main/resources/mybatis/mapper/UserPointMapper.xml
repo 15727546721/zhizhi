@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.xu.infrastructure.persistent.dao.UserPointMapper">
+
+    <resultMap id="BaseResultMap" type="cn.xu.infrastructure.persistent.po.UserPoint">
+        <id property="id" column="id" jdbcType="BIGINT"/>
+        <result property="userId" column="user_id" jdbcType="BIGINT"/>
+        <result property="totalPoints" column="total_points" jdbcType="BIGINT"/>
+        <result property="availablePoints" column="available_points" jdbcType="BIGINT"/>
+        <result property="consumedPoints" column="consumed_points" jdbcType="BIGINT"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, user_id, total_points, available_points, consumed_points, create_time, update_time
+    </sql>
+
+    <select id="findByUserId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM user_point
+        WHERE user_id = #{userId}
+    </select>
+
+    <insert id="insert" parameterType="cn.xu.infrastructure.persistent.po.UserPoint" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO user_point (user_id, total_points, available_points, consumed_points, create_time, update_time)
+        VALUES (#{userId}, #{totalPoints}, #{availablePoints}, #{consumedPoints}, now(), now())
+    </insert>
+
+    <update id="update" parameterType="cn.xu.infrastructure.persistent.po.UserPoint">
+        UPDATE user_point
+        SET total_points = #{totalPoints},
+            available_points = #{availablePoints},
+            consumed_points = #{consumedPoints},
+            update_time = now()
+        WHERE id = #{id}
+    </update>
+
+    <select id="findRanking" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM user_point
+        ORDER BY total_points DESC
+        LIMIT #{limit}
+    </select>
+
+</mapper>

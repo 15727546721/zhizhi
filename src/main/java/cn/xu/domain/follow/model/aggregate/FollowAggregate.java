@@ -1,8 +1,8 @@
 package cn.xu.domain.follow.model.aggregate;
 
+import cn.xu.common.exception.BusinessException;
 import cn.xu.domain.follow.model.entity.FollowRelationEntity;
 import cn.xu.domain.follow.model.valueobject.FollowStatus;
-import cn.xu.infrastructure.common.exception.BusinessException;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 

@@ -1,10 +1,10 @@
 package cn.xu.domain.essay.model.aggregate;
 
+import cn.xu.common.exception.BusinessException;
 import cn.xu.domain.essay.model.entity.EssayEntity;
 import cn.xu.domain.essay.model.valobj.EssayContent;
 import cn.xu.domain.essay.model.valobj.EssayImages;
 import cn.xu.domain.essay.model.valobj.EssayTopics;
-import cn.xu.infrastructure.common.exception.BusinessException;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 

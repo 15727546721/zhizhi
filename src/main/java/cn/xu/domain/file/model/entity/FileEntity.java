@@ -1,8 +1,8 @@
 package cn.xu.domain.file.model.entity;
 
+import cn.xu.domain.file.model.valobj.FileMetadata;
 import cn.xu.domain.file.model.valobj.FileName;
 import cn.xu.domain.file.model.valobj.FileUrl;
-import cn.xu.domain.file.model.valobj.FileMetadata;
 import lombok.Data;
 
 import java.time.LocalDateTime;

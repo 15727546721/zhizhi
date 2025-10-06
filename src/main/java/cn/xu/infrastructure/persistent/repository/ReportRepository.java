@@ -2,10 +2,10 @@ package cn.xu.infrastructure.persistent.repository;
 
 import cn.xu.domain.report.model.entity.ReportEntity;
 import cn.xu.domain.report.repository.IReportRepository;
+import cn.xu.infrastructure.persistent.converter.ReportConverter;
 import cn.xu.infrastructure.persistent.dao.IReportDao;
 import cn.xu.infrastructure.persistent.po.Report;
 import cn.xu.infrastructure.persistent.po.ReportReasonConfig;
-import cn.xu.infrastructure.persistent.repository.converter.ReportConverter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 public class ReportRepository implements IReportRepository {
     
     private final IReportDao reportDao;
-    private final ReportConverter reportConverter = new ReportConverter();
+    private final ReportConverter reportConverter;
     
     @Override
     public ReportEntity save(ReportEntity report) {
@@ -45,7 +45,7 @@ public class ReportRepository implements IReportRepository {
     public List<ReportEntity> findByTarget(Integer targetType, Long targetId) {
         List<Report> reportPOs = reportDao.selectByTarget(targetType, targetId);
         return reportPOs.stream()
-                .map(reportConverter::toDomainEntity)
+                .map(report -> reportConverter.toDomainEntity(report))
                 .collect(Collectors.toList());
     }
     
@@ -53,7 +53,7 @@ public class ReportRepository implements IReportRepository {
     public List<ReportEntity> findByReporterId(Long reporterId) {
         List<Report> reportPOs = reportDao.selectByReporterId(reporterId);
         return reportPOs.stream()
-                .map(reportConverter::toDomainEntity)
+                .map(report -> reportConverter.toDomainEntity(report))
                 .collect(Collectors.toList());
     }
     
@@ -62,7 +62,7 @@ public class ReportRepository implements IReportRepository {
         int offset = page * size;
         List<Report> reportPOs = reportDao.selectByPage(offset, size);
         return reportPOs.stream()
-                .map(reportConverter::toDomainEntity)
+                .map(report -> reportConverter.toDomainEntity(report))
                 .collect(Collectors.toList());
     }
     
@@ -70,7 +70,7 @@ public class ReportRepository implements IReportRepository {
     public List<ReportEntity> findByStatus(Integer status) {
         List<Report> reportPOs = reportDao.selectByStatus(status);
         return reportPOs.stream()
-                .map(reportConverter::toDomainEntity)
+                .map(report -> reportConverter.toDomainEntity(report))
                 .collect(Collectors.toList());
     }
     

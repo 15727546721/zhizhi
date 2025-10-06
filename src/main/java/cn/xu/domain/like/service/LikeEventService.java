@@ -1,7 +1,6 @@
 package cn.xu.domain.like.service;
 
 import cn.xu.domain.like.event.LikeEventPublisher;
-import cn.xu.domain.like.model.LikeEntity;
 import cn.xu.domain.like.model.LikeType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,37 +16,6 @@ import org.springframework.stereotype.Service;
 public class LikeEventService {
     
     private final LikeEventPublisher likeEventPublisher;
-    
-    /**
-     * 发布点赞事件
-     * 
-     * @param likeEntity 点赞实体
-     * @param isLike 是否点赞（true为点赞，false为取消点赞）
-     */
-    public void publishLikeEvent(LikeEntity likeEntity, boolean isLike) {
-        try {
-            likeEventPublisher.publish(
-                likeEntity.getUserId(),
-                likeEntity.getTargetId(),
-                likeEntity.getType(),
-                isLike
-            );
-            log.info("发布点赞事件成功 - userId: {}, targetId: {}, type: {}, isLike: {}", 
-                likeEntity.getUserId(), 
-                likeEntity.getTargetId(), 
-                likeEntity.getType(), 
-                isLike
-            );
-        } catch (Exception e) {
-            log.error("发布点赞事件失败 - userId: {}, targetId: {}, type: {}, isLike: {}", 
-                likeEntity.getUserId(), 
-                likeEntity.getTargetId(), 
-                likeEntity.getType(), 
-                isLike, 
-                e
-            );
-        }
-    }
     
     /**
      * 发布点赞事件

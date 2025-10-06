@@ -1,6 +1,6 @@
 package cn.xu.domain.notification.model.valueobject;
 
-import cn.xu.infrastructure.common.exception.BusinessException;
+import cn.xu.common.exception.BusinessException;
 import lombok.Getter;
 
 import java.util.Collections;

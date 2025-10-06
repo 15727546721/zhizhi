@@ -1,7 +1,6 @@
 package cn.xu.infrastructure.persistent.dao;
 
 import cn.xu.api.web.model.dto.comment.CommentQueryRequest;
-import cn.xu.domain.comment.model.entity.CommentEntity;
 import cn.xu.domain.comment.model.valueobject.CommentSortType;
 import cn.xu.infrastructure.persistent.po.Comment;
 import org.apache.ibatis.annotations.Mapper;
@@ -188,4 +187,41 @@ public interface CommentMapper {
     List<Comment> findRepliesByParentIdByTime(@Param("parentId") Long parentId, @Param("offset") int offset, @Param("size") int size);
 
     List<Comment> selectCommentsByIds(@Param("commentIdList") List<Long> commentIdList);
+    
+    /**
+     * 更新评论
+     */
+    void updateComment(Comment comment);
+    
+    /**
+     * 根据目标类型和目标ID统计评论数
+     */
+    Long countByTargetTypeAndTargetId(@Param("targetType") Integer targetType, @Param("targetId") Long targetId);
+    
+    /**
+     * 批量统计目标的评论数
+     */
+    List<CommentCountResult> batchCountByTargetIds(@Param("targetType") Integer targetType, @Param("targetIds") List<Long> targetIds);
+    
+    class CommentCountResult {
+        private Long targetId;
+        private Long count;
+        
+        // Getters and Setters
+        public Long getTargetId() {
+            return targetId;
+        }
+        
+        public void setTargetId(Long targetId) {
+            this.targetId = targetId;
+        }
+        
+        public Long getCount() {
+            return count;
+        }
+        
+        public void setCount(Long count) {
+            this.count = count;
+        }
+    }
 }

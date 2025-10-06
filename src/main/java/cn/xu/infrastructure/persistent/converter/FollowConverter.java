@@ -1,6 +1,5 @@
 package cn.xu.infrastructure.persistent.converter;
 
-import cn.xu.domain.follow.model.entity.UserFollowEntity;
 import cn.xu.domain.follow.model.entity.FollowRelationEntity;
 import cn.xu.domain.follow.model.valueobject.FollowStatus;
 import cn.xu.infrastructure.persistent.po.Follow;
@@ -22,7 +21,7 @@ public class FollowConverter {
     /**
      * 领域实体转换为持久化对象
      */
-    public Follow toDataObject(UserFollowEntity entity) {
+    public Follow toDataObject(FollowRelationEntity entity) {
         if (entity == null) {
             return null;
         }
@@ -56,11 +55,11 @@ public class FollowConverter {
     /**
      * 持久化对象转换为领域实体
      */
-    public UserFollowEntity toDomainEntity(Follow po) {
+    public FollowRelationEntity toDomainEntity(Follow po) {
         if (po == null) {
             return null;
         }
-        return UserFollowEntity.builder()
+        return FollowRelationEntity.builder()
                 .id(po.getId())
                 .followerId(po.getFollowerId())
                 .followedId(po.getFollowedId())
@@ -73,7 +72,7 @@ public class FollowConverter {
     /**
      * 批量转换持久化对象列表为领域实体列表
      */
-    public List<UserFollowEntity> toDomainEntities(List<Follow> poList) {
+    public List<FollowRelationEntity> toDomainEntities(List<Follow> poList) {
         if (poList == null || poList.isEmpty()) {
             return Collections.emptyList();
         }
@@ -85,7 +84,7 @@ public class FollowConverter {
     /**
      * 批量转换领域实体列表为持久化对象列表
      */
-    public List<Follow> toDataObjects(List<UserFollowEntity> entityList) {
+    public List<Follow> toDataObjects(List<FollowRelationEntity> entityList) {
         if (entityList == null || entityList.isEmpty()) {
             return Collections.emptyList();
         }

@@ -1,12 +1,12 @@
 package cn.xu.domain.essay.service.impl;
 
 import cn.xu.api.web.model.dto.essay.TopicQueryRequest;
-import cn.xu.application.common.ResponseCode;
+import cn.xu.common.ResponseCode;
+import cn.xu.common.exception.BusinessException;
 import cn.xu.domain.essay.command.CreateTopicCommand;
 import cn.xu.domain.essay.model.entity.TopicEntity;
 import cn.xu.domain.essay.repository.ITopicRepository;
 import cn.xu.domain.essay.service.ITopicService;
-import cn.xu.infrastructure.common.exception.BusinessException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,10 +15,10 @@ import javax.annotation.Resource;
 import java.util.List;
 
 @Slf4j
-@Service
+@Service("essayTopicServiceImpl")
 public class TopicServiceImpl implements ITopicService {
 
-    @Resource
+    @Resource(name = "essayTopicRepository")
     private ITopicRepository topicRepository;
 
     @Override

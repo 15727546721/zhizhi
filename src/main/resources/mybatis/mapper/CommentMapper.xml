@@ -283,6 +283,24 @@
       #{id}
     </foreach>
   </select>
+  
+  <!-- 根据目标类型和目标ID统计评论数 -->
+  <select id="countByTargetTypeAndTargetId" resultType="java.lang.Long">
+    SELECT COUNT(*)
+    FROM comment
+    WHERE target_type = #{targetType} AND target_id = #{targetId}
+  </select>
+  
+  <!-- 批量统计目标的评论数 -->
+  <select id="batchCountByTargetIds" resultType="cn.xu.infrastructure.persistent.dao.CommentMapper$CommentCountResult">
+    SELECT target_id as targetId, COUNT(*) as count
+    FROM comment
+    WHERE target_type = #{targetType} AND target_id IN
+    <foreach collection="targetIds" item="targetId" open="(" separator="," close=")">
+      #{targetId}
+    </foreach>
+    GROUP BY target_id
+  </select>
 
   <!-- 批量查询评论（用于缓存预热） -->
   <select id="findCommentsBatch" resultMap="BaseResultMap">
@@ -292,4 +310,21 @@
     ORDER BY id
     LIMIT #{offset}, #{batchSize}
   </select>
+  
+  <!-- 更新评论 -->
+  <update id="updateComment" parameterType="cn.xu.infrastructure.persistent.po.Comment">
+    UPDATE comment
+    SET 
+      target_type = #{targetType},
+      target_id = #{targetId},
+      parent_id = #{parentId},
+      user_id = #{userId},
+      reply_user_id = #{replyUserId},
+      content = #{content},
+      like_count = #{likeCount},
+      reply_count = #{replyCount},
+      hot_score = #{hotScore},
+      update_time = #{updateTime}
+    WHERE id = #{id}
+  </update>
 </mapper>

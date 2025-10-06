@@ -2,7 +2,6 @@ package cn.xu.domain.follow.service;
 
 import cn.xu.domain.follow.model.aggregate.FollowAggregate;
 import cn.xu.domain.follow.repository.IFollowAggregateRepository;
-import cn.xu.domain.user.model.aggregate.UserAggregate;
 import cn.xu.domain.user.repository.IUserAggregateRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;

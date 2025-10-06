@@ -1,10 +1,13 @@
 package cn.xu.api.system.controller;
 
 
-import cn.xu.application.common.ResponseCode;
+import cn.xu.common.ResponseCode;
+import cn.xu.common.annotation.ApiOperationLog;
+import cn.xu.common.exception.BusinessException;
+import cn.xu.common.response.ResponseEntity;
 import cn.xu.domain.file.service.MinioService;
-import cn.xu.infrastructure.common.exception.BusinessException;
-import cn.xu.infrastructure.common.response.ResponseEntity;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -28,7 +31,9 @@ public class FileController {
     }
 
     @PostMapping("/upload")
-    public ResponseEntity uploadFile(@RequestPart("multipartFile") MultipartFile file, @RequestParam(required = false) String fileName) {
+    @Operation(summary = "上传文件", description = "上传文件到文件存储系统")
+    @ApiOperationLog(description = "上传文件")
+    public ResponseEntity uploadFile(@Parameter(description = "文件") @RequestPart("files") MultipartFile file, @Parameter(description = "文件名(可选)") @RequestParam(required = false) String fileName) {
         try {
             if (StringUtils.isEmpty(fileName)) {
                 fileName = file.getOriginalFilename();
@@ -46,7 +51,9 @@ public class FileController {
     }
 
     @PostMapping("/delete")
-    public ResponseEntity deleteFile(@RequestBody String fileUrl) {
+    @Operation(summary = "删除文件", description = "从文件存储系统删除指定文件")
+    @ApiOperationLog(description = "删除文件")
+    public ResponseEntity deleteFile(@Parameter(description = "文件URL") @RequestBody String fileUrl) {
         try {
             // 解析 URL 获取桶名和对象名
             minioService.deleteFile(fileUrl);
@@ -61,7 +68,9 @@ public class FileController {
     }
 
     @GetMapping("/download/{fileName}")
-    public void downloadFile(@PathVariable String fileName, HttpServletResponse response) {
+    @Operation(summary = "下载文件", description = "从文件存储系统下载指定文件")
+    @ApiOperationLog(description = "下载文件")
+    public void downloadFile(@Parameter(description = "文件名") @PathVariable String fileName, HttpServletResponse response) {
         try {
             String localFilePath = "/tmp/" + fileName;
             minioService.downloadFile(fileName, localFilePath);
@@ -72,6 +81,8 @@ public class FileController {
     }
 
     @GetMapping("/list")
+    @Operation(summary = "列出文件", description = "列出文件存储系统中的所有文件")
+    @ApiOperationLog(description = "列出文件")
     public List<String> listFiles() {
         try {
             return minioService.listFiles();
@@ -80,4 +91,3 @@ public class FileController {
         }
     }
 }
-

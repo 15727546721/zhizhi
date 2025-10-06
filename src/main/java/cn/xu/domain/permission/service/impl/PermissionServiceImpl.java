@@ -3,7 +3,9 @@ package cn.xu.domain.permission.service.impl;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.api.web.model.dto.permission.RoleAddOrUpdateRequest;
 import cn.xu.api.web.model.dto.permission.RoleMenuRequest;
-import cn.xu.application.common.ResponseCode;
+import cn.xu.common.ResponseCode;
+import cn.xu.common.exception.BusinessException;
+import cn.xu.common.response.PageResponse;
 import cn.xu.domain.permission.model.entity.MenuEntity;
 import cn.xu.domain.permission.model.entity.MenuOptionsEntity;
 import cn.xu.domain.permission.model.entity.RoleEntity;
@@ -12,8 +14,6 @@ import cn.xu.domain.permission.model.vo.MenuComponentVO;
 import cn.xu.domain.permission.model.vo.MenuTypeVO;
 import cn.xu.domain.permission.repository.IPermissionRepository;
 import cn.xu.domain.permission.service.IPermissionService;
-import cn.xu.infrastructure.common.exception.BusinessException;
-import cn.xu.infrastructure.common.response.PageResponse;
 import cn.xu.infrastructure.config.satoken.UserPermission;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 
 /**
  * 权限服务实现类
+ * 实现权限相关的业务逻辑，遵循DDD领域驱动设计规范
  * 
  * @author Lily
  */
@@ -42,9 +43,9 @@ public class PermissionServiceImpl implements IPermissionService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public List<MenuEntity> selectMenuTreeList() {
+    public List<MenuEntity> getMenuTreeList() {
         // 1查询所有菜单
-        List<MenuEntity> menuEntityList = permissionRepository.selectMenuList();
+        List<MenuEntity> menuEntityList = permissionRepository.findAllMenus();
         // 2组装成树形结构
         List<MenuEntity> resultList = buildMenuTree(menuEntityList);
 
@@ -58,66 +59,60 @@ public class PermissionServiceImpl implements IPermissionService {
     @Override
     public List<MenuOptionsEntity> getMenuOptionsTree() {
         // 1查询所有菜单
-        List<MenuEntity> menuEntityList = permissionRepository.selectMenuList();
+        List<MenuEntity> menuEntityList = permissionRepository.findAllMenus();
 
         // 2组装成树形结构
-        List<MenuOptionsEntity> resultList = new ArrayList<>();
-        for (MenuEntity menu : menuEntityList) {
-            Long parentId = menu.getParentId();
-            if (parentId == null || parentId == 0) {
-                resultList.add(MenuOptionsEntity.builder()
+        return menuEntityList.stream()
+                .filter(menu -> menu.getParentId() == null || menu.getParentId() == 0)
+                .map(menu -> MenuOptionsEntity.builder()
                         .label(menu.getTitle())
                         .id(menu.getId())
-                        .build());
-            }
-        }
-        for (MenuOptionsEntity menu : resultList) {
-            menu.setChildren(getOptionsChild(menu.getId(), menuEntityList));
-        }
-        return resultList;
+                        .children(getOptionsChild(menu.getId(), menuEntityList))
+                        .build())
+                .collect(Collectors.toList());
     }
 
     @Override
-    public MenuEntity selectMenuById(Long id) {
-        return permissionRepository.selectMenuById(id);
+    public Optional<MenuEntity> findMenuById(Long id) {
+        return permissionRepository.findMenuById(id);
     }
 
     @Override
-    public PageResponse<List<RoleEntity>> selectRolePage(String name, int page, int size) {
+    public PageResponse<List<RoleEntity>> findRolePage(String name, int page, int size) {
         // 参数校验和默认值设置
         page = Math.max(1, page);  // 确保页码最小为1
         size = size <= 0 ? 10 : Math.min(size, 100);  // 确保每页数量在1-100之间
 
+        // 计算偏移量
+        int offset = (page - 1) * size;
+
         // 查询数据
-        List<RoleEntity> roleEntities = permissionRepository.selectRolePage(name, page, size);
-        long total = permissionRepository.countRole(name);
-
-        return PageResponse.of(page, size, total, roleEntities);
+        return permissionRepository.findRolePage(name, offset, size);
     }
 
     @Override
-    public List<Long> getCurrentUserRole() {
+    public List<Long> getCurrentUserRoleMenuIds() {
         long userId = StpUtil.getLoginIdAsLong();
-        Long roleId = permissionRepository.selectRoleIdByUserId(userId);
-        List<Long> menuIds = permissionRepository.selectMenuIdByRoleMenu(roleId);
-        return menuIds;
+        return permissionRepository.findMenuIdsByUserId(userId);
     }
 
     @Override
-    public List<Long> selectRoleMenuById(Long roleId) {
+    public List<Long> findRoleMenuIdsById(Long roleId) {
         // 1. 检查角色是否存在
-        RoleEntity roleEntity = permissionRepository.selectRoleById(roleId);
-        if (roleEntity == null) {
+        Optional<RoleEntity> roleEntityOptional = permissionRepository.findRoleById(roleId);
+        if (!roleEntityOptional.isPresent()) {
             throw new BusinessException(ResponseCode.NULL_RESPONSE.getCode(), "角色不存在");
         }
 
+        RoleEntity roleEntity = roleEntityOptional.get();
+
         // 2. 如果是超级管理员角色，返回所有菜单ID
         if ("admin".equals(roleEntity.getCode())) {
-            return permissionRepository.selectAllMenuId();
+            return permissionRepository.findAllMenuIds();
         }
 
         // 3. 获取角色的菜单权限
-        List<Long> menuIds = permissionRepository.selectMenuIdByRoleMenu(roleId);
+        List<Long> menuIds = permissionRepository.findMenuIdsByRoleId(roleId);
         if (menuIds == null) {
             menuIds = Collections.emptyList();
         }
@@ -140,10 +135,12 @@ public class PermissionServiceImpl implements IPermissionService {
         if (roleId == null || menuIds.isEmpty()) {
             throw new BusinessException(ResponseCode.NULL_PARAMETER.getCode(), "参数不能为空");
         }
-        RoleEntity roleEntity = permissionRepository.selectRoleById(roleId);
-        if (roleEntity != null && roleEntity.getCode().equals("admin")) {
+        
+        Optional<RoleEntity> roleEntityOptional = permissionRepository.findRoleById(roleId);
+        if (roleEntityOptional.isPresent() && roleEntityOptional.get().getCode().equals("admin")) {
             return;
         }
+        
         transactionTemplate.execute(status -> {
             try {
                 // 先删除原有菜单权限
@@ -178,17 +175,19 @@ public class PermissionServiceImpl implements IPermissionService {
                 .build();
 
         // 3. 保存角色
-        permissionRepository.addRole(roleEntity);
+        permissionRepository.saveRole(roleEntity);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void updateRole(RoleAddOrUpdateRequest role) {
         // 1. 检查角色是否存在
-        RoleEntity existingRole = permissionRepository.selectRoleById(role.getId());
-        if (existingRole == null) {
+        Optional<RoleEntity> existingRoleOptional = permissionRepository.findRoleById(role.getId());
+        if (!existingRoleOptional.isPresent()) {
             throw new BusinessException(ResponseCode.NULL_RESPONSE.getCode(), "角色不存在");
         }
+
+        RoleEntity existingRole = existingRoleOptional.get();
 
         // 2. 如果修改了编码，检查新编码是否已存在
         if (!existingRole.getCode().equals(role.getCode()) &&
@@ -204,7 +203,7 @@ public class PermissionServiceImpl implements IPermissionService {
                 .remark(role.getRemark())
                 .build();
 
-        permissionRepository.updateRole(roleEntity);
+        permissionRepository.saveRole(roleEntity);
     }
 
     @Override
@@ -219,13 +218,13 @@ public class PermissionServiceImpl implements IPermissionService {
         if (menu.getType().equals(MenuTypeVO.CATALOG.getCode())) {
             menu.setComponent(MenuComponentVO.Layout.getName());
         }
-        permissionRepository.addMenu(menu);
+        permissionRepository.saveMenu(menu);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void updateMenu(MenuEntity menu) {
-        permissionRepository.updateMenu(menu);
+        permissionRepository.saveMenu(menu);
     }
 
     @Override
@@ -239,10 +238,10 @@ public class PermissionServiceImpl implements IPermissionService {
         List<MenuEntity> menus;
         try {
             if (StpUtil.hasRole("admin")) {
-                menus = permissionRepository.selectMenuList();
+                menus = permissionRepository.findAllMenus();
             } else {
-                List<Long> menuIds = permissionRepository.getMenuById(StpUtil.getLoginIdAsLong());
-                menus = permissionRepository.listByIds(menuIds);
+                List<Long> menuIds = permissionRepository.findMenuIdsByUserId(StpUtil.getLoginIdAsLong());
+                menus = permissionRepository.findMenusByIds(menuIds);
             }
         } catch (Exception e) {
             log.error("获取当前用户菜单失败", e);
@@ -297,24 +296,14 @@ public class PermissionServiceImpl implements IPermissionService {
             return Collections.emptyList();
         }
 
-        Map<Long, MenuOptionsEntity> optionsMap = new HashMap<>();
-        for (MenuEntity menu : menus) {
-            Long parentId = menu.getParentId();
-            if (parentId != null && parentId == pid) {
-                optionsMap.put(menu.getId(), MenuOptionsEntity.builder()
+        return menus.stream()
+                .filter(menu -> menu.getParentId() != null && menu.getParentId().equals(pid))
+                .map(menu -> MenuOptionsEntity.builder()
                         .label(menu.getTitle())
                         .id(menu.getId())
-                        .build());
-            }
-        }
-
-        List<MenuOptionsEntity> children = new ArrayList<>(optionsMap.values());
-
-        for (MenuOptionsEntity child : children) {
-            child.setChildren(getOptionsChild(child.getId(), menus));
-        }
-
-        return children.isEmpty() ? Collections.emptyList() : children;
+                        .children(getOptionsChild(menu.getId(), menus))
+                        .build())
+                .collect(Collectors.toList());
     }
 
     /**
@@ -390,11 +379,6 @@ public class PermissionServiceImpl implements IPermissionService {
                 .build();
     }
 
-    @Override
-    public long countRole(String name) {
-        return permissionRepository.countRole(name);
-    }
-
     /**
      * 根据角色ID清除相关用户的权限缓存
      * @param roleId 角色ID
@@ -417,9 +401,7 @@ public class PermissionServiceImpl implements IPermissionService {
      */
     private void clearUserPermissionsCacheByUserIds(List<Long> userIds) {
         if (userIds != null && !userIds.isEmpty()) {
-            for (Long userId : userIds) {
-                userPermission.clearUserPermissionCache(userId);
-            }
+            userIds.forEach(userPermission::clearUserPermissionCache);
         }
     }
 }

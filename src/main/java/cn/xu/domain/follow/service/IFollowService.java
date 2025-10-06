@@ -1,6 +1,6 @@
 package cn.xu.domain.follow.service;
 
-import cn.xu.domain.follow.model.entity.UserFollowEntity;
+import cn.xu.domain.follow.model.entity.FollowRelationEntity;
 
 import java.util.List;
 
@@ -23,12 +23,12 @@ public interface IFollowService {
     /**
      * 获取用户的关注列表
      */
-    List<UserFollowEntity> getFollowingList(Long followerId);
+    List<FollowRelationEntity> getFollowingList(Long followerId);
 
     /**
      * 获取用户的粉丝列表
      */
-    List<UserFollowEntity> getFollowersList(Long followedId);
+    List<FollowRelationEntity> getFollowersList(Long followedId);
 
     /**
      * 获取用户关注数
@@ -48,4 +48,24 @@ public interface IFollowService {
      * @return
      */
     boolean checkStatus(long followerId, long followedId);
+    
+    /**
+     * 获取用户的关注列表（分页）
+     * 
+     * @param followerId 关注者ID
+     * @param pageNo 页码
+     * @param pageSize 页面大小
+     * @return 关注关系实体列表
+     */
+    List<FollowRelationEntity> getFollowingList(Long followerId, Integer pageNo, Integer pageSize);
+    
+    /**
+     * 获取用户的粉丝列表（分页）
+     * 
+     * @param followedId 被关注者ID
+     * @param pageNo 页码
+     * @param pageSize 页面大小
+     * @return 关注关系实体列表
+     */
+    List<FollowRelationEntity> getFollowersList(Long followedId, Integer pageNo, Integer pageSize);
 }

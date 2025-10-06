@@ -28,7 +28,7 @@ app:
   elasticsearch:
     index:
       comments: comments
-      articles: articles
+      posts: posts
 
 # 线程池配置
 thread:
@@ -43,9 +43,7 @@ thread:
 
 mybatis:
   mapper-locations: classpath:mybatis/mapper/*.xml
-  configuration:
-    map-underscore-to-camel-case: true
-    default-enum-type-handler: org.apache.ibatis.type.EnumTypeHandler
+  config-location: classpath:mybatis/config/mybatis-config.xml
   type-handlers-package: cn.xu.infrastructure.persistent.handler
 
 # Sa-Token配置
@@ -90,7 +88,6 @@ minio:
   secretKey: superadmin
   bucketName: zhizhi
   enabled: true  # 在开发环境中启用MinIO
-
 
 # 日志
 logging:

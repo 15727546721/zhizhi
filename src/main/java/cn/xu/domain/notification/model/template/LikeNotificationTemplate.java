@@ -1,8 +1,8 @@
 package cn.xu.domain.notification.model.template;
 
+import cn.xu.common.exception.BusinessException;
 import cn.xu.domain.notification.model.valueobject.BusinessType;
 import cn.xu.domain.notification.model.valueobject.NotificationType;
-import cn.xu.infrastructure.common.exception.BusinessException;
 import lombok.Getter;
 
 /**

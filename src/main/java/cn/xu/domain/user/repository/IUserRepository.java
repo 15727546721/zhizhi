@@ -4,7 +4,7 @@ import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.model.entity.UserInfoEntity;
 import cn.xu.domain.user.model.valobj.Email;
 import cn.xu.domain.user.model.valobj.Username;
-import cn.xu.domain.user.model.vo.UserFormVO;
+import cn.xu.domain.user.model.vo.UserFormResponse;
 
 import java.util.List;
 import java.util.Optional;
@@ -35,6 +35,11 @@ public interface IUserRepository {
      * 根据邮箱查找用户
      */
     Optional<UserEntity> findByEmail(Email email);
+
+    /**
+     * 根据邮箱查找用户
+     */
+    Optional<UserEntity> findByEmailWithPassword(Email email);
 
     /**
      * 检查用户名是否存在
@@ -82,7 +87,7 @@ public interface IUserRepository {
      * @param username 用户名
      * @return 用户表单值对象
      */
-    UserFormVO findUsernameAndPasswordByUsername(String username);
+    UserFormResponse findUsernameAndPasswordByUsername(String username);
     
     /**
      * 根据用户ID查找用户信息实体

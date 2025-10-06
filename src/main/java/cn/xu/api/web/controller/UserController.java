@@ -2,37 +2,48 @@ package cn.xu.api.web.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.stp.StpUtil;
-import cn.xu.api.web.model.dto.user.LoginRequest;
-import cn.xu.api.web.model.dto.user.RegisterRequest;
-import cn.xu.api.web.model.dto.user.UpdateUserReq;
-import cn.xu.api.web.model.vo.user.UserLoginVO;
-import cn.xu.application.common.ResponseCode;
+import cn.xu.api.web.model.dto.user.UpdateUserRequest;
+import cn.xu.api.web.model.dto.user.UserLoginRequest;
+import cn.xu.api.web.model.dto.user.UserRegisterRequest;
+import cn.xu.api.web.model.vo.user.UserLoginResponse;
+import cn.xu.common.ResponseCode;
+import cn.xu.common.annotation.ApiOperationLog;
+import cn.xu.common.exception.BusinessException;
+import cn.xu.common.response.ResponseEntity;
 import cn.xu.domain.user.model.entity.UserEntity;
-import cn.xu.domain.user.model.valobj.Email;
 import cn.xu.domain.user.service.IUserService;
-import cn.xu.infrastructure.common.annotation.ApiOperationLog;
-import cn.xu.infrastructure.common.exception.BusinessException;
-import cn.xu.infrastructure.common.response.ResponseEntity;
+import cn.xu.domain.user.service.UserValidationService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
-import javax.validation.Valid;
 
 @Slf4j
 @RequestMapping("api/user")
 @RestController
+@Tag(name = "用户接口", description = "用户相关接口")
 public class UserController {
 
     @Resource
     private IUserService userService;
+    
+    @Resource
+    private UserValidationService userValidationService;
 
     @PostMapping("/register")
     @Operation(summary = "用户注册", description = "用户注册接口")
-    public ResponseEntity<Void> register(@RequestBody @Valid RegisterRequest registerRequest) {
+    @ApiOperationLog(description = "用户注册")
+    public ResponseEntity<Void> register(@RequestBody UserRegisterRequest registerRequest) {
         // 参数校验
-        validateRegisterRequest(registerRequest);
+        userValidationService.validateRegisterParams(
+            registerRequest.getUsername(),
+            registerRequest.getPassword(),
+            registerRequest.getConfirmPassword(),
+            registerRequest.getEmail()
+        );
 
         // 注册用户
         userService.register(registerRequest);
@@ -43,49 +54,32 @@ public class UserController {
                 .build();
     }
 
-    /**
-     * 校验注册请求参数
-     */
-    private void validateRegisterRequest(RegisterRequest request) {
-        // 密码一致性校验
-        if (!request.getPassword().equals(request.getConfirmPassword())) {
-            throw new BusinessException("两次密码输入不一致");
-        }
-
-        // 密码强度校验
-        if (request.getPassword().length() < 6 || request.getPassword().length() > 20) {
-            throw new BusinessException("密码长度必须在6-20个字符之间");
-        }
-
-        // 用户名格式校验
-        if (request.getUsername().length() < 4 || request.getUsername().length() > 20) {
-            throw new BusinessException("用户名长度必须在4-20个字符之间");
-        }
-
-        // 邮箱格式校验（使用Email值对象进行校验）
-        try {
-            new Email(request.getEmail());
-        } catch (BusinessException e) {
-            throw new BusinessException("邮箱格式不正确");
-        }
-    }
-
     @PostMapping("/login")
-    public ResponseEntity<UserLoginVO> login(@RequestBody LoginRequest loginRequest) {
+    @Operation(summary = "用户登录", description = "用户登录接口")
+    @ApiOperationLog(description = "用户登录")
+    public ResponseEntity<UserLoginResponse> login(@RequestBody UserLoginRequest loginRequest) {
+        // 参数校验
+        userValidationService.validateLoginParams(
+            loginRequest.getEmail(),
+            loginRequest.getPassword()
+        );
+        
         UserEntity user = userService.login(loginRequest);
         if (user == null) {
             throw new BusinessException("用户名或密码错误");
         }
         StpUtil.login(user.getId());
         log.info("用户登录成功，用户ID：{}", user.getId());
-        return ResponseEntity.<UserLoginVO>builder()
+        return ResponseEntity.<UserLoginResponse>builder()
                 .code(ResponseCode.SUCCESS.getCode())
-                .data(UserLoginVO.builder().userInfo(user).token(StpUtil.getTokenValue()).build())
+                .data(UserLoginResponse.builder().userInfo(user).token(StpUtil.getTokenValue()).build())
                 .info("用户登录成功")
                 .build();
     }
 
     @PostMapping("/logout")
+    @Operation(summary = "用户退出", description = "用户退出接口")
+    @ApiOperationLog(description = "用户退出")
     public ResponseEntity<Void> logout() {
         long useId = StpUtil.getLoginIdAsLong();
         StpUtil.logout();
@@ -97,7 +91,9 @@ public class UserController {
     }
 
     @GetMapping("/info/{id}")
-    public ResponseEntity<UserEntity> getUserInfo(@PathVariable Long id) {
+    @Operation(summary = "获取用户信息", description = "根据用户ID获取用户信息")
+    @ApiOperationLog(description = "获取用户信息")
+    public ResponseEntity<UserEntity> getUserInfo(@Parameter(description = "用户ID") @PathVariable Long id) {
         log.info("获取用户信息，用户ID：{}", id);
         UserEntity user = userService.getUserInfo(id);
         return ResponseEntity.<UserEntity>builder()
@@ -109,7 +105,8 @@ public class UserController {
     @PostMapping("/update")
     @ApiOperationLog(description = "更新用户信息")
     @SaCheckLogin
-    public ResponseEntity<Void> updateUser(@RequestBody UpdateUserReq user) {
+    @Operation(summary = "更新用户信息", description = "更新当前登录用户的信息")
+    public ResponseEntity<Void> updateUser(@RequestBody UpdateUserRequest user) {
         long userId = StpUtil.getLoginIdAsLong();
         if (userId != user.getId()) {
             throw new BusinessException("只能更新自己的信息");

@@ -1,7 +1,7 @@
 package cn.xu.domain.file.service;
 
-import cn.xu.application.common.ResponseCode;
-import cn.xu.infrastructure.common.exception.BusinessException;
+import cn.xu.common.ResponseCode;
+import cn.xu.common.exception.BusinessException;
 import com.alibaba.fastjson2.JSONObject;
 import io.minio.*;
 import io.minio.errors.MinioException;
@@ -13,7 +13,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.annotation.Resource;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;

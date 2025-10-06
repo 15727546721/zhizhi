@@ -1,7 +1,7 @@
 package cn.xu.domain.file.model.valobj;
 
-import cn.xu.application.common.ResponseCode;
-import cn.xu.infrastructure.common.exception.BusinessException;
+import cn.xu.common.ResponseCode;
+import cn.xu.common.exception.BusinessException;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 

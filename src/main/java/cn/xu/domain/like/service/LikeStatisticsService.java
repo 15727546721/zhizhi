@@ -1,7 +1,7 @@
 package cn.xu.domain.like.service;
 
 import cn.xu.domain.like.model.LikeType;
-import cn.xu.domain.like.repository.ILikeRepository;
+import cn.xu.domain.like.repository.ILikeAggregateRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -15,7 +15,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class LikeStatisticsService {
     
-    private final ILikeRepository likeRepository;
+    private final ILikeAggregateRepository likeAggregateRepository;
     
     /**
      * 获取目标的点赞数
@@ -25,9 +25,8 @@ public class LikeStatisticsService {
      * @return 点赞数
      */
     public Long getLikeCount(Long targetId, LikeType type) {
-        // 这里应该从缓存或数据库获取点赞数
-        // 暂时返回默认值，实际实现需要结合缓存服务
-        return 0L;
+        // 从聚合根仓储获取点赞数
+        return likeAggregateRepository.countByTarget(targetId, type);
     }
     
     /**
@@ -38,9 +37,10 @@ public class LikeStatisticsService {
      */
     public UserLikeStatistics getUserLikeStatistics(Long userId) {
         // 获取用户的点赞统计信息
+        // 这里需要实现具体的统计逻辑，暂时返回默认值
         return UserLikeStatistics.builder()
                 .userId(userId)
-                .articleLikeCount(0L)
+                .postLikeCount(0L)
                 .commentLikeCount(0L)
                 .essayLikeCount(0L)
                 .totalLikeCount(0L)
@@ -52,7 +52,7 @@ public class LikeStatisticsService {
      */
     public static class UserLikeStatistics {
         private Long userId;
-        private Long articleLikeCount;
+        private Long postLikeCount;
         private Long commentLikeCount;
         private Long essayLikeCount;
         private Long totalLikeCount;
@@ -74,12 +74,12 @@ public class LikeStatisticsService {
             this.userId = userId;
         }
         
-        public Long getArticleLikeCount() {
-            return articleLikeCount;
+        public Long getPostLikeCount() {
+            return postLikeCount;
         }
         
-        public void setArticleLikeCount(Long articleLikeCount) {
-            this.articleLikeCount = articleLikeCount;
+        public void setPostLikeCount(Long postLikeCount) {
+            this.postLikeCount = postLikeCount;
         }
         
         public Long getCommentLikeCount() {
@@ -111,7 +111,7 @@ public class LikeStatisticsService {
          */
         public static class UserLikeStatisticsBuilder {
             private Long userId;
-            private Long articleLikeCount;
+            private Long postLikeCount;
             private Long commentLikeCount;
             private Long essayLikeCount;
             private Long totalLikeCount;
@@ -121,8 +121,8 @@ public class LikeStatisticsService {
                 return this;
             }
             
-            public UserLikeStatisticsBuilder articleLikeCount(Long articleLikeCount) {
-                this.articleLikeCount = articleLikeCount;
+            public UserLikeStatisticsBuilder postLikeCount(Long postLikeCount) {
+                this.postLikeCount = postLikeCount;
                 return this;
             }
             
@@ -144,7 +144,7 @@ public class LikeStatisticsService {
             public UserLikeStatistics build() {
                 UserLikeStatistics statistics = new UserLikeStatistics();
                 statistics.setUserId(this.userId);
-                statistics.setArticleLikeCount(this.articleLikeCount);
+                statistics.setPostLikeCount(this.postLikeCount);
                 statistics.setCommentLikeCount(this.commentLikeCount);
                 statistics.setEssayLikeCount(this.essayLikeCount);
                 statistics.setTotalLikeCount(this.totalLikeCount);

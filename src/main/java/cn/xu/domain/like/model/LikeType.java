@@ -8,9 +8,9 @@ import lombok.Getter;
 @Getter
 public enum LikeType {
 
-    ARTICLE(1, "文章"),
-    COMMENT(2, "评论"),
-    ESSAY(3, "随笔"),
+    POST(1, "帖子"),
+    ESSAY(2, "随笔"),
+    COMMENT(3, "评论"),
     ;
 
     private final int code;
@@ -29,4 +29,25 @@ public enum LikeType {
         }
         return null;
     }
-} 
+    
+    /**
+     * 根据名称获取LikeType
+     * @param name 枚举名称
+     * @return LikeType枚举
+     */
+    public static LikeType fromName(String name) {
+        try {
+            return LikeType.valueOf(name.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+    
+    /**
+     * 获取用于Redis键的名称（小写）
+     * @return Redis键名
+     */
+    public String getRedisKeyName() {
+        return this.name().toLowerCase();
+    }
+}

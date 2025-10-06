@@ -1,7 +1,7 @@
 package cn.xu.domain.follow.model.entity;
 
+import cn.xu.common.exception.BusinessException;
 import cn.xu.domain.follow.model.valueobject.FollowStatus;
-import cn.xu.infrastructure.common.exception.BusinessException;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

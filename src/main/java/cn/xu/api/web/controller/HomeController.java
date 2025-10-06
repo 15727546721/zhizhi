@@ -1,210 +1,374 @@
 package cn.xu.api.web.controller;
 
 import cn.dev33.satoken.stp.StpUtil;
-import cn.xu.api.web.model.vo.article.ArticleListVO;
-import cn.xu.api.web.model.vo.home.HomeDataVO;
-import cn.xu.api.web.model.vo.home.PersonalizedHomeDataVO;
-import cn.xu.application.common.ResponseCode;
-import cn.xu.domain.article.model.entity.CategoryEntity;
-import cn.xu.domain.article.model.entity.TagEntity;
-import cn.xu.domain.article.model.entity.ArticleEntity;
-import cn.xu.domain.article.service.ArticleQueryDomainService;
-import cn.xu.domain.article.service.ICategoryService;
-import cn.xu.domain.article.service.ITagService;
-import cn.xu.domain.article.service.IArticleService;
+import cn.xu.api.web.model.vo.HomePageResponse;
+import cn.xu.api.web.model.vo.post.PostListResponse;
+import cn.xu.common.ResponseCode;
+import cn.xu.common.annotation.ApiOperationLog;
+import cn.xu.common.response.PageResponse;
+import cn.xu.common.response.ResponseEntity;
+import cn.xu.domain.follow.model.entity.FollowRelationEntity;
+import cn.xu.domain.follow.service.IFollowService;
+import cn.xu.domain.post.model.entity.PostEntity;
+import cn.xu.domain.post.model.valobj.PostType;
+import cn.xu.domain.post.service.IPostService;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.service.IUserService;
-import cn.xu.domain.follow.service.IFollowService;
-import cn.xu.infrastructure.common.response.ResponseEntity;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
+import javax.annotation.Resource;
+import java.util.*;
 import java.util.stream.Collectors;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.Collections;
-import java.util.ArrayList;
 
 /**
- * 主页接口
- * 提供主页数据聚合展示功能
+ * 首页控制器
+ * 提供首页数据展示接口
  */
 @Slf4j
 @RestController
 @RequestMapping("/api/home")
-@Tag(name = "主页接口", description = "主页数据展示相关接口")
-@RequiredArgsConstructor
+@Tag(name = "首页接口", description = "首页相关接口")
 public class HomeController {
 
-    private final IArticleService articleService;
-    private final ArticleQueryDomainService articleQueryDomainService;
-    private final IUserService userService;
-    private final ICategoryService categoryService;
-    private final ITagService tagService;
-    private final IFollowService followService;
+    @Resource
+    private IPostService postService;
+    @Resource
+    private IUserService userService;
+    @Resource
+    private IFollowService followService;
 
-    /**
-     * 获取主页数据
-     *
-     * @return 主页数据
-     */
-    @GetMapping("/data")
-    @Operation(summary = "获取主页数据", description = "获取主页展示的所有数据，包括热门文章、最新文章、推荐作者、热门标签等")
-    public ResponseEntity<HomeDataVO> getHomeData() {
+    @GetMapping("/page")
+    @Operation(summary = "获取首页数据")
+    public ResponseEntity<HomePageResponse> getHomePage() {
         try {
-            // 获取热门文章列表（周榜前10）
-            List<ArticleEntity> hotArticles = new ArrayList<>();
+            Long currentUserId = StpUtil.isLogin() ? StpUtil.getLoginIdAsLong() : null;
+            
+            // 获取热门帖子（本周）
+            List<PostEntity> hotPosts = new ArrayList<>();
             try {
-                hotArticles = articleQueryDomainService.getHotRank("week", 
-                    PageRequest.of(0, 10)).getContent();
+                hotPosts = postService.findHotPosts(1, 10);
             } catch (Exception e) {
-                log.warn("获取热门文章失败，使用默认文章列表", e);
-                hotArticles = articleService.getArticlePageList(1, 10);
+                log.warn("获取热门帖子失败，使用默认排序", e);
+                hotPosts = postService.getPostPageList(1, 10);
             }
             
-            // 获取最新文章列表
-            List<ArticleEntity> latestArticles = articleService.getArticlePageList(1, 10);
+            // 获取最新帖子
+            List<PostEntity> latestPosts = postService.getPostPageList(1, 10);
             
-            // 获取推荐作者（这里简单获取前10个用户，实际可以根据关注数、文章数等维度计算）
-            List<UserEntity> recommendedAuthors = new ArrayList<>();
-            try {
-                recommendedAuthors = userService.queryUserList(
-                    new cn.xu.infrastructure.common.request.PageRequest());
-                // 设置分页参数
-                recommendedAuthors = recommendedAuthors.subList(0, Math.min(recommendedAuthors.size(), 10));
-            } catch (Exception e) {
-                log.warn("获取推荐作者失败", e);
-                recommendedAuthors = Collections.emptyList();
-            }
-            
-            // 获取热门标签
-            List<TagEntity> hotTags = new ArrayList<>();
-            try {
-                hotTags = tagService.getTagList();
-                // 限制标签数量
-                if (hotTags.size() > 20) {
-                    hotTags = hotTags.subList(0, 20);
-                }
-            } catch (Exception e) {
-                log.warn("获取热门标签失败", e);
-                hotTags = Collections.emptyList();
-            }
-            
-            // 获取分类列表
-            List<CategoryEntity> categories = new ArrayList<>();
-            try {
-                categories = categoryService.getCategoryList();
-                // 限制分类数量
-                if (categories.size() > 10) {
-                    categories = categories.subList(0, 10);
-                }
-            } catch (Exception e) {
-                log.warn("获取分类列表失败", e);
-                categories = Collections.emptyList();
-            }
-            
-            // 构建主页数据VO
-            HomeDataVO homeData = HomeDataVO.builder()
-                    .hotArticles(convertToArticleListVOs(hotArticles))
-                    .latestArticles(convertToArticleListVOs(latestArticles))
-                    .recommendedAuthors(recommendedAuthors)
-                    .hotTags(hotTags)
-                    .categories(categories)
+            HomePageResponse homePageVO = HomePageResponse.builder()
+                    .hotPosts(convertToPostListResponses(hotPosts))
+                    .latestPosts(convertToPostListResponses(latestPosts))
                     .build();
             
-            return ResponseEntity.<HomeDataVO>builder()
+            return ResponseEntity.<HomePageResponse>builder()
                     .code(ResponseCode.SUCCESS.getCode())
-                    .data(homeData)
+                    .data(homePageVO)
                     .build();
         } catch (Exception e) {
-            log.error("获取主页数据失败", e);
-            return ResponseEntity.<HomeDataVO>builder()
+            log.error("获取首页数据失败", e);
+            return ResponseEntity.<HomePageResponse>builder()
                     .code(ResponseCode.UN_ERROR.getCode())
-                    .info("获取主页数据失败: " + e.getMessage())
+                    .info("获取首页数据失败: " + e.getMessage())
                     .build();
         }
     }
 
-    /**
-     * 获取用户个性化主页数据（需要登录）
-     *
-     * @return 用户个性化主页数据
-     */
-    @GetMapping("/personalized")
-    @Operation(summary = "获取个性化主页数据", description = "获取用户个性化的主页数据，包括关注用户的最新动态等")
-    public ResponseEntity<PersonalizedHomeDataVO> getPersonalizedHomeData() {
+    @GetMapping("/following")
+    @Operation(summary = "获取关注用户的帖子")
+    public ResponseEntity<PageResponse<List<PostListResponse>>> getFollowingPosts(
+            @Parameter(description = "页码，默认为1") @RequestParam(defaultValue = "1") int page,
+            @Parameter(description = "页面大小，默认为10") @RequestParam(defaultValue = "10") int size) {
         try {
-            // 检查用户是否登录
-            if (!StpUtil.isLogin()) {
-                return ResponseEntity.<PersonalizedHomeDataVO>builder()
-                        .code(ResponseCode.UN_ERROR.getCode())
-                        .info("用户未登录")
-                        .build();
-            }
+            // 确保页码至少为1
+            int safePage = Math.max(1, page);
+            int safeSize = Math.max(1, Math.min(size, 100)); // 限制页面大小最大为100
             
-            Long userId = StpUtil.getLoginIdAsLong();
+            Long currentUserId = StpUtil.getLoginIdAsLong();
             
-            // 获取用户关注的作者列表
-            List<Long> followingUserIds = new ArrayList<>();
-            try {
-                List<cn.xu.domain.follow.model.entity.UserFollowEntity> followingList = 
-                    followService.getFollowingList(userId);
-                followingUserIds = followingList.stream()
-                    .map(cn.xu.domain.follow.model.entity.UserFollowEntity::getFollowedId)
-                    .collect(Collectors.toList());
-            } catch (Exception e) {
-                log.warn("获取用户关注列表失败", e);
-            }
+            // 获取关注的用户ID列表
+            List<FollowRelationEntity> followingList = followService.getFollowingList(currentUserId);
+            Set<Long> followingUserIds = followingList.stream()
+                    .map(FollowRelationEntity::getFollowedId)
+                    .collect(Collectors.toSet());
             
-            // 获取关注用户发布的最新文章
-            List<ArticleEntity> followingAuthorsArticles = new ArrayList<>();
+            List<PostEntity> followingAuthorsPosts = new ArrayList<>();
+            long total = 0;
             if (!followingUserIds.isEmpty()) {
-                try {
-                    // 这里简化处理，实际应该根据关注用户ID查询文章
-                    followingAuthorsArticles = articleService.getArticlePageList(1, 10);
-                } catch (Exception e) {
-                    log.warn("获取关注用户文章失败", e);
-                }
+                // 获取关注用户的帖子，按时间倒序排列
+                followingAuthorsPosts = postService.getPostsByUserIds(new ArrayList<>(followingUserIds), safePage, safeSize);
+                // 获取总数
+                total = postService.countPostsByUserIds(new ArrayList<>(followingUserIds));
             }
             
-            // 构建个性化主页数据VO
-            PersonalizedHomeDataVO personalizedData = PersonalizedHomeDataVO.builder()
-                    .followingArticles(convertToArticleListVOs(followingAuthorsArticles))
-                    .build();
+            // 转换为PostListResponse列表
+            List<PostListResponse> postListResponses = convertToPostListResponses(followingAuthorsPosts);
             
-            return ResponseEntity.<PersonalizedHomeDataVO>builder()
+            // 创建PageResponse对象
+            PageResponse<List<PostListResponse>> pageResponse = PageResponse.ofList(
+                safePage, 
+                safeSize, 
+                total, 
+                postListResponses
+            );
+            
+            return ResponseEntity.<PageResponse<List<PostListResponse>>>builder()
                     .code(ResponseCode.SUCCESS.getCode())
-                    .data(personalizedData)
+                    .data(pageResponse)
                     .build();
         } catch (Exception e) {
-            log.error("获取个性化主页数据失败", e);
-            return ResponseEntity.<PersonalizedHomeDataVO>builder()
+            log.error("获取关注用户文章失败", e);
+            return ResponseEntity.<PageResponse<List<PostListResponse>>>builder()
                     .code(ResponseCode.UN_ERROR.getCode())
-                    .info("获取个性化主页数据失败: " + e.getMessage())
+                    .info("获取关注用户文章失败: " + e.getMessage())
+                    .build();
+        }
+    }
+
+    @GetMapping("/search")
+    @Operation(summary = "搜索帖子")
+    @ApiOperationLog(description = "搜索帖子")
+    public ResponseEntity<PageResponse<List<PostListResponse>>> searchPosts(
+            @Parameter(description = "搜索关键词") @RequestParam String keyword,
+            @Parameter(description = "页码，默认为1") @RequestParam(defaultValue = "1") int page,
+            @Parameter(description = "页面大小，默认为10") @RequestParam(defaultValue = "10") int size) {
+        try {
+            // 确保页码至少为1
+            int safePage = Math.max(1, page);
+            int safeSize = Math.max(1, Math.min(size, 100)); // 限制页面大小最大为100
+            
+            Pageable pageable = PageRequest.of(safePage - 1, safeSize); // Spring Data 从0开始计算页码
+            Page<PostEntity> postsPage = postService.searchPostsByTitle(keyword, pageable);
+            
+            // 转换为PostListResponse页面
+            List<PostListResponse> postListResponses = convertToPostListResponses(postsPage.getContent());
+            
+            // 创建PageResponse对象
+            PageResponse<List<PostListResponse>> pageResponse = PageResponse.ofList(
+                safePage, 
+                safeSize, 
+                postsPage.getTotalElements(), 
+                postListResponses
+            );
+            
+            return ResponseEntity.<PageResponse<List<PostListResponse>>>builder()
+                    .code(ResponseCode.SUCCESS.getCode())
+                    .data(pageResponse)
+                    .build();
+        } catch (Exception e) {
+            log.error("搜索文章失败", e);
+            return ResponseEntity.<PageResponse<List<PostListResponse>>>builder()
+                    .code(ResponseCode.UN_ERROR.getCode())
+                    .info("搜索文章失败: " + e.getMessage())
+                    .build();
+        }
+    }
+
+    @GetMapping("/posts")
+    @Operation(summary = "获取帖子列表（支持筛选和排序）")
+    public ResponseEntity<PageResponse<List<PostListResponse>>> getPosts(
+            @Parameter(description = "帖子类型") @RequestParam(required = false) String type,
+            @Parameter(description = "标签ID") @RequestParam(required = false) Long tagId,
+            @Parameter(description = "排序方式") @RequestParam(defaultValue = "latest") String sort,
+            @Parameter(description = "页码，默认为1") @RequestParam(defaultValue = "1") int page,
+            @Parameter(description = "页面大小，默认为10") @RequestParam(defaultValue = "10") int size) {
+        try {
+            // 确保页码至少为1
+            int safePage = Math.max(1, page);
+            int safeSize = Math.max(1, Math.min(size, 100)); // 限制页面大小最大为100
+            
+            List<PostEntity> posts = new ArrayList<>();
+            long total = 0;
+            
+            // 根据类型筛选
+            if (type != null && !type.isEmpty()) {
+                PostType postType = PostType.fromCode(type);
+                posts = postService.findPostsByType(postType, safePage, safeSize);
+                total = postService.countPostsByType(postType);
+            } 
+            // 根据标签筛选
+            else if (tagId != null) {
+                posts = postService.findPostsByTagId(tagId, safePage, safeSize);
+                total = postService.countPostsByTagId(tagId);
+            } 
+            // 默认获取最新帖子
+            else {
+                posts = postService.getPostPageList(safePage, safeSize);
+                total = postService.countAllPosts();
+            }
+            
+            // 转换为PostListResponse列表
+            List<PostListResponse> postListResponses = convertToPostListResponses(posts);
+            
+            // 创建PageResponse对象
+            PageResponse<List<PostListResponse>> pageResponse = PageResponse.ofList(
+                safePage, 
+                safeSize, 
+                total, 
+                postListResponses
+            );
+            
+            return ResponseEntity.<PageResponse<List<PostListResponse>>>builder()
+                    .code(ResponseCode.SUCCESS.getCode())
+                    .data(pageResponse)
+                    .build();
+        } catch (Exception e) {
+            log.error("获取帖子列表失败", e);
+            return ResponseEntity.<PageResponse<List<PostListResponse>>>builder()
+                    .code(ResponseCode.UN_ERROR.getCode())
+                    .info("获取帖子列表失败: " + e.getMessage())
+                    .build();
+        }
+    }
+
+    @GetMapping("/recommend")
+    @Operation(summary = "获取推荐帖子")
+    public ResponseEntity<PageResponse<List<PostListResponse>>> getRecommendedPosts(
+            @Parameter(description = "页码，默认为1") @RequestParam(defaultValue = "1") int page,
+            @Parameter(description = "页面大小，默认为10") @RequestParam(defaultValue = "10") int size) {
+        try {
+            // 确保页码至少为1
+            int safePage = Math.max(1, page);
+            int safeSize = Math.max(1, Math.min(size, 100)); // 限制页面大小最大为100
+            
+            Long currentUserId = StpUtil.isLogin() ? StpUtil.getLoginIdAsLong() : null;
+            
+            List<PostEntity> recommendedPosts = new ArrayList<>();
+            long total = 0;
+            if (currentUserId != null) {
+                recommendedPosts = postService.findRecommendedPosts(currentUserId, safePage, safeSize);
+                total = postService.countRecommendedPosts(currentUserId);
+            } else {
+                // 未登录用户推荐热门帖子
+                recommendedPosts = postService.findHotPosts(safePage, safeSize);
+                total = postService.countHotPosts();
+            }
+            
+            // 转换为PostListResponse列表
+            List<PostListResponse> postListResponses = convertToPostListResponses(recommendedPosts);
+            
+            // 创建PageResponse对象
+            PageResponse<List<PostListResponse>> pageResponse = PageResponse.ofList(
+                safePage, 
+                safeSize, 
+                total, 
+                postListResponses
+            );
+            
+            return ResponseEntity.<PageResponse<List<PostListResponse>>>builder()
+                    .code(ResponseCode.SUCCESS.getCode())
+                    .data(pageResponse)
+                    .build();
+        } catch (Exception e) {
+            log.error("获取推荐帖子失败", e);
+            return ResponseEntity.<PageResponse<List<PostListResponse>>>builder()
+                    .code(ResponseCode.UN_ERROR.getCode())
+                    .info("获取推荐帖子失败: " + e.getMessage())
+                    .build();
+        }
+    }
+
+    @GetMapping("/related")
+    @Operation(summary = "获取相关推荐帖子")
+    public ResponseEntity<PageResponse<List<PostListResponse>>> getRelatedPosts(
+            @Parameter(description = "帖子类型") @RequestParam String type,
+            @Parameter(description = "当前帖子ID") @RequestParam Long excludeId,
+            @Parameter(description = "页码，默认为1") @RequestParam(defaultValue = "1") int page,
+            @Parameter(description = "页面大小，默认为5") @RequestParam(defaultValue = "5") int size) {
+        try {
+            // 确保页码至少为1
+            int safePage = Math.max(1, page);
+            int safeSize = Math.max(1, Math.min(size, 20)); // 限制页面大小最大为20
+            
+            // 转换帖子类型
+            PostType postType = PostType.fromCode(type);
+            
+            // 获取相关推荐帖子
+            List<PostEntity> relatedPosts = postService.findRelatedPostsByType(postType, excludeId, safeSize);
+            
+            // 转换为PostListResponse列表
+            List<PostListResponse> postListResponses = convertToPostListResponses(relatedPosts);
+            
+            // 创建PageResponse对象
+            PageResponse<List<PostListResponse>> pageResponse = PageResponse.ofList(
+                safePage, 
+                safeSize,
+                    (long) postListResponses.size(),
+                postListResponses
+            );
+            
+            return ResponseEntity.<PageResponse<List<PostListResponse>>>builder()
+                    .code(ResponseCode.SUCCESS.getCode())
+                    .data(pageResponse)
+                    .build();
+        } catch (Exception e) {
+            log.error("获取相关推荐帖子失败: type={}, excludeId={}", type, excludeId, e);
+            return ResponseEntity.<PageResponse<List<PostListResponse>>>builder()
+                    .code(ResponseCode.UN_ERROR.getCode())
+                    .info("获取相关推荐帖子失败: " + e.getMessage())
+                    .build();
+        }
+    }
+
+    @GetMapping("/featured")
+    @Operation(summary = "获取精选帖子")
+    public ResponseEntity<PageResponse<List<PostListResponse>>> getFeaturedPosts(
+            @Parameter(description = "页码，默认为1") @RequestParam(defaultValue = "1") int page,
+            @Parameter(description = "页面大小，默认为10") @RequestParam(defaultValue = "10") int size) {
+        try {
+            // 确保页码至少为1
+            int safePage = Math.max(1, page);
+            int safeSize = Math.max(1, Math.min(size, 100)); // 限制页面大小最大为100
+            
+            List<PostEntity> featuredPosts = postService.findFeaturedPosts(safePage, safeSize);
+            long total = postService.countFeaturedPosts();
+            
+            // 转换为PostListResponse列表
+            List<PostListResponse> postListResponses = convertToPostListResponses(featuredPosts);
+            
+            // 创建PageResponse对象
+            PageResponse<List<PostListResponse>> pageResponse = PageResponse.ofList(
+                safePage, 
+                safeSize, 
+                total, 
+                postListResponses
+            );
+            
+            return ResponseEntity.<PageResponse<List<PostListResponse>>>builder()
+                    .code(ResponseCode.SUCCESS.getCode())
+                    .data(pageResponse)
+                    .build();
+        } catch (Exception e) {
+            log.error("获取精选帖子失败", e);
+            return ResponseEntity.<PageResponse<List<PostListResponse>>>builder()
+                    .code(ResponseCode.UN_ERROR.getCode())
+                    .info("获取精选帖子失败: " + e.getMessage())
                     .build();
         }
     }
 
     /**
-     * 将文章实体列表转换为ArticleListVO列表
+     * 将帖子实体列表转换为PostListResponse列表
      */
-    private List<ArticleListVO> convertToArticleListVOs(List<ArticleEntity> articles) {
-        if (articles == null || articles.isEmpty()) {
+    private List<PostListResponse> convertToPostListResponses(List<PostEntity> posts) {
+        if (posts == null || posts.isEmpty()) {
             return Collections.emptyList();
         }
         
-        // 收集所有文章的作者ID
+        // 收集所有帖子的作者ID
         Set<Long> userIds = new HashSet<>();
-        articles.forEach(article -> {
-            if (article.getUserId() != null) {
-                userIds.add(article.getUserId());
+        posts.forEach(post -> {
+            if (post.getUserId() != null) {
+                userIds.add(post.getUserId());
             }
         });
         
@@ -220,13 +384,13 @@ public class HomeController {
         java.util.Map<Long, UserEntity> userMap = users.stream()
                 .collect(Collectors.toMap(UserEntity::getId, user -> user, (existing, replacement) -> existing));
         
-        return articles.stream()
-                .map(article -> {
-                    ArticleListVO vo = new ArticleListVO();
-                    vo.setArticle(article);
+        return posts.stream()
+                .map(post -> {
+                    PostListResponse vo = new PostListResponse();
+                    vo.setPost(post);
                     // 设置作者信息
-                    if (article.getUserId() != null) {
-                        vo.setUser(userMap.get(article.getUserId()));
+                    if (post.getUserId() != null) {
+                        vo.setUser(userMap.get(post.getUserId()));
                     }
                     return vo;
                 })

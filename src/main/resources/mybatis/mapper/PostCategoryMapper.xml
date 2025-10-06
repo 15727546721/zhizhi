@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.xu.infrastructure.persistent.dao.PostCategoryMapper">
+
+    <resultMap id="BaseResultMap" type="cn.xu.infrastructure.persistent.po.PostCategory">
+        <id property="id" column="id" jdbcType="BIGINT"/>
+        <result property="name" column="name" jdbcType="VARCHAR"/>
+        <result property="description" column="description" jdbcType="VARCHAR"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <resultMap id="CategoryResultMap" type="cn.xu.infrastructure.persistent.po.PostCategory">
+        <id property="id" column="id" jdbcType="BIGINT"/>
+        <result property="name" column="name" jdbcType="VARCHAR"/>
+        <result property="description" column="description" jdbcType="VARCHAR"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, name, description, create_time, update_time
+    </sql>
+
+    <sql id="Category_Column_List">
+        id, name, description, create_time, update_time
+    </sql>
+
+    <select id="selectPostIdsByCategoryId" resultType="java.lang.Long">
+        SELECT post_id
+        FROM post_category
+        WHERE category_id = #{categoryId}
+        ORDER BY create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="countByCategoryId" resultType="int">
+        SELECT COUNT(*)
+        FROM post_category
+        WHERE category_id = #{categoryId}
+    </select>
+
+    <select id="selectHotCategories" resultType="cn.xu.infrastructure.persistent.dao.PostCategoryMapper$CategoryStatistics">
+        SELECT 
+            c.id as categoryId,
+            c.name as categoryName,
+            c.description as categoryDescription,
+            COUNT(pc.category_id) as postCount
+        FROM category c
+        LEFT JOIN post_category pc ON c.id = pc.category_id
+        LEFT JOIN post p ON pc.post_id = p.id
+        WHERE p.type = #{postType}
+        GROUP BY c.id, c.name, c.description
+        ORDER BY postCount DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="selectAllCategories" resultMap="CategoryResultMap">
+        SELECT
+        <include refid="Category_Column_List"/>
+        FROM category
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="selectByCategoryName" resultMap="CategoryResultMap">
+        SELECT
+        <include refid="Category_Column_List"/>
+        FROM category
+        WHERE name = #{categoryName}
+    </select>
+
+</mapper>

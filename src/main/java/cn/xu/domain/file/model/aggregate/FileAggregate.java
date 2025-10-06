@@ -1,9 +1,9 @@
 package cn.xu.domain.file.model.aggregate;
 
 import cn.xu.domain.file.model.entity.FileEntity;
+import cn.xu.domain.file.model.valobj.FileMetadata;
 import cn.xu.domain.file.model.valobj.FileName;
 import cn.xu.domain.file.model.valobj.FileUrl;
-import cn.xu.domain.file.model.valobj.FileMetadata;
 import lombok.Data;
 import org.springframework.web.multipart.MultipartFile;
 

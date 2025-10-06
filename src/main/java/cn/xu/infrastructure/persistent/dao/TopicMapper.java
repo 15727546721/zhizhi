@@ -1,6 +1,5 @@
 package cn.xu.infrastructure.persistent.dao;
 
-import cn.xu.domain.essay.model.entity.TopicEntity;
 import cn.xu.infrastructure.persistent.po.Topic;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -8,66 +7,53 @@ import org.apache.ibatis.annotations.Param;
 import java.util.List;
 
 /**
- * 话题分类数据访问接口
+ * 话题数据访问接口
  */
 @Mapper
 public interface TopicMapper {
     /**
-     * 插入分类
+     * 添加话题
      *
-     * @param categoryPO 分类PO
-     * @return 影响行数
+     * @param name 话题名称
      */
-    int insert(Topic categoryPO);
-
+    void addTopic(@Param("name") String name);
+    
     /**
-     * 更新分类
+     * 根据ID获取话题
      *
-     * @param categoryPO 分类PO
-     * @return 影响行数
+     * @param id 话题ID
+     * @return 话题PO
      */
-    int update(Topic categoryPO);
-
+    Topic getTopicById(@Param("id") Long id);
+    
     /**
-     * 删除分类
+     * 获取所有话题
      *
-     * @param id 分类ID
-     * @return 影响行数
+     * @return 话题PO列表
      */
-    int deleteById(@Param("id") Long id);
-
+    List<Topic> getAllTopics();
+    
     /**
-     * 根据ID查询分类
+     * 搜索话题
      *
-     * @param id 分类ID
-     * @return 分类PO
+     * @param keyword 搜索关键词
+     * @return 话题PO列表
      */
-    Topic findById(@Param("id") Long id);
-
+    List<Topic> searchTopics(@Param("keyword") String keyword);
+    
     /**
-     * 查询所有分类
+     * 获取热门话题
      *
-     * @return 分类PO列表
+     * @param limit 限制数量
+     * @return 话题PO列表
      */
-    List<Topic> findAll();
-
+    List<Topic> getHotTopics(@Param("limit") int limit);
+    
     /**
-     * 根据名称查询分类
+     * 根据名称查询话题
      *
-     * @param name 分类名称
-     * @return 分类PO
+     * @param name 话题名称
+     * @return 话题PO
      */
     Topic findByName(@Param("name") String name);
-
-    /**
-     * 根据名称分页查询分类
-     *
-     * @param name
-     * @param offset
-     * @param pageSize
-     * @return
-     */
-    List<Topic> getPageByName(@Param("name") String name,
-                              @Param("offset") int offset,
-                              @Param("pageSize") Integer pageSize);
 }

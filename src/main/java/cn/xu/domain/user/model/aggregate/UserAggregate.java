@@ -1,13 +1,9 @@
 package cn.xu.domain.user.model.aggregate;
 
-import cn.xu.application.common.ResponseCode;
+import cn.xu.common.ResponseCode;
+import cn.xu.common.exception.BusinessException;
 import cn.xu.domain.user.model.entity.RoleEntity;
 import cn.xu.domain.user.model.entity.UserEntity;
-import cn.xu.domain.user.model.valobj.Email;
-import cn.xu.domain.user.model.valobj.Password;
-import cn.xu.domain.user.model.valobj.Phone;
-import cn.xu.domain.user.model.valobj.Username;
-import cn.xu.infrastructure.common.exception.BusinessException;
 import lombok.Builder;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;

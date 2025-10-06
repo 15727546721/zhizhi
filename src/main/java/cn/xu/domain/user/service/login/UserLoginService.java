@@ -1,17 +1,16 @@
 package cn.xu.domain.user.service.login;
 
-import cn.dev33.satoken.secure.SaSecureUtil;
 import cn.dev33.satoken.stp.StpUtil;
-import cn.xu.application.common.ResponseCode;
+import cn.xu.common.ResponseCode;
+import cn.xu.common.exception.BusinessException;
 import cn.xu.domain.user.constant.UserErrorCode;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.model.entity.UserInfoEntity;
 import cn.xu.domain.user.model.valobj.Password;
-import cn.xu.domain.user.model.vo.LoginFormVO;
-import cn.xu.domain.user.model.vo.UserFormVO;
+import cn.xu.domain.user.model.vo.LoginFormResponse;
+import cn.xu.domain.user.model.vo.UserFormResponse;
 import cn.xu.domain.user.repository.IUserRepository;
 import cn.xu.domain.user.service.IUserLoginService;
-import cn.xu.infrastructure.common.exception.BusinessException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ObjectUtils;
@@ -32,17 +31,17 @@ public class UserLoginService implements IUserLoginService {
     private IUserRepository userRepository;
 
     @Override
-    public String loginByAdmin(LoginFormVO loginFormVO) {
-        if (ObjectUtils.isEmpty(loginFormVO)) {
+    public String loginByAdmin(LoginFormResponse loginFormResponse) {
+        if (ObjectUtils.isEmpty(loginFormResponse)) {
             throw new BusinessException(ResponseCode.NULL_PARAMETER.getCode(), "登录参数不能为空");
         }
-        UserFormVO userFormVO = userRepository.findUsernameAndPasswordByUsername(loginFormVO.getUsername());
+        UserFormResponse userFormVO = userRepository.findUsernameAndPasswordByUsername(loginFormResponse.getUsername());
         if (ObjectUtils.isEmpty(userFormVO)) {
             throw new BusinessException(UserErrorCode.USER_NOT_FOUND.getCode(), "用户不存在");
         }
         
         // 使用Password.matches方法验证密码
-        if (!Password.matches(loginFormVO.getPassword(), userFormVO.getPassword())) {
+        if (!Password.matches(loginFormResponse.getPassword(), userFormVO.getPassword())) {
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "密码错误");
         }
 

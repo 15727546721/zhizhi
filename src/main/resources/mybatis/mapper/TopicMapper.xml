@@ -5,62 +5,60 @@
     <resultMap id="BaseResultMap" type="cn.xu.infrastructure.persistent.po.Topic">
         <id column="id" property="id" jdbcType="BIGINT"/>
         <result column="name" property="name" jdbcType="VARCHAR"/>
+        <result column="description" property="description" jdbcType="VARCHAR"/>
+        <result column="is_recommended" property="isRecommended" jdbcType="TINYINT"/>
+        <result column="usage_count" property="usageCount" jdbcType="INTEGER"/>
         <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
         <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        id, name, create_time, update_time
+        id, name, description, is_recommended, usage_count, create_time, update_time
     </sql>
 
-    <insert id="insert" parameterType="cn.xu.infrastructure.persistent.po.Topic">
-        insert into `topic` (name, description, sort, create_time, update_time)
-        values (#{name}, #{description}, #{sort}, now(), now())
+    <insert id="addTopic">
+        INSERT INTO `topic` (name, create_time, update_time)
+        VALUES (#{name}, NOW(), NOW())
     </insert>
 
-    <update id="update" parameterType="cn.xu.infrastructure.persistent.po.Topic">
-        update `topic`
-        set name        = #{name},
-            description = #{description},
-            sort        = #{sort},
-            update_time = now()
-        where id = #{id}
-    </update>
-
-    <delete id="deleteById" parameterType="java.lang.Long">
-        delete
-        from `topic`
-        where id = #{id}
-    </delete>
-
-    <select id="findById" resultMap="BaseResultMap" parameterType="java.lang.Long">
-        select
+    <select id="getTopicById" resultMap="BaseResultMap">
+        SELECT
         <include refid="Base_Column_List"/>
-        from `topic`
-        where id = #{id}
+        FROM `topic`
+        WHERE id = #{id}
     </select>
 
-    <select id="findAll" resultMap="BaseResultMap">
-        select
+    <select id="getAllTopics" resultMap="BaseResultMap">
+        SELECT
         <include refid="Base_Column_List"/>
-        from `topic`
-        order by sort asc
+        FROM `topic`
+        ORDER BY usage_count DESC
     </select>
 
-    <select id="findByName" resultMap="BaseResultMap" parameterType="java.lang.String">
-        select
+    <select id="searchTopics" resultMap="BaseResultMap">
+        SELECT
         <include refid="Base_Column_List"/>
-        from `topic`
-        where name = #{name}
+        FROM `topic`
+        <where>
+            <if test="keyword != null and keyword != ''">
+                name LIKE CONCAT('%', #{keyword}, '%')
+            </if>
+        </where>
+        ORDER BY usage_count DESC
     </select>
-    <select id="getPageByName" resultType="cn.xu.domain.essay.model.entity.TopicEntity">
-        select
+
+    <select id="getHotTopics" resultMap="BaseResultMap">
+        SELECT
         <include refid="Base_Column_List"/>
-        from `topic`
-        <if test="name!= null and name!= ''">
-            where name like concat('%', #{name}, '%')
-        </if>
-        order by create_time asc
-        limit #{offset}, #{pageSize}
+        FROM `topic`
+        ORDER BY usage_count DESC
+        LIMIT #{limit}
     </select>
-</mapper> 
+
+    <select id="findByName" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM `topic`
+        WHERE name = #{name}
+    </select>
+</mapper>

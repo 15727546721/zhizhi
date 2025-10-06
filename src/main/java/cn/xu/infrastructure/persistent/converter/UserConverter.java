@@ -37,6 +37,7 @@ public class UserConverter {
                 .username(entity.getUsernameValue())
                 .email(entity.getEmailValue())
                 .nickname(entity.getNickname())
+                .password(entity.getPassword().getValue())
                 .avatar(entity.getAvatar())
                 .gender(entity.getGender())
                 .phone(entity.getPhoneValue())
@@ -52,12 +53,12 @@ public class UserConverter {
                 .createTime(entity.getCreateTime() != null ? entity.getCreateTime() : LocalDateTime.now())
                 .updateTime(entity.getUpdateTime() != null ? entity.getUpdateTime() : LocalDateTime.now())
                 .build();
-        
-        // 处理密码字段
-        if (entity.getPassword() != null) {
-            // 使用SaSecureUtil对密码进行加密
-            user.setPassword(SaSecureUtil.sha256(entity.getPassword().getValue()));
-        }
+
+//        // 处理密码字段
+//        if (entity.getPassword() != null) {
+//            // 使用SaSecureUtil对密码进行加密
+//            user.setPassword(SaSecureUtil.sha256(entity.getPassword().getValue()));
+//        }
         
         return user;
     }
@@ -73,9 +74,13 @@ public class UserConverter {
             return null;
         }
         
+        UserEntity.UserStatus status = dataObject.getStatus() != null ? 
+            UserEntity.UserStatus.fromCode(dataObject.getStatus()) : UserEntity.UserStatus.NORMAL;
+        
         return UserEntity.builder()
                 .id(dataObject.getId())
                 .username(dataObject.getUsername() != null ? new Username(dataObject.getUsername()) : null)
+                .password(dataObject.getPassword() != null ? Password.ofEncoded(dataObject.getPassword()) : null) // 使用已加密的密码构造
                 .email(dataObject.getEmail() != null ? new Email(dataObject.getEmail()) : null)
                 .nickname(dataObject.getNickname())
                 .avatar(dataObject.getAvatar())
@@ -83,7 +88,7 @@ public class UserConverter {
                 .phone(dataObject.getPhone() != null ? new Phone(dataObject.getPhone()) : null)
                 .region(dataObject.getRegion())
                 .birthday(dataObject.getBirthday())
-                .status(UserEntity.UserStatus.fromCode(dataObject.getStatus()))
+                .status(status)
                 .description(dataObject.getDescription())
                 .followCount(dataObject.getFollowCount())
                 .fansCount(dataObject.getFansCount())

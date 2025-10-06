@@ -14,7 +14,9 @@ public class RedisKeyManager {
 
     private static final String SEPARATOR = ":";
 
-    /** 拼接 Redis Key，自动使用冒号分隔 */
+    /**
+     * 拼接 Redis Key，自动使用冒号分隔
+     */
     private static String key(Object... parts) {
         return String.join(SEPARATOR, Arrays.stream(parts)
                 .filter(Objects::nonNull)
@@ -22,38 +24,43 @@ public class RedisKeyManager {
                 .toArray(String[]::new));
     }
 
-    // ===================== 文章模块 =====================
+    // ===================== 帖子模块 =====================
 
-    public static String articleDetailKey(Long articleId) {
-        return key("article", "detail", articleId);
+    public static String postDetailKey(Long postId) {
+        return key("post", "detail", postId);
     }
 
-    public static String articleViewCountKey(Long articleId) {
-        return key("article", "view", "count", articleId);
+    public static String postViewCountKey(Long postId) {
+        return key("post", "view", "count", postId);
     }
 
-    public static String articleLikeCountKey(Long articleId) {
-        return key("article", "like", "count", articleId);
+    public static String postLikeCountKey(Long postId) {
+        return key("post", "like", "count", postId);
     }
 
-    public static String articleCollectCountKey(Long articleId) {
-        return key("article", "collect", "count", articleId);
+    public static String postCollectCountKey(Long postId) {
+        return key("post", "collect", "count", postId);
     }
 
-    public static String articleCommentCountKey(Long articleId) {
-        return key("article", "comment", "count", articleId);
+    public static String postCommentCountKey(Long postId) {
+        return key("post", "comment", "count", postId);
     }
 
-    public static String articleHotScoreKey(Long articleId) {
-        return key("article", "hot", "score", articleId);
+    public static String postHotScoreKey(Long postId) {
+        return key("post", "hot", "score", postId);
     }
 
-    public static String articleHotRankKey() {
-        return key("article", "rank", "hot");
+    public static String postHotRankKey() {
+        return key("post", "rank", "hot");
     }
 
-    public static String articleViewIpKey(Long articleId) {
-        return key("article", "view", "ip", articleId);
+    // 帖子热度缓存key (用于临时存储点赞、收藏、评论等操作对热度的影响)
+    public static String postHotCacheKey(Long postId) {
+        return key("post", "hot", postId);
+    }
+
+    public static String postViewIpKey(Long postId) {
+        return key("post", "view", "ip", postId);
     }
 
     // ===================== 用户模块 =====================
@@ -70,16 +77,16 @@ public class RedisKeyManager {
         return key("user", "followers", userId);
     }
 
-    public static String userLikedArticlesKey(Long userId) {
-        return key("user", "like", "article", userId);
+    public static String userLikedPostsKey(Long userId) {
+        return key("user", "like", "post", userId);
     }
 
-    public static String userCollectedArticlesKey(Long userId) {
+    public static String userCollectedPostsKey(Long userId) {
         return key("user", "collect", userId);
     }
 
-    public static String userArticleCountKey(Long userId) {
-        return key("user", "article", "count", userId);
+    public static String userPostCountKey(Long userId) {
+        return key("user", "post", "count", userId);
     }
 
     public static String userPointsKey(Long userId) {
@@ -89,15 +96,15 @@ public class RedisKeyManager {
     // ===================== 点赞模块 =====================
 
     public static String likeRelationKey(LikeType type, Long targetId) {
-        return key("like", type.name().toLowerCase(), targetId);
+        return key("like", type.getRedisKeyName(), targetId);
     }
 
     public static String likeCountKey(LikeType type, Long targetId) {
-        return key("like", "count", type.name().toLowerCase(), targetId);
+        return key("like", "count", type.getRedisKeyName(), targetId);
     }
 
     public static String likeRankKey(LikeType type) {
-        return key("like", "rank", type.name().toLowerCase());
+        return key("like", "rank", type.getRedisKeyName());
     }
 
     // ===================== 评论模块 =====================
@@ -117,10 +124,15 @@ public class RedisKeyManager {
         return key("comment", "count", targetType, targetId);
     }
 
+    // 评论热度衰减key
+    public static String commentHotDecayKey() {
+        return key("comment", "hot", "zset");
+    }
+
     // ===================== 分类 & 标签模块 =====================
 
-    public static String tagArticleCountKey(Long tagId) {
-        return key("tag", "article", "count", tagId);
+    public static String tagPostCountKey(Long tagId) {
+        return key("tag", "post", "count", tagId);
     }
 
     public static String tagHotKey() {
@@ -131,8 +143,8 @@ public class RedisKeyManager {
         return key("category", "tree");
     }
 
-    public static String categoryArticleKey(Long categoryId) {
-        return key("category", "article", categoryId);
+    public static String categoryPostKey(Long categoryId) {
+        return key("category", "post", categoryId);
     }
 
     // ===================== 通知模块 =====================

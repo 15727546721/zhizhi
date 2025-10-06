@@ -1,7 +1,7 @@
 package cn.xu.infrastructure.persistent.dao;
 
-import cn.xu.domain.article.model.aggregate.ArticleAndTagAgg;
-import cn.xu.infrastructure.persistent.po.ArticleTag;
+import cn.xu.domain.post.model.aggregate.PostAndTagAgg;
+import cn.xu.infrastructure.persistent.po.Tag;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -9,24 +9,37 @@ import java.util.List;
 
 @Mapper
 public interface TagMapper {
-    void insert(ArticleTag articleTag);
+    void addTag(@Param("name") String name);
 
-    List<ArticleTag> selectListByPage(@Param("page") int page, @Param("size") int size);
-
-    void update(ArticleTag articleTag);
-
-    void delete(List<Long> idList);
-
-    ArticleTag selectById(@Param("id") Long tagId);
-
-    List<ArticleTag> selectList();
-
-    List<ArticleTag> selectByArticleId(@Param("articleId") Long articleId);
+    List<String> getTagNamesByPostId(Long postId);
 
     /**
      *
-     * @param articleIds
+     * @param postIds
      * @return
      */
-    List<ArticleAndTagAgg> selectByArticleIds(@Param("articleIds") List<Long> articleIds);
+    List<PostAndTagAgg> selectByPostIds(@Param("postIds") List<Long> postIds);
+    
+    /**
+     * 搜索标签
+     *
+     * @param keyword 搜索关键词
+     * @return 标签列表
+     */
+    List<Tag> searchTags(@Param("keyword") String keyword);
+    
+    /**
+     * 获取热门标签
+     *
+     * @param limit 限制数量
+     * @return 标签列表
+     */
+    List<Tag> getHotTags(@Param("limit") int limit);
+    
+    /**
+     * 获取所有标签
+     *
+     * @return 标签列表
+     */
+    List<Tag> getAllTags();
 }

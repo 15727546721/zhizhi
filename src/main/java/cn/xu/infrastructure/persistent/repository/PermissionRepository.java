@@ -1,10 +1,11 @@
 package cn.xu.infrastructure.persistent.repository;
 
-import cn.xu.application.common.ResponseCode;
+import cn.xu.common.ResponseCode;
+import cn.xu.common.exception.BusinessException;
+import cn.xu.common.response.PageResponse;
 import cn.xu.domain.permission.model.entity.MenuEntity;
 import cn.xu.domain.permission.model.entity.RoleEntity;
 import cn.xu.domain.permission.repository.IPermissionRepository;
-import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.persistent.converter.MenuConverter;
 import cn.xu.infrastructure.persistent.converter.RoleConverter;
 import cn.xu.infrastructure.persistent.dao.MenuMapper;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * 权限仓储实现类
@@ -36,54 +38,49 @@ public class PermissionRepository implements IPermissionRepository {
     private final MenuConverter menuConverter;
 
     @Override
-    public List<String> findRolesByUserid(Long userid) {
-        List<String> roles = roleDao.selectRolesByUserid(userid);
-        return roles;
+    public List<String> findRolesByUserId(Long userId) {
+        return roleDao.selectRolesByUserid(userId);
     }
 
     @Override
-    public List<MenuEntity> selectMenuList() {
+    public List<MenuEntity> findAllMenus() {
         List<Menu> menuList = menuDao.selectMenuList();
         return menuConverter.toDomainEntities(menuList);
     }
 
     @Override
-    public MenuEntity selectMenuById(Long id) {
+    public Optional<MenuEntity> findMenuById(Long id) {
         Menu menu = menuDao.selectMenuById(id);
-        return menuConverter.toDomainEntity(menu);
+        return Optional.ofNullable(menuConverter.toDomainEntity(menu));
     }
 
     @Override
-    public List<RoleEntity> selectRolePage(String name, int page, int size) {
-        int offset = Math.max(0, (page - 1) * size);
+    public PageResponse<List<RoleEntity>> findRolePage(String name, int offset, int size) {
         List<Role> roleList = roleDao.selectRolePage(name, offset, size);
-        return roleConverter.toDomainEntities(roleList);
+        List<RoleEntity> roleEntities = roleConverter.toDomainEntities(roleList);
+        long total = roleDao.countRole(name);
+        return PageResponse.ofList(offset / size + 1, size, total, roleEntities);
     }
 
     @Override
-    public long countRole(String name) {
-        long count = roleDao.countRole(name);
-        return count;
+    public Optional<Long> findRoleIdByUserId(long userId) {
+        Long roleId = roleDao.selectRoleIdByUserId(userId);
+        return Optional.ofNullable(roleId);
     }
 
     @Override
-    public Long selectRoleIdByUserId(long userId) {
-        return roleDao.selectRoleIdByUserId(userId);
-    }
-
-    @Override
-    public List<Long> selectMenuIdByRoleMenu(Long roleId) {
+    public List<Long> findMenuIdsByRoleId(Long roleId) {
         return roleDao.selectMenuIdByRoleMenu(roleId);
     }
 
     @Override
-    public RoleEntity selectRoleById(Long roleId) {
+    public Optional<RoleEntity> findRoleById(Long roleId) {
         Role role = roleDao.selectRoleById(roleId);
-        return roleConverter.toDomainEntity(role);
+        return Optional.ofNullable(roleConverter.toDomainEntity(role));
     }
 
     @Override
-    public List<Long> selectAllMenuId() {
+    public List<Long> findAllMenuIds() {
         return menuDao.selectAllMenuId();
     }
 
@@ -98,24 +95,19 @@ public class PermissionRepository implements IPermissionRepository {
     }
 
     @Override
-    public void addRole(RoleEntity roleEntity) {
+    public RoleEntity saveRole(RoleEntity roleEntity) {
         Role role = roleConverter.toDataObject(roleEntity);
         try {
-            roleDao.insertRole(role);
+            if (role.getId() == null) {
+                roleDao.insertRole(role);
+                roleEntity.setId(role.getId());
+            } else {
+                roleDao.updateRole(role);
+            }
+            return roleConverter.toDomainEntity(role);
         } catch (Exception e) {
-            log.error("新增角色失败", e);
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "新增角色失败");
-        }
-    }
-
-    @Override
-    public void updateRole(RoleEntity roleEntity) {
-        try {
-            Role role = roleConverter.toDataObject(roleEntity);
-            roleDao.updateRole(role);
-        } catch (Exception e) {
-            log.error("更新角色失败", e);
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "更新角色失败");
+            log.error("保存角色失败", e);
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "保存角色失败");
         }
     }
 
@@ -137,15 +129,13 @@ public class PermissionRepository implements IPermissionRepository {
     }
 
     @Override
-    public void addMenu(MenuEntity menuEntity) {
+    public void saveMenu(MenuEntity menuEntity) {
         Menu menu = menuConverter.toDataObject(menuEntity);
-        menuDao.addMenu(menu);
-    }
-
-    @Override
-    public void updateMenu(MenuEntity menuEntity) {
-        Menu menu = menuConverter.toDataObject(menuEntity);
-        menuDao.updateMenu(menu);
+        if (menu.getId() == null) {
+            menuDao.addMenu(menu);
+        } else {
+            menuDao.updateMenu(menu);
+        }
     }
 
     @Override
@@ -154,23 +144,23 @@ public class PermissionRepository implements IPermissionRepository {
     }
 
     @Override
-    public List<Long> getMenuById(long userId) {
+    public List<Long> findMenuIdsByUserId(long userId) {
         return menuDao.getMenuById(userId);
     }
 
     @Override
-    public List<MenuEntity> listByIds(List<Long> menuIds) {
+    public List<MenuEntity> findMenusByIds(List<Long> menuIds) {
         List<Menu> menuList = menuDao.listByIds(menuIds);
         return menuConverter.toDomainEntities(menuList);
     }
 
     @Override
-    public List<String> findPermissionsByUserid(Long userId) {
+    public List<String> findPermissionsByUserId(Long userId) {
         return menuDao.findPermissionsByUserid(userId);
     }
     
     @Override
-    public List<String> findDirectPermissionsByUserid(Long userId) {
+    public List<String> findDirectPermissionsByUserId(Long userId) {
         return menuDao.findDirectPermissionsByUserid(userId);
     }
     

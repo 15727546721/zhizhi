@@ -1,12 +1,12 @@
 package cn.xu.domain.comment.service;
 
-import cn.xu.application.common.ResponseCode;
+import cn.xu.common.ResponseCode;
+import cn.xu.common.exception.BusinessException;
 import cn.xu.domain.comment.event.CommentDeletedEvent;
 import cn.xu.domain.comment.event.CommentEventPublisher;
 import cn.xu.domain.comment.model.entity.CommentEntity;
 import cn.xu.domain.comment.repository.ICommentRepository;
 import cn.xu.domain.user.service.IUserService;
-import cn.xu.infrastructure.common.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

@@ -1,9 +1,10 @@
 package cn.xu.api.system.controller;
 
-import cn.xu.application.common.ResponseCode;
+import cn.xu.common.ResponseCode;
+import cn.xu.common.annotation.ApiOperationLog;
+import cn.xu.common.response.ResponseEntity;
 import cn.xu.domain.essay.command.CreateTopicCommand;
 import cn.xu.domain.essay.service.ITopicService;
-import cn.xu.infrastructure.common.response.ResponseEntity;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +29,7 @@ public class SysTopicController {
 
     @Operation(summary = "创建话题")
     @PostMapping("/create")
+    @ApiOperationLog(description = "创建话题")
     public ResponseEntity<Void> createTopic(@RequestBody @Valid CreateTopicCommand command) {
         log.info("创建话题: {}", command);
         topicService.createTopic(command);

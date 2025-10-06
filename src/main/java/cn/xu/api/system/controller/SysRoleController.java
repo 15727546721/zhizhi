@@ -3,13 +3,15 @@ package cn.xu.api.system.controller;
 import cn.xu.api.web.model.dto.permission.RoleAddOrUpdateRequest;
 import cn.xu.api.web.model.dto.permission.RoleMenuRequest;
 import cn.xu.api.web.model.dto.permission.RoleRequest;
-import cn.xu.application.common.ResponseCode;
+import cn.xu.common.ResponseCode;
+import cn.xu.common.annotation.ApiOperationLog;
+import cn.xu.common.exception.BusinessException;
+import cn.xu.common.response.PageResponse;
+import cn.xu.common.response.ResponseEntity;
 import cn.xu.domain.permission.model.entity.RoleEntity;
 import cn.xu.domain.permission.service.IPermissionService;
-import cn.xu.infrastructure.common.exception.BusinessException;
-import cn.xu.infrastructure.common.response.PageResponse;
-import cn.xu.infrastructure.common.response.ResponseEntity;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,6 +28,7 @@ public class SysRoleController {
 
     @GetMapping("/list")
     @Operation(summary = "角色列表")
+    @ApiOperationLog(description = "获取角色列表")
     public ResponseEntity<PageResponse<List<RoleEntity>>> selectRolePage(RoleRequest roleRequest) {
 
         // 参数校验和默认值设置
@@ -37,7 +40,7 @@ public class SysRoleController {
         }
 
         // 查询角色列表
-        PageResponse<List<RoleEntity>> pageResponse = permissionService.selectRolePage(
+        PageResponse<List<RoleEntity>> pageResponse = permissionService.findRolePage(
                 roleRequest.getName(),
                 roleRequest.getPageNo(),
                 roleRequest.getPageSize()
@@ -52,8 +55,9 @@ public class SysRoleController {
 
     @GetMapping("queryUserRole")
     @Operation(summary = "获取当前登录用户所拥有的权限")
+    @ApiOperationLog(description = "获取当前登录用户所拥有的权限")
     public ResponseEntity<List<Long>> getCurrentUserRole() {
-        List<Long> currentUserRole = permissionService.getCurrentUserRole();
+        List<Long> currentUserRole = permissionService.getCurrentUserRoleMenuIds();
         return ResponseEntity.<List<Long>>builder()
                 .data(currentUserRole)
                 .info("获取当前登录用户所拥有的权限成功")
@@ -63,11 +67,12 @@ public class SysRoleController {
 
     @GetMapping("getRoleMenuIds")
     @Operation(summary = "获取角色的菜单权限")
-    public ResponseEntity<List<Long>> selectRoleMenuById(@RequestParam("roleId") Long roleId) {
+    @ApiOperationLog(description = "获取角色的菜单权限")
+    public ResponseEntity<List<Long>> selectRoleMenuById(@Parameter(description = "角色ID") @RequestParam("roleId") Long roleId) {
         if (roleId == null) {
             throw new BusinessException(ResponseCode.NULL_PARAMETER.getCode(), "角色ID不能为空");
         }
-        List<Long> roleMenuIds = permissionService.selectRoleMenuById(roleId);
+        List<Long> roleMenuIds = permissionService.findRoleMenuIdsById(roleId);
         return ResponseEntity.<List<Long>>builder()
                 .data(roleMenuIds)
                 .info("获取角色菜单权限成功")
@@ -77,6 +82,7 @@ public class SysRoleController {
 
     @PostMapping("updateRoleMenus")
     @Operation(summary = "分配角色权限")
+    @ApiOperationLog(description = "分配角色权限")
     public ResponseEntity assignRoleMenus(@RequestBody RoleMenuRequest roleMenuRequest) {
         permissionService.assignRoleMenus(roleMenuRequest);
         return ResponseEntity.builder()
@@ -87,6 +93,7 @@ public class SysRoleController {
 
     @PostMapping(value = "add")
     @Operation(summary = "添加角色")
+    @ApiOperationLog(description = "添加角色")
     public ResponseEntity addRole(@RequestBody RoleAddOrUpdateRequest role) {
         permissionService.addRole(role);
         return ResponseEntity.builder()
@@ -97,6 +104,7 @@ public class SysRoleController {
 
     @PostMapping("/update")
     @Operation(summary = "修改角色")
+    @ApiOperationLog(description = "修改角色")
     public ResponseEntity updateRole(@RequestBody RoleAddOrUpdateRequest role) {
         permissionService.updateRole(role);
         return ResponseEntity.builder()
@@ -107,7 +115,8 @@ public class SysRoleController {
 
     @PostMapping("/delete")
     @Operation(summary = "删除角色")
-    public ResponseEntity deleteRole(@RequestBody List<Long> ids) {
+    @ApiOperationLog(description = "删除角色")
+    public ResponseEntity deleteRole(@Parameter(description = "角色ID列表") @RequestBody List<Long> ids) {
         permissionService.deleteRoleByIds(ids);
         return ResponseEntity.builder()
                 .info("删除角色成功")

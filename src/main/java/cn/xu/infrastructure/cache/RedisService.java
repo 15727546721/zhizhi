@@ -49,11 +49,31 @@ public class RedisService {
      */
     public String getConnectionPoolInfo() {
         try {
-            // 获取连接池信息（需要根据具体的连接池实现来获取）
-            return "Redis连接池状态正常";
+            // 获取Redis连接
+            try (org.springframework.data.redis.connection.RedisConnection connection = 
+                 redisTemplate.getConnectionFactory().getConnection()) {
+                // 获取连接信息
+                java.util.Properties info = connection.info();
+                
+                // 提取关键连接池信息
+                String connectedClients = info.getProperty("connected_clients", "0");
+                String usedMemory = info.getProperty("used_memory_human", "0");
+                String totalKeys = "0";
+                
+                // 尝试获取键空间信息
+                try {
+                    String db0Info = info.getProperty("db0", "keys=0,expires=0,avg_ttl=0");
+                    totalKeys = db0Info.split(",")[0].split("=")[1];
+                } catch (Exception e) {
+                    log.warn("获取键数量信息失败: {}", e.getMessage());
+                }
+                
+                return String.format("连接数: %s, 内存使用: %s, 键总数: %s", 
+                                   connectedClients, usedMemory, totalKeys);
+            }
         } catch (Exception e) {
             log.error("获取Redis连接池信息失败: {}", e.getMessage());
-            return "无法获取连接池信息";
+            return "无法获取连接池信息: " + e.getMessage();
         }
     }
 
@@ -434,5 +454,38 @@ public class RedisService {
      */
     public long pfCount(String key) {
         return redisTemplate.opsForHyperLogLog().size(key);
+    }
+    
+    // ===============================Post View Count=================================
+    
+    /**
+     * 增加帖子浏览量
+     * @param postId 帖子ID
+     */
+    public void incrementViewCount(Long postId) {
+        if (postId == null) {
+            return;
+        }
+        
+        String key = "post:view:count:" + postId;
+        redisTemplate.opsForValue().increment(key, 1);
+        
+        // 设置过期时间，避免key无限增长
+        redisTemplate.expire(key, 24, TimeUnit.HOURS);
+    }
+    
+    /**
+     * 获取帖子浏览量
+     * @param postId 帖子ID
+     * @return 浏览量
+     */
+    public Long getViewCount(Long postId) {
+        if (postId == null) {
+            return 0L;
+        }
+        
+        String key = "post:view:count:" + postId;
+        Object count = redisTemplate.opsForValue().get(key);
+        return count != null ? Long.valueOf(count.toString()) : 0L;
     }
 } 

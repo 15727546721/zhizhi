@@ -34,8 +34,8 @@ public class CommentHotCachePreloadTask {
         log.info("开始执行评论热门缓存预热任务");
         
         try {
-            // 预加载文章评论热门数据
-            preloadHotComments(CommentType.ARTICLE, 100);
+            // 预加载帖子评论热门数据
+            preloadHotComments(CommentType.POST, 100);
             
             // 预加载随笔评论热门数据
             preloadHotComments(CommentType.ESSAY, 100);

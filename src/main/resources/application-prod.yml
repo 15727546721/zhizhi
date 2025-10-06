@@ -61,8 +61,8 @@ app:
   elasticsearch:
     index:
       comments: comments
-      articles: articles
-  article:
+      posts: posts
+  post:
     query:
       strategy: elasticsearch  # 在生产环境中使用Elasticsearch策略
 

@@ -61,8 +61,8 @@ app:
   elasticsearch:
     index:
       comments: comments
-      articles: articles
-  article:
+      posts: posts
+  post:
     query:
       strategy: mysql  # 在测试环境中使用MySQL策略
 

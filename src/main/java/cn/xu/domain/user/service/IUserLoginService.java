@@ -1,14 +1,14 @@
 package cn.xu.domain.user.service;
 
 import cn.xu.domain.user.model.entity.UserInfoEntity;
-import cn.xu.domain.user.model.vo.LoginFormVO;
+import cn.xu.domain.user.model.vo.LoginFormResponse;
 
 public interface IUserLoginService {
 
     /**
      * 登录
      */
-    String loginByAdmin(LoginFormVO loginFormVO);
+    String loginByAdmin(LoginFormResponse loginFormResponse);
 
     /**
      * 根据token获取用户信息

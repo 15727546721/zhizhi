@@ -6,7 +6,9 @@ import cn.xu.domain.like.model.LikeType;
 /**
  * 点赞仓储接口
  * 遵循DDD原则，只处理点赞领域实体的操作
+ * @deprecated 请使用ILikeAggregateRepository替代
  */
+@Deprecated
 public interface ILikeRepository {
     /**
      * 保存点赞记录

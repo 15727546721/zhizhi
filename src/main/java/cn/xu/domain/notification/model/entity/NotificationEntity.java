@@ -1,8 +1,8 @@
 package cn.xu.domain.notification.model.entity;
 
+import cn.xu.common.exception.BusinessException;
 import cn.xu.domain.notification.model.valueobject.BusinessType;
 import cn.xu.domain.notification.model.valueobject.NotificationType;
-import cn.xu.infrastructure.common.exception.BusinessException;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

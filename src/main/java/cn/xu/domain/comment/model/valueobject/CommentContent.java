@@ -1,7 +1,7 @@
 package cn.xu.domain.comment.model.valueobject;
 
-import cn.xu.infrastructure.common.exception.BusinessException;
-import cn.xu.infrastructure.common.utils.SensitiveWordFilter;
+import cn.xu.common.exception.BusinessException;
+import cn.xu.common.utils.SensitiveWordFilter;
 import lombok.Getter;
 
 /**
@@ -16,6 +16,15 @@ public class CommentContent {
     
     private final String value;
     
+    // 内容类型枚举
+    public enum ContentType {
+        TEXT,       // 纯文本
+        MARKDOWN,   // Markdown格式
+        HTML        // HTML格式
+    }
+    
+    private final ContentType contentType;
+    
     // 注入敏感词过滤器
     private static SensitiveWordFilter sensitiveWordFilter;
     
@@ -24,6 +33,10 @@ public class CommentContent {
     }
 
     public CommentContent(String content) {
+        this(content, ContentType.TEXT); // 默认为纯文本
+    }
+
+    public CommentContent(String content, ContentType contentType) {
         if (content == null || content.trim().isEmpty()) {
             throw new BusinessException("评论内容不能为空");
         }
@@ -43,11 +56,12 @@ public class CommentContent {
         }
         
         // 检查是否为垃圾内容
-        if (isSpamContent(trimmedContent)) {
-            throw new BusinessException("请发表有意义的评论");
-        }
+//        if (isSpamContent(trimmedContent)) {
+//            throw new BusinessException("请发表有意义的评论");
+//        }
         
         this.value = trimmedContent;
+        this.contentType = contentType != null ? contentType : ContentType.TEXT;
     }
 
     private boolean isSpamContent(String content) {
@@ -82,18 +96,104 @@ public class CommentContent {
         String meaninglessPattern = "^[!@#$%^&*()_+\\-=\\[\\]{}|;':\",./<>?~`]+$";
         return content.matches(meaninglessPattern);
     }
+    
+    /**
+     * 获取内容预览（截取前100个字符）
+     * 
+     * @return 内容预览
+     */
+    public String getPreview() {
+        if (value == null) {
+            return "";
+        }
+        if (value.length() <= 100) {
+            return value;
+        }
+        return value.substring(0, 100) + "...";
+    }
+    
+    /**
+     * 获取格式化的内容（处理换行符等）
+     * 
+     * @return 格式化后的内容
+     */
+    public String getFormattedContent() {
+        if (value == null) {
+            return "";
+        }
+        // 将换行符替换为HTML的<br>标签
+        return value.replace("\n", "<br>");
+    }
+    
+    /**
+     * 获取纯文本内容（去除HTML标签）
+     * 
+     * @return 纯文本内容
+     */
+    public String getPlainText() {
+        if (value == null) {
+            return "";
+        }
+        // 简单的HTML标签去除
+        return value.replaceAll("<[^>]*>", "");
+    }
+    
+    /**
+     * 获取内容长度
+     * 
+     * @return 内容长度
+     */
+    public int getLength() {
+        return value != null ? value.length() : 0;
+    }
+    
+    /**
+     * 判断内容是否包含指定关键词
+     * 
+     * @param keyword 关键词
+     * @return 是否包含关键词
+     */
+    public boolean containsKeyword(String keyword) {
+        if (value == null || keyword == null) {
+            return false;
+        }
+        return value.contains(keyword);
+    }
+    
+    /**
+     * 获取内容的单词数（简单实现）
+     * 
+     * @return 单词数
+     */
+    public int getWordCount() {
+        if (value == null || value.isEmpty()) {
+            return 0;
+        }
+        // 简单的单词计数实现，按空格分割
+        String[] words = value.trim().split("\\s+");
+        return words.length;
+    }
+    
+    /**
+     * 判断是否为长评论
+     * 
+     * @return 是否为长评论
+     */
+    public boolean isLongComment() {
+        return value != null && value.length() > 200;
+    }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         CommentContent that = (CommentContent) o;
-        return value.equals(that.value);
+        return value.equals(that.value) && contentType == that.contentType;
     }
 
     @Override
     public int hashCode() {
-        return value.hashCode();
+        return value.hashCode() + contentType.hashCode();
     }
 
     @Override

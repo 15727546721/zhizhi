@@ -39,10 +39,10 @@ public class LikeCacheRepository {
             } else if (value instanceof Integer) {
                 return ((Integer) value).longValue();
             }
-            return value != null ? Long.parseLong(value.toString()) : 0L;
+            return value != null ? Long.parseLong(value.toString()) : null; // 返回null表示缓存未命中
         } catch (Exception e) {
             log.error("获取点赞数失败 - key: {}", key, e);
-            return 0L;
+            return null; // 返回null表示缓存未命中
         }
     }
     
@@ -142,7 +142,7 @@ public class LikeCacheRepository {
      * 构建点赞数键
      */
     private String buildLikeCountKey(Long targetId, LikeType type) {
-        return LIKE_COUNT_KEY_PREFIX + type.getCode() + ":" + targetId;
+        return LIKE_COUNT_KEY_PREFIX + type.getRedisKeyName() + ":" + targetId;
     }
     
     /**
@@ -156,6 +156,6 @@ public class LikeCacheRepository {
      * 构建点赞关系值
      */
     private String buildLikeRelationValue(Long targetId, LikeType type) {
-        return type.getCode() + ":" + targetId;
+        return type.getRedisKeyName() + ":" + targetId;
     }
 }

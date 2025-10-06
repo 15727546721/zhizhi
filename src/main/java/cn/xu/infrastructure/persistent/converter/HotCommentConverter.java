@@ -1,7 +1,7 @@
 package cn.xu.infrastructure.persistent.converter;
 
-import cn.xu.api.web.model.vo.comment.CommentUserVO;
-import cn.xu.api.web.model.vo.comment.HotCommentVO;
+import cn.xu.api.web.model.vo.comment.CommentUserResponse;
+import cn.xu.api.web.model.vo.comment.HotCommentResponse;
 import cn.xu.domain.comment.model.entity.CommentEntity;
 import cn.xu.domain.user.model.entity.UserEntity;
 import org.springframework.stereotype.Component;
@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
 
 /**
  * 热点评论转换器
- * 负责将CommentEntity转换为HotCommentVO
+ * 负责将CommentEntity转换为HotCommentResponse
  * 
  * @author Lily
  */
@@ -19,17 +19,17 @@ import java.util.stream.Collectors;
 public class HotCommentConverter {
 
     /**
-     * 将CommentEntity转换为HotCommentVO
+     * 将CommentEntity转换为HotCommentResponse
      * 
      * @param commentEntity 评论实体
-     * @return 热点评论VO
+     * @return 热点评论Response
      */
-    public HotCommentVO convertToVO(CommentEntity commentEntity) {
+    public HotCommentResponse convertToVO(CommentEntity commentEntity) {
         if (commentEntity == null) {
             return null;
         }
         
-        HotCommentVO vo = new HotCommentVO();
+        HotCommentResponse vo = new HotCommentResponse();
         vo.setId(commentEntity.getId());
         vo.setTargetType(commentEntity.getTargetType());
         vo.setTargetId(commentEntity.getTargetId());
@@ -48,7 +48,7 @@ public class HotCommentConverter {
         
         // 转换子评论
         if (commentEntity.getChildren() != null) {
-            List<HotCommentVO> childrenVOs = commentEntity.getChildren().stream()
+            List<HotCommentResponse> childrenVOs = commentEntity.getChildren().stream()
                     .map(this::convertToVO)
                     .collect(Collectors.toList());
             vo.setChildren(childrenVOs);
@@ -58,17 +58,17 @@ public class HotCommentConverter {
     }
 
     /**
-     * 将UserEntity转换为CommentUserVO
+     * 将UserEntity转换为CommentUserResponse
      * 
      * @param userEntity 用户实体
-     * @return 评论用户VO
+     * @return 评论用户Response
      */
-    private CommentUserVO convertUserToVO(UserEntity userEntity) {
+    private CommentUserResponse convertUserToVO(UserEntity userEntity) {
         if (userEntity == null) {
             return null;
         }
         
-        CommentUserVO vo = new CommentUserVO();
+        CommentUserResponse vo = new CommentUserResponse();
         vo.setId(userEntity.getId());
         vo.setNickname(userEntity.getNickname());
         vo.setAvatar(userEntity.getAvatar());

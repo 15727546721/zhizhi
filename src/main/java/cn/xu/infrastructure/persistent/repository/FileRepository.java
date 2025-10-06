@@ -1,9 +1,9 @@
 package cn.xu.infrastructure.persistent.repository;
 
-import cn.xu.application.common.ResponseCode;
+import cn.xu.common.ResponseCode;
+import cn.xu.common.exception.BusinessException;
 import cn.xu.domain.file.model.entity.FileEntity;
 import cn.xu.domain.file.repository.IFileRepository;
-import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.persistent.converter.FileConverter;
 import cn.xu.infrastructure.persistent.dao.FileMapper;
 import cn.xu.infrastructure.persistent.po.File;

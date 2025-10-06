@@ -3,6 +3,7 @@ package cn.xu.infrastructure.persistent.converter;
 import cn.xu.domain.comment.model.entity.CommentEntity;
 import cn.xu.domain.comment.model.valueobject.CommentContent;
 import cn.xu.infrastructure.persistent.po.Comment;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -15,6 +16,7 @@ import java.util.stream.Collectors;
  * 评论实体转换器（防腐层）
  * 负责领域实体与持久化对象之间的转换，遵循DDD原则
  */
+@Slf4j
 @Component
 public class CommentConverter {
 
@@ -65,12 +67,30 @@ public class CommentConverter {
         // 解析图片URL字符串为列表
         List<String> imageUrls = parseImageUrls(dataObject.getImageUrl());
         
+        // 处理可能为空或无效的评论内容
+        CommentContent commentContent = null;
+        if (dataObject.getContent() != null && !dataObject.getContent().trim().isEmpty()) {
+            try {
+                commentContent = new CommentContent(dataObject.getContent());
+            } catch (Exception e) {
+                // 如果内容验证失败，记录日志并使用默认内容
+                log.warn("评论内容验证失败，ID: {}, 内容: {}, 使用默认内容", dataObject.getId(), dataObject.getContent());
+                try {
+                    commentContent = new CommentContent("默认评论内容");
+                } catch (Exception ex) {
+                    // 如果默认内容也失败，设置为null
+                    log.error("创建默认评论内容失败，ID: {}", dataObject.getId());
+                    commentContent = null;
+                }
+            }
+        }
+        
         return CommentEntity.builder()
                 .id(dataObject.getId())
                 .userId(dataObject.getUserId())
                 .targetType(dataObject.getTargetType())
                 .targetId(dataObject.getTargetId())
-                .content(dataObject.getContent() != null ? new CommentContent(dataObject.getContent()) : null)
+                .content(commentContent)
                 .parentId(dataObject.getParentId())
                 .replyUserId(dataObject.getReplyUserId())
                 .likeCount(dataObject.getLikeCount() != null ? dataObject.getLikeCount() : 0L)

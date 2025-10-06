@@ -1,10 +1,9 @@
 package cn.xu.domain.comment.repository;
 
-import cn.xu.api.web.model.dto.comment.FindChildCommentItemVO;
-import cn.xu.api.web.model.vo.comment.FindCommentItemVO;
 import cn.xu.domain.comment.model.entity.CommentEntity;
 
 import java.util.List;
+import java.util.Map;
 
 public interface ICommentRepository {
     /**
@@ -14,6 +13,13 @@ public interface ICommentRepository {
      * @return 评论ID
      */
     Long save(CommentEntity commentEntity);
+
+    /**
+     * 更新评论
+     *
+     * @param commentEntity 评论实体
+     */
+    void update(CommentEntity commentEntity);
 
     /**
      * 查询所有评论（用于ES数据初始化和缓存预热）
@@ -135,4 +141,20 @@ public interface ICommentRepository {
      * 根据评论ID列表查询评论
      */
     List<CommentEntity> findCommentsByIds(List<Long> commentIdList);
+    
+    /**
+     * 根据目标类型和目标ID统计评论数
+     * @param targetType 目标类型
+     * @param targetId 目标ID
+     * @return 评论数量
+     */
+    Long countByTargetTypeAndTargetId(Integer targetType, Long targetId);
+    
+    /**
+     * 批量统计目标的评论数
+     * @param targetType 目标类型
+     * @param targetIds 目标ID列表
+     * @return 目标ID到评论数量的映射
+     */
+    Map<Long, Long> batchCountByTargetIds(Integer targetType, List<Long> targetIds);
 }

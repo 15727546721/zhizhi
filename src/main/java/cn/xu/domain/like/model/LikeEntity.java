@@ -1,13 +1,10 @@
 package cn.xu.domain.like.model;
 
-import cn.xu.infrastructure.common.exception.BusinessException;
-import cn.xu.domain.like.model.LikeStatus;
+import cn.xu.common.exception.BusinessException;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
 
 import java.time.LocalDateTime;
 
@@ -110,6 +107,25 @@ public class LikeEntity {
      * 验证点赞的有效性
      */
     public void validate() {
+        if (userId == null || userId <= 0) {
+            throw new BusinessException("用户ID不能为空");
+        }
+        if (targetId == null || targetId <= 0) {
+            throw new BusinessException("目标ID不能为空");
+        }
+        if (type == null) {
+            throw new BusinessException("点赞类型不能为空");
+        }
+    }
+    
+    /**
+     * 验证点赞关系的有效性
+     * 
+     * @param userId 用户ID
+     * @param targetId 目标ID
+     * @param type 点赞类型
+     */
+    public static void validateLikeRelation(Long userId, Long targetId, LikeType type) {
         if (userId == null || userId <= 0) {
             throw new BusinessException("用户ID不能为空");
         }

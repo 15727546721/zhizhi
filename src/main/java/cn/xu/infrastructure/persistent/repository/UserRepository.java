@@ -1,20 +1,20 @@
 package cn.xu.infrastructure.persistent.repository;
 
-import cn.xu.application.common.ResponseCode;
+import cn.xu.common.ResponseCode;
+import cn.xu.common.exception.BusinessException;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.model.entity.UserInfoEntity;
 import cn.xu.domain.user.model.valobj.Email;
+import cn.xu.domain.user.model.valobj.Password;
 import cn.xu.domain.user.model.valobj.Username;
-import cn.xu.domain.user.model.vo.LoginFormVO;
-import cn.xu.domain.user.model.vo.UserFormVO;
+import cn.xu.domain.user.model.vo.UserFormResponse;
 import cn.xu.domain.user.repository.IUserRepository;
-import cn.xu.infrastructure.common.exception.BusinessException;
-import cn.xu.infrastructure.persistent.converter.UserConverter;
 import cn.xu.infrastructure.persistent.converter.RoleConverter;
+import cn.xu.infrastructure.persistent.converter.UserConverter;
 import cn.xu.infrastructure.persistent.dao.RoleMapper;
 import cn.xu.infrastructure.persistent.dao.UserMapper;
-import cn.xu.infrastructure.persistent.dao.UserRoleMapper;
 import cn.xu.infrastructure.persistent.dao.UserPermissionMapper;
+import cn.xu.infrastructure.persistent.dao.UserRoleMapper;
 import cn.xu.infrastructure.persistent.po.Role;
 import cn.xu.infrastructure.persistent.po.User;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +23,6 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -75,6 +74,18 @@ public class UserRepository implements IUserRepository {
     @Override
     public Optional<UserEntity> findByEmail(Email email) {
         return Optional.ofNullable(userConverter.toDomainEntity(userDao.selectByEmail(email.getValue())));
+    }
+
+    @Override
+    public Optional<UserEntity> findByEmailWithPassword(Email email) {
+        User user = userDao.selectByEmail(email.getValue());
+        if (user == null) {
+            return Optional.empty();
+        }
+        // 使用已加密的密码构造Password对象
+        UserEntity domainEntity = userConverter.toDomainEntity(user);
+        domainEntity.setPassword(Password.ofEncoded(user.getPassword()));
+        return Optional.ofNullable(domainEntity);
     }
 
     @Override
@@ -188,7 +199,7 @@ public class UserRepository implements IUserRepository {
     }
     
     @Override
-    public UserFormVO findUsernameAndPasswordByUsername(String username) {
+    public UserFormResponse findUsernameAndPasswordByUsername(String username) {
         return userDao.selectUsernameAndPasswordByUsername(username);
     }
     

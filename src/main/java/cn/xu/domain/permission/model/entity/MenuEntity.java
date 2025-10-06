@@ -8,6 +8,10 @@ import lombok.NoArgsConstructor;
 import java.util.Date;
 import java.util.List;
 
+/**
+ * 菜单领域实体
+ * 用于表示系统中的菜单资源，包含菜单的基本信息和层级关系
+ */
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
@@ -83,5 +87,8 @@ public class MenuEntity {
      */
     private String perm;
 
+    /**
+     * 子菜单列表
+     */
     private List<MenuEntity> children;
 }

@@ -1,8 +1,8 @@
 package cn.xu.domain.report.service;
 
+import cn.xu.common.exception.BusinessException;
 import cn.xu.domain.report.model.entity.ReportEntity;
 import cn.xu.domain.report.repository.IReportRepository;
-import cn.xu.infrastructure.common.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

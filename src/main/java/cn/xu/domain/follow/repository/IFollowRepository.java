@@ -1,6 +1,6 @@
 package cn.xu.domain.follow.repository;
 
-import cn.xu.domain.follow.model.entity.UserFollowEntity;
+import cn.xu.domain.follow.model.entity.FollowRelationEntity;
 
 import java.util.List;
 
@@ -8,7 +8,7 @@ public interface IFollowRepository {
     /**
      * 保存关注关系
      */
-    void save(UserFollowEntity entity);
+    void save(FollowRelationEntity entity);
 
     /**
      * 更新关注状态
@@ -18,17 +18,17 @@ public interface IFollowRepository {
     /**
      * 获取关注关系
      */
-    UserFollowEntity getByFollowerAndFollowed(Long followerId, Long followedId);
+    FollowRelationEntity getByFollowerAndFollowed(Long followerId, Long followedId);
 
     /**
      * 获取用户的关注列表
      */
-    List<UserFollowEntity> listByFollowerId(Long followerId);
+    List<FollowRelationEntity> listByFollowerId(Long followerId);
 
     /**
      * 获取用户的粉丝列表
      */
-    List<UserFollowEntity> listByFollowedId(Long followedId);
+    List<FollowRelationEntity> listByFollowedId(Long followedId);
 
     /**
      * 统计用户关注数

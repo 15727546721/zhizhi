@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import javax.annotation.Resource;
-import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -31,7 +30,7 @@ public class HotCommentServiceTest {
         try {
             // 假设有一个文章ID为1的热门评论
             List<CommentEntity> hotComments = hotCommentDomainService.getHotComments(
-                CommentType.ARTICLE.getValue(), 1L, 1, 10);
+                CommentType.POST.getValue(), 1L, 1, 10);
             
             log.info("获取到{}条热门评论", hotComments.size());
             hotComments.forEach(comment -> {
@@ -49,7 +48,7 @@ public class HotCommentServiceTest {
     @Test
     public void testRefreshHotCommentCache() {
         try {
-            hotCommentDomainService.refreshHotCommentCache(CommentType.ARTICLE.getValue(), 1L);
+            hotCommentDomainService.refreshHotCommentCache(CommentType.POST.getValue(), 1L);
             log.info("刷新热门评论缓存成功");
         } catch (Exception e) {
             log.error("测试刷新热门评论缓存失败", e);

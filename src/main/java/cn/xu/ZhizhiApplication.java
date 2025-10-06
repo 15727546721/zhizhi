@@ -10,6 +10,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.Environment;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -28,6 +29,7 @@ import java.net.UnknownHostException;
 )
 @EnableScheduling
 @EnableAsync
+@EnableTransactionManagement
 @Configurable
 public class ZhizhiApplication {
 
@@ -44,7 +46,7 @@ public class ZhizhiApplication {
         String path = env.getProperty("server.servlet.context-path");
         path = path == null ? "" : path;
         log.info("\n----------------------------------------------------------\n\t" +
-                "blog is running! Access URLs:\n\t" +
+                "知之社区系统已启动! Access URLs:\n\t" +
                 "Local: \t\thttp://localhost:" + port + path + "/\n\t" +
                 "External: \thttp://" + ip + ":" + port + path + "/\n\t" +
                 "Knife4j-ui: \thttp://" + ip + ":" + port + path + "/doc.html\n\t" +

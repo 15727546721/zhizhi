@@ -99,7 +99,7 @@
 
     <!-- 开发环境：控制台打印 -->
     <springProfile name="dev">
-        <logger name="com.nmys.view" level="debug"/>
+        <logger name="cn.xu" level="debug"/>
     </springProfile>
 
     <root level="info">

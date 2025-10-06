@@ -13,12 +13,12 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-//                .allowedOrigins("http://localhost:9527")  // 允许的域名
-
+        // 配置允许的跨域请求
         registry.addMapping("/**")
-                .allowedOrigins("*")  // 允许的域名
-                .allowedMethods("*")  // 允许的请求方法
-                .allowedHeaders("*")  // 允许的请求头
+                .allowedOriginPatterns("http://localhost:*", "https://*.zhizhi.cn")  // 允许的域名模式
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")  // 允许的请求方法
+                .allowedHeaders("Origin", "Content-Type", "Accept", "Authorization", "X-Requested-With")  // 允许的请求头
+                .allowCredentials(true)  // 允许发送Cookie
                 .maxAge(3600);  // 预检请求的有效期，单位为秒
     }
 

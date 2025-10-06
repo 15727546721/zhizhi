@@ -2,11 +2,12 @@ package cn.xu.api.web.controller;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.api.web.model.dto.notification.NotificationRequest;
-import cn.xu.api.web.model.vo.notification.NotificationVO;
+import cn.xu.api.web.model.vo.notification.NotificationResponse;
+import cn.xu.common.annotation.ApiOperationLog;
+import cn.xu.common.response.PageResponse;
+import cn.xu.common.response.ResponseEntity;
 import cn.xu.domain.notification.model.aggregate.NotificationAggregate;
 import cn.xu.domain.notification.service.INotificationService;
-import cn.xu.infrastructure.common.response.PageResponse;
-import cn.xu.infrastructure.common.response.ResponseEntity;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -30,26 +31,27 @@ public class NotificationController {
 
     @GetMapping
     @Operation(summary = "获取通知列表")
-    public ResponseEntity<PageResponse<List<NotificationVO>>> getUserNotifications(
+    @ApiOperationLog(description = "获取通知列表")
+    public ResponseEntity<PageResponse<List<NotificationResponse>>> getUserNotifications(
             @Validated @Parameter(description = "查询参数") NotificationRequest request) {
         try {
             Long currentUserId = StpUtil.getLoginIdAsLong();
             List<NotificationAggregate> notifications = notificationService.getUserNotifications(
                     currentUserId, request.getType(), request.getPageNo(), request.getPageSize());
             
-            List<NotificationVO> voList = notifications.stream()
-                    .map(NotificationVO::fromAggregate)
+            List<NotificationResponse> voList = notifications.stream()
+                    .map(NotificationResponse::fromAggregate)
                     .collect(Collectors.toList());
 
             long total = notificationService.getUnreadCount(currentUserId);
-            return ResponseEntity.<PageResponse<List<NotificationVO>>>builder()
+            return ResponseEntity.<PageResponse<List<NotificationResponse>>>builder()
                     .code(20000)
                     .info("获取通知列表成功")
                     .data(PageResponse.of(request.getPageNo(), request.getPageSize(), total, voList))
                     .build();
         } catch (Exception e) {
             log.error("获取用户通知列表失败", e);
-            return ResponseEntity.<PageResponse<List<NotificationVO>>>builder()
+            return ResponseEntity.<PageResponse<List<NotificationResponse>>>builder()
                     .code(20001)
                     .info("获取通知列表失败：" + e.getMessage())
                     .build();
@@ -58,6 +60,7 @@ public class NotificationController {
 
     @GetMapping("/unread/count")
     @Operation(summary = "获取未读通知数量")
+    @ApiOperationLog(description = "获取未读通知数量")
     public ResponseEntity<Long> getUnreadCount() {
         try {
             Long currentUserId = StpUtil.getLoginIdAsLong();
@@ -78,6 +81,7 @@ public class NotificationController {
 
 //    @GetMapping("/unread/list/count")
 //    @Operation(summary = "获取未读各个通知数量")
+//    @ApiOperationLog(description = "获取未读各个通知数量")
 //    public ResponseEntity<List<Long>> getUnreadListCount() {
 //        try {
 //            Long currentUserId = StpUtil.getLoginIdAsLong();
@@ -101,6 +105,7 @@ public class NotificationController {
 
     @PutMapping("/{notificationId}/read")
     @Operation(summary = "标记通知为已读")
+    @ApiOperationLog(description = "标记通知为已读")
     public ResponseEntity<Void> markAsRead(
             @Parameter(description = "通知ID") @PathVariable Long notificationId) {
         try {
@@ -120,6 +125,7 @@ public class NotificationController {
 
     @PutMapping("/read/all")
     @Operation(summary = "标记所有通知为已读")
+    @ApiOperationLog(description = "标记所有通知为已读")
     public ResponseEntity<Void> markAllAsRead() {
         try {
             Long currentUserId = StpUtil.getLoginIdAsLong();
@@ -139,6 +145,7 @@ public class NotificationController {
 
     @DeleteMapping("/{notificationId}")
     @Operation(summary = "删除通知")
+    @ApiOperationLog(description = "删除通知")
     public ResponseEntity<Void> deleteNotification(
             @Parameter(description = "通知ID") @PathVariable Long notificationId) {
         try {
@@ -156,4 +163,4 @@ public class NotificationController {
                     .build();
         }
     }
-} 
+}

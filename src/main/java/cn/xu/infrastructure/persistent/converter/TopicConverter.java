@@ -4,7 +4,6 @@ import cn.xu.domain.essay.model.entity.TopicEntity;
 import cn.xu.infrastructure.persistent.po.Topic;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;

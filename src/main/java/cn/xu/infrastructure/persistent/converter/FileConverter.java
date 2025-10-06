@@ -7,7 +7,6 @@ import cn.xu.domain.file.model.valobj.FileUrl;
 import cn.xu.infrastructure.persistent.po.File;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;

@@ -14,13 +14,13 @@ public class MessageEvent {
     private String content;
     private Long targetId;
 
-    public static MessageEvent createCommentEvent(Long senderId, Long receiverId, String content, Long articleId) {
+    public static MessageEvent createCommentEvent(Long senderId, Long receiverId, String content, Long postId) {
         return MessageEvent.builder()
                 .type(MessageType.COMMENT)
                 .senderId(senderId)
                 .receiverId(receiverId)
                 .content(content)
-                .targetId(articleId)
+                .targetId(postId)
                 .build();
     }
 
@@ -42,4 +42,4 @@ public class MessageEvent {
                 .content("关注了你")
                 .build();
     }
-} 
+}

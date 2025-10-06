@@ -4,6 +4,7 @@ import cn.xu.domain.permission.model.entity.RoleEntity;
 import cn.xu.infrastructure.persistent.po.Role;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -28,13 +29,18 @@ public class RoleConverter {
             return null;
         }
         
+        // 设置创建时间和更新时间
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime createTime = entity.getCreateTime() != null ? entity.getCreateTime() : now;
+        LocalDateTime updateTime = now;
+        
         return Role.builder()
                 .id(entity.getId())
                 .name(entity.getName())
                 .code(entity.getCode())
                 .remark(entity.getRemark())
-                .createTime(entity.getCreateTime())
-                .updateTime(entity.getUpdateTime())
+                .createTime(createTime)
+                .updateTime(updateTime)
                 .build();
     }
 

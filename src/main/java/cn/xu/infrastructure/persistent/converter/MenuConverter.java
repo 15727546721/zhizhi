@@ -5,6 +5,7 @@ import cn.xu.infrastructure.persistent.po.Menu;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,6 +29,11 @@ public class MenuConverter {
             return null;
         }
         
+        // 设置创建时间和更新时间
+        Date now = new Date();
+        Date createTime = entity.getCreateTime() != null ? entity.getCreateTime() : now;
+        Date updateTime = now;
+        
         return Menu.builder()
                 .id(entity.getId())
                 .title(entity.getTitle())
@@ -41,8 +47,8 @@ public class MenuConverter {
                 .perm(entity.getPerm())
                 .redirect(entity.getRedirect())
                 .name(entity.getName())
-                .createTime(entity.getCreateTime())
-                .updateTime(entity.getUpdateTime())
+                .createTime(createTime)
+                .updateTime(updateTime)
                 .build();
     }
 

@@ -1,9 +1,9 @@
 package cn.xu.domain.notification.model.template.impl;
 
+import cn.xu.common.exception.BusinessException;
 import cn.xu.domain.notification.model.template.AbstractNotificationTemplate;
 import cn.xu.domain.notification.model.valueobject.BusinessType;
 import cn.xu.domain.notification.model.valueobject.NotificationType;
-import cn.xu.infrastructure.common.exception.BusinessException;
 
 public class ReplyNotificationTemplate extends AbstractNotificationTemplate {
 

@@ -1,11 +1,13 @@
 package cn.xu.api.system.controller;
 
 import cn.xu.api.web.model.dto.user.UserPermissionRequest;
-import cn.xu.application.common.ResponseCode;
+import cn.xu.common.ResponseCode;
+import cn.xu.common.annotation.ApiOperationLog;
+import cn.xu.common.exception.BusinessException;
+import cn.xu.common.response.ResponseEntity;
 import cn.xu.domain.user.service.IUserPermissionService;
-import cn.xu.infrastructure.common.exception.BusinessException;
-import cn.xu.infrastructure.common.response.ResponseEntity;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,6 +29,7 @@ public class SysUserPermissionController {
 
     @PostMapping("/assign")
     @Operation(summary = "为用户直接分配权限")
+    @ApiOperationLog(description = "为用户直接分配权限")
     public ResponseEntity assignPermissionsToUser(@RequestBody UserPermissionRequest userPermissionRequest) {
         // 参数校验
         if (userPermissionRequest.getUserId() == null) {
@@ -42,7 +45,8 @@ public class SysUserPermissionController {
 
     @GetMapping("/user-permissions")
     @Operation(summary = "获取用户的权限ID列表")
-    public ResponseEntity<List<Long>> getUserPermissionIds(@RequestParam("userId") Long userId) {
+    @ApiOperationLog(description = "获取用户的权限ID列表")
+    public ResponseEntity<List<Long>> getUserPermissionIds(@Parameter(description = "用户ID") @RequestParam("userId") Long userId) {
         if (userId == null) {
             throw new BusinessException(ResponseCode.NULL_PARAMETER.getCode(), "用户ID不能为空");
         }
@@ -57,6 +61,7 @@ public class SysUserPermissionController {
     
     @DeleteMapping("/remove")
     @Operation(summary = "移除用户的权限")
+    @ApiOperationLog(description = "移除用户的权限")
     public ResponseEntity removeUserPermissions(@RequestBody UserPermissionRequest userPermissionRequest) {
         // 参数校验
         if (userPermissionRequest.getUserId() == null) {
@@ -72,7 +77,8 @@ public class SysUserPermissionController {
     
     @DeleteMapping("/clear")
     @Operation(summary = "清除用户的所有权限")
-    public ResponseEntity clearUserPermissions(@RequestParam("userId") Long userId) {
+    @ApiOperationLog(description = "清除用户的所有权限")
+    public ResponseEntity clearUserPermissions(@Parameter(description = "用户ID") @RequestParam("userId") Long userId) {
         if (userId == null) {
             throw new BusinessException(ResponseCode.NULL_PARAMETER.getCode(), "用户ID不能为空");
         }

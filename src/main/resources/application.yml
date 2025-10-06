@@ -22,6 +22,16 @@ comment:
     score:
       strategy: SIMPLE  # 可选值: SIMPLE, REDDIT, TRENDING, LINEAR
 
+# 帖子热度计算策略配置
+post:
+  hot-score:
+    like-weight: 3.0
+    comment-weight: 5.0
+    view-weight: 0.5
+    favorite-weight: 4.0
+    time-decay-exponent: 1.2
+    time-decay-base: 2.0
+
 # MinIO配置
 minio:
   url: http://localhost:5000
@@ -52,7 +62,15 @@ app:
   elasticsearch:
     index:
       comments: comments
-      articles: articles
-  article:
+      posts: posts
+  post:
     query:
-      strategy: mysql  # 文章查询策略：elasticsearch 或 mysql
+      strategy: mysql  # 帖子查询策略：elasticsearch 或 mysql
+  event:
+    enabled: true
+    async-thread-pool-size: 10
+    ring-buffer-size: 1024
+    consumer-thread-count: 4
+    monitoring-enabled: true
+    retry-count: 3
+    timeout-ms: 5000

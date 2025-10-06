@@ -1,6 +1,6 @@
 package cn.xu.infrastructure.persistent.dao;
 
-import cn.xu.domain.user.model.vo.UserFormVO;
+import cn.xu.domain.user.model.vo.UserFormResponse;
 import cn.xu.infrastructure.persistent.po.User;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -113,5 +113,5 @@ public interface UserMapper {
      * @param username 用户名
      * @return 用户表单值对象
      */
-    UserFormVO selectUsernameAndPasswordByUsername(@Param("username") String username);
+    UserFormResponse selectUsernameAndPasswordByUsername(@Param("username") String username);
 }

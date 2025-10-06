@@ -4,8 +4,8 @@ import cn.xu.domain.message.model.entity.MessageType;
 
 public class CommentMessageEvent extends BaseMessageEvent {
 
-    public CommentMessageEvent(Long senderId, Long receiverId, String content, Long articleId) {
-        super(senderId, receiverId, content, articleId, MessageType.COMMENT);
+    public CommentMessageEvent(Long senderId, Long receiverId, String content, Long postId) {
+        super(senderId, receiverId, content, postId, MessageType.COMMENT);
     }
 
     @Override

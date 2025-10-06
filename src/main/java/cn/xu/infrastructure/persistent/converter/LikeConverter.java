@@ -3,10 +3,10 @@ package cn.xu.infrastructure.persistent.converter;
 import cn.xu.domain.like.model.LikeEntity;
 import cn.xu.domain.like.model.LikeStatus;
 import cn.xu.domain.like.model.LikeType;
+import cn.xu.domain.like.model.aggregate.LikeAggregate;
 import cn.xu.infrastructure.persistent.po.Like;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -21,9 +21,46 @@ import java.util.stream.Collectors;
 public class LikeConverter {
 
     /**
-     * 将领域实体转换为持久化对象
+     * 将聚合根转换为持久化对象
      *
-     * @param entity 点赞领域实体
+     * @param aggregate 点赞聚合根
+     * @return 点赞持久化对象
+     */
+    public Like toDataObjectFromAggregate(LikeAggregate aggregate) {
+        if (aggregate == null) {
+            return null;
+        }
+        
+        return Like.builder()
+                .id(aggregate.getId())
+                .userId(aggregate.getUserId())
+                .targetId(aggregate.getTargetId())
+                .type(aggregate.getType() != null ? aggregate.getType().getCode() : null)
+                .status(aggregate.isLiked() ? LikeStatus.LIKED.getCode() : LikeStatus.UNLIKED.getCode())
+                .createTime(aggregate.getCreateTime())
+                .build();
+    }
+
+    /**
+     * 批量转换聚合根为持久化对象
+     *
+     * @param aggregateList 聚合根列表
+     * @return 持久化对象列表
+     */
+    public List<Like> toDataObjectsFromAggregates(List<LikeAggregate> aggregateList) {
+        if (aggregateList == null || aggregateList.isEmpty()) {
+            return Collections.emptyList();
+        }
+        
+        return aggregateList.stream()
+                .map(this::toDataObjectFromAggregate)
+                .collect(Collectors.toList());
+    }
+    
+    /**
+     * 将实体转换为持久化对象
+     *
+     * @param entity 点赞实体
      * @return 点赞持久化对象
      */
     public Like toDataObject(LikeEntity entity) {
@@ -36,61 +73,30 @@ public class LikeConverter {
                 .userId(entity.getUserId())
                 .targetId(entity.getTargetId())
                 .type(entity.getType() != null ? entity.getType().getCode() : null)
-                .status(entity.getStatus() != null ? entity.getStatus().getCode() : null)
+                .status(entity.isLiked() ? LikeStatus.LIKED.getCode() : LikeStatus.UNLIKED.getCode())
                 .createTime(entity.getCreateTime())
                 .build();
     }
-
+    
     /**
-     * 将持久化对象转换为领域实体
+     * 将持久化对象转换为实体
      *
      * @param po 点赞持久化对象
-     * @return 点赞领域实体
+     * @return 点赞实体
      */
     public LikeEntity toDomainEntity(Like po) {
         if (po == null) {
             return null;
         }
         
-        return LikeEntity.builder()
-                .id(po.getId())
-                .userId(po.getUserId())
-                .targetId(po.getTargetId())
-                .type(po.getType() != null ? LikeType.valueOf(po.getType()) : null)
-                .status(po.getStatus() != null ? LikeStatus.valueOf(po.getStatus()) : null)
-                .createTime(po.getCreateTime())
-                .build();
-    }
-
-    /**
-     * 批量转换持久化对象为领域实体
-     *
-     * @param poList 持久化对象列表
-     * @return 领域实体列表
-     */
-    public List<LikeEntity> toDomainEntities(List<Like> poList) {
-        if (poList == null || poList.isEmpty()) {
-            return Collections.emptyList();
-        }
+        LikeEntity entity = new LikeEntity();
+        entity.setId(po.getId());
+        entity.setUserId(po.getUserId());
+        entity.setTargetId(po.getTargetId());
+        entity.setType(po.getType() != null ? LikeType.valueOf(po.getType()) : null);
+        entity.setStatus(po.getStatus() != null && po.getStatus() == 1 ? LikeStatus.LIKED : LikeStatus.UNLIKED);
+        entity.setCreateTime(po.getCreateTime());
         
-        return poList.stream()
-                .map(this::toDomainEntity)
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * 批量转换领域实体为持久化对象
-     *
-     * @param entityList 领域实体列表
-     * @return 持久化对象列表
-     */
-    public List<Like> toDataObjects(List<LikeEntity> entityList) {
-        if (entityList == null || entityList.isEmpty()) {
-            return Collections.emptyList();
-        }
-        
-        return entityList.stream()
-                .map(this::toDataObject)
-                .collect(Collectors.toList());
+        return entity;
     }
 }

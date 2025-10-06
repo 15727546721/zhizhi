@@ -1,9 +1,9 @@
 package cn.xu.application.task;
 
-import cn.xu.domain.article.model.entity.ArticleEntity;
-import cn.xu.domain.article.model.valobj.ArticleStatus;
-import cn.xu.domain.article.repository.IArticleRepository;
 import cn.xu.domain.cache.ICacheService;
+import cn.xu.domain.post.model.aggregate.PostAggregate;
+import cn.xu.domain.post.model.entity.PostEntity;
+import cn.xu.domain.post.repository.IPostRepository;
 import cn.xu.domain.user.repository.IUserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,53 +23,59 @@ import java.util.List;
 @RequiredArgsConstructor
 public class RedisSyncService {
 
-    private final IArticleRepository articleRepository;
+    private final IPostRepository postRepository;
     private final IUserRepository userRepository;
     private final ICacheService cacheService;  // 使用领域层接口
 
-    private static final String ARTICLE_VIEW_COUNT_KEY_PREFIX = "article:view:count:";
-    private static final String ARTICLE_LIKE_COUNT_KEY_PREFIX = "article:like:count:";
-    private static final String ARTICLE_COLLECT_COUNT_KEY_PREFIX = "article:collect:count:";
-    private static final String ARTICLE_COMMENT_COUNT_KEY_PREFIX = "article:comment:count:";
+    private static final String POST_VIEW_COUNT_KEY_PREFIX = "post:view:count:";
+    private static final String POST_LIKE_COUNT_KEY_PREFIX = "post:like:count:";
+    private static final String POST_COLLECT_COUNT_KEY_PREFIX = "post:collect:count:";
+    private static final String POST_COMMENT_COUNT_KEY_PREFIX = "post:comment:count:";
 
     /**
      * 定时任务：定时同步 Redis 数据到 MySQL
-     * 每小时执行一次，将Redis中的文章计数更新到数据库
+     * 每小时执行一次，将Redis中的帖子计数更新到数据库
      */
     @Scheduled(cron = "0 0 * * * ?")
-    public void syncArticleCounts() {
+    public void syncPostCounts() {
         try {
             log.info("开始同步Redis数据到数据库");
-            
-            List<ArticleEntity> articles = articleRepository.findAll();
-            
+
+            List<PostEntity> posts = postRepository.findAll();
+
             int successCount = 0;
-            for (ArticleEntity article : articles) {
-                if (article.getStatus() == null || article.getStatus() == ArticleStatus.DRAFT) {
+            for (PostEntity post : posts) {
+                if (post.getStatus() == null || "DRAFT".equals(post.getStatus())) {
                     continue;
                 }
-                
+
                 try {
-                    Long articleId = article.getId();
-                    long viewCount = getRedisCount(ARTICLE_VIEW_COUNT_KEY_PREFIX, articleId);
-                    long likeCount = getRedisCount(ARTICLE_LIKE_COUNT_KEY_PREFIX, articleId);
-                    long collectCount = getRedisCount(ARTICLE_COLLECT_COUNT_KEY_PREFIX, articleId);
-                    long commentCount = getRedisCount(ARTICLE_COMMENT_COUNT_KEY_PREFIX, articleId);
-                    
-                    // 更新数据库中的文章计数
-                    article.setViewCount(viewCount);
-                    article.setLikeCount(likeCount);
-                    article.setCollectCount(collectCount);
-                    article.setCommentCount(commentCount);
-                    
-                    articleRepository.update(article);
+                    Long postId = post.getId();
+                    long viewCount = getRedisCount(POST_VIEW_COUNT_KEY_PREFIX, postId);
+                    long likeCount = getRedisCount(POST_LIKE_COUNT_KEY_PREFIX, postId);
+                    long collectCount = getRedisCount(POST_COLLECT_COUNT_KEY_PREFIX, postId);
+                    long commentCount = getRedisCount(POST_COMMENT_COUNT_KEY_PREFIX, postId);
+
+                    // 更新数据库中的帖子计数
+                    post.setViewCount(viewCount);
+                    post.setLikeCount(likeCount);
+                    post.setCollectCount(collectCount);
+                    post.setCommentCount(commentCount);
+
+                    // 创建PostAggregate对象用于更新
+                    PostAggregate postAggregate = PostAggregate.builder()
+                            .id(postId)
+                            .postEntity(post)
+                            .build();
+
+                    postRepository.update(postAggregate);
                     successCount++;
                 } catch (Exception e) {
-                    log.error("同步文章计数失败 - articleId: {}", article.getId(), e);
+                    log.error("同步帖子计数失败 - postId: {}", post.getId(), e);
                 }
             }
-            
-            log.info("Redis数据同步完成，成功同步 {} 篇文章", successCount);
+
+            log.info("Redis数据同步完成，成功同步 {} 篇帖子", successCount);
         } catch (Exception e) {
             log.error("Redis数据同步失败", e);
         }
@@ -77,18 +83,18 @@ public class RedisSyncService {
 
     /**
      * 获取 Redis 中的计数值，如果 Redis 中没有，则返回 0
-     * 
+     *
      * @param keyPrefix 键值前缀
-     * @param articleId 文章ID
+     * @param postId    帖子ID
      * @return 计数值
      */
-    private long getRedisCount(String keyPrefix, Long articleId) {
+    private long getRedisCount(String keyPrefix, Long postId) {
         try {
-            String key = keyPrefix + articleId;
+            String key = keyPrefix + postId;
             Long count = cacheService.getCount(key);
             return count != null ? count : 0;
         } catch (Exception e) {
-            log.warn("获取Redis计数失败 - key: {}{}", keyPrefix, articleId, e);
+            log.warn("获取Redis计数失败 - key: {}{}", keyPrefix, postId, e);
             return 0;
         }
     }

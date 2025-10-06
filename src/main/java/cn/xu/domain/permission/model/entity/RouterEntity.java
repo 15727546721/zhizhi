@@ -26,6 +26,8 @@ public class RouterEntity {
     private List<RouterEntity> children;
 
     @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
     public static class MetaEntity {
         private String title;
         private String icon;
@@ -34,8 +36,7 @@ public class RouterEntity {
         public MetaEntity(String title, String icon, Integer hidden) {
             this.title = title;
             this.icon = icon;
-            this.hidden = hidden == 0;
+            this.hidden = hidden != null && hidden == 0;
         }
     }
 }
-

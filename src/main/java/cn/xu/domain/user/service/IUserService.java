@@ -1,12 +1,12 @@
 package cn.xu.domain.user.service;
 
-import cn.xu.api.system.model.dto.user.UserRequest;
-import cn.xu.api.web.model.dto.user.LoginRequest;
-import cn.xu.api.web.model.dto.user.RegisterRequest;
-import cn.xu.api.web.model.dto.user.UpdateUserReq;
+import cn.xu.api.system.model.dto.user.SysUserRequest;
+import cn.xu.api.web.model.dto.user.UpdateUserRequest;
+import cn.xu.api.web.model.dto.user.UserLoginRequest;
+import cn.xu.api.web.model.dto.user.UserRegisterRequest;
+import cn.xu.common.request.PageRequest;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.model.entity.UserInfoEntity;
-import cn.xu.infrastructure.common.request.PageRequest;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -24,12 +24,12 @@ public interface IUserService {
     /**
      * 用户注册
      */
-    void register(RegisterRequest request);
+    void register(UserRegisterRequest request);
 
     /**
      * 用户登录
      */
-    UserEntity login(LoginRequest request);
+    UserEntity login(UserLoginRequest request);
 
     /**
      * 获取用户信息
@@ -59,12 +59,12 @@ public interface IUserService {
     /**
      * 添加用户
      */
-    void addUser(UserRequest userRequest);
+    void addUser(SysUserRequest userRequest);
 
     /**
      * 更新用户
      */
-    void updateUser(UserRequest userRequest);
+    void updateUser(SysUserRequest userRequest);
 
     /**
      * 删除用户
@@ -123,7 +123,7 @@ public interface IUserService {
      *
      * @param user
      */
-    void update(UpdateUserReq user);
+    void update(UpdateUserRequest user);
 
     /**
      * 批量获取用户信息

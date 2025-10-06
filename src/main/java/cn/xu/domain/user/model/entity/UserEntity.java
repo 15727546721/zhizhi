@@ -1,15 +1,12 @@
 package cn.xu.domain.user.model.entity;
 
-import cn.xu.application.common.ResponseCode;
+import cn.xu.common.ResponseCode;
+import cn.xu.common.exception.BusinessException;
 import cn.xu.domain.user.model.valobj.Email;
 import cn.xu.domain.user.model.valobj.Password;
 import cn.xu.domain.user.model.valobj.Phone;
 import cn.xu.domain.user.model.valobj.Username;
-import cn.xu.infrastructure.common.exception.BusinessException;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
@@ -21,6 +18,8 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString
 public class UserEntity {
     private Long id;
     private Username username;
@@ -87,6 +86,7 @@ public class UserEntity {
      * 创建新用户
      */
     public static UserEntity createNewUser(String username, String password, String email, String nickname) {
+        LocalDateTime now = LocalDateTime.now();
         return UserEntity.builder()
                 .username(new Username(username))
                 .password(new Password(password))
@@ -96,11 +96,42 @@ public class UserEntity {
                 .followCount(0L)
                 .fansCount(0L)
                 .likeCount(0L)
-                .createTime(LocalDateTime.now())
-                .updateTime(LocalDateTime.now())
+                .createTime(now)
+                .updateTime(now)
+                .lastActionTime(now)
+                .passwordUpdateTime(now)
                 .build();
     }
 
+    /**
+     * 验证用户是否可以执行操作
+     */
+    public void validateCanPerformAction() {
+        if (isBanned()) {
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "账户已被封禁，无法执行此操作");
+        }
+        if (this.status == UserStatus.PENDING) {
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "账户待审核，无法执行此操作");
+        }
+        // 更新最后操作时间
+        updateLastActionTime();
+    }
+    
+    /**
+     * 验证用户是否可以登录
+     */
+    public void validateCanLogin() {
+        if (isBanned()) {
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "账户已被封禁，无法登录");
+        }
+        if (this.status == UserStatus.PENDING) {
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "账户待审核，无法登录");
+        }
+        if (isLocked()) {
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "账户已被锁定，无法登录");
+        }
+    }
+    
     /**
      * 验证密码
      */
@@ -119,7 +150,9 @@ public class UserEntity {
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "原密码错误");
         }
         this.password = new Password(newPassword);
+        this.passwordUpdateTime = LocalDateTime.now();
         this.updateTime = LocalDateTime.now();
+        updateLastActionTime();
     }
 
     /**
@@ -131,6 +164,7 @@ public class UserEntity {
         }
         this.status = UserStatus.BANNED;
         this.updateTime = LocalDateTime.now();
+        updateLastActionTime();
     }
 
     /**
@@ -142,6 +176,7 @@ public class UserEntity {
         }
         this.status = UserStatus.NORMAL;
         this.updateTime = LocalDateTime.now();
+        updateLastActionTime();
     }
 
     /**
@@ -157,45 +192,41 @@ public class UserEntity {
     public boolean isNormal() {
         return this.status == UserStatus.NORMAL;
     }
-
+    
     /**
-     * 增加关注数
+     * 判断用户是否待审核
      */
-    public void increaseFollowCount() {
-        this.followCount = (this.followCount == null ? 0L : this.followCount) + 1L;
-        this.updateTime = LocalDateTime.now();
+    public boolean isPending() {
+        return this.status == UserStatus.PENDING;
     }
-
+    
     /**
-     * 减少关注数
+     * 获取用户状态
+     * 
+     * @return 用户状态
      */
-    public void decreaseFollowCount() {
-        this.followCount = Math.max(0L, (this.followCount == null ? 0L : this.followCount) - 1L);
-        this.updateTime = LocalDateTime.now();
+    public UserStatus getStatus() {
+        return status;
     }
-
+    
     /**
-     * 增加粉丝数
+     * 设置用户状态
+     * 
+     * @param status 用户状态
      */
-    public void increaseFansCount() {
-        this.fansCount = (this.fansCount == null ? 0L : this.fansCount) + 1L;
+    public void setStatus(UserStatus status) {
+        this.status = status;
         this.updateTime = LocalDateTime.now();
+        updateLastActionTime();
     }
-
-    /**
-     * 减少粉丝数
-     */
-    public void decreaseFansCount() {
-        this.fansCount = Math.max(0L, (this.fansCount == null ? 0L : this.fansCount) - 1L);
-        this.updateTime = LocalDateTime.now();
-    }
-
+    
     /**
      * 增加获赞数
      */
     public void increaseLikeCount() {
         this.likeCount = (this.likeCount == null ? 0L : this.likeCount) + 1L;
         this.updateTime = LocalDateTime.now();
+        updateLastActionTime();
     }
 
     /**
@@ -204,6 +235,43 @@ public class UserEntity {
     public void decreaseLikeCount() {
         this.likeCount = Math.max(0L, (this.likeCount == null ? 0L : this.likeCount) - 1L);
         this.updateTime = LocalDateTime.now();
+        updateLastActionTime();
+    }
+    
+    /**
+     * 增加关注数
+     */
+    public void increaseFollowCount() {
+        this.followCount = (this.followCount == null ? 0L : this.followCount) + 1L;
+        this.updateTime = LocalDateTime.now();
+        updateLastActionTime();
+    }
+
+    /**
+     * 减少关注数
+     */
+    public void decreaseFollowCount() {
+        this.followCount = Math.max(0L, (this.followCount == null ? 0L : this.followCount) - 1L);
+        this.updateTime = LocalDateTime.now();
+        updateLastActionTime();
+    }
+
+    /**
+     * 增加粉丝数
+     */
+    public void increaseFansCount() {
+        this.fansCount = (this.fansCount == null ? 0L : this.fansCount) + 1L;
+        this.updateTime = LocalDateTime.now();
+        updateLastActionTime();
+    }
+
+    /**
+     * 减少粉丝数
+     */
+    public void decreaseFansCount() {
+        this.fansCount = Math.max(0L, (this.fansCount == null ? 0L : this.fansCount) - 1L);
+        this.updateTime = LocalDateTime.now();
+        updateLastActionTime();
     }
     
     /**
@@ -214,6 +282,7 @@ public class UserEntity {
     public void setFollowCount(Long followCount) {
         this.followCount = followCount;
         this.updateTime = LocalDateTime.now();
+        updateLastActionTime();
     }
     
     /**
@@ -224,8 +293,36 @@ public class UserEntity {
     public void setFansCount(Long fansCount) {
         this.fansCount = fansCount;
         this.updateTime = LocalDateTime.now();
+        updateLastActionTime();
     }
-
+    
+    /**
+     * 获取关注数
+     * 
+     * @return 关注数
+     */
+    public Long getFollowCount() {
+        return followCount != null ? followCount : 0L;
+    }
+    
+    /**
+     * 获取粉丝数
+     * 
+     * @return 粉丝数
+     */
+    public Long getFansCount() {
+        return fansCount != null ? fansCount : 0L;
+    }
+    
+    /**
+     * 获取获赞数
+     * 
+     * @return 获赞数
+     */
+    public Long getLikeCount() {
+        return likeCount != null ? likeCount : 0L;
+    }
+    
     /**
      * 更新最后登录信息
      */
@@ -233,6 +330,7 @@ public class UserEntity {
         this.lastLoginTime = LocalDateTime.now();
         this.lastLoginIp = ip;
         this.updateTime = LocalDateTime.now();
+        updateLastActionTime();
     }
 
     /**
@@ -251,6 +349,7 @@ public class UserEntity {
         this.birthday = birthday;
         this.description = description;
         this.updateTime = LocalDateTime.now();
+        updateLastActionTime();
     }
 
     /**
@@ -262,18 +361,7 @@ public class UserEntity {
         }
         this.avatar = avatarUrl;
         this.updateTime = LocalDateTime.now();
-    }
-
-    /**
-     * 验证用户是否可以执行某个操作
-     */
-    public void validateCanPerformAction() {
-        if (isBanned()) {
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "账户已被封禁，无法执行此操作");
-        }
-        if (this.status == UserStatus.PENDING) {
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "账户待审核，无法执行此操作");
-        }
+        updateLastActionTime();
     }
 
     // ==================== 兼容性方法 ====================
@@ -312,6 +400,7 @@ public class UserEntity {
     public void setStatusByCode(Integer statusCode) {
         this.status = UserStatus.fromCode(statusCode);
         this.updateTime = LocalDateTime.now();
+        updateLastActionTime();
     }
     
     // ==================== 安全相关方法 ====================
@@ -322,6 +411,7 @@ public class UserEntity {
     public void lockAccount(int lockoutDurationMinutes) {
         this.lockoutEndTime = LocalDateTime.now().plusMinutes(lockoutDurationMinutes);
         this.updateTime = LocalDateTime.now();
+        updateLastActionTime();
     }
     
     /**
@@ -330,6 +420,7 @@ public class UserEntity {
     public void resetFailedLoginAttempts() {
         this.failedLoginAttempts = 0;
         this.updateTime = LocalDateTime.now();
+        updateLastActionTime();
     }
     
     /**
@@ -340,20 +431,27 @@ public class UserEntity {
     }
     
     /**
-     * 判断是否为管理员
+     * 检查密码是否需要更新
+     * 根据密码更新时间和最大有效天数判断
+     * 
+     * @param maxDays 密码有效天数
+     * @return 是否需要更新密码
      */
-    public boolean isAdmin() {
-        // 这里可以根据实际业务需求设置管理员判断逻辑
-        // 例如根据用户角色或特殊标识
-        return false; // 默认非管理员
+    public boolean isPasswordUpdateRequired(int maxDays) {
+        if (this.passwordUpdateTime == null) {
+            return true;
+        }
+        LocalDateTime expireDate = this.passwordUpdateTime.plusDays(maxDays);
+        return LocalDateTime.now().isAfter(expireDate);
     }
     
     /**
      * 判断是否为超级管理员
+     * 根据用户ID判断，实际项目中应该基于角色权限系统判断
      */
     public boolean isSuperAdmin() {
-        // 这里可以根据实际业务需求设置超级管理员判断逻辑
-        return false; // 默认非超级管理员
+        // 这里假设ID为1的用户为超级管理员
+        return id != null && id == 1L;
     }
     
     /**
@@ -364,13 +462,6 @@ public class UserEntity {
             return false;
         }
         return LocalDateTime.now().isBefore(lockoutEndTime);
-    }
-    
-    /**
-     * 获取最后操作时间
-     */
-    public LocalDateTime getLastActionTime() {
-        return lastActionTime;
     }
     
     /**
@@ -385,6 +476,29 @@ public class UserEntity {
      */
     public void recordFailedLogin() {
         this.failedLoginAttempts = getFailedLoginAttempts() + 1;
-        this.updateTime = LocalDateTime.now();
+        updateLastActionTime();
+    }
+    
+    /**
+     * 更新最后操作时间
+     */
+    public void updateLastActionTime() {
+        this.lastActionTime = LocalDateTime.now();
+    }
+    
+    /**
+     * 判断是否为管理员
+     * 根据用户ID判断，实际项目中应该基于角色权限系统判断
+     */
+    public boolean isAdmin() {
+        // 这里假设ID为1或2的用户为管理员
+        return id != null && (id == 1L || id == 2L);
+    }
+    
+    /**
+     * 获取最后操作时间
+     */
+    public LocalDateTime getLastActionTime() {
+        return lastActionTime;
     }
 }

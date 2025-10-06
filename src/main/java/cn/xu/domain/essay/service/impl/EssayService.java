@@ -2,23 +2,28 @@ package cn.xu.domain.essay.service.impl;
 
 import cn.xu.api.web.model.dto.essay.EssayQueryRequest;
 import cn.xu.api.web.model.dto.essay.TopicResponse;
+import cn.xu.common.exception.BusinessException;
 import cn.xu.domain.essay.command.CreateEssayCommand;
+import cn.xu.domain.essay.event.EssayDeletedEvent;
+import cn.xu.domain.essay.event.EssayEventPublisher;
 import cn.xu.domain.essay.model.aggregate.EssayAggregate;
 import cn.xu.domain.essay.model.entity.EssayEntity;
 import cn.xu.domain.essay.model.entity.EssayWithUserAggregation;
 import cn.xu.domain.essay.model.valobj.EssayType;
-import cn.xu.domain.essay.model.vo.EssayVO;
+import cn.xu.domain.essay.model.vo.EssayResponse;
 import cn.xu.domain.essay.repository.IEssayRepository;
 import cn.xu.domain.essay.service.IEssayService;
+import cn.xu.domain.file.service.IFileStorageService;
 import cn.xu.domain.file.service.MinioService;
-import cn.xu.infrastructure.common.exception.BusinessException;
 import cn.xu.infrastructure.persistent.repository.CommentRepositoryImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -32,6 +37,12 @@ public class EssayService implements IEssayService {
 
     @Resource
     private IEssayRepository essayRepository;
+
+    @Resource
+    private IFileStorageService fileStorageService;
+
+    @Resource
+    private EssayEventPublisher essayEventPublisher;
 
     @Resource
     private MinioService minioService;
@@ -130,11 +141,32 @@ public class EssayService implements IEssayService {
                 throw new BusinessException("随笔不存在");
             }
             
+            // 删除随笔相关的图片
+            if (essayEntity.getImages() != null && !essayEntity.getImages().isEmpty()) {
+                List<String> imageUrls = essayEntity.getImages().getImageUrls();
+                try {
+                    fileStorageService.deleteFiles(imageUrls);
+                    log.info("删除随笔相关图片成功，随笔ID: {}, 图片数量: {}", id, imageUrls.size());
+                } catch (Exception e) {
+                    log.warn("删除随笔相关图片失败，随笔ID: {}", id, e);
+                }
+            }
+            
             // 删除随笔
             essayRepository.deleteById(id);
             
-            // TODO: 这里可以添加删除相关图片的逻辑
-            // TODO: 这里可以发布随笔删除事件
+            // 发布随笔删除事件
+            try {
+                EssayDeletedEvent event = EssayDeletedEvent.builder()
+                        .essayId(id)
+                        .userId(essayEntity.getUserId())
+                        .deletedTime(LocalDateTime.now())
+                        .build();
+                essayEventPublisher.publishEssayDeletedEvent(event);
+                log.info("发布随笔删除事件成功，随笔ID: {}", id);
+            } catch (Exception e) {
+                log.warn("发布随笔删除事件失败，随笔ID: {}", id, e);
+            }
             
             log.info("随笔删除成功，随笔ID: {}", id);
             
@@ -169,7 +201,7 @@ public class EssayService implements IEssayService {
     }
 
     @Override
-    public List<EssayVO> getEssayList(EssayQueryRequest request) {
+    public List<EssayResponse> getEssayList(EssayQueryRequest request) {
         if (request == null) {
             throw new BusinessException("查询请求不能为空");
         }
@@ -192,7 +224,7 @@ public class EssayService implements IEssayService {
             List<EssayWithUserAggregation> essayList = essayRepository.findEssayList(
                     page, size, topic, essayType.name());
             
-            List<EssayVO> voList = convertToVOList(essayList);
+            List<EssayResponse> voList = convertToVOList(essayList);
             
             log.debug("查询随笔列表成功，页码: {}, 大小: {}, 话题: {}, 类型: {}, 结果数量: {}", 
                     page, size, topic, essayType.name(), voList.size());
@@ -208,15 +240,15 @@ public class EssayService implements IEssayService {
     /**
      * 将聚合对象转换为VO对象列表
      */
-    private List<EssayVO> convertToVOList(List<EssayWithUserAggregation> essayList) {
+    private List<EssayResponse> convertToVOList(List<EssayWithUserAggregation> essayList) {
         if (essayList == null || essayList.isEmpty()) {
             return new LinkedList<>();
         }
         
-        List<EssayVO> voList = new LinkedList<>();
+        List<EssayResponse> voList = new LinkedList<>();
         for (EssayWithUserAggregation essay : essayList) {
             try {
-                EssayVO vo = convertToVO(essay);
+                EssayResponse vo = convertToVO(essay);
                 if (vo != null) {
                     voList.add(vo);
                 }
@@ -231,7 +263,7 @@ public class EssayService implements IEssayService {
     /**
      * 将聚合对象转换为VO对象
      */
-    private EssayVO convertToVO(EssayWithUserAggregation essay) {
+    private EssayResponse convertToVO(EssayWithUserAggregation essay) {
         if (essay == null) {
             return null;
         }
@@ -249,7 +281,7 @@ public class EssayService implements IEssayService {
             images = essay.getImages().split(",");
         }
         
-        return EssayVO.builder()
+        return EssayResponse.builder()
                 .id(essay.getId())
                 .user(essay.getUser())
                 .content(essay.getContent())
@@ -287,9 +319,36 @@ public class EssayService implements IEssayService {
 
     @Override
     public TopicResponse getTopicDetail(Long id) {
-        // TODO: 实现话题详情查询逻辑
-        log.warn("getTopicDetail方法尚未实现，ID: {}", id);
-        return null;
+        // 实现话题详情查询逻辑
+        if (id == null || id <= 0) {
+            throw new BusinessException("话题ID不能为空");
+        }
+        
+        try {
+            // 查询话题详情
+            EssayEntity essayEntity = essayRepository.findById(id);
+            if (essayEntity == null) {
+                log.warn("话题不存在，话题ID: {}", id);
+                return null;
+            }
+            
+            // 构建话题响应对象
+            TopicResponse response = TopicResponse.builder()
+                    .id(essayEntity.getId())
+                    .userId(essayEntity.getUserId())
+                    .content(essayEntity.getContent().toString()) // 使用toString()方法替代getValue()
+                    .images(Arrays.asList(essayEntity.getImages().getImageUrls().toArray(new String[0])))
+                    .createTime(essayEntity.getCreateTime())
+                    .updateTime(essayEntity.getUpdateTime())
+                    .build();
+            
+            log.info("查询话题详情成功，话题ID: {}", id);
+            return response;
+            
+        } catch (Exception e) {
+            log.error("查询话题详情失败，话题ID: {}", id, e);
+            throw new BusinessException("查询话题详情失败: " + e.getMessage());
+        }
     }
     
     /**

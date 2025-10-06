@@ -242,14 +242,14 @@ public class NotificationAggregate {
     }
 
     // 工厂方法：创建评论通知
-    public static NotificationAggregate createCommentNotification(Long senderId, Long userId, String content, Long articleId, BusinessType notificationBusinessType) {
+    public static NotificationAggregate createCommentNotification(Long senderId, Long userId, String content, Long postId, BusinessType notificationBusinessType) {
         return builder()
                 .type(NotificationType.COMMENT)
                 .receiverId(userId)
                 .senderId(senderId)
                 .content(content)
                 .businessType(notificationBusinessType)
-                .businessId(articleId)
+                .businessId(postId)
                 .read(false)
                 .status(true)
                 .build();

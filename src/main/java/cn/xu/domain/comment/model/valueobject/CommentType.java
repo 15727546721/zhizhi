@@ -1,7 +1,7 @@
 package cn.xu.domain.comment.model.valueobject;
 
-import cn.xu.application.common.ResponseCode;
-import cn.xu.infrastructure.common.exception.BusinessException;
+import cn.xu.common.ResponseCode;
+import cn.xu.common.exception.BusinessException;
 import lombok.Getter;
 
 /**
@@ -9,7 +9,7 @@ import lombok.Getter;
  */
 @Getter
 public enum CommentType {
-    ARTICLE(1, "文章评论"),
+    POST(1, "帖子评论"),
     ESSAY(2, "随笔评论"),
     COMMENT(3, "评论回复");
 

@@ -2,20 +2,18 @@ package cn.xu.domain.follow.service.impl;
 
 import cn.xu.domain.follow.event.FollowEvent;
 import cn.xu.domain.follow.event.FollowEventPublisher;
-import cn.xu.domain.follow.model.entity.UserFollowEntity;
-import cn.xu.domain.follow.model.valueobject.FollowStatus;
+import cn.xu.domain.follow.model.aggregate.FollowAggregate;
+import cn.xu.domain.follow.model.entity.FollowRelationEntity;
 import cn.xu.domain.follow.repository.IFollowRepository;
 import cn.xu.domain.follow.service.FollowApplicationService;
 import cn.xu.domain.follow.service.IFollowService;
-import cn.xu.domain.user.model.aggregate.UserAggregate;
 import cn.xu.domain.user.repository.IUserAggregateRepository;
-import cn.xu.infrastructure.common.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -44,13 +42,13 @@ public class FollowService implements IFollowService {
     }
 
     @Override
-    public List<UserFollowEntity> getFollowingList(Long followerId) {
+    public List<FollowRelationEntity> getFollowingList(Long followerId) {
         // 这个方法在新的设计中将逐步废弃，使用分页版本
         return getFollowingList(followerId, 1, 100);
     }
 
     @Override
-    public List<UserFollowEntity> getFollowersList(Long followedId) {
+    public List<FollowRelationEntity> getFollowersList(Long followedId) {
         // 这个方法在新的设计中将逐步废弃，使用分页版本
         return getFollowersList(followedId, 1, 100);
     }
@@ -63,11 +61,14 @@ public class FollowService implements IFollowService {
      * @param pageSize 页面大小
      * @return 关注关系实体列表
      */
-    public List<UserFollowEntity> getFollowingList(Long followerId, Integer pageNo, Integer pageSize) {
-        // 转换调用新的应用服务
-        // 注意：这里需要做适配，将FollowAggregate转换为UserFollowEntity
-        // 在实际实现中，可能需要调整接口设计
-        return Collections.emptyList();
+    public List<FollowRelationEntity> getFollowingList(Long followerId, Integer pageNo, Integer pageSize) {
+        // 调用应用服务获取关注聚合根列表
+        List<FollowAggregate> aggregates = followApplicationService.getFollowingList(followerId, pageNo, pageSize);
+        
+        // 将聚合根转换为实体列表
+        return aggregates.stream()
+                .map(FollowAggregate::getFollowRelation)
+                .collect(Collectors.toList());
     }
     
     /**
@@ -78,11 +79,14 @@ public class FollowService implements IFollowService {
      * @param pageSize 页面大小
      * @return 关注关系实体列表
      */
-    public List<UserFollowEntity> getFollowersList(Long followedId, Integer pageNo, Integer pageSize) {
-        // 转换调用新的应用服务
-        // 注意：这里需要做适配，将FollowAggregate转换为UserFollowEntity
-        // 在实际实现中，可能需要调整接口设计
-        return Collections.emptyList();
+    public List<FollowRelationEntity> getFollowersList(Long followedId, Integer pageNo, Integer pageSize) {
+        // 调用应用服务获取粉丝聚合根列表
+        List<FollowAggregate> aggregates = followApplicationService.getFollowersList(followedId, pageNo, pageSize);
+        
+        // 将聚合根转换为实体列表
+        return aggregates.stream()
+                .map(FollowAggregate::getFollowRelation)
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -103,7 +107,7 @@ public class FollowService implements IFollowService {
         }
         
         // 验证用户ID的有效性
-        UserFollowEntity.validateFollowRelation(followerId, followedId);
+        FollowRelationEntity.validateFollowRelation(followerId, followedId);
          
         return followApplicationService.isFollowing(followerId, followedId);
     }

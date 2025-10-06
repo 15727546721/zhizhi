@@ -1,6 +1,6 @@
 package cn.xu.infrastructure.persistent.repository;
 
-import cn.xu.domain.follow.model.entity.UserFollowEntity;
+import cn.xu.domain.follow.model.entity.FollowRelationEntity;
 import cn.xu.domain.follow.repository.IFollowRepository;
 import cn.xu.infrastructure.persistent.converter.FollowConverter;
 import cn.xu.infrastructure.persistent.dao.FollowMapper;
@@ -24,7 +24,7 @@ public class FollowRepository implements IFollowRepository {
     private final FollowConverter followConverter;
 
     @Override
-    public void save(UserFollowEntity entity) {
+    public void save(FollowRelationEntity entity) {
         Follow po = followConverter.toDataObject(entity);
         userFollowDao.insert(po);
         entity.setId(po.getId());
@@ -36,19 +36,19 @@ public class FollowRepository implements IFollowRepository {
     }
 
     @Override
-    public UserFollowEntity getByFollowerAndFollowed(Long followerId, Long followedId) {
+    public FollowRelationEntity getByFollowerAndFollowed(Long followerId, Long followedId) {
         Follow po = userFollowDao.getByFollowerAndFollowed(followerId, followedId);
         return followConverter.toDomainEntity(po);
     }
 
     @Override
-    public List<UserFollowEntity> listByFollowerId(Long followerId) {
+    public List<FollowRelationEntity> listByFollowerId(Long followerId) {
         List<Follow> follows = userFollowDao.listByFollowerId(followerId);
         return followConverter.toDomainEntities(follows);
     }
 
     @Override
-    public List<UserFollowEntity> listByFollowedId(Long followedId) {
+    public List<FollowRelationEntity> listByFollowedId(Long followedId) {
         List<Follow> follows = userFollowDao.listByFollowedId(followedId);
         return followConverter.toDomainEntities(follows);
     }

@@ -39,7 +39,7 @@ public class HotCommentCacheUpdateTask {
         
         try {
             // 更新文章评论热门数据
-            updateHotCommentsForType(CommentType.ARTICLE);
+            updateHotCommentsForType(CommentType.POST);
             
             // 更新随笔评论热门数据
             updateHotCommentsForType(CommentType.ESSAY);

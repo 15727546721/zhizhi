@@ -4,16 +4,16 @@ import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.api.web.model.dto.essay.EssayQueryRequest;
 import cn.xu.api.web.model.dto.essay.EssaySaveRequest;
-import cn.xu.application.common.ResponseCode;
+import cn.xu.common.ResponseCode;
+import cn.xu.common.annotation.ApiOperationLog;
+import cn.xu.common.exception.BusinessException;
+import cn.xu.common.response.ResponseEntity;
 import cn.xu.domain.essay.command.CreateEssayCommand;
-import cn.xu.domain.essay.model.vo.EssayVO;
+import cn.xu.domain.essay.model.vo.EssayResponse;
 import cn.xu.domain.essay.service.impl.EssayService;
 import cn.xu.domain.file.service.MinioService;
 import cn.xu.domain.like.model.LikeType;
 import cn.xu.domain.like.service.ILikeService;
-import cn.xu.infrastructure.common.annotation.ApiOperationLog;
-import cn.xu.infrastructure.common.exception.BusinessException;
-import cn.xu.infrastructure.common.response.ResponseEntity;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
@@ -43,6 +43,7 @@ public class EssayController {
     @Operation(summary = "创建随笔")
     @SaCheckLogin
     @PostMapping("/create")
+    @ApiOperationLog(description = "创建随笔")
     public ResponseEntity<Void> createTopic(@RequestBody EssaySaveRequest request) {
         log.info("开始创建随笔，请求参数: {}", request);
         CreateEssayCommand command = new CreateEssayCommand();
@@ -60,14 +61,14 @@ public class EssayController {
     @Operation(summary = "获取随笔列表")
     @ApiOperationLog(description = "获取随笔列表")
     @PostMapping("/list/page")
-    public ResponseEntity<List<EssayVO>> queryEssayList(@RequestBody EssayQueryRequest request) {
+    public ResponseEntity<List<EssayResponse>> queryEssayList(@RequestBody EssayQueryRequest request) {
         log.info("开始获取随笔列表，请求参数: {}", request.getPageNo());
         if (request.getType() == null) {
             throw new BusinessException("查询类型不能为空!");
         }
-        List<EssayVO> essayEntities = essayService.getEssayList(request);
+        List<EssayResponse> essayEntities = essayService.getEssayList(request);
 
-        return ResponseEntity.<List<EssayVO>>builder()
+        return ResponseEntity.<List<EssayResponse>>builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .info(ResponseCode.SUCCESS.getMessage())
                 .data(essayEntities)
@@ -76,6 +77,7 @@ public class EssayController {
 
     @Operation(summary = "删除随笔")
     @DeleteMapping("/{id}")
+    @ApiOperationLog(description = "删除随笔")
     public ResponseEntity<Void> deleteTopic(@PathVariable Long id) {
         essayService.deleteTopic(id);
         return ResponseEntity.<Void>builder()
@@ -86,6 +88,7 @@ public class EssayController {
 
     @Operation(summary = "上传随笔图片")
     @PostMapping("/upload/images")
+    @ApiOperationLog(description = "上传随笔图片")
     public ResponseEntity<List<String>> uploadTopicImages(@RequestParam("files") MultipartFile[] files) {
         log.info("开始上传随笔图片，文件数量: {}", files.length);
         List<String> imageUrls = new ArrayList<>();
@@ -127,10 +130,11 @@ public class EssayController {
     @GetMapping("/like/{id}")
     @Operation(summary = "随笔点赞")
     @SaCheckLogin
+    @ApiOperationLog(description = "随笔点赞")
     public ResponseEntity<Void> likeEssay(@PathVariable Long id) {
         log.info("开始点赞随笔，id: {}", id);
         long userId = StpUtil.getLoginIdAsLong();
-        likeService.like(userId, LikeType.ESSAY.getCode(), id);
+        likeService.like(userId, LikeType.ESSAY, id);
         return ResponseEntity.<Void>builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .info(ResponseCode.SUCCESS.getMessage())
@@ -140,12 +144,13 @@ public class EssayController {
     @GetMapping("/unlike/{id}")
     @Operation(summary = "取消随笔点赞")
     @SaCheckLogin
+    @ApiOperationLog(description = "取消随笔点赞")
     public ResponseEntity<?> unlikeEssay(@PathVariable("id") Long id) {
         long userId = StpUtil.getLoginIdAsLong();
-        likeService.unlike(userId, LikeType.ESSAY.getCode(), id);
+        likeService.unlike(userId, LikeType.ESSAY, id);
         return ResponseEntity.builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .info("文章取消点赞成功")
                 .build();
     }
-} 
+}

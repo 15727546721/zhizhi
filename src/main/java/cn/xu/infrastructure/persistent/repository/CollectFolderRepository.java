@@ -1,9 +1,9 @@
 package cn.xu.infrastructure.persistent.repository;
 
-import cn.xu.domain.article.model.entity.CollectFolderEntity;
-import cn.xu.domain.article.repository.ICollectFolderRepository;
+import cn.xu.domain.collect.model.entity.CollectFolderEntity;
+import cn.xu.domain.collect.repository.ICollectFolderRepository;
 import cn.xu.infrastructure.persistent.dao.CollectFolderMapper;
-import cn.xu.infrastructure.persistent.po.CollectFolder;
+import cn.xu.infrastructure.persistent.po.CollectFolderPO;
 import org.springframework.stereotype.Repository;
 
 import javax.annotation.Resource;
@@ -22,14 +22,14 @@ public class CollectFolderRepository implements ICollectFolderRepository {
 
     @Override
     public Long save(CollectFolderEntity collectFolderEntity) {
-        CollectFolder collectFolder = convertToPO(collectFolderEntity);
+        CollectFolderPO collectFolder = convertToPO(collectFolderEntity);
         collectFolderMapper.insert(collectFolder);
         return collectFolder.getId();
     }
 
     @Override
     public void update(CollectFolderEntity collectFolderEntity) {
-        CollectFolder collectFolder = convertToPO(collectFolderEntity);
+        CollectFolderPO collectFolder = convertToPO(collectFolderEntity);
         collectFolderMapper.update(collectFolder);
     }
 
@@ -40,13 +40,13 @@ public class CollectFolderRepository implements ICollectFolderRepository {
 
     @Override
     public Optional<CollectFolderEntity> findById(Long id) {
-        CollectFolder collectFolder = collectFolderMapper.selectById(id);
+        CollectFolderPO collectFolder = collectFolderMapper.selectById(id);
         return Optional.ofNullable(convertToEntity(collectFolder));
     }
 
     @Override
     public List<CollectFolderEntity> findByUserId(Long userId) {
-        List<CollectFolder> collectFolders = collectFolderMapper.selectByUserId(userId);
+        List<CollectFolderPO> collectFolders = collectFolderMapper.selectByUserId(userId);
         return collectFolders.stream()
                 .map(this::convertToEntity)
                 .collect(Collectors.toList());
@@ -54,43 +54,43 @@ public class CollectFolderRepository implements ICollectFolderRepository {
 
     @Override
     public Optional<CollectFolderEntity> findByUserIdAndName(Long userId, String name) {
-        CollectFolder collectFolder = collectFolderMapper.selectByUserIdAndName(userId, name);
+        CollectFolderPO collectFolder = collectFolderMapper.selectByUserIdAndName(userId, name);
         return Optional.ofNullable(convertToEntity(collectFolder));
     }
 
     @Override
     public Optional<CollectFolderEntity> findDefaultFolderByUserId(Long userId) {
-        CollectFolder collectFolder = collectFolderMapper.selectDefaultFolderByUserId(userId);
+        CollectFolderPO collectFolder = collectFolderMapper.selectDefaultFolderByUserId(userId);
         return Optional.ofNullable(convertToEntity(collectFolder));
     }
 
     @Override
-    public void updateArticleCount(Long folderId, Integer count) {
-        collectFolderMapper.updateArticleCount(folderId, count);
+    public void updateContentCount(Long folderId, Integer count) {
+        collectFolderMapper.updatePostCount(folderId, count);
     }
 
     /**
      * 将持久化对象转换为领域实体
      *
-     * @param collectFolder 持久化对象
+     * @param collectFolderPO 持久化对象
      * @return 领域实体
      */
-    private CollectFolderEntity convertToEntity(CollectFolder collectFolder) {
-        if (collectFolder == null) {
+    private CollectFolderEntity convertToEntity(CollectFolderPO collectFolderPO) {
+        if (collectFolderPO == null) {
             return null;
         }
 
         return CollectFolderEntity.builder()
-                .id(collectFolder.getId())
-                .userId(collectFolder.getUserId())
-                .name(collectFolder.getName())
-                .description(collectFolder.getDescription())
-                .isDefault(collectFolder.getIsDefault() != null && collectFolder.getIsDefault() == 1)
-                .articleCount(collectFolder.getArticleCount())
-                .isPublic(collectFolder.getIsPublic() != null && collectFolder.getIsPublic() == 1)
-                .sort(collectFolder.getSort())
-                .createTime(collectFolder.getCreateTime())
-                .updateTime(collectFolder.getUpdateTime())
+                .id(collectFolderPO.getId())
+                .userId(collectFolderPO.getUserId())
+                .name(collectFolderPO.getName())
+                .description(collectFolderPO.getDescription())
+                .isDefault(collectFolderPO.getIsDefault())
+                .contentCount(collectFolderPO.getContentCount())
+                .isPublic(collectFolderPO.getIsPublic())
+                .sort(collectFolderPO.getSort())
+                .createTime(collectFolderPO.getCreateTime())
+                .updateTime(collectFolderPO.getUpdateTime())
                 .build();
     }
 
@@ -100,19 +100,19 @@ public class CollectFolderRepository implements ICollectFolderRepository {
      * @param collectFolderEntity 领域实体
      * @return 持久化对象
      */
-    private CollectFolder convertToPO(CollectFolderEntity collectFolderEntity) {
+    private CollectFolderPO convertToPO(CollectFolderEntity collectFolderEntity) {
         if (collectFolderEntity == null) {
             return null;
         }
 
-        CollectFolder collectFolder = new CollectFolder();
+        CollectFolderPO collectFolder = new CollectFolderPO();
         collectFolder.setId(collectFolderEntity.getId());
         collectFolder.setUserId(collectFolderEntity.getUserId());
         collectFolder.setName(collectFolderEntity.getName());
         collectFolder.setDescription(collectFolderEntity.getDescription());
-        collectFolder.setIsDefault(collectFolderEntity.getIsDefault() != null && collectFolderEntity.getIsDefault() ? 1 : 0);
-        collectFolder.setArticleCount(collectFolderEntity.getArticleCount());
-        collectFolder.setIsPublic(collectFolderEntity.getIsPublic() != null && collectFolderEntity.getIsPublic() ? 1 : 0);
+        collectFolder.setIsDefault(collectFolderEntity.getIsDefault());
+        collectFolder.setContentCount(collectFolderEntity.getContentCount());
+        collectFolder.setIsPublic(collectFolderEntity.getIsPublic());
         collectFolder.setSort(collectFolderEntity.getSort());
         collectFolder.setCreateTime(collectFolderEntity.getCreateTime());
         collectFolder.setUpdateTime(collectFolderEntity.getUpdateTime());

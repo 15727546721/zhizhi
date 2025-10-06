@@ -1,7 +1,7 @@
 package cn.xu.domain.essay.model.valobj;
 
-import cn.xu.infrastructure.common.exception.BusinessException;
-import cn.xu.infrastructure.common.utils.SensitiveWordFilter;
+import cn.xu.common.exception.BusinessException;
+import cn.xu.common.utils.SensitiveWordFilter;
 import lombok.Getter;
 
 import java.util.Objects;

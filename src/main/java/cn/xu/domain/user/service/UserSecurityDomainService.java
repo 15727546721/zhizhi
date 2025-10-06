@@ -1,8 +1,8 @@
 package cn.xu.domain.user.service;
 
+import cn.xu.common.exception.BusinessException;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.model.valobj.Password;
-import cn.xu.infrastructure.common.exception.BusinessException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 

@@ -1,13 +1,18 @@
 package cn.xu.domain.user.service.impl;
 
-import cn.dev33.satoken.secure.SaSecureUtil;
 import cn.dev33.satoken.stp.StpUtil;
-import cn.xu.api.system.model.dto.user.UserRequest;
-import cn.xu.api.web.model.dto.user.LoginRequest;
-import cn.xu.api.web.model.dto.user.RegisterRequest;
-import cn.xu.api.web.model.dto.user.UpdateUserReq;
-import cn.xu.application.common.ResponseCode;
+import cn.xu.api.system.model.dto.user.SysUserRequest;
+import cn.xu.api.web.model.dto.user.UpdateUserRequest;
+import cn.xu.api.web.model.dto.user.UserLoginRequest;
+import cn.xu.api.web.model.dto.user.UserRegisterRequest;
+import cn.xu.common.ResponseCode;
+import cn.xu.common.exception.BusinessException;
+import cn.xu.common.request.PageRequest;
 import cn.xu.domain.file.service.IFileStorageService;
+import cn.xu.domain.user.event.UserEventPublisher;
+import cn.xu.domain.user.event.UserLoggedInEvent;
+import cn.xu.domain.user.event.UserRegisteredEvent;
+import cn.xu.domain.user.event.UserUpdatedEvent;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.model.entity.UserInfoEntity;
 import cn.xu.domain.user.model.valobj.Email;
@@ -16,8 +21,6 @@ import cn.xu.domain.user.model.valobj.Phone;
 import cn.xu.domain.user.model.valobj.Username;
 import cn.xu.domain.user.repository.IUserRepository;
 import cn.xu.domain.user.service.IUserService;
-import cn.xu.infrastructure.common.exception.BusinessException;
-import cn.xu.infrastructure.common.request.PageRequest;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -26,7 +29,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -46,6 +48,7 @@ public class UserServiceImpl implements IUserService {
 
     private final IUserRepository userRepository;
     private final IFileStorageService fileStorageService;
+    private final UserEventPublisher userEventPublisher;
 
     @Override
     public UserEntity getUserById(Long userId) {
@@ -71,7 +74,7 @@ public class UserServiceImpl implements IUserService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void update(UpdateUserReq user) {
+    public void update(UpdateUserRequest user) {
         UserEntity userEntity = getUserById(user.getId());
         if (userEntity == null) {
             log.error("[用户服务] 更新用户信息失败：用户不存在");
@@ -86,6 +89,14 @@ public class UserServiceImpl implements IUserService {
         userEntity.setPhone(user.getPhone() != null ? new Phone(user.getPhone()) : null);
         userEntity.setUpdateTime(LocalDateTime.now());
         userRepository.update(userEntity);
+        
+        // 发布用户更新事件
+        UserUpdatedEvent event = UserUpdatedEvent.builder()
+                .userId(userEntity.getId())
+                .username(userEntity.getUsernameValue())
+                .updateTime(LocalDateTime.now())
+                .build();
+        userEventPublisher.publishUserUpdated(event);
     }
 
     @Override
@@ -95,7 +106,7 @@ public class UserServiceImpl implements IUserService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void register(RegisterRequest request) {
+    public void register(UserRegisterRequest request) {
         try {
             log.info("[用户服务] 开始用户注册 - username: {}", request.getUsername());
 
@@ -122,6 +133,15 @@ public class UserServiceImpl implements IUserService {
             // 3. 保存用户
             UserEntity savedUser = userRepository.save(user);
             log.info("[用户服务] 用户注册成功 - userId: {}", savedUser.getId());
+            
+            // 4. 发布用户注册事件
+            UserRegisteredEvent event = UserRegisteredEvent.builder()
+                    .userId(savedUser.getId())
+                    .username(savedUser.getUsernameValue())
+                    .email(savedUser.getEmailValue())
+                    .registerTime(LocalDateTime.now())
+                    .build();
+            userEventPublisher.publishUserRegistered(event);
 
         } catch (BusinessException e) {
             throw e;
@@ -132,20 +152,43 @@ public class UserServiceImpl implements IUserService {
     }
 
     @Override
-    public UserEntity login(LoginRequest request) {
+    public UserEntity login(UserLoginRequest request) {
         try {
             log.info("[用户服务] 用户登录请求 - email: {}", request.getEmail());
 
-            // 1. 获取用户信息
-            UserEntity user = userRepository.findByEmail(new Email(request.getEmail()))
-                    .filter(u -> validatePassword(u, request.getPassword()))
-                    .orElseThrow(() -> new BusinessException(ResponseCode.UN_ERROR.getCode(), "用户名或密码错误"));
+            // 1. 验证登录参数
+            if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
+                throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "邮箱不能为空");
+            }
+            if (request.getPassword() == null || request.getPassword().trim().isEmpty()) {
+                throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "密码不能为空");
+            }
+
+            // 2. 根据邮箱查找用户（包含密码信息）
+            Email email = new Email(request.getEmail());
+            UserEntity user = userRepository.findByEmailWithPassword(email)
+                    .orElseThrow(() -> new BusinessException(ResponseCode.UN_ERROR.getCode(), "用户不存在"));
+
+            // 3. 验证密码
+            if (!validatePassword(user, request.getPassword())) {
+                throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "用户名或密码错误");
+            }
+
+            // 4. 验证用户状态
+            user.validateCanLogin();
 
             log.info("[用户服务] 用户登录成功 - userId: {}", user.getId());
             StpUtil.login(user.getId());
+            
+            // 发布用户登录事件
+            UserLoggedInEvent event = UserLoggedInEvent.builder()
+                    .userId(user.getId())
+                    .username(user.getUsernameValue())
+                    .loginTime(LocalDateTime.now())
+                    .build();
+            userEventPublisher.publishUserLoggedIn(event);
+            
             return user;
-        } catch (BusinessException e) {
-            throw e;
         } catch (Exception e) {
             log.error("[用户服务] 用户登录失败 - email: {}", request.getEmail(), e);
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "登录失败：" + e.getMessage());
@@ -237,7 +280,7 @@ public class UserServiceImpl implements IUserService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void addUser(UserRequest userRequest) {
+    public void addUser(SysUserRequest userRequest) {
         validateUsernameAndEmail(userRequest.getUsername(), userRequest.getEmail());
 
         UserEntity user = UserEntity.builder()
@@ -259,7 +302,7 @@ public class UserServiceImpl implements IUserService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void updateUser(UserRequest userRequest) {
+    public void updateUser(SysUserRequest userRequest) {
         UserEntity user = getUserInfo(userRequest.getId());
         user.setUsername(userRequest.getUsername() != null ? new Username(userRequest.getUsername()) : null);
         user.setEmail(userRequest.getEmail() != null ? new Email(userRequest.getEmail()) : null);
@@ -277,6 +320,14 @@ public class UserServiceImpl implements IUserService {
         }
 
         userRepository.save(user);
+        
+        // 发布用户更新事件
+        UserUpdatedEvent event = UserUpdatedEvent.builder()
+                .userId(user.getId())
+                .username(user.getUsernameValue())
+                .updateTime(LocalDateTime.now())
+                .build();
+        userEventPublisher.publishUserUpdated(event);
     }
 
     @Override

@@ -1,9 +1,9 @@
 package cn.xu.domain.essay.model.entity;
 
+import cn.xu.common.exception.BusinessException;
 import cn.xu.domain.essay.model.valobj.EssayContent;
 import cn.xu.domain.essay.model.valobj.EssayImages;
 import cn.xu.domain.essay.model.valobj.EssayTopics;
-import cn.xu.infrastructure.common.exception.BusinessException;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -243,6 +243,39 @@ public class EssayEntity {
      */
     public boolean belongsToUser(Long userId) {
         return Objects.equals(this.userId, userId);
+    }
+    
+    /**
+     * 验证用户是否有权限操作该随笔
+     * 
+     * @param currentUserId 当前用户ID
+     * @param isAdmin 是否为管理员
+     * @throws BusinessException 当用户无权操作时
+     */
+    public void validateOwnership(Long currentUserId, boolean isAdmin) {
+        if (currentUserId == null) {
+            throw new BusinessException("用户未登录");
+        }
+        
+        // 如果是管理员，直接允许操作
+        if (isAdmin) {
+            return;
+        }
+        
+        // 非管理员只能操作自己的随笔
+        if (!belongsToUser(currentUserId)) {
+            throw new BusinessException("无权操作此随笔");
+        }
+    }
+    
+    /**
+     * 验证用户是否有权限操作该随笔（兼容旧方法）
+     * 
+     * @param currentUserId 当前用户ID
+     * @throws BusinessException 当用户无权操作时
+     */
+    public void validateOwnership(Long currentUserId) {
+        validateOwnership(currentUserId, false);
     }
     
     /**

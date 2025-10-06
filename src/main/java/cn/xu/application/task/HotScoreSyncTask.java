@@ -1,9 +1,11 @@
 package cn.xu.application.task;
 
-import cn.xu.infrastructure.common.utils.ArticleHotScoreCacheHelper;
-import cn.xu.infrastructure.persistent.po.Article;
-import cn.xu.infrastructure.persistent.read.elastic.service.ArticleElasticService;
-import cn.xu.infrastructure.persistent.repository.ArticleRepository;
+import cn.xu.common.utils.PostHotScoreCacheHelper;
+import cn.xu.domain.post.model.entity.PostEntity;
+import cn.xu.domain.post.repository.IPostRepository;
+import cn.xu.infrastructure.cache.RedisKeyManager;
+import cn.xu.infrastructure.persistent.po.Post;
+import cn.xu.infrastructure.persistent.read.elastic.service.PostElasticService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,33 +27,34 @@ import java.util.Set;
 public class HotScoreSyncTask {
 
     private final RedisTemplate<String, Object> redisTemplate;
-    private final ArticleRepository articleRepository;
+    private final IPostRepository postRepository; // 使用领域层接口而不是基础设施层实现类
     @Autowired(required = false) // 设置为非必需，允许Elasticsearch不可用
-    private ArticleElasticService articleElasticService;
-    private final ArticleHotScoreCacheHelper hotScoreHelper;
+    private PostElasticService postElasticService;
+    private final PostHotScoreCacheHelper hotScoreHelper;
 
     @Scheduled(cron = "0 */5 * * * ?") // 每5分钟执行一次
     public void syncToElastic() {
         // 检查Elasticsearch是否可用
-        if (articleElasticService == null) {
+        if (postElasticService == null) {
             log.debug("Elasticsearch服务不可用，跳过热度同步任务");
             return;
         }
-        
-        Set<String> keys = redisTemplate.keys("article:hot:*");
+
+        Set<String> keys = redisTemplate.keys(RedisKeyManager.postHotCacheKey(0L).replace("0", "*"));
         if (keys.isEmpty()) {
             return;
         }
 
         for (String key : keys) {
             try {
-                // 解析文章ID，避免数组越界异常
+                // 解析帖子ID，避免数组越界异常
+                // key格式为: post:hot:{postId}
                 String[] parts = key.split(":");
                 if (parts.length < 3) {
                     log.warn("Redis key格式异常: {}", key);
                     continue;
                 }
-                Long articleId = Long.parseLong(parts[2]);
+                Long postId = Long.parseLong(parts[2]);
 
                 Map<Object, Object> map = redisTemplate.opsForHash().entries(key);
                 if (map.isEmpty()) {
@@ -63,28 +66,46 @@ public class HotScoreSyncTask {
                 int collect = parseIntSafe(map.get("collect"));
                 int comment = parseIntSafe(map.get("comment"));
 
-                // 查询数据库文章实体
-                Article article = articleRepository.findPoById(articleId);
-                if (article == null) {
-                    log.warn("文章不存在，跳过同步，articleId={}", articleId);
+                // 查询数据库帖子实体
+                // 注意：这里我们需要获取PostEntity，然后手动构建Post PO对象
+                // 因为领域层不应该直接暴露PO对象
+                PostEntity postEntity = postRepository.findById(postId)
+                    .map(aggregate -> aggregate.getPostEntity())
+                    .orElse(null);
+                    
+                if (postEntity == null) {
+                    log.warn("帖子不存在，跳过同步，postId={}", postId);
                     continue;
                 }
 
-                // 累加最新热度数值
-                article.setLikeCount(article.getLikeCount() + like);
-                article.setCollectCount(article.getCollectCount() + collect);
-                article.setCommentCount(article.getCommentCount() + comment);
+                // 手动构建Post PO对象
+                Post post = new Post();
+                post.setId(postEntity.getId());
+                post.setUserId(postEntity.getUserId());
+                post.setTitle(postEntity.getTitleValue());
+                post.setDescription(postEntity.getDescription());
+                post.setContent(postEntity.getContentValue());
+                post.setCoverUrl(postEntity.getCoverUrl());
+                post.setStatus(postEntity.getStatusCode()); // 直接使用getStatusCode方法
+                post.setCategoryId(postEntity.getCategoryId());
+                post.setViewCount((postEntity.getViewCount() == null ? 0 : postEntity.getViewCount()) + like); // 累加最新热度数值
+                post.setLikeCount((postEntity.getLikeCount() == null ? 0 : postEntity.getLikeCount()) + collect);
+                post.setCollectCount((postEntity.getCollectCount() == null ? 0 : postEntity.getCollectCount()) + comment);
+                post.setCommentCount(postEntity.getCommentCount() == null ? 0 : postEntity.getCommentCount());
+                post.setCreateTime(postEntity.getCreateTime());
+                post.setUpdateTime(postEntity.getUpdateTime());
+                post.setPublishTime(postEntity.getPublishTime());
 
                 // 同步到ES
-                articleElasticService.indexArticle(article);
+                postElasticService.indexPost(post);
 
                 // 清理缓存，避免重复同步
-                hotScoreHelper.clearHotData(articleId);
+                hotScoreHelper.clearHotData(postId);
 
-                log.info("文章[{}]热度已同步至Elasticsearch", articleId);
+                log.info("帖子[{}]热度已同步至Elasticsearch", postId);
 
             } catch (Exception e) {
-                log.error("同步文章热度失败，key={}", key, e);
+                log.error("同步帖子热度失败，key={}", key, e);
             }
         }
     }
@@ -94,7 +115,7 @@ public class HotScoreSyncTask {
      */
     @Scheduled(cron = "0 0 * * * ?")
     public void decayHotComments() {
-        Set<String> keys = redisTemplate.keys("comment:hot:zset:*");
+        Set<String> keys = redisTemplate.keys(RedisKeyManager.commentHotDecayKey() + ":*");
         for (String zsetKey : keys) {
             Set<ZSetOperations.TypedTuple<Object>> hotComments = redisTemplate.opsForZSet()
                     .rangeWithScores(zsetKey, 0, -1);

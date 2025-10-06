@@ -192,7 +192,7 @@
             #{userId}
         </foreach>
     </select>
-    <select id="selectUsernameAndPasswordByUsername" resultType="cn.xu.domain.user.model.vo.UserFormVO">
+    <select id="selectUsernameAndPasswordByUsername" resultType="cn.xu.domain.user.model.vo.UserFormResponse">
         SELECT id, username, password
         FROM user
         WHERE username = #{username}

@@ -1,7 +1,6 @@
 package cn.xu.application.init;
 
-import cn.dev33.satoken.secure.SaSecureUtil;
-import cn.xu.api.system.model.dto.user.UserRequest;
+import cn.xu.api.system.model.dto.user.SysUserRequest;
 import cn.xu.api.web.model.dto.permission.RoleAddOrUpdateRequest;
 import cn.xu.api.web.model.dto.permission.RoleMenuRequest;
 import cn.xu.domain.permission.model.entity.MenuEntity;
@@ -55,7 +54,7 @@ public class PermissionDataInitializer implements CommandLineRunner {
 
         try {
             // 检查是否已经存在角色数据
-            long roleCount = permissionService.countRole("");
+            long roleCount = permissionService.findRolePage("", 1, 10).getTotal();
             if (roleCount > 0) {
                 log.info("权限数据已存在，跳过初始化");
                 return;
@@ -130,7 +129,7 @@ public class PermissionDataInitializer implements CommandLineRunner {
             permissionService.addMenu(systemMenu);
             
             // 重新查询系统菜单以获取实际ID
-            List<MenuEntity> allMenus = permissionService.selectMenuTreeList();
+            List<MenuEntity> allMenus = permissionService.getMenuTreeList();
             MenuEntity savedSystemMenu = findMenuByTitle(allMenus, "系统管理");
             
             if (savedSystemMenu == null) {
@@ -204,7 +203,7 @@ public class PermissionDataInitializer implements CommandLineRunner {
         
         try {
             // 创建默认超级管理员用户
-            UserRequest adminUserRequest = new UserRequest();
+            SysUserRequest adminUserRequest = new SysUserRequest();
             adminUserRequest.setUsername("admin");
             adminUserRequest.setPassword("admin123"); // 不再在这里加密，让UserEntity自动处理
             adminUserRequest.setNickname("超级管理员");
@@ -228,7 +227,7 @@ public class PermissionDataInitializer implements CommandLineRunner {
             Long roleId = roleEntity.getId();
             
             // 重新查询菜单列表以获取所有菜单ID
-            List<MenuEntity> allMenus = permissionService.selectMenuTreeList();
+            List<MenuEntity> allMenus = permissionService.getMenuTreeList();
             List<Long> allMenuIds = getAllMenuIds(allMenus);
             
             // 为超级管理员角色分配所有菜单权限

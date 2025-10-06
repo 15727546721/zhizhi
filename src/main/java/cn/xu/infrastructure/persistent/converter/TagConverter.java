@@ -1,86 +1,67 @@
 package cn.xu.infrastructure.persistent.converter;
 
-import cn.xu.domain.article.model.entity.TagEntity;
-import cn.xu.infrastructure.persistent.po.ArticleTag;
-import org.springframework.stereotype.Component;
+import cn.xu.domain.post.model.entity.TagEntity;
+import cn.xu.infrastructure.persistent.po.Tag;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * 标签领域实体与持久化对象转换器
- * 符合DDD架构的防腐层模式
- * 
- * @author xu
+ * 标签转换器
+ * 负责标签领域实体与持久化对象之间的转换
  */
-@Component
 public class TagConverter {
-
+    
+    public static final TagConverter INSTANCE = new TagConverter();
+    
+    private TagConverter() {}
+    
     /**
-     * 将领域实体转换为持久化对象
-     *
-     * @param entity 标签领域实体
-     * @return 标签持久化对象
+     * 将TagEntity转换为Tag PO对象
      */
-    public ArticleTag toDataObject(TagEntity entity) {
-        if (entity == null) {
+    public Tag toDataObject(TagEntity tagEntity) {
+        if (tagEntity == null) {
             return null;
         }
         
-        return ArticleTag.builder()
-                .id(entity.getId())
-                .name(entity.getName())
+        return Tag.builder()
+                .id(tagEntity.getId())
+                .name(tagEntity.getName())
+                .createTime(tagEntity.getCreateTime())
+                .updateTime(tagEntity.getUpdateTime())
+                // PO中存在但Entity中不存在的字段设置为默认值
+                .description(null)
+                .isRecommended(0)
+                .usageCount(0)
                 .build();
     }
-
+    
     /**
-     * 将持久化对象转换为领域实体
-     *
-     * @param po 标签持久化对象
-     * @return 标签领域实体
+     * 将Tag PO对象转换为TagEntity
      */
-    public TagEntity toDomainEntity(ArticleTag po) {
-        if (po == null) {
+    public TagEntity toDomainEntity(Tag tag) {
+        if (tag == null) {
             return null;
         }
         
         return TagEntity.builder()
-                .id(po.getId())
-                .name(po.getName())
+                .id(tag.getId())
+                .name(tag.getName())
+                .createTime(tag.getCreateTime())
+                .updateTime(tag.getUpdateTime())
                 .build();
     }
-
+    
     /**
-     * 批量转换持久化对象为领域实体
-     *
-     * @param poList 持久化对象列表
-     * @return 领域实体列表
+     * 批量转换：将Tag PO对象列表转换为TagEntity列表
      */
-    public List<TagEntity> toDomainEntities(List<ArticleTag> poList) {
-        if (poList == null || poList.isEmpty()) {
-            return Collections.emptyList();
+    public List<TagEntity> toDomainEntityList(List<Tag> tags) {
+        if (tags == null) {
+            return null;
         }
         
-        return poList.stream()
+        return tags.stream()
                 .map(this::toDomainEntity)
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * 批量转换领域实体为持久化对象
-     *
-     * @param entities 领域实体列表
-     * @return 持久化对象列表
-     */
-    public List<ArticleTag> toDataObjects(List<TagEntity> entities) {
-        if (entities == null || entities.isEmpty()) {
-            return Collections.emptyList();
-        }
-        
-        return entities.stream()
-                .map(this::toDataObject)
                 .collect(Collectors.toList());
     }
 }

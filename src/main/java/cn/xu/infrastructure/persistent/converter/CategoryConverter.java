@@ -1,7 +1,7 @@
 package cn.xu.infrastructure.persistent.converter;
 
-import cn.xu.domain.article.model.entity.CategoryEntity;
-import cn.xu.infrastructure.persistent.po.ArticleCategory;
+import cn.xu.domain.post.model.entity.CategoryEntity;
+import cn.xu.infrastructure.persistent.po.PostCategory;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
@@ -20,11 +20,11 @@ public class CategoryConverter {
     /**
      * 领域实体转换为持久化对象
      */
-    public ArticleCategory toDataObject(CategoryEntity entity) {
+    public PostCategory toDataObject(CategoryEntity entity) {
         if (entity == null) {
             return null;
         }
-        return ArticleCategory.builder()
+        return PostCategory.builder()
                 .id(entity.getId())
                 .name(entity.getName())
                 .description(entity.getDescription())
@@ -36,7 +36,7 @@ public class CategoryConverter {
     /**
      * 持久化对象转换为领域实体
      */
-    public CategoryEntity toDomainEntity(ArticleCategory po) {
+    public CategoryEntity toDomainEntity(PostCategory po) {
         if (po == null) {
             return null;
         }
@@ -52,7 +52,7 @@ public class CategoryConverter {
     /**
      * 批量转换持久化对象列表为领域实体列表
      */
-    public List<CategoryEntity> toDomainEntities(List<ArticleCategory> poList) {
+    public List<CategoryEntity> toDomainEntities(List<PostCategory> poList) {
         if (poList == null || poList.isEmpty()) {
             return Collections.emptyList();
         }
@@ -64,7 +64,7 @@ public class CategoryConverter {
     /**
      * 批量转换领域实体列表为持久化对象列表
      */
-    public List<ArticleCategory> toDataObjects(List<CategoryEntity> entityList) {
+    public List<PostCategory> toDataObjects(List<CategoryEntity> entityList) {
         if (entityList == null || entityList.isEmpty()) {
             return Collections.emptyList();
         }

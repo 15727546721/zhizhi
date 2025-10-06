@@ -2,16 +2,14 @@ package cn.xu.infrastructure.persistent.po;
 
 import lombok.Data;
 
-import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
  * 收藏夹持久化对象
- *
- * @TableName collect_folder
  */
 @Data
-public class CollectFolder implements Serializable {
+public class CollectFolder {
+
     /**
      * 收藏夹ID
      */
@@ -38,9 +36,9 @@ public class CollectFolder implements Serializable {
     private Integer isDefault;
 
     /**
-     * 收藏文章数量
+     * 收藏内容数量
      */
-    private Integer articleCount;
+    private Integer contentCount;
 
     /**
      * 是否公开（0-私密，1-公开）
@@ -61,6 +59,4 @@ public class CollectFolder implements Serializable {
      * 更新时间
      */
     private LocalDateTime updateTime;
-
-    private static final long serialVersionUID = 1L;
 }

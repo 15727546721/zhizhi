@@ -1,13 +1,12 @@
 package cn.xu.infrastructure.persistent.repository;
 
+import cn.xu.common.exception.BusinessException;
 import cn.xu.domain.notification.model.aggregate.NotificationAggregate;
 import cn.xu.domain.notification.model.entity.NotificationEntity;
-import cn.xu.domain.notification.model.valueobject.BusinessType;
 import cn.xu.domain.notification.model.valueobject.NotificationType;
 import cn.xu.domain.notification.repository.INotificationRepository;
-import cn.xu.infrastructure.common.exception.BusinessException;
-import cn.xu.infrastructure.persistent.dao.NotificationMapper;
 import cn.xu.infrastructure.persistent.converter.NotificationConverter;
+import cn.xu.infrastructure.persistent.dao.NotificationMapper;
 import cn.xu.infrastructure.persistent.po.Notification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

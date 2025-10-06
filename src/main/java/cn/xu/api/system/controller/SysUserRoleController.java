@@ -1,11 +1,13 @@
 package cn.xu.api.system.controller;
 
 import cn.xu.api.web.model.dto.user.UserRoleRequest;
-import cn.xu.application.common.ResponseCode;
+import cn.xu.common.ResponseCode;
+import cn.xu.common.annotation.ApiOperationLog;
+import cn.xu.common.exception.BusinessException;
+import cn.xu.common.response.ResponseEntity;
 import cn.xu.domain.user.service.IUserRoleService;
-import cn.xu.infrastructure.common.exception.BusinessException;
-import cn.xu.infrastructure.common.response.ResponseEntity;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,6 +29,7 @@ public class SysUserRoleController {
 
     @PostMapping("/assign")
     @Operation(summary = "为用户分配角色")
+    @ApiOperationLog(description = "为用户分配角色")
     public ResponseEntity assignRolesToUser(@RequestBody UserRoleRequest userRoleRequest) {
         // 参数校验
         if (userRoleRequest.getUserId() == null) {
@@ -42,7 +45,8 @@ public class SysUserRoleController {
 
     @GetMapping("/user-roles")
     @Operation(summary = "获取用户的角色ID列表")
-    public ResponseEntity<List<Long>> getUserRoleIds(@RequestParam("userId") Long userId) {
+    @ApiOperationLog(description = "获取用户的角色ID列表")
+    public ResponseEntity<List<Long>> getUserRoleIds(@Parameter(description = "用户ID") @RequestParam("userId") Long userId) {
         if (userId == null) {
             throw new BusinessException(ResponseCode.NULL_PARAMETER.getCode(), "用户ID不能为空");
         }

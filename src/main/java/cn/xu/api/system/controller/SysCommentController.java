@@ -1,15 +1,16 @@
 package cn.xu.api.system.controller;
 
-import cn.xu.api.system.model.vo.comment.CommentReplyVO;
-import cn.xu.api.web.model.dto.comment.CommentRequest;
-import cn.xu.api.web.model.vo.comment.CommentVO;
-import cn.xu.application.common.ResponseCode;
+import cn.xu.api.system.model.vo.comment.CommentReplyResponse;
+import cn.xu.api.web.model.dto.comment.CommentCreateRequest;
+import cn.xu.api.web.model.vo.comment.CommentResponse;
+import cn.xu.common.ResponseCode;
+import cn.xu.common.annotation.ApiOperationLog;
+import cn.xu.common.exception.BusinessException;
+import cn.xu.common.request.PageRequest;
+import cn.xu.common.response.PageResponse;
+import cn.xu.common.response.ResponseEntity;
 import cn.xu.domain.comment.model.entity.CommentEntity;
 import cn.xu.domain.comment.service.impl.CommentServiceImpl;
-import cn.xu.infrastructure.common.exception.BusinessException;
-import cn.xu.infrastructure.common.request.PageRequest;
-import cn.xu.infrastructure.common.response.PageResponse;
-import cn.xu.infrastructure.common.response.ResponseEntity;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
@@ -33,7 +34,8 @@ public class SysCommentController {
 
     @Operation(summary = "管理员删除评论")
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<Void> deleteComment(@PathVariable @NotNull(message = "评论ID不能为空") Long id) {
+    @ApiOperationLog(description = "管理员删除评论")
+    public ResponseEntity<Void> deleteComment(@Parameter(description = "评论ID") @PathVariable @NotNull(message = "评论ID不能为空") Long id) {
         commentServiceImpl.deleteCommentByAdmin(id);
         return ResponseEntity.<Void>builder()
                 .code(ResponseCode.SUCCESS.getCode())
@@ -48,10 +50,11 @@ public class SysCommentController {
         @Parameter(name = "pageSize", description = "每页数量", required = true)
     })
     @GetMapping("/list")
-    public ResponseEntity<PageResponse<List<CommentVO>>> getComments(@Valid CommentRequest request) {
+    @ApiOperationLog(description = "分页获取一级评论列表")
+    public ResponseEntity<PageResponse<List<CommentResponse>>> getComments(@Valid CommentCreateRequest request) {
         log.info("分页获取一级评论列表, request: {}", request);
-//        PageResponse<List<CommentVO>> pageResponse = commentServiceImpl.getRootCommentsWithUserByPage(request);
-        return ResponseEntity.<PageResponse<List<CommentVO>>>builder()
+//        PageResponse<List<CommentResponse>> pageResponse = commentServiceImpl.getRootCommentsWithUserByPage(request);
+        return ResponseEntity.<PageResponse<List<CommentResponse>>>builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .info(ResponseCode.SUCCESS.getMessage())
                 .data(null)
@@ -65,8 +68,9 @@ public class SysCommentController {
         @Parameter(name = "pageSize", description = "每页数量", required = true)
     })
     @GetMapping("/replies/{parentId}")
+    @ApiOperationLog(description = "分页获取二级评论列表")
     public ResponseEntity<?> getReplies(
-            @PathVariable @NotNull(message = "父评论ID不能为空") Long parentId,
+            @Parameter(description = "父评论ID") @PathVariable @NotNull(message = "父评论ID不能为空") Long parentId,
             @Valid PageRequest pageRequest) {
         try {
             // 1. 参数校验日志
@@ -77,7 +81,7 @@ public class SysCommentController {
             CommentEntity parentComment = commentServiceImpl.getCommentById(parentId);
             if (parentComment == null) {
                 log.error("[评论服务] 父评论不存在 - ID: {}", parentId);
-                return ResponseEntity.<List<CommentReplyVO>>builder()
+                return ResponseEntity.<List<CommentReplyResponse>>builder()
                         .code(ResponseCode.ILLEGAL_PARAMETER.getCode())
                         .info(String.format("父评论[%d]不存在", parentId))
                         .build();
@@ -86,7 +90,7 @@ public class SysCommentController {
             // 3. 确保是一级评论
             if (parentComment.getParentId() != null) {
                 log.error("[评论服务] 非法的父评论ID - ID: {}, 该评论不是一级评论", parentId);
-                return ResponseEntity.<List<CommentReplyVO>>builder()
+                return ResponseEntity.<List<CommentReplyResponse>>builder()
                         .code(ResponseCode.ILLEGAL_PARAMETER.getCode())
                         .info(String.format("评论[%d]不是一级评论", parentId))
                         .build();

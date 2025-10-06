@@ -1,7 +1,7 @@
 package cn.xu.domain.like.event;
 
 import cn.xu.domain.like.model.LikeType;
-import org.springframework.context.ApplicationEventPublisher;
+import cn.xu.infrastructure.event.disruptor.EventPublisher;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -9,10 +9,10 @@ import java.time.LocalDateTime;
 @Component
 public class LikeEventPublisher {
 
-    private final ApplicationEventPublisher publisher;
+    private final EventPublisher eventPublisher;
 
-    public LikeEventPublisher(ApplicationEventPublisher publisher) {
-        this.publisher = publisher;
+    public LikeEventPublisher(EventPublisher eventPublisher) {
+        this.eventPublisher = eventPublisher;
     }
 
     public void publish(Long userId, Long targetId, LikeType targetType, Boolean likeStatus) {
@@ -24,6 +24,21 @@ public class LikeEventPublisher {
                 .createTime(LocalDateTime.now())
                 .build();
 
-        publisher.publishEvent(event);
+        eventPublisher.publishEvent(event, "LikeEvent");
+    }
+    
+    /**
+     * 发布点赞事件的重载方法，支持更多参数
+     */
+    public void publish(Long userId, Long targetId, LikeType targetType, Boolean likeStatus, String targetTitle) {
+        LikeEvent event = LikeEvent.builder()
+                .userId(userId)
+                .targetId(targetId)
+                .type(targetType)
+                .status(likeStatus)
+                .createTime(LocalDateTime.now())
+                .build();
+
+        eventPublisher.publishEvent(event, "LikeEvent");
     }
 }

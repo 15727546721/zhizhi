@@ -5,21 +5,18 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
  * 点赞持久化对象
- *
- * @TableName like
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Like implements Serializable {
+public class Like {
     /**
-     * 点赞ID
+     * 主键ID
      */
     private Long id;
 

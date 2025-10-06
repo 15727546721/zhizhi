@@ -1,6 +1,5 @@
 package cn.xu.domain.comment.event;
 
-import cn.xu.domain.comment.model.valueobject.CommentType;
 import lombok.Builder;
 import lombok.Data;
 
@@ -14,4 +13,5 @@ public class CommentDeletedEvent {
     private final Integer targetType; // 目标类型
     private final Long targetId;      // 目标ID
     private final boolean isRootComment; // 是否一级评论
+    private final Long parentId;      // 父评论ID（用于非根评论）
 }

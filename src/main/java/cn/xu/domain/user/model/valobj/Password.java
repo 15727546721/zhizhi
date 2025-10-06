@@ -1,7 +1,7 @@
 package cn.xu.domain.user.model.valobj;
 
 import cn.dev33.satoken.secure.SaSecureUtil;
-import cn.xu.infrastructure.common.exception.BusinessException;
+import cn.xu.common.exception.BusinessException;
 import lombok.Getter;
 
 import java.util.regex.Pattern;
@@ -23,28 +23,50 @@ public class Password {
     private final String value;
 
     public Password(String password) {
-        if (password == null || password.isEmpty()) {
-            throw new BusinessException("密码不能为空");
-        }
-        
-        if (password.length() < MIN_LENGTH) {
-            throw new BusinessException("密码长度不能少于" + MIN_LENGTH + "个字符");
-        }
-        
-        if (password.length() > MAX_LENGTH) {
-            throw new BusinessException("密码长度不能超过" + MAX_LENGTH + "个字符");
-        }
-        
-        if (!PATTERN.matcher(password).matches()) {
-            throw new BusinessException("密码必须包含至少一个字母和一个数字，可以包含特殊字符@$!%*?&");
-        }
-        
-        if (isWeakPassword(password)) {
-            throw new BusinessException("密码强度过弱，请使用更复杂的密码");
-        }
+//        if (password == null || password.isEmpty()) {
+//            throw new BusinessException("密码不能为空");
+//        }
+//
+//        if (password.length() < MIN_LENGTH) {
+//            throw new BusinessException("密码长度不能少于" + MIN_LENGTH + "个字符");
+//        }
+//
+//        if (password.length() > MAX_LENGTH) {
+//            throw new BusinessException("密码长度不能超过" + MAX_LENGTH + "个字符");
+//        }
+//
+//        if (!PATTERN.matcher(password).matches()) {
+//            throw new BusinessException("密码必须包含至少一个字母和一个数字，可以包含特殊字符@$!%*?&");
+//        }
+//
+//        if (isWeakPassword(password)) {
+//            throw new BusinessException("密码强度过弱，请使用更复杂的密码");
+//        }
         
         // 在构造函数中对密码进行加密
         this.value = SaSecureUtil.sha256(password);
+    }
+    
+    /**
+     * 构造已加密的密码对象
+     * @param encodedPassword 已加密的密码
+     * @param isEncoded 标识密码已加密的标志
+     */
+    public Password(String encodedPassword, boolean isEncoded) {
+        if (isEncoded) {
+            this.value = encodedPassword;
+        } else {
+            this.value = SaSecureUtil.sha256(encodedPassword);
+        }
+    }
+
+    /**
+     * 创建已加密的密码对象
+     * @param encodedPassword 已加密的密码
+     * @return 密码对象
+     */
+    public static Password ofEncoded(String encodedPassword) {
+        return new Password(encodedPassword, true);
     }
 
     private boolean isWeakPassword(String password) {

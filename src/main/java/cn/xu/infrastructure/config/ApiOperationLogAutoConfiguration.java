@@ -1,6 +1,6 @@
 package cn.xu.infrastructure.config;
 
-import cn.xu.infrastructure.common.annotation.ApiOperationLogAspect;
+import cn.xu.common.annotation.ApiOperationLogAspect;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.context.annotation.Bean;
 

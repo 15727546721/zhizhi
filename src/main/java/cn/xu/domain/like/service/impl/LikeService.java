@@ -1,138 +1,151 @@
 package cn.xu.domain.like.service.impl;
 
-import cn.hutool.core.util.RandomUtil;
-import cn.xu.application.common.ResponseCode;
+import cn.xu.common.ResponseCode;
+import cn.xu.common.exception.BusinessException;
 import cn.xu.domain.like.event.LikeEventPublisher;
 import cn.xu.domain.like.model.LikeType;
-import cn.xu.domain.like.repository.ILikeRepository;
 import cn.xu.domain.like.service.ILikeService;
 import cn.xu.domain.like.service.LikeDomainService;
-import cn.xu.infrastructure.cache.LuaScriptManager;
-import cn.xu.infrastructure.cache.RedisKeyManager;
-import cn.xu.infrastructure.common.exception.BusinessException;
-import cn.xu.infrastructure.common.utils.ArticleHotScoreCacheHelper;
+import cn.xu.domain.post.model.aggregate.PostAggregate;
+import cn.xu.domain.post.repository.IPostRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
-import java.util.Arrays;
-import java.util.Objects;
+import java.util.Optional;
 
+/**
+ * 点赞应用服务
+ * 负责处理应用层逻辑，如参数校验、事务管理等
+ */
 @Slf4j
 @Service
 public class LikeService implements ILikeService {
 
     @Autowired
-    private RedisTemplate<String, String> redisTemplate;
-
-    @Resource
-    private LikeEventPublisher likeEventPublisher;
-
-    @Autowired
-    private ILikeRepository likeRepository;
+    private LikeDomainService likeDomainService;
     
     @Autowired
-    private LikeDomainService likeDomainService;
+    private LikeEventPublisher likeEventPublisher;
+    
+    @Autowired
+    private IPostRepository postRepository;
 
     @Override
-    public void like(Long userId, Integer type, Long targetId) {
+    public void like(Long userId, LikeType type, Long targetId) {
         checkParams(userId, type, targetId);
-
-        String likeKey = RedisKeyManager.likeRelationKey(Objects.requireNonNull(LikeType.valueOf(type)), targetId);
-        String likeCountKey = RedisKeyManager.likeCountKey(Objects.requireNonNull(LikeType.valueOf(type)), targetId);
-
+        
         try {
-            Boolean member = redisTemplate.opsForSet().isMember(likeKey, userId.toString());
-            if (Boolean.TRUE.equals(member)) {
-                throw new BusinessException("您已经点赞过了！");
+            // 先检查当前状态，避免重复操作
+            boolean currentStatus = likeDomainService.checkLikeStatus(userId, targetId, type);
+            if (currentStatus) {
+                log.warn("用户已点赞，无需重复操作 - userId: {}, targetId: {}, type: {}", userId, targetId, type);
+                throw new BusinessException("您已点赞，请勿重复操作");
             }
-
-            if (Boolean.FALSE.equals(member) && likeRepository.checkStatus(userId, Objects.requireNonNull(LikeType.valueOf(type)), targetId)) {
-                // 数据库已有点赞，缓存写入并返回异常
-                redisTemplate.opsForSet().add(likeKey, userId.toString());
-                throw new BusinessException("您已经点赞过了！");
+            
+            likeDomainService.doLike(userId, targetId, type);
+            // 发布点赞事件
+            likeEventPublisher.publish(userId, targetId, type, true);
+            
+            // 如果是帖子点赞，更新帖子统计
+            if (type == LikeType.POST && postRepository != null) {
+                updatePostLikeCount(targetId, true);
             }
-
-            // 写入 Redis 缓存点赞状态
-            Long result = redisTemplate.execute(
-                    LuaScriptManager.LIKE_ADD_SCRIPT,
-                    Arrays.asList(likeKey, likeCountKey),
-                    userId.toString()
-            );
-
-            if (result == null || result == 0L) {
-                throw new BusinessException("您已经点赞过了！");
-            }
-
+        } catch (BusinessException e) {
+            log.error("点赞失败: userId={}, targetId={}, type={}", userId, targetId, type, e);
+            // 直接抛出业务异常，让上层处理
+            throw e;
         } catch (Exception e) {
-            log.error("点赞失败", e);
+            log.error("点赞失败: userId={}, targetId={}, type={}", userId, targetId, type, e);
             throw new BusinessException("点赞失败，请稍后再试！");
         }
-
-        // 发布异步事件（写库等后续处理）
-        likeEventPublisher.publish(userId, targetId, LikeType.valueOf(type), true);
     }
 
     @Override
-    public void unlike(Long userId, Integer type, Long targetId) {
+    public void unlike(Long userId, LikeType type, Long targetId) {
         checkParams(userId, type, targetId);
-
-        // 存储点赞用户的集合
-        String likeKey = RedisKeyManager.likeRelationKey(Objects.requireNonNull(LikeType.valueOf(type)), targetId);
-        String likeCountKey = RedisKeyManager.likeCountKey(Objects.requireNonNull(LikeType.valueOf(type)), targetId);
-
+        
         try {
-            // 检查当前用户是否已点赞
-            Boolean member = redisTemplate.opsForSet().isMember(likeKey, userId.toString());
-
-            if (Boolean.FALSE.equals(member)) {
-                throw new BusinessException("您还未点赞，无法取消！");
+            // 先检查当前状态，避免重复操作
+            boolean currentStatus = likeDomainService.checkLikeStatus(userId, targetId, type);
+            if (!currentStatus) {
+                log.warn("用户未点赞，无法取消 - userId: {}, targetId: {}, type: {}", userId, targetId, type);
+                throw new BusinessException("您尚未点赞，无法取消");
             }
-
-            // 删除 Redis 中的点赞记录
-            Long result = redisTemplate.execute(
-                    LuaScriptManager.LIKE_REMOVE_SCRIPT,
-                    Arrays.asList(likeKey, likeCountKey),
-                    userId.toString()
-            );
-
-            if (result == null || result == 0L) {
-                throw new BusinessException("取消点赞失败，请稍后再试！");
+            
+            likeDomainService.cancelLike(userId, targetId, type);
+            // 发布取消点赞事件
+            likeEventPublisher.publish(userId, targetId, type, false);
+            
+            // 如果是帖子点赞，更新帖子统计
+            if (type == LikeType.POST && postRepository != null) {
+                updatePostLikeCount(targetId, false);
             }
-
+        } catch (BusinessException e) {
+            log.error("取消点赞失败: userId={}, targetId={}, type={}", userId, targetId, type, e);
+            // 直接抛出业务异常，让上层处理
+            throw e;
         } catch (Exception e) {
-            log.error("取消点赞失败", e);
+            log.error("取消点赞失败: userId={}, targetId={}, type={}", userId, targetId, type, e);
             throw new BusinessException("取消点赞失败，请稍后再试！");
         }
-
-        // 发布异步事件（更新数据库等操作）
-        likeEventPublisher.publish(userId, targetId, LikeType.valueOf(type), false);
     }
 
     @Override
-    public boolean checkStatus(Long userId, Integer type, Long targetId) {
+    public boolean checkStatus(Long userId, LikeType type, Long targetId) {
         if (userId == null || type == null || targetId == null) {
             // 未登录用户默认未点赞
             return false;
         }
-        return likeRepository.checkStatus(userId, Objects.requireNonNull(LikeType.valueOf(type)), targetId);
+        return likeDomainService.checkLikeStatus(userId, targetId, type);
+    }
+    
+    @Override
+    public long getLikeCount(Long targetId, LikeType type) {
+        return likeDomainService.getLikeCount(targetId, type);
+    }
+    
+    @Override
+    public void checkAndRepairLikeConsistency(Long userId, Long targetId, LikeType type) {
+        likeDomainService.checkAndRepairLikeConsistency(userId, targetId, type);
     }
 
     /**
      * 校验入参
      */
-    private void checkParams(Long userId, Integer type, Long targetId) {
+    private void checkParams(Long userId, LikeType type, Long targetId) {
         if (userId == null || type == null || targetId == null) {
             throw new BusinessException(ResponseCode.NULL_PARAMETER.getCode(), ResponseCode.NULL_PARAMETER.getMessage());
         }
     }
-
+    
     /**
-     * 随机过期时间，防止缓存雪崩
+     * 更新帖子点赞数
+     * 
+     * @param postId 帖子ID
+     * @param isIncrease 是否增加
      */
-    private int randomExpire() {
-        return RandomUtil.randomInt(3600, 86400); // 1小时至24小时随机过期秒数
+    private void updatePostLikeCount(Long postId, boolean isIncrease) {
+        try {
+            // 获取帖子聚合根
+            Optional<PostAggregate> postAggregateOpt = postRepository.findById(postId);
+            if (postAggregateOpt.isPresent()) {
+                PostAggregate postAggregate = postAggregateOpt.get();
+                
+                // 更新点赞数
+                if (isIncrease) {
+                    postAggregate.increaseLikeCount();
+                } else {
+                    postAggregate.decreaseLikeCount();
+                }
+                
+                // 保存更新
+                postRepository.update(postAggregate);
+                
+                log.info("帖子点赞数更新成功: postId={}, isIncrease={}", postId, isIncrease);
+            }
+        } catch (Exception e) {
+            log.error("更新帖子点赞数失败: postId={}, isIncrease={}", postId, isIncrease, e);
+        }
     }
 }

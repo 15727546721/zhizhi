@@ -1,8 +1,6 @@
 package cn.xu.domain.comment.service;
 
 import cn.xu.domain.comment.model.entity.CommentEntity;
-import cn.xu.domain.comment.model.policy.HotScoreStrategy;
-import cn.xu.domain.comment.model.policy.HotScoreStrategyFactory;
 import cn.xu.domain.comment.model.valueobject.CommentType;
 import cn.xu.domain.comment.repository.ICommentRepository;
 import cn.xu.infrastructure.cache.RedisKeyManager;
@@ -14,7 +12,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Collections;
 import java.util.Set;
@@ -136,7 +133,7 @@ public class HotScoreService {
     public void decayAllHotScores() {
         log.info("开始执行热度衰减任务...");
         // 1. 查找所有一级评论热度ZSet key（模糊匹配）
-        Set<String> keys = redisTemplate.keys("comment:hot:*");
+        Set<String> keys = redisTemplate.keys(RedisKeyManager.commentHotRankKey(CommentType.POST, 0L).replace("0", "*"));
         if (keys == null || keys.isEmpty()) {
             log.info("无热度数据，跳过衰减");
             return;
