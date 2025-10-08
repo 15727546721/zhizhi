@@ -7,11 +7,12 @@
         <result column="followed_id" property="followedId"/>
         <result column="status" property="status"/>
         <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
     </resultMap>
 
     <sql id="Base_Column_List">
         id
-        , follower_id, followed_id, status, create_time
+        , follower_id, followed_id, status, create_time, update_time
     </sql>
 
     <insert id="insert" parameterType="cn.xu.infrastructure.persistent.po.Follow">
