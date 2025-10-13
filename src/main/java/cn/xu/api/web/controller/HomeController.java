@@ -1,5 +1,6 @@
 package cn.xu.api.web.controller;
 
+import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.api.web.model.vo.HomePageResponse;
 import cn.xu.api.web.model.vo.post.PostListResponse;
@@ -85,6 +86,7 @@ public class HomeController {
 
     @GetMapping("/following")
     @Operation(summary = "获取关注用户的帖子")
+    @SaCheckLogin
     public ResponseEntity<PageResponse<List<PostListResponse>>> getFollowingPosts(
             @Parameter(description = "页码，默认为1") @RequestParam(defaultValue = "1") int page,
             @Parameter(description = "页面大小，默认为10") @RequestParam(defaultValue = "10") int size) {
@@ -226,6 +228,44 @@ public class HomeController {
             return ResponseEntity.<PageResponse<List<PostListResponse>>>builder()
                     .code(ResponseCode.UN_ERROR.getCode())
                     .info("获取帖子列表失败: " + e.getMessage())
+                    .build();
+        }
+    }
+
+    @GetMapping("/hot")
+    @Operation(summary = "获取热门帖子")
+    public ResponseEntity<PageResponse<List<PostListResponse>>> getHotPosts(
+            @Parameter(description = "页码，默认为1") @RequestParam(defaultValue = "1") int page,
+            @Parameter(description = "页面大小，默认为10") @RequestParam(defaultValue = "10") int size) {
+        try {
+            // 确保页码至少为1
+            int safePage = Math.max(1, page);
+            int safeSize = Math.max(1, Math.min(size, 100)); // 限制页面大小最大为100
+            
+            int offset = (safePage - 1) * safeSize;
+            List<PostEntity> hotPosts = postService.findHotPosts(safePage, safeSize);
+            long total = postService.countHotPosts();
+            
+            // 转换为PostListResponse列表
+            List<PostListResponse> postListResponses = convertToPostListResponses(hotPosts);
+            
+            // 创建PageResponse对象
+            PageResponse<List<PostListResponse>> pageResponse = PageResponse.ofList(
+                safePage, 
+                safeSize, 
+                total, 
+                postListResponses
+            );
+            
+            return ResponseEntity.<PageResponse<List<PostListResponse>>>builder()
+                    .code(ResponseCode.SUCCESS.getCode())
+                    .data(pageResponse)
+                    .build();
+        } catch (Exception e) {
+            log.error("获取热门帖子失败", e);
+            return ResponseEntity.<PageResponse<List<PostListResponse>>>builder()
+                    .code(ResponseCode.UN_ERROR.getCode())
+                    .info("获取热门帖子失败: " + e.getMessage())
                     .build();
         }
     }
