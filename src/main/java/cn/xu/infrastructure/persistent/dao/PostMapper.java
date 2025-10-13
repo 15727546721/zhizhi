@@ -143,7 +143,7 @@ public interface PostMapper {
      */
     List<Post> getPostPageListByUserIds(@Param("userIds") List<Long> userIds,
                                         @Param("offset") int offset,
-                                        @Param("size") int size);
+                                        @Param("limit") int limit);
 
     /**
      * 根据标题搜索帖子（分页）

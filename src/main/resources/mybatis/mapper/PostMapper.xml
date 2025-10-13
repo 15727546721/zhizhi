@@ -302,6 +302,20 @@
         LIMIT #{offset}, #{limit}
     </select>
     
+    <!-- 根据用户ID列表分页查询帖子列表 -->
+    <select id="getPostPageListByUserIds" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM post
+        WHERE status = 1
+          AND user_id IN
+        <foreach collection="userIds" item="userId" open="(" separator="," close=")">
+            #{userId}
+        </foreach>
+        ORDER BY create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+    
     <!-- 统计指定用户的帖子数量 -->
     <select id="countPostsByUserIds" resultType="java.lang.Long">
         SELECT COUNT(*)
