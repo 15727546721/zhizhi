@@ -26,7 +26,6 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @RestController
-@CrossOrigin("*")
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/hot-comment")
 @Tag(name = "热点评论接口", description = "热点评论相关接口")
