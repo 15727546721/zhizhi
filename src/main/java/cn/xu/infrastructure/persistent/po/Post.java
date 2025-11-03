@@ -86,6 +86,11 @@ public class Post implements Serializable {
      * 点赞次数
      */
     private Long likeCount;
+    
+    /**
+     * 分享次数
+     */
+    private Long shareCount;
 
     /**
      * 帖子状态：0-草稿，1-已发布，2-已删除，3-已归档

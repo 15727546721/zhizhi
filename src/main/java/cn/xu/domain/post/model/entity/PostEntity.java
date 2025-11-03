@@ -33,6 +33,7 @@ public class PostEntity {
     private Long collectCount;
     private Long commentCount;
     private Long likeCount;
+    private Long shareCount;
     private PostStatus status; // 帖子状态
     private PostType type; // 帖子类型
     private Boolean isFeatured; // 是否加精
@@ -73,6 +74,7 @@ public class PostEntity {
                 .collectCount(0L)
                 .commentCount(0L)
                 .likeCount(0L)
+                .shareCount(0L)
                 .createTime(LocalDateTime.now())
                 .updateTime(LocalDateTime.now())
                 .build();
@@ -194,6 +196,20 @@ public class PostEntity {
      */
     public void decreaseCommentCount() {
         this.commentCount = Math.max(0, (this.commentCount == null ? 0 : this.commentCount) - 1);
+    }
+    
+    /**
+     * 增加分享数
+     */
+    public void increaseShareCount() {
+        this.shareCount = (this.shareCount == null ? 0 : this.shareCount) + 1;
+    }
+    
+    /**
+     * 减少分享数
+     */
+    public void decreaseShareCount() {
+        this.shareCount = Math.max(0, (this.shareCount == null ? 0 : this.shareCount) - 1);
     }
 
     /**

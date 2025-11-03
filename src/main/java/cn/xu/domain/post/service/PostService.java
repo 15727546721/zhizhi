@@ -1,8 +1,8 @@
 package cn.xu.domain.post.service;
 
 import cn.xu.api.system.model.dto.post.SysPostQueryRequest;
-import cn.xu.api.web.model.dto.comment.FindCommentRequest;
 import cn.xu.api.web.model.dto.post.PostPageQueryRequest;
+import cn.xu.api.web.model.converter.PostVOConverter;
 import cn.xu.api.web.model.vo.post.PostDetailResponse;
 import cn.xu.api.web.model.vo.post.PostListResponse;
 import cn.xu.api.web.model.vo.post.PostPageListResponse;
@@ -10,7 +10,7 @@ import cn.xu.api.web.model.vo.post.PostPageResponse;
 import cn.xu.common.ResponseCode;
 import cn.xu.common.exception.BusinessException;
 import cn.xu.common.response.PageResponse;
-import cn.xu.domain.comment.model.entity.CommentEntity;
+
 import cn.xu.domain.comment.service.ICommentService;
 import cn.xu.domain.file.service.IFileStorageService;
 import cn.xu.domain.follow.service.IFollowService;
@@ -70,6 +70,8 @@ public class PostService implements IPostService, TransactionParticipant {
     private IPostCollectService postCollectService;
     @Resource
     private RedisService redisService;
+    @Resource
+    private PostVOConverter postVOConverter;
     
     // 用于存储临时浏览量数据
     private final Map<Long, Long> viewCountBuffer = new HashMap<>();
@@ -548,6 +550,8 @@ public class PostService implements IPostService, TransactionParticipant {
         }
     }
 
+
+    
     @Override
     public PostDetailResponse getPostDetail(Long id, Long currentUserId) {
         // 查询帖子详情
@@ -566,7 +570,6 @@ public class PostService implements IPostService, TransactionParticipant {
         UserEntity author = userService.getUserById(post.getUserId());
         
         // 查询标签信息
-        // 实现标签查询
         List<TagEntity> tags = null;
         if (tagService != null) {
             tags = tagService.getTagsByPostId(id);
@@ -578,63 +581,72 @@ public class PostService implements IPostService, TransactionParticipant {
             topicIds = postTopicService.getTopicsByPostId(id);
         }
         
-        // 查询评论信息
-        FindCommentRequest commentReq = new FindCommentRequest();
-        commentReq.setTargetId(id);
-        commentReq.setTargetType(1); // 假设1表示帖子类型
-        commentReq.setPageNo(1);
-        commentReq.setPageSize(10);
-        commentReq.setSortType("HOT"); // 按热度排序
-        List<CommentEntity> comments = commentService.findCommentListWithPreview(commentReq);
-        
-        // 构建返回对象
-        PostDetailResponse.PostDetailResponseBuilder builder = PostDetailResponse.builder()
-                .post(post)
-                .user(author)
-                .tags(tags)
-                .topicIds(topicIds)
-                .comments(comments);
+
         
         // 设置用户相关状态
+        boolean isLiked = false;
+        boolean isCollected = false;
+        boolean isAuthor = false;
+        boolean isFollowed = false;
+        
         if (currentUserId != null) {
             // 是否已点赞
-            boolean isLiked = false;
             try {
                 isLiked = likeService != null ? likeService.checkStatus(currentUserId, LikeType.POST, id) : false;
             } catch (Exception e) {
                 log.warn("检查点赞状态失败: userId={}, postId={}", currentUserId, id, e);
             }
-            builder.isLiked(isLiked);
             
             // 是否已收藏
-            boolean isCollected = false;
             try {
                 isCollected = postCollectService != null ? postCollectService.isCollected(currentUserId, id, "post") : false;
             } catch (Exception e) {
                 log.warn("检查收藏状态失败: userId={}, postId={}", currentUserId, id, e);
             }
-            builder.isCollected(isCollected);
             
             // 是否为作者
-            boolean isAuthor = post.getUserId().equals(currentUserId);
-            builder.isAuthor(isAuthor);
+            isAuthor = post.getUserId().equals(currentUserId);
             
             // 是否已关注作者
-            boolean isFollowed = false;
             try {
                 isFollowed = followService != null ? followService.isFollowing(currentUserId, post.getUserId()) : false;
             } catch (Exception e) {
                 log.warn("检查关注状态失败: followerId={}, followedId={}", currentUserId, post.getUserId(), e);
             }
-            builder.isFollowed(isFollowed);
         }
         
-        return builder.build();
+        // 使用转换器转换为VO对象
+        return postVOConverter.convertToPostDetailResponse(
+                post, 
+                author, 
+                "", // 需要从分类服务获取分类名称，这里先留空
+                tags, 
+                topicIds, 
+                null, // acceptedAnswerId，问答帖需要，这里先留空
+                isLiked, 
+                isCollected, 
+                isAuthor, 
+                isFollowed
+        );
     }
 
     @Override
     public long countAllPosts() {
         return postRepository.countAll();
+    }
+    
+    /**
+     * 增加帖子分享数
+     * @param postId 帖子ID
+     */
+    public void increasePostShareCount(Long postId) {
+        Optional<PostAggregate> postAggregateOpt = postRepository.findById(postId);
+        if (postAggregateOpt.isPresent()) {
+            PostAggregate postAggregate = postAggregateOpt.get();
+            PostEntity postEntity = postAggregate.getPostEntity();
+            postEntity.increaseShareCount();
+            postRepository.update(postAggregate);
+        }
     }
 
     @Override

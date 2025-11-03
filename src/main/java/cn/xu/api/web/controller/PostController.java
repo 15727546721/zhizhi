@@ -233,12 +233,12 @@ public class PostController {
         postService.viewPost(id, clientIp, currentUserId);
 
         // 调用服务层获取帖子详情
-        PostDetailResponse postDetailVO = postService.getPostDetail(id, currentUserId);
+        PostDetailResponse postDetail = postService.getPostDetail(id, currentUserId);
 
         return ResponseEntity.builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .info("帖子获取成功")
-                .data(postDetailVO)
+                .data(postDetail)
                 .build();
     }
 
@@ -437,6 +437,35 @@ public class PostController {
         }
     }
 
+    @GetMapping("/share/{id}")
+    @Operation(summary = "增加分享数")
+    @ApiOperationLog(description = "增加帖子分享数")
+    public ResponseEntity sharePost(@PathVariable Long id) {
+        try {
+            // 验证帖子是否存在
+            Optional<PostEntity> postOpt = postService.findPostEntityById(id);
+            if (!postOpt.isPresent()) {
+                return ResponseEntity.builder()
+                        .code(ResponseCode.UN_ERROR.getCode())
+                        .info("帖子不存在")
+                        .build();
+            }
+            
+            // 增加分享数
+            postService.increasePostShareCount(id);
+            return ResponseEntity.builder()
+                    .code(ResponseCode.SUCCESS.getCode())
+                    .info("分享成功")
+                    .build();
+        } catch (Exception e) {
+            log.error("分享帖子失败，postId={}", id, e);
+            return ResponseEntity.builder()
+                    .code(ResponseCode.UN_ERROR.getCode())
+                    .info("分享失败")
+                    .build();
+        }
+    }
+    
     @GetMapping("/view")
     @Operation(summary = "增加帖子浏览量")
     @ApiOperationLog(description = "增加帖子浏览量")

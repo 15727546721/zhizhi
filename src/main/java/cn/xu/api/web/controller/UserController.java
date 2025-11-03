@@ -2,6 +2,7 @@ package cn.xu.api.web.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.stp.StpUtil;
+import cn.xu.api.web.model.converter.UserVOConverter;
 import cn.xu.api.web.model.dto.user.UpdateUserRequest;
 import cn.xu.api.web.model.dto.user.UserLoginRequest;
 import cn.xu.api.web.model.dto.user.UserRegisterRequest;
@@ -32,6 +33,9 @@ public class UserController {
     
     @Resource
     private UserValidationService userValidationService;
+    
+    @Resource
+    private UserVOConverter userVOConverter;
 
     @PostMapping("/register")
     @Operation(summary = "用户注册", description = "用户注册接口")
@@ -72,7 +76,10 @@ public class UserController {
         log.info("用户登录成功，用户ID：{}", user.getId());
         return ResponseEntity.<UserLoginResponse>builder()
                 .code(ResponseCode.SUCCESS.getCode())
-                .data(UserLoginResponse.builder().userInfo(user).token(StpUtil.getTokenValue()).build())
+                .data(UserLoginResponse.builder()
+                        .userInfo(userVOConverter.convertToUserResponse(user))
+                        .token(StpUtil.getTokenValue())
+                        .build())
                 .info("用户登录成功")
                 .build();
     }

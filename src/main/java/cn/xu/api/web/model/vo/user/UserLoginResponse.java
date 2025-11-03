@@ -1,6 +1,5 @@
 package cn.xu.api.web.model.vo.user;
 
-import cn.xu.domain.user.model.entity.UserEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,7 +13,7 @@ import lombok.NoArgsConstructor;
 @Schema(description = "用户登录响应数据")
 public class UserLoginResponse implements java.io.Serializable {
     @Schema(description = "用户信息")
-    UserEntity userInfo;
+    UserResponse userInfo;
     
     @Schema(description = "登录令牌")
     String token;

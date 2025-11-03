@@ -1,11 +1,13 @@
 package cn.xu.infrastructure.persistent.converter;
 
+import cn.xu.api.web.model.converter.UserVOConverter;
 import cn.xu.api.web.model.vo.comment.CommentUserResponse;
 import cn.xu.api.web.model.vo.comment.HotCommentResponse;
 import cn.xu.domain.comment.model.entity.CommentEntity;
 import cn.xu.domain.user.model.entity.UserEntity;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.Resource;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -17,6 +19,9 @@ import java.util.stream.Collectors;
  */
 @Component
 public class HotCommentConverter {
+    
+    @Resource
+    private UserVOConverter userVOConverter;
 
     /**
      * 将CommentEntity转换为HotCommentResponse
@@ -64,16 +69,7 @@ public class HotCommentConverter {
      * @return 评论用户Response
      */
     private CommentUserResponse convertUserToVO(UserEntity userEntity) {
-        if (userEntity == null) {
-            return null;
-        }
-        
-        CommentUserResponse vo = new CommentUserResponse();
-        vo.setId(userEntity.getId());
-        vo.setNickname(userEntity.getNickname());
-        vo.setAvatar(userEntity.getAvatar());
-        // UserEntity中没有getLevel()方法，所以移除这一行
-        
-        return vo;
+        // 直接使用UserVOConverter进行转换，确保转换逻辑的一致性
+        return userVOConverter.convertToCommentUserResponse(userEntity);
     }
 }

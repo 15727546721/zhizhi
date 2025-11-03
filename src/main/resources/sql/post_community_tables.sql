@@ -15,6 +15,7 @@ CREATE TABLE `post` (
   `like_count` INT NOT NULL DEFAULT 0 COMMENT '点赞次数',
   `collect_count` INT NOT NULL DEFAULT 0 COMMENT '收藏次数',
   `comment_count` INT NOT NULL DEFAULT 0 COMMENT '评论次数',
+  `share_count` INT NOT NULL DEFAULT 0 COMMENT '分享次数',
   `hot_score` INT NOT NULL DEFAULT 0 COMMENT '热度分数',
   `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',

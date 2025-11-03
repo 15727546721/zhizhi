@@ -2,6 +2,7 @@ package cn.xu.api.web.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.stp.StpUtil;
+import cn.xu.api.web.model.converter.UserVOConverter;
 import cn.xu.api.web.model.dto.comment.CommentCreateRequest;
 import cn.xu.api.web.model.dto.comment.FindCommentRequest;
 import cn.xu.api.web.model.dto.comment.FindReplyRequest;
@@ -44,6 +45,8 @@ public class CommentController {
     private ReportDomainService reportDomainService;
     @Resource
     private CommentValidationService commentValidationService;
+    @Resource
+    private UserVOConverter userVOConverter;
 
     @PostMapping("/list")
     @Operation(summary = "获取评论列表")
@@ -94,8 +97,9 @@ public class CommentController {
                 .type(entity.getTargetType())
                 .targetId(entity.getTargetId())
                 .parentId(entity.getParentId())
-                .user(entity.getUser())
-                .replyUser(entity.getReplyUser())
+                // 使用UserVOConverter转换用户信息
+                .user(userVOConverter.convertToCommentUserResponse(entity.getUser()))
+                .replyUser(userVOConverter.convertToCommentUserResponse(entity.getReplyUser()))
                 .content(entity.getContentValue())
                 .imageUrls(entity.getImageUrls())
                 .likeCount(entity.getLikeCount() != null ? entity.getLikeCount().intValue() : 0)

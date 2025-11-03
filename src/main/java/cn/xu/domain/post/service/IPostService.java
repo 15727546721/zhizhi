@@ -2,10 +2,7 @@ package cn.xu.domain.post.service;
 
 import cn.xu.api.system.model.dto.post.SysPostQueryRequest;
 import cn.xu.api.web.model.dto.post.PostPageQueryRequest;
-import cn.xu.api.web.model.vo.post.PostDetailResponse;
-import cn.xu.api.web.model.vo.post.PostListResponse;
-import cn.xu.api.web.model.vo.post.PostPageListResponse;
-import cn.xu.api.web.model.vo.post.PostPageResponse;
+import cn.xu.api.web.model.vo.post.*;
 import cn.xu.common.response.PageResponse;
 import cn.xu.domain.post.model.aggregate.PostAggregate;
 import cn.xu.domain.post.model.entity.PostEntity;
@@ -337,6 +334,13 @@ public interface IPostService {
      * @return 帖子总数
      */
     long countAllPosts();
+
+    /**
+     * 增加帖子分享数
+     * @param postId 帖子ID
+     */
+    void increasePostShareCount(Long postId);
+
 
     /**
      * 根据帖子类型查找相关帖子

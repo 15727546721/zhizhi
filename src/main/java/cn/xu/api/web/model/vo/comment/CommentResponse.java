@@ -1,6 +1,5 @@
 package cn.xu.api.web.model.vo.comment;
 
-import cn.xu.domain.user.model.entity.UserEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -29,10 +28,10 @@ public class CommentResponse {
     private Long parentId;
 
     @Schema(description = "评论用户")
-    private UserEntity user;
+    private CommentUserResponse user;
 
     @Schema(description = "回复用户")
-    private UserEntity replyUser;
+    private CommentUserResponse replyUser;
 
     @Schema(description = "评论内容")
     private String content;
