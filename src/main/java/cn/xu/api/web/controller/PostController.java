@@ -10,7 +10,6 @@ import cn.xu.api.web.model.dto.report.ReportRequestDTO;
 import cn.xu.api.web.model.vo.post.PostDetailResponse;
 import cn.xu.api.web.model.vo.post.PostListResponse;
 import cn.xu.api.web.model.vo.post.PostPageListResponse;
-import cn.xu.application.service.PostCollectApplicationService;
 import cn.xu.common.ResponseCode;
 import cn.xu.common.annotation.ApiOperationLog;
 import cn.xu.common.exception.BusinessException;
@@ -34,8 +33,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -73,8 +70,6 @@ public class PostController {
     private ReportDomainService reportDomainService;
     @Resource
     private PostValidationService postValidationService;
-    @Resource
-    private PostCollectApplicationService postCollectApplicationService;
 
     /**
      * 将帖子实体列表转换为PostListResponse列表
@@ -564,47 +559,7 @@ public class PostController {
         }
     }
     
-    @PostMapping("/collect/{id}")
-    @Operation(summary = "收藏帖子")
-    @SaCheckLogin
-    @ApiOperationLog(description = "收藏帖子")
-    public ResponseEntity<?> collectPost(@Parameter(description = "帖子ID") @PathVariable("id") Long id) {
-        try {
-            Long userId = StpUtil.getLoginIdAsLong();
-            boolean result = postCollectApplicationService.collectPost(userId, id);
-            return ResponseEntity.builder()
-                    .code(ResponseCode.SUCCESS.getCode())
-                    .info(result ? "帖子收藏成功" : "帖子收藏失败")
-                    .build();
-        } catch (Exception e) {
-            log.error("帖子收藏失败", e);
-            return ResponseEntity.builder()
-                    .code(ResponseCode.UN_ERROR.getCode())
-                    .info("帖子收藏失败，请稍后重试")
-                    .build();
-        }
-    }
-    
-    @DeleteMapping("/collect/{id}")
-    @Operation(summary = "取消收藏帖子")
-    @SaCheckLogin
-    @ApiOperationLog(description = "取消收藏帖子")
-    public ResponseEntity<?> uncollectPost(@Parameter(description = "帖子ID") @PathVariable("id") Long id) {
-        try {
-            Long userId = StpUtil.getLoginIdAsLong();
-            boolean result = postCollectApplicationService.uncollectPost(userId, id);
-            return ResponseEntity.builder()
-                    .code(ResponseCode.SUCCESS.getCode())
-                    .info(result ? "帖子取消收藏成功" : "帖子取消收藏失败")
-                    .build();
-        } catch (Exception e) {
-            log.error("帖子取消收藏失败", e);
-            return ResponseEntity.builder()
-                    .code(ResponseCode.UN_ERROR.getCode())
-                    .info("帖子取消收藏失败，请稍后重试")
-                    .build();
-        }
-    }
+
     
     @PostMapping("/accept-answer")
     @Operation(summary = "采纳回答（仅限问答帖）")

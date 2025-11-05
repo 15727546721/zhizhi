@@ -13,10 +13,10 @@
         <result property="title" column="title" jdbcType="VARCHAR"/>
         <result property="content" column="content" jdbcType="VARCHAR"/>
         <result property="coverUrl" column="cover_url" jdbcType="VARCHAR"/>
-        <result property="viewCount" column="view_count" jdbcType="INTEGER"/>
-        <result property="likeCount" column="like_count" jdbcType="INTEGER"/>
-        <result property="commentCount" column="comment_count" jdbcType="INTEGER"/>
-        <result property="collectCount" column="collect_count" jdbcType="INTEGER"/>
+        <result property="viewCount" column="view_count" jdbcType="BIGINT"/>
+        <result property="likeCount" column="like_count" jdbcType="BIGINT"/>
+        <result property="commentCount" column="comment_count" jdbcType="BIGINT"/>
+        <result property="favoriteCount" column="favorite_count" jdbcType="BIGINT"/>
         <result property="isFeatured" column="is_featured" jdbcType="TINYINT"/>
         <result property="acceptedAnswerId" column="accepted_answer_id" jdbcType="BIGINT"/>
         <result property="publishTime" column="publish_time" jdbcType="TIMESTAMP"/>
@@ -26,16 +26,16 @@
 
     <sql id="Base_Column_List">
         id, user_id, category_id, type, status, title, content, cover_url, view_count, like_count, 
-        comment_count, collect_count, is_featured, accepted_answer_id, publish_time, create_time, update_time
+        comment_count, favorite_count, is_featured, accepted_answer_id, publish_time, create_time, update_time
     </sql>
     
     <insert id="insert" parameterType="cn.xu.infrastructure.persistent.po.Post" useGeneratedKeys="true"
             keyProperty="id">
         INSERT INTO post (user_id, category_id, type, status, title, content, cover_url, view_count, 
-                         like_count, comment_count, collect_count, is_featured, accepted_answer_id, publish_time, 
+                         like_count, comment_count, favorite_count, is_featured, accepted_answer_id, publish_time, 
                          create_time, update_time)
         VALUES (#{userId}, #{categoryId}, #{type}, #{status}, #{title}, #{content}, #{coverUrl},
-                #{viewCount}, #{likeCount}, #{commentCount}, #{collectCount}, #{isFeatured}, #{acceptedAnswerId},
+                #{viewCount}, #{likeCount}, #{commentCount}, #{favoriteCount}, #{isFeatured}, #{acceptedAnswerId},
                 #{publishTime}, now(), now())
     </insert>
     
@@ -51,7 +51,7 @@
             view_count = #{viewCount},
             like_count = #{likeCount},
             comment_count = #{commentCount},
-            collect_count = #{collectCount},
+            favorite_count = #{favoriteCount},
             is_featured = #{isFeatured},
             accepted_answer_id = #{acceptedAnswerId},
             publish_time = #{publishTime},
@@ -72,10 +72,10 @@
         WHERE id = #{postId}
     </update>
     
-    <update id="updateLikeCount">
+    <update id="updateLikeCount" parameterType="java.util.Map">
         UPDATE post
-        SET like_count = like_count + #{count}
-        WHERE id = #{postId}
+        SET like_count = like_count + #{count, jdbcType=BIGINT}
+        WHERE id = #{postId, jdbcType=BIGINT}
     </update>
     
     <update id="updateCommentCount">
@@ -84,10 +84,10 @@
         WHERE id = #{postId}
     </update>
     
-    <update id="updateCollectCount">
+    <update id="updateFavoriteCount" parameterType="java.util.Map">
         UPDATE post
-        SET collect_count = collect_count + #{count}
-        WHERE id = #{postId}
+        SET favorite_count = favorite_count + #{count, jdbcType=BIGINT}
+        WHERE id = #{postId, jdbcType=BIGINT}
     </update>
 
     <delete id="deleteByIds">
@@ -163,7 +163,7 @@
                 comment_count DESC, create_time DESC
             </when>
             <when test='sortBy == "most_bookmarked"'>
-                collect_count DESC, create_time DESC
+                favorite_count DESC, create_time DESC
             </when>
             <when test='sortBy == "most_liked"'>
                 like_count DESC, create_time DESC
@@ -227,7 +227,7 @@
         <include refid="Base_Column_List"/>
         FROM post
         WHERE status = 1
-        ORDER BY (like_count + comment_count * 2 + collect_count * 3) DESC, create_time DESC
+        ORDER BY (like_count + comment_count * 2 + favorite_count * 3) DESC, create_time DESC
         LIMIT #{offset}, #{limit}
     </select>
     
@@ -349,7 +349,7 @@
     <!-- 根据标签ID查询帖子列表 -->
     <select id="findPostsByTagId" resultMap="BaseResultMap">
         SELECT p.id, p.user_id, p.category_id, p.type, p.status, p.title, p.content, p.cover_url, 
-               p.view_count, p.like_count, p.comment_count, p.collect_count, p.is_featured, 
+               p.view_count, p.like_count, p.comment_count, p.favorite_count, p.is_featured, 
                p.accepted_answer_id, p.publish_time, p.create_time, p.update_time
         FROM post p
         INNER JOIN post_tag pt ON p.id = pt.post_id

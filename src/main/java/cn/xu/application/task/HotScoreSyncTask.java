@@ -90,7 +90,7 @@ public class HotScoreSyncTask {
                 post.setCategoryId(postEntity.getCategoryId());
                 post.setViewCount((postEntity.getViewCount() == null ? 0 : postEntity.getViewCount()) + like); // 累加最新热度数值
                 post.setLikeCount((postEntity.getLikeCount() == null ? 0 : postEntity.getLikeCount()) + collect);
-                post.setCollectCount((postEntity.getCollectCount() == null ? 0 : postEntity.getCollectCount()) + comment);
+                post.setFavoriteCount((postEntity.getFavoriteCount() == null ? 0 : postEntity.getFavoriteCount()) + comment);
                 post.setShareCount(postEntity.getShareCount() != null ? postEntity.getShareCount() : 0L);
                 post.setCommentCount(postEntity.getCommentCount() == null ? 0 : postEntity.getCommentCount());
                 post.setCreateTime(postEntity.getCreateTime());

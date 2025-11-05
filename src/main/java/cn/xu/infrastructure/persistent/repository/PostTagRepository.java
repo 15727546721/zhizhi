@@ -4,7 +4,10 @@ import cn.xu.domain.post.model.entity.PostEntity;
 import cn.xu.domain.post.model.valobj.PostType;
 import cn.xu.domain.post.repository.IPostTagRepository;
 import cn.xu.domain.post.service.IPostTagService;
+import cn.xu.infrastructure.persistent.converter.PostConverter;
+import cn.xu.infrastructure.persistent.dao.PostMapper;
 import cn.xu.infrastructure.persistent.dao.PostTagMapper;
+import cn.xu.infrastructure.persistent.po.Post;
 import cn.xu.infrastructure.persistent.po.PostTag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
@@ -23,7 +26,7 @@ public class PostTagRepository implements IPostTagRepository {
     private PostTagMapper postTagDao;
     
     @Resource
-    private PostRepository postRepository;
+    private PostMapper postMapper;
 
     @Override
     public void savePostTag(Long postId, List<Long> tagIds) {
@@ -51,8 +54,10 @@ public class PostTagRepository implements IPostTagRepository {
         }
         // 获取帖子ID列表
         List<Long> postIds = postTagDao.selectPostIdsByTagId(tagId, offset, limit);
-        // 根据帖子ID列表获取帖子实体列表
-        return postRepository.findPostsByIds(postIds);
+        // 直接使用PostMapper查询帖子信息
+        List<Post> posts = postMapper.findPostsByIds(postIds);
+        List<PostEntity> postEntities = PostConverter.toDomainEntities(posts);
+        return postEntities;
     }
 
     @Override

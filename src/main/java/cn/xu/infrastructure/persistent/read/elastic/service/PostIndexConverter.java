@@ -15,7 +15,7 @@ public class PostIndexConverter {
         index.setUserId(post.getUserId());
         index.setCategoryId(post.getCategoryId());
         index.setViewCount(post.getViewCount());
-        index.setCollectCount(post.getCollectCount());
+        index.setFavoriteCount(post.getFavoriteCount());
         index.setCommentCount(post.getCommentCount());
         index.setLikeCount(post.getLikeCount());
         index.setPublishTime(post.getCreateTime());

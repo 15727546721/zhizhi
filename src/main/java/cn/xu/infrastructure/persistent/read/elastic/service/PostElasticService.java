@@ -72,7 +72,7 @@ public class PostElasticService {
             index.setUserId(post.getUserId());
             index.setCategoryId(post.getCategoryId());
             index.setViewCount(post.getViewCount());
-            index.setCollectCount(post.getCollectCount());
+            index.setFavoriteCount(post.getFavoriteCount());
             index.setCommentCount(post.getCommentCount());
             index.setLikeCount(post.getLikeCount());
             index.setPublishTime(post.getPublishTime());
@@ -80,7 +80,7 @@ public class PostElasticService {
 
             double hotScore = PostHotScorePolicy.calculate(
                     post.getLikeCount() != null ? post.getLikeCount() : 0L,
-                    post.getCollectCount() != null ? post.getCollectCount() : 0L,
+                    post.getFavoriteCount() != null ? post.getFavoriteCount() : 0L,
                     post.getCommentCount() != null ? post.getCommentCount() : 0L,
                     post.getPublishTime());
             index.setHotScore(hotScore);
@@ -148,7 +148,7 @@ public class PostElasticService {
                 .userId(index.getUserId())
                 .categoryId(index.getCategoryId())
                 .viewCount(index.getViewCount())
-                .collectCount(index.getCollectCount())
+                .favoriteCount(index.getFavoriteCount() == null ? 0L : index.getFavoriteCount())
                 .commentCount(index.getCommentCount())
                 .likeCount(index.getLikeCount())
                 .createTime(index.getPublishTime())

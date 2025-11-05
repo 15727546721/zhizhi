@@ -75,7 +75,7 @@ public class Post implements Serializable {
     /**
      * 收藏次数
      */
-    private Long collectCount;
+    private Long favoriteCount;
 
     /**
      * 评论次数

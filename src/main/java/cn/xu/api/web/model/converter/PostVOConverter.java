@@ -29,7 +29,7 @@ public class PostVOConverter {
                                              List<Long> topicIds,
                                              Long acceptedAnswerId,
                                              boolean isLiked, 
-                                             boolean isCollected, 
+                                             boolean isFavorited, 
                                              boolean isAuthor, 
                                              boolean isFollowed) {
         if (post == null) {
@@ -51,12 +51,12 @@ public class PostVOConverter {
                 .viewCount(post.getViewCount())
                 .likeCount(post.getLikeCount())
                 .commentCount(post.getCommentCount())
-                .collectCount(post.getCollectCount())
+                .favoriteCount(post.getFavoriteCount())
                 .shareCount(post.getShareCount())
                 .status(post.getStatus().getCode())
                 .isFeatured(post.isFeatured())
                 .isLiked(isLiked)
-                .isCollected(isCollected)
+                .isFavorited(isFavorited)
                 .isAuthor(isAuthor)
                 .isFollowed(isFollowed)
                 .build();

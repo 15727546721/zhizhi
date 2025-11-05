@@ -38,7 +38,7 @@ public class RedisKeyManager {
         return key("post", "like", "count", postId);
     }
 
-    public static String postCollectCountKey(Long postId) {
+    public static String postFavoriteCountKey(Long postId) {
         return key("post", "collect", "count", postId);
     }
 

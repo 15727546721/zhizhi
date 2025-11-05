@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.xu.infrastructure.persistent.dao.IFavoriteDao">
+
+    <!-- 插入或更新收藏记录 -->
+    <insert id="insertOrUpdate" parameterType="cn.xu.infrastructure.persistent.po.FavoritePO">
+        INSERT INTO favorite (
+            id, user_id, target_id, folder_id, target_type, status, create_time, update_time
+        ) VALUES (
+            #{id},
+            #{userId},
+            #{targetId},
+            #{folderId},
+            #{targetType},
+            #{status},
+            #{createTime},
+            #{updateTime}
+        ) ON DUPLICATE KEY UPDATE
+            status = VALUES(status),
+            folder_id = VALUES(folder_id),
+            update_time = VALUES(update_time)
+    </insert>
+
+    <!-- 根据用户ID和内容ID查找收藏记录 -->
+    <select id="selectByUserIdAndTargetId" resultType="cn.xu.infrastructure.persistent.po.FavoritePO">
+        SELECT
+            id,
+            user_id AS userId,
+            target_id AS targetId,
+            folder_id AS folderId,
+            target_type AS targetType,
+            status,
+            create_time AS createTime,
+            update_time AS updateTime
+        FROM favorite
+        WHERE user_id = #{userId}
+        AND target_id = #{targetId}
+        AND target_type = #{targetType}
+    </select>
+
+    <!-- 删除收藏记录 -->
+    <delete id="deleteByUserIdAndTargetId">
+        DELETE FROM favorite
+        WHERE user_id = #{userId}
+        AND target_id = #{targetId}
+        AND target_type = #{targetType}
+    </delete>
+
+    <!-- 获取用户收藏的内容ID列表 -->
+    <select id="selectFavoritedTargetIdsByUserId" resultType="java.lang.Long">
+        SELECT target_id
+        FROM favorite
+        WHERE user_id = #{userId}
+        AND target_type = #{targetType}
+        AND status = 1
+    </select>
+
+    <!-- 统计用户收藏的内容数量 -->
+    <select id="countFavoritedItemsByUserId" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM favorite
+        WHERE user_id = #{userId}
+        AND target_type = #{targetType}
+        AND status = 1
+    </select>
+
+    <!-- 更新收藏夹ID -->
+    <update id="updateFolderId">
+        UPDATE favorite
+        SET folder_id = #{folderId}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 根据收藏夹ID查询收藏记录 -->
+    <select id="selectByFolderId" resultType="cn.xu.infrastructure.persistent.po.FavoritePO">
+        SELECT
+            id,
+            user_id AS userId,
+            target_id AS targetId,
+            folder_id AS folderId,
+            target_type AS targetType,
+            status,
+            create_time AS createTime,
+            update_time AS updateTime
+        FROM favorite
+        WHERE user_id = #{userId}
+        AND folder_id = #{folderId}
+        AND status = 1
+    </select>
+
+</mapper>

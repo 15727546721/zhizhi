@@ -1,8 +1,8 @@
 package cn.xu.domain.post.service;
 
 import cn.xu.api.system.model.dto.post.SysPostQueryRequest;
-import cn.xu.api.web.model.dto.post.PostPageQueryRequest;
 import cn.xu.api.web.model.converter.PostVOConverter;
+import cn.xu.api.web.model.dto.post.PostPageQueryRequest;
 import cn.xu.api.web.model.vo.post.PostDetailResponse;
 import cn.xu.api.web.model.vo.post.PostListResponse;
 import cn.xu.api.web.model.vo.post.PostPageListResponse;
@@ -10,8 +10,8 @@ import cn.xu.api.web.model.vo.post.PostPageResponse;
 import cn.xu.common.ResponseCode;
 import cn.xu.common.exception.BusinessException;
 import cn.xu.common.response.PageResponse;
-
 import cn.xu.domain.comment.service.ICommentService;
+import cn.xu.domain.favorite.service.IFavoriteService;
 import cn.xu.domain.file.service.IFileStorageService;
 import cn.xu.domain.follow.service.IFollowService;
 import cn.xu.domain.like.model.LikeType;
@@ -46,7 +46,7 @@ import java.util.stream.Collectors;
 @SuppressWarnings("unused")
 public class PostService implements IPostService, TransactionParticipant {
 
-    @Resource(name = "postRepository")
+    @Resource(name = "postAggregateRepository")
     private IPostRepository postRepository;
     @Resource
     private IUserService userService;
@@ -67,7 +67,7 @@ public class PostService implements IPostService, TransactionParticipant {
     @Resource
     private IFollowService followService;
     @Resource
-    private IPostCollectService postCollectService;
+    private IFavoriteService favoriteService;
     @Resource
     private RedisService redisService;
     @Resource
@@ -585,7 +585,7 @@ public class PostService implements IPostService, TransactionParticipant {
         
         // 设置用户相关状态
         boolean isLiked = false;
-        boolean isCollected = false;
+        boolean isFavorited = false;
         boolean isAuthor = false;
         boolean isFollowed = false;
         
@@ -599,7 +599,7 @@ public class PostService implements IPostService, TransactionParticipant {
             
             // 是否已收藏
             try {
-                isCollected = postCollectService != null ? postCollectService.isCollected(currentUserId, id, "post") : false;
+                isFavorited = favoriteService != null ? favoriteService.isFavorited(currentUserId, id, "post") : false;
             } catch (Exception e) {
                 log.warn("检查收藏状态失败: userId={}, postId={}", currentUserId, id, e);
             }
@@ -621,13 +621,12 @@ public class PostService implements IPostService, TransactionParticipant {
                 author, 
                 "", // 需要从分类服务获取分类名称，这里先留空
                 tags, 
-                topicIds, 
+                topicIds,
                 null, // acceptedAnswerId，问答帖需要，这里先留空
-                isLiked, 
-                isCollected, 
+                isLiked,
+                isFavorited, 
                 isAuthor, 
-                isFollowed
-        );
+                isFollowed);
     }
 
     @Override

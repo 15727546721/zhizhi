@@ -59,7 +59,7 @@ public class RedisSyncService {
                     // 更新数据库中的帖子计数
                     post.setViewCount(viewCount);
                     post.setLikeCount(likeCount);
-                    post.setCollectCount(collectCount);
+                    post.setFavoriteCount(collectCount);
                     post.setCommentCount(commentCount);
 
                     // 创建PostAggregate对象用于更新

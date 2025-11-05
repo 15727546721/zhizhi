@@ -5,6 +5,7 @@ import cn.xu.domain.like.model.aggregate.LikeAggregate;
 import cn.xu.domain.like.repository.ILikeAggregateRepository;
 import cn.xu.domain.like.service.LikeDataConsistencyService;
 import cn.xu.infrastructure.cache.LikeCacheRepository;
+import cn.xu.infrastructure.persistent.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,7 @@ public class LikeApplicationService {
     private final ILikeAggregateRepository likeAggregateRepository;
     private final LikeCacheRepository likeCacheRepository;
     private final LikeDataConsistencyService likeDataConsistencyService;
+    private final PostRepository postRepository;
     
     /**
      * 点赞操作
@@ -70,6 +72,14 @@ public class LikeApplicationService {
                 
                 // 添加用户点赞关系缓存
                 likeCacheRepository.addUserLikeRelation(userId, targetId, type);
+                
+                // 更新数据库中的点赞数
+                if (type == LikeType.POST) {
+                    // 获取最新的点赞数
+                    long newLikeCount = getLikeCount(targetId, type);
+                    postRepository.updatePostLikeCount(targetId, newLikeCount);
+                    log.info("[点赞应用服务] 更新数据库点赞数成功，目标: {}, 新点赞数: {}", targetId, newLikeCount);
+                }
                 
                 log.info("[点赞应用服务] 更新缓存成功，用户: {}, 目标: {}, 类型: {}", userId, targetId, type);
             }
@@ -137,6 +147,14 @@ public class LikeApplicationService {
                 
                 // 移除用户点赞关系缓存
                 likeCacheRepository.removeUserLikeRelation(userId, targetId, type);
+                
+                // 更新数据库中的点赞数
+                if (type == LikeType.POST) {
+                    // 获取最新的点赞数
+                    long newLikeCount = getLikeCount(targetId, type);
+                    postRepository.updatePostLikeCount(targetId, newLikeCount);
+                    log.info("[点赞应用服务] 更新数据库点赞数成功，目标: {}, 新点赞数: {}", targetId, newLikeCount);
+                }
                 
                 log.info("[点赞应用服务] 更新缓存成功，用户: {}, 目标: {}, 类型: {}", userId, targetId, type);
             }

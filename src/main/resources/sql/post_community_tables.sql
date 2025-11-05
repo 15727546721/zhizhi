@@ -13,7 +13,7 @@ CREATE TABLE `post` (
   `status` TINYINT NOT NULL DEFAULT 1 COMMENT '帖子状态：0-草稿，1-已发布，2-已删除，3-已归档',
   `view_count` INT NOT NULL DEFAULT 0 COMMENT '浏览次数',
   `like_count` INT NOT NULL DEFAULT 0 COMMENT '点赞次数',
-  `collect_count` INT NOT NULL DEFAULT 0 COMMENT '收藏次数',
+  `favorite_count` INT NOT NULL DEFAULT 0 COMMENT '收藏次数',
   `comment_count` INT NOT NULL DEFAULT 0 COMMENT '评论次数',
   `share_count` INT NOT NULL DEFAULT 0 COMMENT '分享次数',
   `hot_score` INT NOT NULL DEFAULT 0 COMMENT '热度分数',
@@ -40,8 +40,8 @@ CREATE TABLE `post_tag` (
   KEY `idx_create_time` (`create_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='帖子标签关联表';
 
--- 3. 收藏表 (collect)
-CREATE TABLE `collect` (
+-- 3. 收藏表 (favorite)
+CREATE TABLE `favorite` (
   `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '收藏ID',
   `user_id` BIGINT NOT NULL COMMENT '用户ID',
   `target_id` BIGINT NOT NULL COMMENT '被收藏内容ID',
@@ -59,8 +59,8 @@ CREATE TABLE `collect` (
   KEY `idx_create_time` (`create_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='用户内容收藏表';
 
--- 4. 收藏夹表 (collect_folder)
-CREATE TABLE `collect_folder` (
+-- 4. 收藏夹表 (favorite_folder)
+CREATE TABLE `favorite_folder` (
   `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '收藏夹ID',
   `user_id` BIGINT NOT NULL COMMENT '用户ID',
   `name` VARCHAR(100) NOT NULL COMMENT '收藏夹名称',

@@ -1,7 +1,6 @@
 package cn.xu.domain.user.model.valobj;
 
 import cn.dev33.satoken.secure.SaSecureUtil;
-import cn.xu.common.exception.BusinessException;
 import lombok.Getter;
 
 import java.util.regex.Pattern;

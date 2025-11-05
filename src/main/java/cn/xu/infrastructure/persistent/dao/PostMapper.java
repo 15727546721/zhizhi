@@ -75,7 +75,7 @@ public interface PostMapper {
      * @param postId
      * @param count
      */
-    void updateLikeCount(@Param("postId") long postId, @Param("count") Integer count);
+    void updateLikeCount(@Param("postId") long postId, @Param("count") Long count);
 
     /**
      * 更新帖子评论数
@@ -91,7 +91,7 @@ public interface PostMapper {
      * @param postId
      * @param count
      */
-    void updateCollectCount(@Param("postId") long postId, @Param("count") Integer count);
+    void updateFavoriteCount(@Param("postId") long postId, @Param("count") Long count);
 
     /**
      * 更新帖子浏览量

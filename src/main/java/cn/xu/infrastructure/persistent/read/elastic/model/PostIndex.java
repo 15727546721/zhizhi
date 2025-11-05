@@ -35,7 +35,7 @@ public class PostIndex {
     private Long viewCount;
 
     @Field(type = FieldType.Long)
-    private Long collectCount;
+    private Long favoriteCount;
 
     @Field(type = FieldType.Long)
     private Long commentCount;

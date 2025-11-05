@@ -8,6 +8,7 @@ import cn.xu.domain.like.service.ILikeService;
 import cn.xu.domain.like.service.LikeDomainService;
 import cn.xu.domain.post.model.aggregate.PostAggregate;
 import cn.xu.domain.post.repository.IPostRepository;
+import cn.xu.infrastructure.persistent.repository.PostRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -30,6 +31,9 @@ public class LikeService implements ILikeService {
     
     @Autowired
     private IPostRepository postRepository;
+    
+    @Autowired
+    private PostRepository postRepositoryHelper;
 
     @Override
     public void like(Long userId, LikeType type, Long targetId) {
@@ -127,23 +131,11 @@ public class LikeService implements ILikeService {
      */
     private void updatePostLikeCount(Long postId, boolean isIncrease) {
         try {
-            // 获取帖子聚合根
-            Optional<PostAggregate> postAggregateOpt = postRepository.findById(postId);
-            if (postAggregateOpt.isPresent()) {
-                PostAggregate postAggregate = postAggregateOpt.get();
-                
-                // 更新点赞数
-                if (isIncrease) {
-                    postAggregate.increaseLikeCount();
-                } else {
-                    postAggregate.decreaseLikeCount();
-                }
-                
-                // 保存更新
-                postRepository.update(postAggregate);
-                
-                log.info("帖子点赞数更新成功: postId={}, isIncrease={}", postId, isIncrease);
-            }
+            // 使用辅助类直接更新点赞数，确保点赞数正确更新到数据库
+            long currentCount = likeDomainService.getLikeCount(postId, LikeType.POST);
+            postRepositoryHelper.updatePostLikeCount(postId, currentCount);
+            
+            log.info("帖子点赞数更新成功: postId={}, 新点赞数={}", postId, currentCount);
         } catch (Exception e) {
             log.error("更新帖子点赞数失败: postId={}, isIncrease={}", postId, isIncrease, e);
         }

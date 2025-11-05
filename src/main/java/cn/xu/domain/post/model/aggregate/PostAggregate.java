@@ -329,18 +329,18 @@ public class PostAggregate {
     /**
      * 增加收藏数
      */
-    public void increaseCollectCount() {
+    public void increaseFavoriteCount() {
         if (postEntity != null) {
-            postEntity.increaseCollectCount();
+            postEntity.increaseFavoriteCount();
         }
     }
     
     /**
      * 减少收藏数
      */
-    public void decreaseCollectCount() {
+    public void decreaseFavoriteCount() {
         if (postEntity != null) {
-            postEntity.decreaseCollectCount();
+            postEntity.decreaseFavoriteCount();
         }
     }
     

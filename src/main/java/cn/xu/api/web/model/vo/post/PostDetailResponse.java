@@ -57,7 +57,7 @@ public class PostDetailResponse {
     private Long commentCount;
 
     @Schema(description = "收藏数")
-    private Long collectCount;
+    private Long favoriteCount;
 
     @Schema(description = "分享数")
     private Long shareCount;
@@ -73,9 +73,15 @@ public class PostDetailResponse {
     @JsonProperty("isLiked")
     private boolean isLiked;
     
-    @Schema(description = "是否已收藏")
+    @Schema(description = "是否已收藏(新命名)")
+    @JsonProperty("isFavorited")
+    private boolean isFavorited;
+    
+    @Schema(description = "是否已收藏(旧命名，向后兼容)")
     @JsonProperty("isCollected")
-    private boolean isCollected;
+    public boolean isCollected() {
+        return isFavorited;
+    }
     
     @Schema(description = "是否为作者")
     @JsonProperty("isAuthor")

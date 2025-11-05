@@ -30,7 +30,7 @@ public class PostEntity {
     private String coverUrl;
     private Long userId;
     private Long viewCount;
-    private Long collectCount;
+    private Long favoriteCount;
     private Long commentCount;
     private Long likeCount;
     private Long shareCount;
@@ -71,7 +71,7 @@ public class PostEntity {
                 .status(PostStatus.DRAFT) // 默认为草稿状态
                 .isFeatured(false) // 默认不加精
                 .viewCount(0L)
-                .collectCount(0L)
+                .favoriteCount(0L)
                 .commentCount(0L)
                 .likeCount(0L)
                 .shareCount(0L)
@@ -173,15 +173,15 @@ public class PostEntity {
     /**
      * 增加收藏数
      */
-    public void increaseCollectCount() {
-        this.collectCount = (this.collectCount == null ? 0 : this.collectCount) + 1;
+    public void increaseFavoriteCount() {
+        this.favoriteCount = (this.favoriteCount == null ? 0 : this.favoriteCount) + 1;
     }
 
     /**
      * 减少收藏数
      */
-    public void decreaseCollectCount() {
-        this.collectCount = Math.max(0, (this.collectCount == null ? 0 : this.collectCount) - 1);
+    public void decreaseFavoriteCount() {
+        this.favoriteCount = Math.max(0, (this.favoriteCount == null ? 0 : this.favoriteCount) - 1);
     }
 
     /**
