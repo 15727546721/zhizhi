@@ -2,6 +2,7 @@ package cn.xu.api.web.model.vo.post;
 
 import cn.xu.api.web.model.vo.user.UserResponse;
 import cn.xu.domain.post.model.entity.TagEntity;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -65,17 +66,22 @@ public class PostDetailResponse {
     private Integer status;
 
     @Schema(description = "是否加精")
+    @JsonProperty("isFeatured")
     private Boolean isFeatured;
 
     @Schema(description = "是否已点赞")
+    @JsonProperty("isLiked")
     private boolean isLiked;
     
     @Schema(description = "是否已收藏")
+    @JsonProperty("isCollected")
     private boolean isCollected;
     
     @Schema(description = "是否为作者")
+    @JsonProperty("isAuthor")
     private boolean isAuthor;
     
     @Schema(description = "是否已关注")
+    @JsonProperty("isFollowed")
     private boolean isFollowed;
 }
