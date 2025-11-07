@@ -92,6 +92,15 @@ public class RedisKeyManager {
     public static String userPointsKey(Long userId) {
         return key("user", "points", userId);
     }
+    
+    /**
+     * 用户排行榜Key
+     * @param sortType 排序类型：fans(粉丝数)、likes(获赞数)、posts(帖子数)、comprehensive(综合)
+     * @return Redis Key
+     */
+    public static String userRankingKey(String sortType) {
+        return key("user", "rank", sortType);
+    }
 
     // ===================== 点赞模块 =====================
 

@@ -280,4 +280,28 @@ public class UserRepository implements IUserRepository {
             }
         });
     }
+    
+    @Override
+    public List<UserEntity> findUserRanking(String sortType, int offset, int limit) {
+        try {
+            List<User> users = userDao.findUserRanking(sortType, offset, limit);
+            return users.stream()
+                    .map(userConverter::toDomainEntity)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("查询用户排行榜失败, sortType: {}, offset: {}, limit: {}", sortType, offset, limit, e);
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "查询用户排行榜失败");
+        }
+    }
+    
+    @Override
+    public Long countAllUsers() {
+        try {
+            Long count = userDao.countAllUsers();
+            return count != null ? count : 0L;
+        } catch (Exception e) {
+            log.error("统计用户总数失败", e);
+            return 0L;
+        }
+    }
 }

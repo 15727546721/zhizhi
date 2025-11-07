@@ -170,4 +170,21 @@ public interface IUserRepository {
     default UserEntity findUserEntityByUsername(String username) {
         return findByUsername(new Username(username)).orElse(null);
     }
+    
+    /**
+     * 查询用户排行榜
+     *
+     * @param sortType 排序类型：fans(粉丝数)、likes(获赞数)、posts(帖子数)、comprehensive(综合)
+     * @param offset 偏移量
+     * @param limit 数量限制
+     * @return 用户列表（包含帖子数统计）
+     */
+    List<UserEntity> findUserRanking(String sortType, int offset, int limit);
+    
+    /**
+     * 统计用户总数（用于排行榜）
+     *
+     * @return 用户总数
+     */
+    Long countAllUsers();
 }

@@ -93,6 +93,7 @@ public class UserConverter {
                 .followCount(dataObject.getFollowCount())
                 .fansCount(dataObject.getFansCount())
                 .likeCount(dataObject.getLikeCount())
+                .postCount(dataObject.getPostCount()) // 临时字段，用于排行榜
                 .lastLoginTime(dataObject.getLastLoginTime())
                 .lastLoginIp(dataObject.getLastLoginIp())
                 .createTime(dataObject.getCreateTime())

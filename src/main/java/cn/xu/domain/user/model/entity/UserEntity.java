@@ -38,6 +38,7 @@ public class UserEntity {
     private Long followCount; // 关注数量
     private Long fansCount;   // 粉丝数量
     private Long likeCount;   // 获赞数量
+    private Long postCount;   // 帖子数量（临时字段，用于排行榜查询）
     private LocalDateTime lastLoginTime; // 最后登录时间
     private String lastLoginIp; // 最后登录IP
     private Integer failedLoginAttempts; // 登录失败次数

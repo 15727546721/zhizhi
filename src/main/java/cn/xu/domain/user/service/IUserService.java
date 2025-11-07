@@ -132,4 +132,21 @@ public interface IUserService {
      * @return 用户信息集合
      */
     List<UserEntity> batchGetUserInfo(List<Long> userIds);
+    
+    /**
+     * 查询用户排行榜
+     *
+     * @param sortType 排序类型：fans(粉丝数)、likes(获赞数)、posts(帖子数)、comprehensive(综合)
+     * @param page 页码
+     * @param size 每页数量
+     * @return 用户列表
+     */
+    List<UserEntity> findUserRanking(String sortType, int page, int size);
+    
+    /**
+     * 统计用户总数（用于排行榜）
+     *
+     * @return 用户总数
+     */
+    Long countAllUsers();
 }

@@ -89,4 +89,9 @@ public class User implements Serializable {
      * 更新时间
      */
     private LocalDateTime updateTime;
+    
+    /**
+     * 帖子数量（临时字段，用于排行榜查询）
+     */
+    private Long postCount;
 }

@@ -10,7 +10,10 @@ import cn.xu.api.web.model.vo.user.UserLoginResponse;
 import cn.xu.common.ResponseCode;
 import cn.xu.common.annotation.ApiOperationLog;
 import cn.xu.common.exception.BusinessException;
+import cn.xu.common.response.PageResponse;
 import cn.xu.common.response.ResponseEntity;
+import cn.xu.api.web.model.vo.user.UserRankingResponse;
+import cn.xu.api.web.model.vo.user.UserResponse;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.service.IUserService;
 import cn.xu.domain.user.service.UserValidationService;
@@ -21,6 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import java.util.List;
 
 @Slf4j
 @RequestMapping("api/user")
@@ -100,12 +104,13 @@ public class UserController {
     @GetMapping("/info/{id}")
     @Operation(summary = "获取用户信息", description = "根据用户ID获取用户信息")
     @ApiOperationLog(description = "获取用户信息")
-    public ResponseEntity<UserEntity> getUserInfo(@Parameter(description = "用户ID") @PathVariable Long id) {
+    public ResponseEntity<UserResponse> getUserInfo(@Parameter(description = "用户ID") @PathVariable Long id) {
         log.info("获取用户信息，用户ID：{}", id);
         UserEntity user = userService.getUserInfo(id);
-        return ResponseEntity.<UserEntity>builder()
+        UserResponse userResponse = userVOConverter.convertToUserResponse(user);
+        return ResponseEntity.<UserResponse>builder()
                 .code(ResponseCode.SUCCESS.getCode())
-                .data(user)
+                .data(userResponse)
                 .build();
     }
 
@@ -122,6 +127,45 @@ public class UserController {
         return ResponseEntity.<Void>builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .info("用户信息更新成功")
+                .build();
+    }
+    
+    @GetMapping("/ranking")
+    @Operation(summary = "获取用户排行榜", description = "根据排序类型获取用户排行榜")
+    @ApiOperationLog(description = "获取用户排行榜")
+    public ResponseEntity<PageResponse<List<UserRankingResponse>>> getUserRanking(
+            @Parameter(description = "时间范围：week(7天)、month(30天)") @RequestParam(required = false, defaultValue = "week") String timeRange,
+            @Parameter(description = "排序类型：fans(粉丝数)、likes(获赞数)、posts(帖子数)、comprehensive(综合)") @RequestParam(required = false, defaultValue = "fans") String sortType,
+            @Parameter(description = "页码") @RequestParam(required = false, defaultValue = "1") Integer page,
+            @Parameter(description = "每页数量") @RequestParam(required = false, defaultValue = "10") Integer size) {
+        log.info("获取用户排行榜 - timeRange: {}, sortType: {}, page: {}, size: {}", timeRange, sortType, page, size);
+        
+        // 参数校验
+        if (page < 1) {
+            page = 1;
+        }
+        if (size < 1) {
+            size = 10;
+        }
+        if (size > 100) {
+            size = 100;
+        }
+        
+        // 查询用户排行榜（领域实体）
+        List<UserEntity> users = userService.findUserRanking(sortType, page, size);
+        
+        // 转换为VO（符合DDD原则，领域实体不直接暴露给前端）
+        List<UserRankingResponse> userRankingResponses = userVOConverter.convertToUserRankingResponseList(users);
+        
+        // 统计总数
+        Long total = userService.countAllUsers();
+        
+        // 构建分页响应
+        PageResponse<List<UserRankingResponse>> pageResponse = PageResponse.ofList(page, size, total, userRankingResponses);
+        
+        return ResponseEntity.<PageResponse<List<UserRankingResponse>>>builder()
+                .code(ResponseCode.SUCCESS.getCode())
+                .data(pageResponse)
                 .build();
     }
 }

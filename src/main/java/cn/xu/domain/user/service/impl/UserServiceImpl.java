@@ -21,6 +21,7 @@ import cn.xu.domain.user.model.valobj.Phone;
 import cn.xu.domain.user.model.valobj.Username;
 import cn.xu.domain.user.repository.IUserRepository;
 import cn.xu.domain.user.service.IUserService;
+import cn.xu.infrastructure.cache.UserRankingCacheRepository;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -49,6 +50,7 @@ public class UserServiceImpl implements IUserService {
     private final IUserRepository userRepository;
     private final IFileStorageService fileStorageService;
     private final UserEventPublisher userEventPublisher;
+    private final UserRankingCacheRepository userRankingCacheRepository;
 
     @Override
     public UserEntity getUserById(Long userId) {
@@ -477,5 +479,82 @@ public class UserServiceImpl implements IUserService {
     private UserEntity getCurrentUser() {
         Long userId = StpUtil.getLoginIdAsLong();
         return getUserInfo(userId);
+    }
+    
+    @Override
+    public List<UserEntity> findUserRanking(String sortType, int page, int size) {
+        try {
+            log.info("[用户服务] 开始查询用户排行榜 - sortType: {}, page: {}, size: {}", sortType, page, size);
+            
+            // 参数校验
+            if (page < 1) {
+                page = 1;
+            }
+            if (size < 1) {
+                size = 10;
+            }
+            if (size > 100) {
+                size = 100; // 限制最大返回数量
+            }
+            
+            // 默认排序类型
+            if (sortType == null || sortType.isEmpty()) {
+                sortType = "fans";
+            }
+            
+            // 先尝试从Redis缓存获取
+            int start = (page - 1) * size;
+            int end = start + size - 1;
+            List<Long> userIds = userRankingCacheRepository.getUserRankingIds(sortType, start, end);
+            
+            if (userIds != null && !userIds.isEmpty()) {
+                // 缓存命中，根据ID批量查询用户信息
+                log.debug("[用户服务] 从Redis缓存获取用户排行榜ID: size={}", userIds.size());
+                List<UserEntity> users = userRepository.findByIds(userIds);
+                
+                // 保持排序顺序（Redis返回的顺序）
+                Map<Long, UserEntity> userMap = new HashMap<>();
+                for (UserEntity user : users) {
+                    if (user != null && user.getId() != null) {
+                        userMap.put(user.getId(), user);
+                    }
+                }
+                
+                List<UserEntity> sortedUsers = new ArrayList<>();
+                for (Long userId : userIds) {
+                    UserEntity user = userMap.get(userId);
+                    if (user != null) {
+                        sortedUsers.add(user);
+                    }
+                }
+                
+                log.info("[用户服务] 从缓存查询用户排行榜成功 - 返回数量: {}", sortedUsers.size());
+                return sortedUsers;
+            }
+            
+            // 缓存未命中，从数据库查询
+            log.debug("[用户服务] Redis缓存未命中，从数据库查询用户排行榜");
+            int offset = (page - 1) * size;
+            List<UserEntity> users = userRepository.findUserRanking(sortType, offset, size);
+            
+            log.info("[用户服务] 从数据库查询用户排行榜成功 - 返回数量: {}", users.size());
+            return users;
+        } catch (Exception e) {
+            log.error("[用户服务] 查询用户排行榜失败 - sortType: {}, page: {}, size: {}", sortType, page, size, e);
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "查询用户排行榜失败：" + e.getMessage());
+        }
+    }
+    
+    @Override
+    public Long countAllUsers() {
+        try {
+            log.info("[用户服务] 开始统计用户总数");
+            Long count = userRepository.countAllUsers();
+            log.info("[用户服务] 统计用户总数成功 - 总数: {}", count);
+            return count;
+        } catch (Exception e) {
+            log.error("[用户服务] 统计用户总数失败", e);
+            return 0L;
+        }
     }
 }
