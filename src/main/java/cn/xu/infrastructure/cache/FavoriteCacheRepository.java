@@ -170,15 +170,57 @@ public class FavoriteCacheRepository {
      */
     public Long getUserFavoriteCount(Long userId, String targetType) {
         try {
-            // 因为现有实现中一个用户的所有收藏关系存储在一个set中，需要过滤获取特定类型的收藏数量
-            // 实际项目中可能需要改进数据结构来直接支持按类型统计
-            String key = buildUserFavoriteKey(userId);
-            // 由于没有直接的方式获取特定前缀的元素数量，这里返回null表示需要从数据库获取
-            // 在实际实现中，可以考虑重构数据结构，或者使用其他方式统计
-            return null;
+            // 使用独立的缓存键存储用户收藏数量
+            String countKey = USER_FAVORITE_KEY_PREFIX + "count:" + userId + ":" + targetType;
+            Object value = redisTemplate.opsForValue().get(countKey);
+            if (value instanceof Long) {
+                return (Long) value;
+            } else if (value instanceof Integer) {
+                return ((Integer) value).longValue();
+            }
+            return value != null ? Long.parseLong(value.toString()) : null; // 返回null表示缓存未命中
         } catch (Exception e) {
             log.error("获取用户收藏数量缓存失败，userId={}, targetType={}", userId, targetType, e);
             return null;
+        }
+    }
+    
+    /**
+     * 增加用户收藏的项目数量
+     * 
+     * @param userId 用户ID
+     * @param targetType 目标类型
+     */
+    public void incrementUserFavoriteCount(Long userId, String targetType) {
+        try {
+            String countKey = USER_FAVORITE_KEY_PREFIX + "count:" + userId + ":" + targetType;
+            redisTemplate.opsForValue().increment(countKey, 1);
+            redisTemplate.expire(countKey, DEFAULT_CACHE_TTL, TimeUnit.SECONDS);
+            log.debug("增加用户收藏数量缓存成功，userId={}, targetType={}", userId, targetType);
+        } catch (Exception e) {
+            log.error("增加用户收藏数量缓存失败，userId={}, targetType={}", userId, targetType, e);
+        }
+    }
+    
+    /**
+     * 减少用户收藏的项目数量
+     * 
+     * @param userId 用户ID
+     * @param targetType 目标类型
+     */
+    public void decrementUserFavoriteCount(Long userId, String targetType) {
+        try {
+            String countKey = USER_FAVORITE_KEY_PREFIX + "count:" + userId + ":" + targetType;
+            Long newValue = redisTemplate.opsForValue().increment(countKey, -1);
+            // 确保数量不为负数
+            if (newValue != null && newValue < 0) {
+                redisTemplate.opsForValue().set(countKey, 0, DEFAULT_CACHE_TTL, TimeUnit.SECONDS);
+            } else {
+                redisTemplate.expire(countKey, DEFAULT_CACHE_TTL, TimeUnit.SECONDS);
+            }
+            log.debug("减少用户收藏数量缓存成功，userId={}, targetType={}", userId, targetType);
+        } catch (Exception e) {
+            log.error("减少用户收藏数量缓存失败，userId={}, targetType={}", userId, targetType, e);
         }
     }
 
@@ -213,6 +255,42 @@ public class FavoriteCacheRepository {
             log.debug("增加收藏夹内容数量缓存成功，folderId={}", folderId);
         } catch (Exception e) {
             log.error("增加收藏夹内容数量缓存失败，folderId={}", folderId, e);
+        }
+    }
+    
+    /**
+     * 减少收藏夹内容数量
+     * 
+     * @param folderId 收藏夹ID
+     */
+    public void decrementFolderContentCount(Long folderId) {
+        try {
+            String key = buildFolderContentCountKey(folderId);
+            Long newValue = redisTemplate.opsForValue().increment(key, -1);
+            // 确保数量不为负数
+            if (newValue != null && newValue < 0) {
+                redisTemplate.opsForValue().set(key, 0, DEFAULT_CACHE_TTL, TimeUnit.SECONDS);
+            } else {
+                redisTemplate.expire(key, DEFAULT_CACHE_TTL, TimeUnit.SECONDS);
+            }
+            log.debug("减少收藏夹内容数量缓存成功，folderId={}", folderId);
+        } catch (Exception e) {
+            log.error("减少收藏夹内容数量缓存失败，folderId={}", folderId, e);
+        }
+    }
+    
+    /**
+     * 删除收藏夹内容数量缓存
+     * 
+     * @param folderId 收藏夹ID
+     */
+    public void deleteFolderContentCount(Long folderId) {
+        try {
+            String key = buildFolderContentCountKey(folderId);
+            redisTemplate.delete(key);
+            log.debug("删除收藏夹内容数量缓存成功，folderId={}", folderId);
+        } catch (Exception e) {
+            log.error("删除收藏夹内容数量缓存失败，folderId={}", folderId, e);
         }
     }
     

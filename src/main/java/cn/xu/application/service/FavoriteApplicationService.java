@@ -153,25 +153,16 @@ public class FavoriteApplicationService {
             // 检查是否已经收藏了该帖子
             boolean alreadyFavorited = favoriteService.isFavorited(userId, postId, TargetType.POST.getApiCode());
             
-            // 执行收藏操作
+            // 执行收藏操作（如果未收藏，favorite方法内部已经更新了缓存和用户收藏数量）
             if (!alreadyFavorited) {
                 favoriteService.favorite(userId, postId, TargetType.POST.getApiCode());
-                // 更新缓存
-                String dbTargetType = TargetType.POST.getDbCode();
-                favoriteCacheRepository.updateUserFavoriteRelation(userId, postId, dbTargetType, true);
                 log.info("[收藏应用服务] 用户首次收藏帖子，已同步更新收藏状态和缓存，用户ID: {}, 帖子ID: {}", userId, postId);
             } else {
                 log.info("[收藏应用服务] 用户已收藏该帖子，仅更新文件夹关系，用户ID: {}, 帖子ID: {}", userId, postId);
             }
             
-            // 将帖子添加到收藏夹
+            // 将帖子添加到收藏夹（addTargetToFolder方法内部已经处理了收藏夹数量更新和缓存更新）
             favoriteService.addTargetToFolder(userId, postId, TargetType.POST.getApiCode(), folderId);
-            
-            // 更新收藏夹的内容数量
-            folder.setContentCount(folder.getContentCount() + 1);
-            
-            // 更新文件夹缓存
-            favoriteCacheRepository.incrementFolderContentCount(folderId);
             
             log.info("[收藏应用服务] 收藏帖子到文件夹成功完成");
             return true;

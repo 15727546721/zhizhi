@@ -98,6 +98,9 @@ public class FavoriteServiceImpl implements IFavoriteService {
                 // 添加用户收藏关系缓存
                 favoriteCacheRepository.addUserFavoriteRelation(userId, targetId, dbTargetType);
                 
+                // 更新用户收藏数量缓存
+                favoriteCacheRepository.incrementUserFavoriteCount(userId, dbTargetType);
+                
                 log.info("[收藏服务] 更新缓存成功，用户: {}, 目标: {}, 类型: {}", userId, targetId, targetTypeEnum);
             }
             
@@ -142,6 +145,22 @@ public class FavoriteServiceImpl implements IFavoriteService {
             
             // 只有在确实执行了取消收藏操作时才更新缓存和数据库
             if (shouldDecrementCache) {
+                // 检查内容是否在收藏夹中，如果在则更新收藏夹数量
+                Long folderId = favoriteEntity.getFolderId();
+                if (folderId != null) {
+                    // 更新收藏夹内容数量（数据库和缓存）
+                    FavoriteFolderEntity folderEntity = favoriteFolderRepository.findById(folderId).orElse(null);
+                    if (folderEntity != null) {
+                        int newCount = Math.max(0, (folderEntity.getContentCount() == null ? 0 : folderEntity.getContentCount()) - 1);
+                        folderEntity.setContentCount(newCount);
+                        favoriteFolderRepository.update(folderEntity);
+                        favoriteFolderRepository.updateContentCount(folderId, newCount);
+                        // 更新缓存
+                        favoriteCacheRepository.decrementFolderContentCount(folderId);
+                        log.info("[收藏服务] 更新收藏夹内容数量，收藏夹ID: {}, 新数量: {}", folderId, newCount);
+                    }
+                }
+                
                 // 先更新数据库中的收藏数（确保数据一致性）
                 updateTargetFavoriteCount(targetId, targetTypeEnum, false);
                 
@@ -150,6 +169,9 @@ public class FavoriteServiceImpl implements IFavoriteService {
                 
                 // 移除用户收藏关系缓存
                 favoriteCacheRepository.removeUserFavoriteRelation(userId, targetId, dbTargetType);
+                
+                // 更新用户收藏数量缓存
+                favoriteCacheRepository.decrementUserFavoriteCount(userId, dbTargetType);
                 
                 log.info("[收藏服务] 更新缓存成功，用户: {}, 目标: {}, 类型: {}", userId, targetId, targetTypeEnum);
             }
@@ -244,7 +266,7 @@ public class FavoriteServiceImpl implements IFavoriteService {
             throw new IllegalArgumentException("无权限删除此收藏夹");
         }
         
-        // 从收藏夹中移除所有内容
+        // 从收藏夹中移除所有内容（不需要更新收藏夹数量，因为收藏夹即将被删除）
         List<FavoriteEntity> targets = favoriteRepository.findTargetsInFolder(userId, folderId);
         for (FavoriteEntity target : targets) {
             favoriteRepository.removeTargetFromFolder(userId, target.getTargetId(), target.getTargetType(), folderId);
@@ -252,6 +274,10 @@ public class FavoriteServiceImpl implements IFavoriteService {
         
         // 删除收藏夹
         favoriteFolderRepository.deleteById(folderId);
+        
+        // 清理收藏夹内容数量缓存
+        favoriteCacheRepository.deleteFolderContentCount(folderId);
+        log.info("[收藏服务] 收藏夹已删除，收藏夹ID: {}", folderId);
     }
     
     @Override
@@ -263,14 +289,91 @@ public class FavoriteServiceImpl implements IFavoriteService {
     @Transactional
     public void addTargetToFolder(Long userId, Long targetId, String targetType, Long folderId) {
         TargetType targetTypeEnum = TargetType.fromCode(targetType);
-        favoriteRepository.addTargetToFolder(userId, targetId, targetTypeEnum.getDbCode(), folderId);
+        String dbTargetType = targetTypeEnum.getDbCode();
+        
+        // 检查内容是否已经在该收藏夹中
+        FavoriteEntity favoriteEntity = favoriteRepository.findByUserIdAndTargetId(userId, targetId, dbTargetType);
+        if (favoriteEntity != null) {
+            // 如果已经在目标收藏夹中，不需要重复添加
+            if (favoriteEntity.getFolderId() != null && favoriteEntity.getFolderId().equals(folderId)) {
+                log.warn("[收藏服务] 内容已在收藏夹中，无需重复添加，用户: {}, 目标: {}, 收藏夹: {}", userId, targetId, folderId);
+                return;
+            }
+            // 如果在其他收藏夹中，先移除并更新旧收藏夹数量
+            if (favoriteEntity.getFolderId() != null && !favoriteEntity.getFolderId().equals(folderId)) {
+                Long oldFolderId = favoriteEntity.getFolderId();
+                favoriteRepository.removeTargetFromFolder(userId, targetId, dbTargetType, oldFolderId);
+                // 更新旧收藏夹数量
+                FavoriteFolderEntity oldFolderEntity = favoriteFolderRepository.findById(oldFolderId).orElse(null);
+                if (oldFolderEntity != null) {
+                    int newCount = Math.max(0, (oldFolderEntity.getContentCount() == null ? 0 : oldFolderEntity.getContentCount()) - 1);
+                    oldFolderEntity.setContentCount(newCount);
+                    favoriteFolderRepository.update(oldFolderEntity);
+                    favoriteFolderRepository.updateContentCount(oldFolderId, newCount);
+                    favoriteCacheRepository.decrementFolderContentCount(oldFolderId);
+                    log.info("[收藏服务] 从旧收藏夹移除，收藏夹ID: {}, 新数量: {}", oldFolderId, newCount);
+                }
+            }
+        }
+        
+        // 添加到新收藏夹
+        favoriteRepository.addTargetToFolder(userId, targetId, dbTargetType, folderId);
+        
+        // 更新新收藏夹内容数量（只有在不是从旧收藏夹转移的情况下才增加）
+        // 如果是从其他收藏夹转移过来的，已经在上面更新了旧收藏夹数量，这里只需要更新新收藏夹
+        FavoriteFolderEntity folderEntity = favoriteFolderRepository.findById(folderId).orElse(null);
+        if (folderEntity != null) {
+            // 检查是否是从其他收藏夹转移过来的（如果favoriteEntity存在且有旧的folderId）
+            boolean isTransfer = favoriteEntity != null && favoriteEntity.getFolderId() != null && !favoriteEntity.getFolderId().equals(folderId);
+            if (!isTransfer) {
+                // 不是转移，是新添加，增加数量
+                int newCount = (folderEntity.getContentCount() == null ? 0 : folderEntity.getContentCount()) + 1;
+                folderEntity.setContentCount(newCount);
+                favoriteFolderRepository.update(folderEntity);
+                favoriteFolderRepository.updateContentCount(folderId, newCount);
+                // 更新缓存
+                favoriteCacheRepository.incrementFolderContentCount(folderId);
+                log.info("[收藏服务] 添加到收藏夹，收藏夹ID: {}, 新数量: {}", folderId, newCount);
+            } else {
+                // 是转移，只需要更新新收藏夹的数量（从旧收藏夹减1，新收藏夹加1）
+                int newCount = (folderEntity.getContentCount() == null ? 0 : folderEntity.getContentCount()) + 1;
+                folderEntity.setContentCount(newCount);
+                favoriteFolderRepository.update(folderEntity);
+                favoriteFolderRepository.updateContentCount(folderId, newCount);
+                // 更新缓存
+                favoriteCacheRepository.incrementFolderContentCount(folderId);
+                log.info("[收藏服务] 转移到收藏夹，收藏夹ID: {}, 新数量: {}", folderId, newCount);
+            }
+        }
     }
     
     @Override
     @Transactional
     public void removeTargetFromFolder(Long userId, Long targetId, String targetType, Long folderId) {
         TargetType targetTypeEnum = TargetType.fromCode(targetType);
-        favoriteRepository.removeTargetFromFolder(userId, targetId, targetTypeEnum.getDbCode(), folderId);
+        String dbTargetType = targetTypeEnum.getDbCode();
+        
+        // 检查是否真的从该收藏夹移除了内容
+        FavoriteEntity favoriteEntity = favoriteRepository.findByUserIdAndTargetId(userId, targetId, dbTargetType);
+        boolean actuallyRemoved = false;
+        if (favoriteEntity != null && favoriteEntity.getFolderId() != null && favoriteEntity.getFolderId().equals(folderId)) {
+            favoriteRepository.removeTargetFromFolder(userId, targetId, dbTargetType, folderId);
+            actuallyRemoved = true;
+        }
+        
+        // 如果确实移除了，更新收藏夹内容数量
+        if (actuallyRemoved) {
+            FavoriteFolderEntity folderEntity = favoriteFolderRepository.findById(folderId).orElse(null);
+            if (folderEntity != null) {
+                int newCount = Math.max(0, (folderEntity.getContentCount() == null ? 0 : folderEntity.getContentCount()) - 1);
+                folderEntity.setContentCount(newCount);
+                favoriteFolderRepository.update(folderEntity);
+                favoriteFolderRepository.updateContentCount(folderId, newCount);
+                // 更新缓存
+                favoriteCacheRepository.decrementFolderContentCount(folderId);
+                log.info("[收藏服务] 从收藏夹移除内容，收藏夹ID: {}, 新数量: {}", folderId, newCount);
+            }
+        }
     }
     
     @Override
