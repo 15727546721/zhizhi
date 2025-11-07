@@ -18,8 +18,10 @@ import cn.xu.domain.comment.service.CommentValidationService;
 import cn.xu.domain.comment.service.ICommentService;
 import cn.xu.domain.like.model.LikeType;
 import cn.xu.domain.like.service.ILikeService;
+import cn.xu.domain.post.service.IPostService;
 import cn.xu.domain.report.model.entity.ReportEntity;
 import cn.xu.domain.report.service.ReportDomainService;
+import cn.xu.application.service.LikeApplicationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
@@ -42,6 +44,10 @@ public class CommentController {
     @Resource
     private ILikeService likeService;
     @Resource
+    private LikeApplicationService likeApplicationService;
+    @Resource
+    private IPostService postService;
+    @Resource
     private ReportDomainService reportDomainService;
     @Resource
     private CommentValidationService commentValidationService;
@@ -56,8 +62,8 @@ public class CommentController {
         commentValidationService.validatePageParams(findCommentReq.getPageNo(), findCommentReq.getPageSize());
         
         List<CommentEntity> commentEntities = commentService.findCommentListWithPreview(findCommentReq);
-        // 将CommentEntity转换为CommentResponse
-        List<CommentResponse> commentVOList = convertToCommentVOList(commentEntities);
+        // 将CommentEntity转换为CommentResponse（包含点赞状态）
+        List<CommentResponse> commentVOList = convertToCommentVOList(commentEntities, findCommentReq.getTargetId());
         return ResponseEntity.<List<CommentResponse>>builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .data(commentVOList)
@@ -65,31 +71,116 @@ public class CommentController {
     }
 
     /**
-     * 将CommentEntity列表转换为CommentResponse列表
+     * 将CommentEntity列表转换为CommentResponse列表（包含点赞状态）
      * @param commentEntities 评论实体列表
+     * @param postId 帖子ID（用于查询帖子作者）
      * @return 评论Response列表
      */
-    private List<CommentResponse> convertToCommentVOList(List<CommentEntity> commentEntities) {
+    private List<CommentResponse> convertToCommentVOList(List<CommentEntity> commentEntities, Long postId) {
         if (commentEntities == null || commentEntities.isEmpty()) {
             return new ArrayList<>();
         }
         
+        // 获取当前登录用户ID（可能为null，未登录时）
+        Long currentUserId = null;
+        try {
+            currentUserId = StpUtil.getLoginIdAsLong();
+        } catch (Exception e) {
+            // 用户未登录，currentUserId保持为null
+            log.debug("用户未登录，无法获取用户ID");
+        }
+        
+        // 获取帖子作者ID（如果postId不为null且targetType为POST）
+        Long authorId = null;
+        if (postId != null) {
+            try {
+                authorId = postService.findPostEntityById(postId)
+                        .map(post -> post.getUserId())
+                        .orElse(null);
+            } catch (Exception e) {
+                log.warn("查询帖子作者失败，postId: {}", postId, e);
+            }
+        }
+        
+        // 收集所有评论ID（包括子评论）
+        List<Long> allCommentIds = collectAllCommentIds(commentEntities);
+        
+        // 批量查询当前用户的点赞状态
+        java.util.Map<Long, Boolean> currentUserLikeMap = new java.util.HashMap<>();
+        if (currentUserId != null && !allCommentIds.isEmpty()) {
+            currentUserLikeMap = likeApplicationService.batchCheckLikeStatus(currentUserId, allCommentIds, LikeType.COMMENT);
+        }
+        
+        // 批量查询作者的点赞状态
+        java.util.Map<Long, Boolean> authorLikeMap = new java.util.HashMap<>();
+        if (authorId != null && !allCommentIds.isEmpty() && !authorId.equals(currentUserId)) {
+            authorLikeMap = likeApplicationService.batchCheckLikeStatus(authorId, allCommentIds, LikeType.COMMENT);
+        } else if (authorId != null && authorId.equals(currentUserId)) {
+            // 如果作者就是当前用户，复用currentUserLikeMap
+            authorLikeMap = currentUserLikeMap;
+        }
+        
+        // 转换为VO列表
         List<CommentResponse> commentVOList = new ArrayList<>();
         for (CommentEntity entity : commentEntities) {
-            CommentResponse vo = convertToCommentVO(entity);
+            CommentResponse vo = convertToCommentVO(entity, currentUserLikeMap, authorLikeMap);
             commentVOList.add(vo);
         }
         return commentVOList;
     }
     
     /**
-     * 将CommentEntity转换为CommentResponse
+     * 收集所有评论ID（包括子评论）
+     * @param commentEntities 评论实体列表
+     * @return 评论ID列表
+     */
+    private List<Long> collectAllCommentIds(List<CommentEntity> commentEntities) {
+        List<Long> commentIds = new ArrayList<>();
+        if (commentEntities == null || commentEntities.isEmpty()) {
+            return commentIds;
+        }
+        
+        for (CommentEntity entity : commentEntities) {
+            if (entity.getId() != null) {
+                commentIds.add(entity.getId());
+            }
+            // 递归收集子评论ID
+            if (entity.getChildren() != null && !entity.getChildren().isEmpty()) {
+                commentIds.addAll(collectAllCommentIds(entity.getChildren()));
+            }
+        }
+        return commentIds;
+    }
+    
+    /**
+     * 将CommentEntity转换为CommentResponse（包含点赞状态）
      * @param entity 评论实体
+     * @param currentUserLikeMap 当前用户点赞状态Map
+     * @param authorLikeMap 作者点赞状态Map
      * @return 评论Response
      */
-    private CommentResponse convertToCommentVO(CommentEntity entity) {
+    private CommentResponse convertToCommentVO(CommentEntity entity, 
+                                               java.util.Map<Long, Boolean> currentUserLikeMap,
+                                               java.util.Map<Long, Boolean> authorLikeMap) {
         if (entity == null) {
             return null;
+        }
+        
+        // 获取当前用户是否点赞
+        Boolean isLiked = currentUserLikeMap.getOrDefault(entity.getId(), false);
+        
+        // 获取作者是否点赞
+        Boolean isAuthorLiked = authorLikeMap.getOrDefault(entity.getId(), false);
+        
+        // 递归转换子评论
+        List<CommentResponse> children = new ArrayList<>();
+        if (entity.getChildren() != null && !entity.getChildren().isEmpty()) {
+            for (CommentEntity childEntity : entity.getChildren()) {
+                CommentResponse childVO = convertToCommentVO(childEntity, currentUserLikeMap, authorLikeMap);
+                if (childVO != null) {
+                    children.add(childVO);
+                }
+            }
         }
         
         return CommentResponse.builder()
@@ -103,8 +194,10 @@ public class CommentController {
                 .content(entity.getContentValue())
                 .imageUrls(entity.getImageUrls())
                 .likeCount(entity.getLikeCount() != null ? entity.getLikeCount().intValue() : 0)
+                .isLiked(isLiked)
+                .isAuthorLiked(isAuthorLiked)
                 .replyCount(entity.getReplyCount() != null ? entity.getReplyCount().intValue() : 0)
-                .children(convertToCommentVOList(entity.getChildren()))
+                .children(children)
                 .createTime(entity.getCreateTime())
                 .updateTime(entity.getUpdateTime())
                 .build();
@@ -284,8 +377,9 @@ public class CommentController {
             commentValidationService.validatePageParams(findReplyRequest.getPageNo(), findReplyRequest.getPageSize());
             
             List<CommentEntity> commentEntities = commentService.findChildCommentList(findReplyRequest);
-            // 将CommentEntity转换为CommentResponse
-            List<CommentResponse> commentVOList = convertToCommentVOList(commentEntities);
+            // 将CommentEntity转换为CommentResponse（包含点赞状态，但回复列表不需要查询帖子作者）
+            // 注意：回复列表没有postId，所以isAuthorLiked会为false
+            List<CommentResponse> commentVOList = convertToCommentVOList(commentEntities, null);
             return ResponseEntity.<List<CommentResponse>>builder()
                     .code(ResponseCode.SUCCESS.getCode())
                     .data(commentVOList)

@@ -58,7 +58,7 @@
   <update id="updateLikeCount">
     UPDATE comment
     SET like_count = like_count + #{count}
-    WHERE target_id = #{targetId}
+    WHERE id = #{commentId}
   </update>
   <update id="updateCommentCount">
     UPDATE comment

@@ -42,6 +42,12 @@ public class CommentResponse {
     @Schema(description = "点赞数量")
     private Integer likeCount;
 
+    @Schema(description = "当前登录用户是否点赞（未登录时为false）")
+    private Boolean isLiked;
+
+    @Schema(description = "帖子作者是否点赞此评论")
+    private Boolean isAuthorLiked;
+
     @Schema(description = "回复数量")
     private Integer replyCount;
 

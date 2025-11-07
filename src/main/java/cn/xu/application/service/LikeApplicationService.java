@@ -4,13 +4,14 @@ import cn.xu.domain.like.model.LikeType;
 import cn.xu.domain.like.model.aggregate.LikeAggregate;
 import cn.xu.domain.like.repository.ILikeAggregateRepository;
 import cn.xu.domain.like.service.LikeDataConsistencyService;
+import cn.xu.domain.like.service.LikeTargetRepositoryManager;
 import cn.xu.infrastructure.cache.LikeCacheRepository;
-import cn.xu.infrastructure.persistent.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -25,7 +26,7 @@ public class LikeApplicationService {
     private final ILikeAggregateRepository likeAggregateRepository;
     private final LikeCacheRepository likeCacheRepository;
     private final LikeDataConsistencyService likeDataConsistencyService;
-    private final PostRepository postRepository;
+    private final LikeTargetRepositoryManager likeTargetRepositoryManager;
     
     /**
      * 点赞操作
@@ -68,20 +69,18 @@ public class LikeApplicationService {
             // 只有在确实执行了点赞操作时才更新缓存和数据库
             if (shouldIncrementCache) {
                 // 先更新数据库中的点赞数（确保数据一致性）
-                // 根据类型更新不同表的点赞数
-                if (type == LikeType.POST) {
-                    try {
-                        // 传递增量值(+1表示点赞)，而不是总数，更安全
-                        postRepository.updatePostLikeCount(targetId, 1L);
-                        log.info("[点赞应用服务] 更新数据库点赞数成功，目标: {}, 增量: +1", targetId);
-                    } catch (Exception e) {
-                        log.error("[点赞应用服务] 更新数据库点赞数失败，目标: {}, 增量: +1", targetId, e);
+                // 使用策略模式更新对应表的点赞数（根据类型自动选择对应的仓储）
+                try {
+                    likeTargetRepositoryManager.updateLikeCount(type, targetId, 1L);
+                    log.info("[点赞应用服务] 更新数据库点赞数成功，目标: {}, 类型: {}, 增量: +1", targetId, type);
+                } catch (Exception e) {
+                    log.error("[点赞应用服务] 更新数据库点赞数失败，目标: {}, 类型: {}, 增量: +1", targetId, type, e);
+                    // 如果该类型不支持更新数据库点赞数，记录警告但不中断流程
+                    if (!type.isPost() && !type.isEssay() && !type.isComment()) {
+                        log.warn("[点赞应用服务] 点赞类型 {} 不支持更新数据库点赞数，仅更新缓存", type);
+                    } else {
                         throw e; // 数据库更新失败，抛出异常，事务回滚
                     }
-                } else {
-                    // 对于非POST类型，这里可以扩展处理其他实体类型的点赞数更新
-                    log.info("[点赞应用服务] 准备更新其他类型点赞数，目标: {}, 类型: {}", targetId, type);
-                    // 这里可以根据实际需求添加其他类型的点赞数更新逻辑
                 }
                 
                 // 然后更新Redis缓存（数据库更新成功后再更新缓存）
@@ -152,20 +151,18 @@ public class LikeApplicationService {
             // 只有在确实执行了取消点赞操作时才更新缓存和数据库
             if (shouldDecrementCache) {
                 // 先更新数据库中的点赞数（确保数据一致性）
-                // 根据类型更新不同表的点赞数
-                if (type == LikeType.POST) {
-                    try {
-                        // 传递增量值(-1表示取消点赞)，而不是总数，更安全
-                        postRepository.updatePostLikeCount(targetId, -1L);
-                        log.info("[点赞应用服务] 更新数据库点赞数成功，目标: {}, 增量: -1", targetId);
-                    } catch (Exception e) {
-                        log.error("[点赞应用服务] 更新数据库点赞数失败，目标: {}, 增量: -1", targetId, e);
+                // 使用策略模式更新对应表的点赞数（根据类型自动选择对应的仓储）
+                try {
+                    likeTargetRepositoryManager.updateLikeCount(type, targetId, -1L);
+                    log.info("[点赞应用服务] 更新数据库点赞数成功，目标: {}, 类型: {}, 增量: -1", targetId, type);
+                } catch (Exception e) {
+                    log.error("[点赞应用服务] 更新数据库点赞数失败，目标: {}, 类型: {}, 增量: -1", targetId, type, e);
+                    // 如果该类型不支持更新数据库点赞数，记录警告但不中断流程
+                    if (!type.isPost() && !type.isEssay() && !type.isComment()) {
+                        log.warn("[点赞应用服务] 点赞类型 {} 不支持更新数据库点赞数，仅更新缓存", type);
+                    } else {
                         throw e; // 数据库更新失败，抛出异常，事务回滚
                     }
-                } else {
-                    // 对于非POST类型，这里可以扩展处理其他实体类型的点赞数更新
-                    log.info("[点赞应用服务] 准备更新其他类型点赞数，目标: {}, 类型: {}", targetId, type);
-                    // 这里可以根据实际需求添加其他类型的点赞数更新逻辑
                 }
                 
                 // 然后更新Redis缓存（数据库更新成功后再更新缓存）
@@ -263,5 +260,46 @@ public class LikeApplicationService {
      */
     public void checkAndRepairLikeConsistency(Long userId, Long targetId, LikeType type) {
         likeDataConsistencyService.checkAndRepairLikeConsistency(userId, targetId, type);
+    }
+    
+    /**
+     * 批量查询用户对多个目标的点赞状态
+     * 
+     * @param userId 用户ID（可为null，未登录时返回全false）
+     * @param targetIds 目标ID列表
+     * @param type 点赞类型
+     * @return 点赞状态Map，key为目标ID，value为是否点赞
+     */
+    public java.util.Map<Long, Boolean> batchCheckLikeStatus(Long userId, List<Long> targetIds, LikeType type) {
+        java.util.Map<Long, Boolean> resultMap = new java.util.HashMap<>();
+        
+        if (targetIds == null || targetIds.isEmpty()) {
+            // 目标列表为空，直接返回空Map
+            return resultMap;
+        }
+        
+        if (userId == null) {
+            // 用户未登录，返回全false
+            targetIds.forEach(targetId -> resultMap.put(targetId, false));
+            return resultMap;
+        }
+        
+        try {
+            log.info("[点赞应用服务] 批量查询点赞状态，用户: {}, 目标数量: {}, 类型: {}", userId, targetIds.size(), type);
+            
+            // 批量查询点赞状态（优先从缓存，然后从数据库）
+            for (Long targetId : targetIds) {
+                boolean isLiked = checkLikeStatus(userId, targetId, type);
+                resultMap.put(targetId, isLiked);
+            }
+            
+            log.debug("[点赞应用服务] 批量查询点赞状态完成，结果数量: {}", resultMap.size());
+            return resultMap;
+        } catch (Exception e) {
+            log.error("[点赞应用服务] 批量查询点赞状态失败，用户: {}, 目标数量: {}, 类型: {}", userId, targetIds.size(), type, e);
+            // 出错时返回全false
+            targetIds.forEach(targetId -> resultMap.put(targetId, false));
+            return resultMap;
+        }
     }
 }

@@ -69,7 +69,7 @@ public class LikeEventListener {
         }
 
         // 如果是帖子点赞，更新帖子热度分数
-        if (event.getType() == LikeType.POST && shouldUpdate) {
+        if (event.getType().isPost() && shouldUpdate) {
             postService.updatePostHotScore(event.getTargetId());
             log.info("更新帖子热度分数: postId={}", event.getTargetId());
         }
@@ -97,7 +97,7 @@ public class LikeEventListener {
         }
 
         // 如果是帖子点赞，更新帖子热度分数
-        if (event.getType() == LikeType.POST && shouldUpdate) {
+        if (event.getType().isPost() && shouldUpdate) {
             postService.updatePostHotScore(event.getTargetId());
             log.info("更新帖子热度分数: postId={}", event.getTargetId());
         }

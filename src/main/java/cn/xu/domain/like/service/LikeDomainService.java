@@ -165,10 +165,19 @@ public class LikeDomainService implements TransactionParticipant {
     private void updateLikeStatistics(Long targetId, LikeType type, Long delta) {
         try {
             // 更新热点数据
+            // 注意：这里只更新热点数据，不更新数据库点赞数
+            // 数据库点赞数的更新应该由应用层（LikeService或LikeApplicationService）负责
+            // 热点数据用于排序和推荐，可以异步更新，不需要实时准确
             Long currentCount = likeStatisticsService.getLikeCount(targetId, type);
-            likeHotDataService.updateHotData(targetId, type, currentCount + delta);
+            // 使用增量方式计算新值，但这里只是更新热点数据
+            // 注意：currentCount是从数据库统计的，应该是准确的
+            long newCount = Math.max(0, currentCount + delta);
+            likeHotDataService.updateHotData(targetId, type, newCount);
+            log.debug("更新点赞热点数据成功 - targetId: {}, type: {}, delta: {}, 新计数: {}", 
+                    targetId, type, delta, newCount);
         } catch (Exception e) {
             log.error("更新点赞统计信息失败 - targetId: {}, type: {}, delta: {}", targetId, type, delta, e);
+            // 热点数据更新失败不影响主流程，只记录日志
         }
     }
     

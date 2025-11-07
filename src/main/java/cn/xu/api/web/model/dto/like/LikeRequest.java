@@ -13,10 +13,8 @@ import javax.validation.constraints.Positive;
 public class LikeRequest {
 
     /**
-     * 用户ID
+     * 用户ID（可选，后端会从登录上下文获取，前端不需要传递）
      */
-    @NotNull(message = "用户ID不能为空")
-    @Positive(message = "用户ID必须大于0")
     private Long userId;
 
     /**

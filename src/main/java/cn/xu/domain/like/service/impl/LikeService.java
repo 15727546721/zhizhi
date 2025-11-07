@@ -6,8 +6,9 @@ import cn.xu.domain.like.event.LikeEventPublisher;
 import cn.xu.domain.like.model.LikeType;
 import cn.xu.domain.like.service.ILikeService;
 import cn.xu.domain.like.service.LikeDomainService;
+import cn.xu.domain.like.service.LikeTargetRepositoryManager;
 import cn.xu.domain.post.repository.IPostRepository;
-import cn.xu.infrastructure.persistent.repository.PostRepository;
+import cn.xu.infrastructure.cache.LikeCacheRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -30,7 +31,10 @@ public class LikeService implements ILikeService {
     private IPostRepository postRepository;
     
     @Autowired
-    private PostRepository postRepositoryHelper;
+    private LikeCacheRepository likeCacheRepository;
+    
+    @Autowired
+    private LikeTargetRepositoryManager likeTargetRepositoryManager;
 
     @Override
     public void like(Long userId, LikeType type, Long targetId) {
@@ -48,10 +52,25 @@ public class LikeService implements ILikeService {
             // 发布点赞事件
             likeEventPublisher.publish(userId, targetId, type, true);
             
-            // 如果是帖子点赞，更新帖子统计
-            if (type == LikeType.POST && postRepository != null) {
-                updatePostLikeCount(targetId, true);
+            // 使用策略模式更新对应表的点赞数（根据类型自动选择对应的仓储）
+            try {
+                likeTargetRepositoryManager.updateLikeCount(type, targetId, 1L);
+                log.info("[点赞服务] 更新数据库点赞数成功，目标: {}, 类型: {}, 增量: +1", targetId, type);
+            } catch (Exception e) {
+                log.error("[点赞服务] 更新数据库点赞数失败，目标: {}, 类型: {}, 增量: +1", targetId, type, e);
+                // 如果该类型不需要更新数据库中的点赞数，可以忽略异常
+                // 例如某些类型可能只更新缓存，不更新数据库表
+                if (!type.isPost() && !type.isEssay() && !type.isComment()) {
+                    log.warn("[点赞服务] 点赞类型 {} 无需更新数据库点赞数，仅更新缓存", type);
+                } else {
+                    throw e;
+                }
             }
+            
+            // 更新缓存（确保数据库更新成功后再更新缓存）
+            likeCacheRepository.incrementLikeCount(targetId, type, 1);
+            likeCacheRepository.addUserLikeRelation(userId, targetId, type);
+            log.info("[点赞服务] 更新缓存成功，用户: {}, 目标: {}, 类型: {}", userId, targetId, type);
         } catch (BusinessException e) {
             log.error("点赞失败: userId={}, targetId={}, type={}", userId, targetId, type, e);
             // 直接抛出业务异常，让上层处理
@@ -78,10 +97,24 @@ public class LikeService implements ILikeService {
             // 发布取消点赞事件
             likeEventPublisher.publish(userId, targetId, type, false);
             
-            // 如果是帖子点赞，更新帖子统计
-            if (type == LikeType.POST && postRepository != null) {
-                updatePostLikeCount(targetId, false);
+            // 使用策略模式更新对应表的点赞数（根据类型自动选择对应的仓储）
+            try {
+                likeTargetRepositoryManager.updateLikeCount(type, targetId, -1L);
+                log.info("[点赞服务] 更新数据库点赞数成功，目标: {}, 类型: {}, 增量: -1", targetId, type);
+            } catch (Exception e) {
+                log.error("[点赞服务] 更新数据库点赞数失败，目标: {}, 类型: {}, 增量: -1", targetId, type, e);
+                // 如果该类型不需要更新数据库中的点赞数，可以忽略异常
+                if (!type.isPost() && !type.isEssay() && !type.isComment()) {
+                    log.warn("[点赞服务] 点赞类型 {} 无需更新数据库点赞数，仅更新缓存", type);
+                } else {
+                    throw e;
+                }
             }
+            
+            // 更新缓存（确保数据库更新成功后再更新缓存）
+            likeCacheRepository.incrementLikeCount(targetId, type, -1);
+            likeCacheRepository.removeUserLikeRelation(userId, targetId, type);
+            log.info("[点赞服务] 更新缓存成功，用户: {}, 目标: {}, 类型: {}", userId, targetId, type);
         } catch (BusinessException e) {
             log.error("取消点赞失败: userId={}, targetId={}, type={}", userId, targetId, type, e);
             // 直接抛出业务异常，让上层处理
@@ -98,12 +131,57 @@ public class LikeService implements ILikeService {
             // 未登录用户默认未点赞
             return false;
         }
-        return likeDomainService.checkLikeStatus(userId, targetId, type);
+        
+        try {
+            // 优先从缓存检查用户点赞关系
+            boolean cachedResult = likeCacheRepository.checkUserLikeRelation(userId, targetId, type);
+            if (cachedResult) {
+                log.debug("[点赞服务] 从缓存中获取到点赞状态：已点赞");
+                return true;
+            }
+            
+            // 缓存未命中，从数据库检查
+            boolean dbResult = likeDomainService.checkLikeStatus(userId, targetId, type);
+            
+            // 如果数据库中有点赞记录，同步到缓存
+            if (dbResult) {
+                likeCacheRepository.addUserLikeRelation(userId, targetId, type);
+                log.debug("[点赞服务] 从数据库中获取到点赞状态：已点赞，并同步到缓存");
+            } else {
+                log.debug("[点赞服务] 从数据库中获取到点赞状态：未点赞");
+            }
+            
+            return dbResult;
+        } catch (Exception e) {
+            log.error("[点赞服务] 检查点赞状态失败，用户: {}, 目标: {}, 类型: {}", userId, targetId, type, e);
+            // 出错时降级到数据库查询
+            return likeDomainService.checkLikeStatus(userId, targetId, type);
+        }
     }
     
     @Override
     public long getLikeCount(Long targetId, LikeType type) {
-        return likeDomainService.getLikeCount(targetId, type);
+        try {
+            // 优先从缓存获取点赞数
+            Long cachedCount = likeCacheRepository.getLikeCount(targetId, type);
+            if (cachedCount != null) {
+                log.debug("[点赞服务] 从缓存中获取到点赞数: {}", cachedCount);
+                return cachedCount;
+            }
+            
+            // 缓存未命中，从数据库统计
+            long dbCount = likeDomainService.getLikeCount(targetId, type);
+            
+            // 同步到缓存
+            likeCacheRepository.setLikeCount(targetId, type, dbCount);
+            log.debug("[点赞服务] 从数据库中获取到点赞数: {}，并同步到缓存", dbCount);
+            
+            return dbCount;
+        } catch (Exception e) {
+            log.error("[点赞服务] 获取点赞数失败，目标: {}, 类型: {}", targetId, type, e);
+            // 出错时降级到数据库查询
+            return likeDomainService.getLikeCount(targetId, type);
+        }
     }
     
     @Override
@@ -120,22 +198,4 @@ public class LikeService implements ILikeService {
         }
     }
     
-    /**
-     * 更新帖子点赞数
-     * 
-     * @param postId 帖子ID
-     * @param isIncrease 是否增加
-     */
-    private void updatePostLikeCount(Long postId, boolean isIncrease) {
-        try {
-            // 使用增量更新方式，点赞时+1，取消点赞时-1
-            long increment = isIncrease ? 1L : -1L;
-            postRepositoryHelper.updatePostLikeCount(postId, increment);
-            
-            log.info("帖子点赞数更新成功: postId={}, 增量={}", postId, increment);
-        } catch (Exception e) {
-            log.error("更新帖子点赞数失败: postId={}, isIncrease={}", postId, isIncrease, e);
-            throw e; // 数据库更新失败，抛出异常，事务回滚
-        }
-    }
 }

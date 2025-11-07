@@ -142,10 +142,10 @@ public interface CommentMapper {
     /**
      * 更新评论点赞数
      *
-     * @param targetId
-     * @param count
+     * @param commentId 评论ID
+     * @param count 增量值（正数表示增加，负数表示减少）
      */
-    void updateLikeCount(@Param("targetId") long targetId, @Param("count") Integer count);
+    void updateLikeCount(@Param("commentId") Long commentId, @Param("count") Integer count);
 
     /**
      * 更新评论回复数
