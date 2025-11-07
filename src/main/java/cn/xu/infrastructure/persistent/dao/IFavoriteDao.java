@@ -37,6 +37,11 @@ public interface IFavoriteDao {
      * 统计用户收藏的内容数量
      */
     int countFavoritedItemsByUserId(@Param("userId") Long userId, @Param("targetType") String targetType);
+    
+    /**
+     * 统计特定目标的收藏数量（所有用户）
+     */
+    int countFavoritedItemsByTarget(@Param("targetId") Long targetId, @Param("targetType") String targetType);
 
     /**
      * 更新收藏夹ID

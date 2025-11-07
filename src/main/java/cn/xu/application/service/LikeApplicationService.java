@@ -65,21 +65,30 @@ public class LikeApplicationService {
                 log.info("[点赞应用服务] 创建新点赞记录，用户: {}, 目标: {}, 类型: {}", userId, targetId, type);
             }
             
-            // 只有在确实执行了点赞操作时才增加Redis中的点赞数
+            // 只有在确实执行了点赞操作时才更新缓存和数据库
             if (shouldIncrementCache) {
-                // 增加Redis中的点赞数
+                // 先更新数据库中的点赞数（确保数据一致性）
+                // 根据类型更新不同表的点赞数
+                if (type == LikeType.POST) {
+                    try {
+                        // 传递增量值(+1表示点赞)，而不是总数，更安全
+                        postRepository.updatePostLikeCount(targetId, 1L);
+                        log.info("[点赞应用服务] 更新数据库点赞数成功，目标: {}, 增量: +1", targetId);
+                    } catch (Exception e) {
+                        log.error("[点赞应用服务] 更新数据库点赞数失败，目标: {}, 增量: +1", targetId, e);
+                        throw e; // 数据库更新失败，抛出异常，事务回滚
+                    }
+                } else {
+                    // 对于非POST类型，这里可以扩展处理其他实体类型的点赞数更新
+                    log.info("[点赞应用服务] 准备更新其他类型点赞数，目标: {}, 类型: {}", targetId, type);
+                    // 这里可以根据实际需求添加其他类型的点赞数更新逻辑
+                }
+                
+                // 然后更新Redis缓存（数据库更新成功后再更新缓存）
                 likeCacheRepository.incrementLikeCount(targetId, type, 1);
                 
                 // 添加用户点赞关系缓存
                 likeCacheRepository.addUserLikeRelation(userId, targetId, type);
-                
-                // 更新数据库中的点赞数
-                if (type == LikeType.POST) {
-                    // 获取最新的点赞数
-                    long newLikeCount = getLikeCount(targetId, type);
-                    postRepository.updatePostLikeCount(targetId, newLikeCount);
-                    log.info("[点赞应用服务] 更新数据库点赞数成功，目标: {}, 新点赞数: {}", targetId, newLikeCount);
-                }
                 
                 log.info("[点赞应用服务] 更新缓存成功，用户: {}, 目标: {}, 类型: {}", userId, targetId, type);
             }
@@ -140,21 +149,30 @@ public class LikeApplicationService {
                 return; // 没有记录，直接返回
             }
             
-            // 无论数据库中是否存在点赞记录，都尝试更新缓存以确保一致性
+            // 只有在确实执行了取消点赞操作时才更新缓存和数据库
             if (shouldDecrementCache) {
-                // 减少Redis中的点赞数
+                // 先更新数据库中的点赞数（确保数据一致性）
+                // 根据类型更新不同表的点赞数
+                if (type == LikeType.POST) {
+                    try {
+                        // 传递增量值(-1表示取消点赞)，而不是总数，更安全
+                        postRepository.updatePostLikeCount(targetId, -1L);
+                        log.info("[点赞应用服务] 更新数据库点赞数成功，目标: {}, 增量: -1", targetId);
+                    } catch (Exception e) {
+                        log.error("[点赞应用服务] 更新数据库点赞数失败，目标: {}, 增量: -1", targetId, e);
+                        throw e; // 数据库更新失败，抛出异常，事务回滚
+                    }
+                } else {
+                    // 对于非POST类型，这里可以扩展处理其他实体类型的点赞数更新
+                    log.info("[点赞应用服务] 准备更新其他类型点赞数，目标: {}, 类型: {}", targetId, type);
+                    // 这里可以根据实际需求添加其他类型的点赞数更新逻辑
+                }
+                
+                // 然后更新Redis缓存（数据库更新成功后再更新缓存）
                 likeCacheRepository.incrementLikeCount(targetId, type, -1);
                 
                 // 移除用户点赞关系缓存
                 likeCacheRepository.removeUserLikeRelation(userId, targetId, type);
-                
-                // 更新数据库中的点赞数
-                if (type == LikeType.POST) {
-                    // 获取最新的点赞数
-                    long newLikeCount = getLikeCount(targetId, type);
-                    postRepository.updatePostLikeCount(targetId, newLikeCount);
-                    log.info("[点赞应用服务] 更新数据库点赞数成功，目标: {}, 新点赞数: {}", targetId, newLikeCount);
-                }
                 
                 log.info("[点赞应用服务] 更新缓存成功，用户: {}, 目标: {}, 类型: {}", userId, targetId, type);
             }

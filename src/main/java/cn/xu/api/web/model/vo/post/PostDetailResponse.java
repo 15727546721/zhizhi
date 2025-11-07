@@ -73,15 +73,9 @@ public class PostDetailResponse {
     @JsonProperty("isLiked")
     private boolean isLiked;
     
-    @Schema(description = "是否已收藏(新命名)")
+    @Schema(description = "是否已收藏")
     @JsonProperty("isFavorited")
     private boolean isFavorited;
-    
-    @Schema(description = "是否已收藏(旧命名，向后兼容)")
-    @JsonProperty("isCollected")
-    public boolean isCollected() {
-        return isFavorited;
-    }
     
     @Schema(description = "是否为作者")
     @JsonProperty("isAuthor")

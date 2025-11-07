@@ -29,7 +29,7 @@ public class RedisSyncService {
 
     private static final String POST_VIEW_COUNT_KEY_PREFIX = "post:view:count:";
     private static final String POST_LIKE_COUNT_KEY_PREFIX = "post:like:count:";
-    private static final String POST_COLLECT_COUNT_KEY_PREFIX = "post:collect:count:";
+    private static final String POST_FAVORITE_COUNT_KEY_PREFIX = "post:favorite:count:";
     private static final String POST_COMMENT_COUNT_KEY_PREFIX = "post:comment:count:";
 
     /**
@@ -53,13 +53,13 @@ public class RedisSyncService {
                     Long postId = post.getId();
                     long viewCount = getRedisCount(POST_VIEW_COUNT_KEY_PREFIX, postId);
                     long likeCount = getRedisCount(POST_LIKE_COUNT_KEY_PREFIX, postId);
-                    long collectCount = getRedisCount(POST_COLLECT_COUNT_KEY_PREFIX, postId);
+                    long favoriteCount = getRedisCount(POST_FAVORITE_COUNT_KEY_PREFIX, postId);
                     long commentCount = getRedisCount(POST_COMMENT_COUNT_KEY_PREFIX, postId);
 
                     // 更新数据库中的帖子计数
                     post.setViewCount(viewCount);
                     post.setLikeCount(likeCount);
-                    post.setFavoriteCount(collectCount);
+                    post.setFavoriteCount(favoriteCount);
                     post.setCommentCount(commentCount);
 
                     // 创建PostAggregate对象用于更新

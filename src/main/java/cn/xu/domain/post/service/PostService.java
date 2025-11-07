@@ -12,6 +12,7 @@ import cn.xu.common.exception.BusinessException;
 import cn.xu.common.response.PageResponse;
 import cn.xu.domain.comment.service.ICommentService;
 import cn.xu.domain.favorite.service.IFavoriteService;
+import cn.xu.domain.favorite.model.valobj.TargetType;
 import cn.xu.domain.file.service.IFileStorageService;
 import cn.xu.domain.follow.service.IFollowService;
 import cn.xu.domain.like.model.LikeType;
@@ -597,11 +598,20 @@ public class PostService implements IPostService, TransactionParticipant {
                 log.warn("检查点赞状态失败: userId={}, postId={}", currentUserId, id, e);
             }
             
-            // 是否已收藏
+            // 是否已收藏 - 根据post的type字段映射到对应的targetType
             try {
-                isFavorited = favoriteService != null ? favoriteService.isFavorited(currentUserId, id, "post") : false;
+                if (favoriteService != null && post.getType() != null) {
+                    // 将PostType映射到TargetType
+                    String targetTypeCode = mapPostTypeToTargetType(post.getType());
+                    isFavorited = favoriteService.isFavorited(currentUserId, id, targetTypeCode);
+                    log.debug("查询收藏状态: userId={}, postId={}, postType={}, targetType={}, isFavorited={}", 
+                            currentUserId, id, post.getType(), targetTypeCode, isFavorited);
+                } else {
+                    isFavorited = false;
+                }
             } catch (Exception e) {
-                log.warn("检查收藏状态失败: userId={}, postId={}", currentUserId, id, e);
+                log.warn("检查收藏状态失败: userId={}, postId={}, postType={}", currentUserId, id, post.getType(), e);
+                isFavorited = false;
             }
             
             // 是否为作者
@@ -629,6 +639,18 @@ public class PostService implements IPostService, TransactionParticipant {
                 isFollowed);
     }
 
+    /**
+     * 获取收藏的TargetType
+     * 所有类型的帖子都使用POST作为TargetType，因为都是post表的记录
+     * @param postType PostType枚举（此参数保留以便将来扩展）
+     * @return TargetType的API代码
+     */
+    private String mapPostTypeToTargetType(PostType postType) {
+        // 所有类型的帖子都统一使用POST类型，因为都是post表的记录
+        // post表的type字段（POST、ARTICLE、DISCUSSION等）不影响收藏逻辑
+        return TargetType.POST.getApiCode();
+    }
+    
     @Override
     public long countAllPosts() {
         return postRepository.countAll();

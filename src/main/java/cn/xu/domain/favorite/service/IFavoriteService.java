@@ -68,4 +68,9 @@ public interface IFavoriteService {
      * 获取收藏夹中的内容列表
      */
     List<FavoriteEntity> getTargetsInFolder(Long userId, Long folderId);
+    
+    /**
+     * 根据目标ID和类型统计收藏数
+     */
+    int countFavoritedItemsByTarget(Long targetId, String targetType);
 }

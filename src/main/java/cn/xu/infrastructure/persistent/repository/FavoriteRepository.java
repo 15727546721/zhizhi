@@ -56,6 +56,11 @@ public class FavoriteRepository implements IFavoriteRepository {
     public int countFavoritedItemsByUserId(Long userId, String targetType) {
         return favoriteDao.countFavoritedItemsByUserId(userId, targetType);
     }
+    
+    @Override
+    public int countFavoritedItemsByTarget(Long targetId, String targetType) {
+        return favoriteDao.countFavoritedItemsByTarget(targetId, targetType);
+    }
 
     @Override
     public void addTargetToFolder(Long userId, Long targetId, String targetType, Long folderId) {

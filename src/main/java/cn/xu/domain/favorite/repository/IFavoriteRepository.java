@@ -32,6 +32,11 @@ public interface IFavoriteRepository {
      * 统计用户收藏的内容数量
      */
     int countFavoritedItemsByUserId(Long userId, String targetType);
+    
+    /**
+     * 统计特定目标的收藏数量（所有用户）
+     */
+    int countFavoritedItemsByTarget(Long targetId, String targetType);
 
     /**
      * 将内容添加到收藏夹

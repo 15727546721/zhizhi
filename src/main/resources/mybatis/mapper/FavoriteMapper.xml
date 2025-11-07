@@ -63,6 +63,15 @@
         AND target_type = #{targetType}
         AND status = 1
     </select>
+    
+    <!-- 统计特定目标的收藏数量（所有用户） -->
+    <select id="countFavoritedItemsByTarget" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM favorite
+        WHERE target_id = #{targetId}
+        AND target_type = #{targetType}
+        AND status = 1
+    </select>
 
     <!-- 更新收藏夹ID -->
     <update id="updateFolderId">

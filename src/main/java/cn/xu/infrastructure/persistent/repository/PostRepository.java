@@ -29,14 +29,28 @@ public class PostRepository {
     private final TransactionTemplate transactionTemplate;
     private final PostConverter postConverter;
 
-    // 辅助方法：更新帖子点赞数量
-    public void updatePostLikeCount(Long postId, Long likeCount) {
-        postDao.updateLikeCount(postId, likeCount);
+    // 辅助方法：更新帖子点赞数量（增量更新）
+    public void updatePostLikeCount(Long postId, Long increment) {
+        try {
+            log.info("[PostRepository] 更新帖子点赞数 - postId: {}, increment: {}", postId, increment);
+            postDao.updateLikeCount(postId, increment);
+            log.info("[PostRepository] 更新帖子点赞数完成 - postId: {}, increment: {}", postId, increment);
+        } catch (Exception e) {
+            log.error("[PostRepository] 更新帖子点赞数失败 - postId: {}, increment: {}", postId, increment, e);
+            throw e;
+        }
     }
     
-    // 辅助方法：更新帖子收藏数量
-    public void updatePostFavoriteCount(Long postId, Long favoriteCount) {
-        postDao.updateFavoriteCount(postId, favoriteCount);
+    // 辅助方法：更新帖子收藏数量（增量更新）
+    public void updatePostFavoriteCount(Long postId, Long increment) {
+        try {
+            log.info("[PostRepository] 更新帖子收藏数 - postId: {}, increment: {}", postId, increment);
+            postDao.updateFavoriteCount(postId, increment);
+            log.info("[PostRepository] 更新帖子收藏数完成 - postId: {}, increment: {}", postId, increment);
+        } catch (Exception e) {
+            log.error("[PostRepository] 更新帖子收藏数失败 - postId: {}, increment: {}", postId, increment, e);
+            throw e;
+        }
     }
 
     // 辅助方法：批量更新帖子点赞数量

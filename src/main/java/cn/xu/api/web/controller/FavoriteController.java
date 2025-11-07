@@ -5,9 +5,11 @@ import cn.xu.api.web.dto.favorite.FavoriteCountResponse;
 import cn.xu.api.web.dto.favorite.FavoriteRequest;
 import cn.xu.application.service.FavoriteApplicationService;
 import cn.xu.common.ResponseCode;
+import cn.xu.common.annotation.ApiOperationLog;
 import cn.xu.common.exception.BusinessException;
 import cn.xu.common.response.ResponseEntity;
 import cn.xu.domain.favorite.model.entity.FavoriteFolderEntity;
+import cn.xu.domain.favorite.model.valobj.TargetType;
 import cn.xu.domain.favorite.service.IFavoriteService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -38,17 +40,21 @@ public class FavoriteController {
      * 收藏内容
      */
     @Operation(summary = "添加收藏")
-    @PostMapping
+    @PostMapping("/favorite")
+    @ApiOperationLog(description = "添加收藏")
     public ResponseEntity<Void> addFavorite(@Valid @RequestBody FavoriteRequest request) {
         Long userId = StpUtil.getLoginIdAsLong();
         
         try {
+            // 将字符串转换为枚举
+            TargetType targetType = TargetType.fromCode(request.getTargetType());
+            
             // 根据目标类型执行不同的收藏逻辑
-            if ("post".equals(request.getTargetType())) {
+            if (targetType.isPost()) {
                 favoriteApplicationService.favoritePost(userId, request.getTargetId());
             } else {
-                // 其他类型的收藏直接调用服务层
-                favoriteService.favorite(userId, request.getTargetId(), request.getTargetType());
+                // 其他类型的收藏直接调用服务层（使用枚举的API代码）
+                favoriteService.favorite(userId, request.getTargetId(), targetType.getApiCode());
             }
             
             return ResponseEntity.<Void>builder()
@@ -74,16 +80,18 @@ public class FavoriteController {
      * 取消收藏
      */
     @Operation(summary = "取消收藏")
-    @DeleteMapping
-    public ResponseEntity<Void> removeFavorite(
-            @Parameter(description = "目标ID") @RequestParam Long targetId,
-            @Parameter(description = "目标类型") @RequestParam String targetType) {
+    @PostMapping("/unfavorite")
+    @ApiOperationLog(description = "取消收藏")
+    public ResponseEntity<Void> removeFavorite(@Valid @RequestBody FavoriteRequest request) {
         Long userId = StpUtil.getLoginIdAsLong();
         
         try {
+            // 将字符串转换为枚举
+            TargetType targetType = TargetType.fromCode(request.getTargetType());
+            
             // 根据目标类型执行不同的取消收藏逻辑
-            if ("post".equals(targetType)) {
-                boolean result = favoriteApplicationService.unfavoritePost(userId, targetId);
+            if (targetType.isPost()) {
+                boolean result = favoriteApplicationService.unfavoritePost(userId, request.getTargetId());
                 if (!result) {
                     return ResponseEntity.<Void>builder()
                             .code(ResponseCode.ILLEGAL_PARAMETER.getCode())
@@ -91,8 +99,8 @@ public class FavoriteController {
                             .build();
                 }
             } else {
-                // 其他类型的取消收藏直接调用服务层
-                favoriteService.unfavorite(userId, targetId, targetType);
+                // 其他类型的取消收藏直接调用服务层（使用枚举的API代码）
+                favoriteService.unfavorite(userId, request.getTargetId(), targetType.getApiCode());
             }
             
             return ResponseEntity.<Void>builder()
@@ -125,7 +133,9 @@ public class FavoriteController {
         Long userId = StpUtil.getLoginIdAsLong();
         
         try {
-            boolean status = favoriteService.isFavorited(userId, targetId, targetType);
+            // 将字符串转换为枚举
+            TargetType targetTypeEnum = TargetType.fromCode(targetType);
+            boolean status = favoriteService.isFavorited(userId, targetId, targetTypeEnum.getApiCode());
             return ResponseEntity.<Boolean>builder()
                     .code(ResponseCode.SUCCESS.getCode())
                     .info(ResponseCode.SUCCESS.getMessage())
@@ -153,14 +163,16 @@ public class FavoriteController {
         try {
             List<FavoriteCountResponse> responses = requests.stream()
                     .map(request -> {
+                        // 将字符串转换为枚举
+                        TargetType targetTypeEnum = TargetType.fromCode(request.getTargetType());
                         boolean favorited = favoriteService.isFavorited(
                                 userId, 
                                 request.getTargetId(), 
-                                request.getTargetType()
+                                targetTypeEnum.getApiCode()
                         );
                         return new FavoriteCountResponse(
                                 request.getTargetId(), 
-                                request.getTargetType(), 
+                                targetTypeEnum.getApiCode(), 
                                 null, // 不返回收藏数，只返回状态
                                 favorited
                         );
@@ -217,13 +229,17 @@ public class FavoriteController {
         Long userId = StpUtil.getLoginIdAsLong();
         
         try {
+            // 将字符串转换为枚举
+            TargetType targetTypeEnum = TargetType.fromCode(targetType);
+            String apiTargetType = targetTypeEnum.getApiCode();
+            
             // 先确保内容已被收藏
-            if (!favoriteService.isFavorited(userId, targetId, targetType)) {
-                favoriteService.favorite(userId, targetId, targetType);
+            if (!favoriteService.isFavorited(userId, targetId, apiTargetType)) {
+                favoriteService.favorite(userId, targetId, apiTargetType);
             }
             
             // 添加到收藏夹
-            favoriteService.addTargetToFolder(userId, targetId, targetType, folderId);
+            favoriteService.addTargetToFolder(userId, targetId, apiTargetType, folderId);
             
             return ResponseEntity.<Void>builder()
                     .code(ResponseCode.SUCCESS.getCode())
@@ -250,7 +266,9 @@ public class FavoriteController {
         Long userId = StpUtil.getLoginIdAsLong();
         
         try {
-            favoriteService.removeTargetFromFolder(userId, targetId, targetType, folderId);
+            // 将字符串转换为枚举
+            TargetType targetTypeEnum = TargetType.fromCode(targetType);
+            favoriteService.removeTargetFromFolder(userId, targetId, targetTypeEnum.getApiCode(), folderId);
             
             return ResponseEntity.<Void>builder()
                     .code(ResponseCode.SUCCESS.getCode())

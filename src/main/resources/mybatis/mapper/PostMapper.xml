@@ -84,7 +84,7 @@
         WHERE id = #{postId}
     </update>
     
-    <update id="updateFavoriteCount" parameterType="java.util.Map">
+    <update id="updateFavoriteCount">
         UPDATE post
         SET favorite_count = favorite_count + #{count, jdbcType=BIGINT}
         WHERE id = #{postId, jdbcType=BIGINT}

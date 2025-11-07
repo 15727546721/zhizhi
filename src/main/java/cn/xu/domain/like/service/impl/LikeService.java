@@ -6,14 +6,11 @@ import cn.xu.domain.like.event.LikeEventPublisher;
 import cn.xu.domain.like.model.LikeType;
 import cn.xu.domain.like.service.ILikeService;
 import cn.xu.domain.like.service.LikeDomainService;
-import cn.xu.domain.post.model.aggregate.PostAggregate;
 import cn.xu.domain.post.repository.IPostRepository;
 import cn.xu.infrastructure.persistent.repository.PostRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.util.Optional;
 
 /**
  * 点赞应用服务
@@ -131,13 +128,14 @@ public class LikeService implements ILikeService {
      */
     private void updatePostLikeCount(Long postId, boolean isIncrease) {
         try {
-            // 使用辅助类直接更新点赞数，确保点赞数正确更新到数据库
-            long currentCount = likeDomainService.getLikeCount(postId, LikeType.POST);
-            postRepositoryHelper.updatePostLikeCount(postId, currentCount);
+            // 使用增量更新方式，点赞时+1，取消点赞时-1
+            long increment = isIncrease ? 1L : -1L;
+            postRepositoryHelper.updatePostLikeCount(postId, increment);
             
-            log.info("帖子点赞数更新成功: postId={}, 新点赞数={}", postId, currentCount);
+            log.info("帖子点赞数更新成功: postId={}, 增量={}", postId, increment);
         } catch (Exception e) {
             log.error("更新帖子点赞数失败: postId={}, isIncrease={}", postId, isIncrease, e);
+            throw e; // 数据库更新失败，抛出异常，事务回滚
         }
     }
 }
