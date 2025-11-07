@@ -62,4 +62,20 @@ public interface ILikeAggregateRepository {
      * @return 点赞数
      */
     long countByTarget(Long targetId, LikeType type);
+    
+    /**
+     * 获取用户点赞的目标ID列表
+     * @param userId 用户ID
+     * @param type 点赞类型
+     * @return 目标ID列表
+     */
+    java.util.List<Long> findLikedTargetIdsByUser(Long userId, LikeType type);
+    
+    /**
+     * 获取点赞某个目标的用户ID列表
+     * @param targetId 目标ID
+     * @param type 点赞类型
+     * @return 用户ID列表
+     */
+    java.util.List<Long> findUserIdsByTarget(Long targetId, LikeType type);
 }

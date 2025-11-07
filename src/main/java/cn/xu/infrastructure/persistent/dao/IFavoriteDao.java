@@ -52,4 +52,12 @@ public interface IFavoriteDao {
      * 根据收藏夹ID查询收藏记录
      */
     List<FavoritePO> selectByFolderId(@Param("userId") Long userId, @Param("folderId") Long folderId);
+    
+    /**
+     * 获取收藏某个目标的用户ID列表
+     * @param targetId 目标ID
+     * @param targetType 目标类型
+     * @return 用户ID列表
+     */
+    List<Long> selectUserIdsByTarget(@Param("targetId") Long targetId, @Param("targetType") String targetType);
 }

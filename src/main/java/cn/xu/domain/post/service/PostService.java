@@ -73,6 +73,9 @@ public class PostService implements IPostService, TransactionParticipant {
     private RedisService redisService;
     @Resource
     private PostVOConverter postVOConverter;
+    @Resource
+    @org.springframework.beans.factory.annotation.Qualifier("simpleRecommendService")
+    private cn.xu.domain.recommend.service.IRecommendService recommendService;
     
     // 用于存储临时浏览量数据
     private final Map<Long, Long> viewCountBuffer = new HashMap<>();
@@ -827,29 +830,23 @@ public class PostService implements IPostService, TransactionParticipant {
     }
     
     @Override
-    public List<PostEntity> findRecommendedPosts(Long userId, Integer pageNo, Integer pageSize) {
-        // 更智能的推荐实现：
-        // 1. 优先推荐热门帖子
-        // 2. 根据用户兴趣推荐
-        // 3. 推荐用户关注的人发布的帖子
-        
-        int offset = Math.max(0, (pageNo - 1) * pageSize);
-        
-        // 获取热门帖子作为推荐
-        List<PostEntity> hotPosts = postRepository.findHotPosts(offset, pageSize);
-        
-        // 如果热门帖子数量不足，补充最新的帖子
-        if (hotPosts.size() < pageSize) {
-            int remaining = pageSize - hotPosts.size();
-            List<PostEntity> latestPosts = postRepository.findAll(offset, remaining);
-            hotPosts.addAll(latestPosts);
+    public List<PostEntity> findRecommendedPosts(Long userId, Integer pageNo, Integer pageSize, Long categoryId) {
+        // 使用推荐服务获取推荐帖子
+        if (recommendService != null) {
+            return recommendService.getRecommendedPosts(userId, pageNo, pageSize, categoryId);
         }
         
-        return hotPosts;
+        // 降级处理：如果没有推荐服务，返回热门帖子
+        int offset = Math.max(0, (pageNo - 1) * pageSize);
+        if (categoryId != null) {
+            // 如果指定了分类，返回该分类的热门帖子
+            return postRepository.findByCategoryId(categoryId, offset, pageSize);
+        }
+        return postRepository.findHotPosts(offset, pageSize);
     }
     
     @Override
-    public long countRecommendedPosts(Long userId) {
+    public long countRecommendedPosts(Long userId, Long categoryId) {
         // 这里需要在IPostRepository中添加对应的方法
         // 暂时返回0，实际实现需要添加对应的DAO方法
         return 0;

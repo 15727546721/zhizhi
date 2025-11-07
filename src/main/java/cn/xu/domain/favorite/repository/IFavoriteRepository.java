@@ -52,4 +52,12 @@ public interface IFavoriteRepository {
      * 获取收藏夹中的内容列表
      */
     List<FavoriteEntity> findTargetsInFolder(Long userId, Long folderId);
+    
+    /**
+     * 获取收藏某个目标的用户ID列表
+     * @param targetId 目标ID
+     * @param targetType 目标类型
+     * @return 用户ID列表
+     */
+    List<Long> findUserIdsByTarget(Long targetId, String targetType);
 }

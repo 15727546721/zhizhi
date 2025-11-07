@@ -82,5 +82,21 @@
         AND type = #{type}
         AND status = 1
     </select>
+    
+    <select id="selectLikedTargetIdsByUserId" resultType="java.lang.Long">
+        SELECT target_id
+        FROM `like`
+        WHERE user_id = #{userId}
+        AND type = #{type}
+        AND status = 1
+    </select>
+    
+    <select id="selectUserIdsByTargetId" resultType="java.lang.Long">
+        SELECT user_id
+        FROM `like`
+        WHERE target_id = #{targetId}
+        AND type = #{type}
+        AND status = 1
+    </select>
 
 </mapper>

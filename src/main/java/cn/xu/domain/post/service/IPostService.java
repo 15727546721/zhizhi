@@ -257,17 +257,19 @@ public interface IPostService {
      * @param userId   用户ID
      * @param pageNo   页码
      * @param pageSize 页面大小
+     * @param categoryId 分类ID，可选
      * @return 帖子列表
      */
-    List<PostEntity> findRecommendedPosts(Long userId, Integer pageNo, Integer pageSize);
+    List<PostEntity> findRecommendedPosts(Long userId, Integer pageNo, Integer pageSize, Long categoryId);
     
     /**
      * 统计推荐帖子数量
      *
      * @param userId 用户ID
+     * @param categoryId 分类ID，可选
      * @return 帖子数量
      */
-    long countRecommendedPosts(Long userId);
+    long countRecommendedPosts(Long userId, Long categoryId);
     
     /**
      * 根据标签ID查找帖子

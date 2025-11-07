@@ -56,4 +56,12 @@ public interface ITagRepository {
      * @return 标签实体列表
      */
     List<TagEntity> getAllTags();
+    
+    /**
+     * 根据帖子ID获取标签ID列表
+     *
+     * @param postId 帖子ID
+     * @return 标签ID列表
+     */
+    List<Long> findTagIdsByPostId(Long postId);
 }

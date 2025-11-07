@@ -47,4 +47,22 @@ public interface ITopicRepository {
      * @return 话题实体列表
      */
     List<TopicEntity> getHotTopics(int limit);
+    
+    /**
+     * 根据帖子ID获取话题ID列表
+     *
+     * @param postId 帖子ID
+     * @return 话题ID列表
+     */
+    List<Long> findTopicIdsByPostId(Long postId);
+    
+    /**
+     * 根据话题ID获取帖子列表
+     *
+     * @param topicId 话题ID
+     * @param offset 偏移量
+     * @param limit 数量
+     * @return 帖子列表
+     */
+    List<cn.xu.domain.post.model.entity.PostEntity> findPostsByTopicId(Long topicId, int offset, int limit);
 }

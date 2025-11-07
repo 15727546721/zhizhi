@@ -12,6 +12,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -173,6 +175,44 @@ public class LikeAggregateRepositoryImpl implements ILikeAggregateRepository {
         } catch (Exception e) {
             log.error("[点赞聚合根] 统计目标点赞数失败，目标: {}, 类型: {}", targetId, type, e);
             return 0;
+        }
+    }
+    
+    @Override
+    public List<Long> findLikedTargetIdsByUser(Long userId, LikeType type) {
+        try {
+            log.info("[点赞聚合根] 开始获取用户点赞的目标ID列表，用户: {}, 类型: {}", userId, type);
+            
+            if (userId == null || type == null) {
+                return new ArrayList<>();
+            }
+            
+            List<Long> targetIds = likeDao.selectLikedTargetIdsByUserId(userId, type.getCode());
+            log.info("[点赞聚合根] 获取用户点赞的目标ID列表成功，用户: {}, 类型: {}, 数量: {}", 
+                    userId, type, targetIds != null ? targetIds.size() : 0);
+            return targetIds != null ? targetIds : new ArrayList<>();
+        } catch (Exception e) {
+            log.error("[点赞聚合根] 获取用户点赞的目标ID列表失败，用户: {}, 类型: {}", userId, type, e);
+            return new ArrayList<>();
+        }
+    }
+    
+    @Override
+    public List<Long> findUserIdsByTarget(Long targetId, LikeType type) {
+        try {
+            log.info("[点赞聚合根] 开始获取点赞目标的用户ID列表，目标: {}, 类型: {}", targetId, type);
+            
+            if (targetId == null || type == null) {
+                return new ArrayList<>();
+            }
+            
+            List<Long> userIds = likeDao.selectUserIdsByTargetId(targetId, type.getCode());
+            log.info("[点赞聚合根] 获取点赞目标的用户ID列表成功，目标: {}, 类型: {}, 数量: {}", 
+                    targetId, type, userIds != null ? userIds.size() : 0);
+            return userIds != null ? userIds : new ArrayList<>();
+        } catch (Exception e) {
+            log.error("[点赞聚合根] 获取点赞目标的用户ID列表失败，目标: {}, 类型: {}", targetId, type, e);
+            return new ArrayList<>();
         }
     }
 }

@@ -85,6 +85,15 @@ public class FavoriteRepository implements IFavoriteRepository {
                 .map(this::convertToEntity)
                 .collect(Collectors.toList());
     }
+    
+    @Override
+    public List<Long> findUserIdsByTarget(Long targetId, String targetType) {
+        if (targetId == null || targetType == null) {
+            return new java.util.ArrayList<>();
+        }
+        List<Long> userIds = favoriteDao.selectUserIdsByTarget(targetId, targetType);
+        return userIds != null ? userIds : new java.util.ArrayList<>();
+    }
 
     private FavoriteEntity convertToEntity(FavoritePO favoritePO) {
         return FavoriteEntity.builder()

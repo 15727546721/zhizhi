@@ -96,5 +96,14 @@
         AND folder_id = #{folderId}
         AND status = 1
     </select>
+    
+    <!-- 获取收藏某个目标的用户ID列表 -->
+    <select id="selectUserIdsByTarget" resultType="java.lang.Long">
+        SELECT user_id
+        FROM favorite
+        WHERE target_id = #{targetId}
+        AND target_type = #{targetType}
+        AND status = 1
+    </select>
 
 </mapper>
