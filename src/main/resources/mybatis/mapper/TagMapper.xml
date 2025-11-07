@@ -66,8 +66,65 @@
         t.update_time
         FROM tags t
         LEFT JOIN post_tag pt ON t.id = pt.tag_id
+        LEFT JOIN post p ON pt.post_id = p.id AND p.status = 1
         GROUP BY t.id, t.name, t.create_time, t.update_time
-        ORDER BY COUNT(pt.tag_id) DESC
+        HAVING COUNT(pt.tag_id) > 0
+        ORDER BY 
+            -- 综合热度分数计算：
+            -- 1. 使用频率（30%权重）：总使用次数
+            COUNT(pt.tag_id) * 0.3 +
+            -- 2. 时间衰减（30%权重）：最近7天使用次数加权
+            SUM(CASE WHEN p.create_time >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN 10 ELSE 0 END) * 0.3 +
+            -- 3. 帖子质量（40%权重）：平均帖子热度
+            AVG(
+                COALESCE(p.like_count, 0) * 3 + 
+                COALESCE(p.comment_count, 0) * 5 + 
+                COALESCE(p.view_count, 0) * 0.5 + 
+                COALESCE(p.favorite_count, 0) * 4
+            ) * 0.4
+        DESC
+        LIMIT #{limit}
+    </select>
+    
+    <select id="getHotTagsByTimeRange" resultMap="BaseResultMap">
+        SELECT 
+        t.id,
+        t.name,
+        t.create_time,
+        t.update_time
+        FROM tags t
+        LEFT JOIN post_tag pt ON t.id = pt.tag_id
+        LEFT JOIN post p ON pt.post_id = p.id AND p.status = 1
+        <where>
+            <choose>
+                <when test="timeRange == 'today'">
+                    AND p.create_time >= DATE_FORMAT(NOW(), '%Y-%m-%d 00:00:00')
+                </when>
+                <when test="timeRange == 'week'">
+                    AND p.create_time >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+                </when>
+                <when test="timeRange == 'month'">
+                    AND p.create_time >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+                </when>
+                <!-- all: 不添加时间限制，统计全部 -->
+            </choose>
+        </where>
+        GROUP BY t.id, t.name, t.create_time, t.update_time
+        HAVING COUNT(pt.tag_id) > 0
+        ORDER BY 
+            -- 综合热度分数计算：
+            -- 1. 使用频率（30%权重）：总使用次数
+            COUNT(pt.tag_id) * 0.3 +
+            -- 2. 时间衰减（30%权重）：最近7天使用次数加权
+            SUM(CASE WHEN p.create_time >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN 10 ELSE 0 END) * 0.3 +
+            -- 3. 帖子质量（40%权重）：平均帖子热度
+            AVG(
+                COALESCE(p.like_count, 0) * 3 + 
+                COALESCE(p.comment_count, 0) * 5 + 
+                COALESCE(p.view_count, 0) * 0.5 + 
+                COALESCE(p.favorite_count, 0) * 4
+            ) * 0.4
+        DESC
         LIMIT #{limit}
     </select>
     
@@ -77,4 +134,23 @@
         FROM tags
         ORDER BY create_time DESC
     </select>
+    
+    <select id="getTagById" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM tags
+        WHERE id = #{id}
+    </select>
+    
+    <update id="updateTag">
+        UPDATE tags
+        SET name = #{name},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+    
+    <delete id="deleteTag">
+        DELETE FROM tags
+        WHERE id = #{id}
+    </delete>
 </mapper>

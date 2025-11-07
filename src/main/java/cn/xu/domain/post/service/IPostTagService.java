@@ -89,6 +89,15 @@ public interface IPostTagService {
     List<TagEntity> getHotTags(Integer limit);
     
     /**
+     * 获取热门标签（支持时间维度）
+     * 
+     * @param timeRange 时间范围：today(今日)、week(本周)、month(本月)、all(全部)
+     * @param limit 返回数量限制
+     * @return 热门标签列表
+     */
+    List<TagEntity> getHotTagsByTimeRange(String timeRange, Integer limit);
+    
+    /**
      * 帖子与标签的关联关系
      */
     class PostTagRelation {

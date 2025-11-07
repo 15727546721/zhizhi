@@ -22,41 +22,89 @@ public class TagServiceImpl implements ITagService {
     
     @Override
     public List<TagEntity> getTagList() {
-        // 实现获取标签列表逻辑
-        // 当前ITagRepository接口没有提供获取标签列表的方法
-        // 暂时返回null，需要完善仓储接口
-        return null;
+        try {
+            return tagRepository.getAllTags();
+        } catch (Exception e) {
+            log.error("获取标签列表失败", e);
+            return null;
+        }
     }
     
     @Override
     public TagEntity getTagById(Long id) {
-        // 实现根据ID获取标签逻辑
-        // 当前ITagRepository接口没有提供根据ID获取标签的方法
-        // 暂时返回null，需要完善仓储接口
-        return null;
+        try {
+            return tagRepository.getTagById(id);
+        } catch (Exception e) {
+            log.error("根据ID获取标签失败, id: {}", id, e);
+            return null;
+        }
     }
     
     @Override
     public TagEntity createTag(String name) {
-        // 实现创建标签逻辑
-        // 当前ITagRepository接口没有提供创建标签的方法
-        // 暂时返回null，需要完善仓储接口
-        return null;
+        try {
+            tagRepository.addTag(name);
+            // 重新获取标签列表以找到新创建的标签
+            List<TagEntity> tags = tagRepository.getAllTags();
+            if (tags != null) {
+                return tags.stream()
+                        .filter(tag -> tag.getName().equals(name))
+                        .findFirst()
+                        .orElse(null);
+            }
+            return null;
+        } catch (Exception e) {
+            log.error("创建标签失败, name: {}", name, e);
+            return null;
+        }
     }
     
     @Override
     public TagEntity updateTag(Long id, String name) {
-        // 实现更新标签逻辑
-        // 当前ITagRepository接口没有提供更新标签的方法
-        // 暂时返回null，需要完善仓储接口
-        return null;
+        try {
+            if (id == null || name == null || name.trim().isEmpty()) {
+                throw new IllegalArgumentException("标签ID和名称不能为空");
+            }
+            
+            // 调用TagRepository更新标签
+            tagRepository.updateTag(id, name.trim());
+            
+            // 重新获取更新后的标签
+            TagEntity updatedTag = tagRepository.getTagById(id);
+            if (updatedTag == null) {
+                log.error("更新标签后无法获取标签信息, id: {}", id);
+                throw new RuntimeException("更新标签后无法获取标签信息");
+            }
+            
+            log.info("更新标签成功, id: {}, name: {}", id, name);
+            return updatedTag;
+        } catch (IllegalArgumentException e) {
+            log.error("更新标签参数错误, id: {}, name: {}", id, name, e);
+            throw e;
+        } catch (Exception e) {
+            log.error("更新标签失败, id: {}, name: {}", id, name, e);
+            throw new RuntimeException("更新标签失败: " + e.getMessage(), e);
+        }
     }
     
     @Override
     public void deleteTag(Long id) {
-        // 实现删除标签逻辑
-        // 当前ITagRepository接口没有提供删除标签的方法
-        // 暂时不执行任何操作，需要完善仓储接口
+        try {
+            if (id == null) {
+                throw new IllegalArgumentException("标签ID不能为空");
+            }
+            
+            // 调用TagRepository删除标签（内部会处理关联关系）
+            tagRepository.deleteTag(id);
+            
+            log.info("删除标签成功, id: {}", id);
+        } catch (IllegalArgumentException e) {
+            log.error("删除标签参数错误, id: {}", id, e);
+            throw e;
+        } catch (Exception e) {
+            log.error("删除标签失败, id: {}", id, e);
+            throw new RuntimeException("删除标签失败: " + e.getMessage(), e);
+        }
     }
     
     @Override

@@ -92,7 +92,7 @@ public class RedisKeyManager {
     public static String userPointsKey(Long userId) {
         return key("user", "points", userId);
     }
-    
+
     /**
      * 用户排行榜Key
      * @param sortType 排序类型：fans(粉丝数)、likes(获赞数)、posts(帖子数)、comprehensive(综合)
@@ -146,6 +146,16 @@ public class RedisKeyManager {
 
     public static String tagHotKey() {
         return key("tag", "hot");
+    }
+
+    /**
+     * 热门标签缓存Key（支持时间维度）
+     * @param timeRange 时间范围：today(今日)、week(本周)、month(本月)、all(全部)
+     * @param limit 返回数量限制
+     * @return Redis Key
+     */
+    public static String tagHotKey(String timeRange, int limit) {
+        return key("tag", "hot", timeRange, String.valueOf(limit));
     }
 
     public static String categoryTreeKey() {

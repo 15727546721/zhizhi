@@ -65,22 +65,31 @@ public class TagController {
     }
 
     @GetMapping("/hot")
-    @Operation(summary = "获取热门标签", description = "获取使用频率最高的标签")
+    @Operation(summary = "获取热门标签", description = "获取使用频率最高的标签，支持时间维度查询")
     @ApiOperationLog(description = "获取热门标签")
     public ResponseEntity<List<TagEntity>> getHotTags(
-            @Parameter(description = "返回数量限制") @RequestParam(defaultValue = "10") Integer limit) {
+            @Parameter(description = "时间范围：today(今日)、week(本周)、month(本月)、all(全部)") 
+            @RequestParam(required = false, defaultValue = "all") String timeRange,
+            @Parameter(description = "返回数量限制") 
+            @RequestParam(required = false, defaultValue = "10") Integer limit) {
         try {
-            List<TagEntity> tagEntityList = tagService.getHotTags(limit);
+            List<TagEntity> tagEntityList = tagService.getHotTagsByTimeRange(timeRange, limit);
+            // 确保不返回null
+            if (tagEntityList == null) {
+                tagEntityList = new java.util.ArrayList<>();
+            }
+            log.debug("获取热门标签成功: timeRange={}, limit={}, count={}", timeRange, limit, tagEntityList.size());
             return ResponseEntity.<List<TagEntity>>builder()
                     .code(ResponseCode.SUCCESS.getCode())
                     .info("获取热门标签成功")
                     .data(tagEntityList)
                     .build();
         } catch (Exception e) {
-            log.error("获取热门标签失败", e);
+            log.error("获取热门标签失败, timeRange: {}, limit: {}", timeRange, limit, e);
             return ResponseEntity.<List<TagEntity>>builder()
                     .code(ResponseCode.SYSTEM_ERROR.getCode())
-                    .info("获取热门标签失败")
+                    .info("获取热门标签失败: " + e.getMessage())
+                    .data(new java.util.ArrayList<>())
                     .build();
         }
     }

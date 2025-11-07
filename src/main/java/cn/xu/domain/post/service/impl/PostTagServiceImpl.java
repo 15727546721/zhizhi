@@ -8,7 +8,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,8 +21,7 @@ public class PostTagServiceImpl implements IPostTagService {
     
     private final IPostTagRepository postTagRepository;
     
-    @Resource
-    private ITagRepository tagRepository;
+    private final ITagRepository tagRepository;
     
     @Override
     public List<PostTagRelation> batchGetTagIdsByPostIds(List<Long> postIds) {
@@ -87,18 +85,51 @@ public class PostTagServiceImpl implements IPostTagService {
     @Override
     public TagEntity updateTag(Long id, String name) {
         // 实现更新标签逻辑
-        log.warn("更新标签功能暂未实现, id: {}, name: {}", id, name);
-        // 这里需要调用TagRepository更新标签，但目前没有注入TagRepository
-        // 暂时返回null，后续需要完善
-        return null;
+        try {
+            if (id == null || name == null || name.trim().isEmpty()) {
+                throw new IllegalArgumentException("标签ID和名称不能为空");
+            }
+            
+            // 调用TagRepository更新标签
+            tagRepository.updateTag(id, name.trim());
+            
+            // 重新获取更新后的标签
+            TagEntity updatedTag = tagRepository.getTagById(id);
+            if (updatedTag == null) {
+                log.error("更新标签后无法获取标签信息, id: {}", id);
+                throw new RuntimeException("更新标签后无法获取标签信息");
+            }
+            
+            log.info("更新标签成功, id: {}, name: {}", id, name);
+            return updatedTag;
+        } catch (IllegalArgumentException e) {
+            log.error("更新标签参数错误, id: {}, name: {}", id, name, e);
+            throw e;
+        } catch (Exception e) {
+            log.error("更新标签失败, id: {}, name: {}", id, name, e);
+            throw new RuntimeException("更新标签失败: " + e.getMessage(), e);
+        }
     }
     
     @Override
     public void deleteTag(Long id) {
         // 实现删除标签逻辑
-        log.warn("删除标签功能暂未实现, id: {}", id);
-        // 这里需要调用TagRepository删除标签，但目前没有注入TagRepository
-        // 暂时不做任何操作，后续需要完善
+        try {
+            if (id == null) {
+                throw new IllegalArgumentException("标签ID不能为空");
+            }
+            
+            // 调用TagRepository删除标签（内部会处理关联关系）
+            tagRepository.deleteTag(id);
+            
+            log.info("删除标签成功, id: {}", id);
+        } catch (IllegalArgumentException e) {
+            log.error("删除标签参数错误, id: {}", id, e);
+            throw e;
+        } catch (Exception e) {
+            log.error("删除标签失败, id: {}", id, e);
+            throw new RuntimeException("删除标签失败: " + e.getMessage(), e);
+        }
     }
     
     @Override
@@ -149,6 +180,21 @@ public class PostTagServiceImpl implements IPostTagService {
         } catch (Exception e) {
             log.error("获取热门标签失败, limit: {}", limit, e);
             return null;
+        }
+    }
+    
+    @Override
+    public List<TagEntity> getHotTagsByTimeRange(String timeRange, Integer limit) {
+        // 实现获取热门标签逻辑（支持时间维度）
+        try {
+            String actualTimeRange = timeRange != null ? timeRange : "all";
+            int actualLimit = limit != null ? limit : 10;
+            List<TagEntity> result = tagRepository.getHotTagsByTimeRange(actualTimeRange, actualLimit);
+            // 确保不返回null，返回空列表
+            return result != null ? result : new ArrayList<>();
+        } catch (Exception e) {
+            log.error("获取热门标签失败, timeRange: {}, limit: {}", timeRange, limit, e);
+            return new ArrayList<>();
         }
     }
 }

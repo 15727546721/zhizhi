@@ -21,6 +21,9 @@ public interface PostTagMapper {
     // 根据帖子ID和标签ID列表删除标签关联
     void deleteByPostIdAndTagIds(@Param("postId") Long postId, @Param("tagIds") List<Long> tagIds);
     
+    // 根据标签ID删除所有关联关系
+    void deleteByTagId(@Param("tagId") Long tagId);
+    
     // 添加根据帖子ID查询标签ID的方法
     List<Long> selectTagIdsByPostId(@Param("postId") Long postId);
     

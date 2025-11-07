@@ -37,9 +37,41 @@ public interface TagMapper {
     List<Tag> getHotTags(@Param("limit") int limit);
     
     /**
+     * 获取热门标签（支持时间维度）
+     *
+     * @param timeRange 时间范围：today(今日)、week(本周)、month(本月)、all(全部)
+     * @param limit 限制数量
+     * @return 标签列表
+     */
+    List<Tag> getHotTagsByTimeRange(@Param("timeRange") String timeRange, @Param("limit") int limit);
+    
+    /**
      * 获取所有标签
      *
      * @return 标签列表
      */
     List<Tag> getAllTags();
+    
+    /**
+     * 根据ID获取标签
+     *
+     * @param id 标签ID
+     * @return 标签实体
+     */
+    Tag getTagById(@Param("id") Long id);
+    
+    /**
+     * 更新标签
+     *
+     * @param id 标签ID
+     * @param name 标签名称
+     */
+    void updateTag(@Param("id") Long id, @Param("name") String name);
+    
+    /**
+     * 删除标签
+     *
+     * @param id 标签ID
+     */
+    void deleteTag(@Param("id") Long id);
 }
