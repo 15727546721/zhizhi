@@ -199,14 +199,6 @@ public interface IPostService {
      */
     List<PostPageListResponse> getPostPageListWithSort(PostPageQueryRequest request);
 
-    /**
-     * 根据标题搜索帖子
-     *
-     * @param title    标题关键词
-     * @param pageable 分页参数
-     * @return 帖子分页结果
-     */
-    Page<PostEntity> searchPostsByTitle(String title, Pageable pageable);
     
     /**
      * 采纳回答

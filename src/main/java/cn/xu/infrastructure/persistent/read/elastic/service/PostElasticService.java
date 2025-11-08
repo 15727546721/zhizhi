@@ -1,12 +1,11 @@
 package cn.xu.infrastructure.persistent.read.elastic.service;
 
 import cn.xu.domain.post.model.entity.PostEntity;
-import cn.xu.domain.post.model.valobj.PostHotScorePolicy;
 import cn.xu.domain.post.model.valobj.PostTitle;
-import cn.xu.infrastructure.persistent.po.Post;
 import cn.xu.infrastructure.persistent.read.elastic.model.PostIndex;
 import cn.xu.infrastructure.persistent.read.elastic.repository.PostElasticRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -17,6 +16,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @ConditionalOnProperty(name = "spring.elasticsearch.enabled", havingValue = "true", matchIfMissing = false)
@@ -36,19 +36,82 @@ public class PostElasticService {
     }
 
     public void indexPost(PostEntity post) {
+        if (post == null) {
+            return;
+        }
+        
+        if (post.getStatusCode() != 1) {
+            return;
+        }
+        
         try {
             PostIndex index = PostIndexConverter.from(post);
             postElasticRepository.save(index);
         } catch (Exception e) {
-            // 忽略Elasticsearch操作失败，不影响主流程
+            log.warn("索引帖子失败: postId={}", post != null ? post.getId() : null, e);
         }
     }
+    
+    public boolean indexPostWithRetry(PostEntity post) {
+        return indexPostWithRetry(post, 3);
+    }
+    
+    private boolean indexPostWithRetry(PostEntity post, int maxRetries) {
+        if (post == null) {
+            return false;
+        }
+        
+        if (post.getStatusCode() != 1) {
+            return false;
+        }
+        
+        long retryDelayMs = 500;
+        
+        for (int attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                PostIndex index = PostIndexConverter.from(post);
+                postElasticRepository.save(index);
+                return true;
+            } catch (Exception e) {
+                if (attempt < maxRetries) {
+                    try {
+                        Thread.sleep(retryDelayMs * attempt);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        return false;
+                    }
+                } else {
+                    log.error("索引帖子失败: postId={}", post.getId(), e);
+                    return false;
+                }
+            }
+        }
+        return false;
+    }
 
+    /**
+     * 更新Elasticsearch中的帖子索引
+     * 如果帖子未发布，则从索引中删除
+     */
     public void updateIndexedPost(PostEntity post) {
         try {
+            if (post == null) {
+                return;
+            }
+            
+            // 如果帖子未发布，从索引中删除
+            if (post.getStatusCode() != 1) {
+                removeIndexedPost(post.getId());
+                log.debug("帖子未发布，从索引中删除: postId={}", post.getId());
+                return;
+            }
+            
+            // 更新索引
             PostIndex index = PostIndexConverter.from(post);
             postElasticRepository.save(index);
+            log.debug("更新帖子索引成功: postId={}", post.getId());
         } catch (Exception e) {
+            log.warn("更新帖子索引失败: postId={}", post != null ? post.getId() : null, e);
             // 忽略Elasticsearch操作失败，不影响主流程
         }
     }
@@ -61,35 +124,6 @@ public class PostElasticService {
         }
     }
 
-    // 初始化或更新索引
-    public void indexPost(Post post) {
-        try {
-            PostIndex index = new PostIndex();
-            index.setId(post.getId());
-            index.setTitle(post.getTitle());
-            index.setDescription(post.getDescription());
-            index.setCoverUrl(post.getCoverUrl());
-            index.setUserId(post.getUserId());
-            index.setCategoryId(post.getCategoryId());
-            index.setViewCount(post.getViewCount());
-            index.setFavoriteCount(post.getFavoriteCount());
-            index.setCommentCount(post.getCommentCount());
-            index.setLikeCount(post.getLikeCount());
-            index.setPublishTime(post.getPublishTime());
-            index.setUpdateTime(post.getUpdateTime());
-
-            double hotScore = PostHotScorePolicy.calculate(
-                    post.getLikeCount() != null ? post.getLikeCount() : 0L,
-                    post.getFavoriteCount() != null ? post.getFavoriteCount() : 0L,
-                    post.getCommentCount() != null ? post.getCommentCount() : 0L,
-                    post.getPublishTime());
-            index.setHotScore(hotScore);
-
-            postElasticRepository.save(index);
-        } catch (Exception e) {
-            // 忽略Elasticsearch操作失败，不影响主流程
-        }
-    }
 
     // 获取热度排行（日榜，周榜，月榜）
     public Page<PostIndex> getHotRank(String rankType, Pageable pageable) {

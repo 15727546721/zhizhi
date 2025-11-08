@@ -63,6 +63,76 @@ public class RedisKeyManager {
         return key("post", "view", "ip", postId);
     }
 
+    /**
+     * 帖子搜索结果缓存Key（基础版本，不包含筛选条件）
+     * @param keyword 搜索关键词
+     * @param page 页码
+     * @param size 页面大小
+     * @return Redis Key
+     */
+    public static String postSearchResultKey(String keyword, int page, int size) {
+        return postSearchResultKey(keyword, null, page, size);
+    }
+    
+    /**
+     * 帖子搜索结果缓存Key（支持筛选条件）
+     * @param keyword 搜索关键词
+     * @param filterHash 筛选条件哈希值（包含类型、时间范围、排序等）
+     * @param page 页码
+     * @param size 页面大小
+     * @return Redis Key
+     */
+    public static String postSearchResultKey(String keyword, String filterHash, int page, int size) {
+        // 对关键词进行哈希编码，避免key过长和特殊字符问题
+        String keywordHash = String.valueOf(keyword.hashCode());
+        if (filterHash != null && !filterHash.isEmpty()) {
+            return key("post", "search", keywordHash, filterHash, String.valueOf(page), String.valueOf(size));
+        }
+        return key("post", "search", keywordHash, String.valueOf(page), String.valueOf(size));
+    }
+    
+    /**
+     * 生成筛选条件的哈希值
+     * @param types 类型列表（已排序）
+     * @param timeRange 时间范围（可以是简化格式如"day"或精确格式如"start:2024-01-01T00:00:00|end:2024-01-02T00:00:00"）
+     * @param sortOption 排序方式
+     * @return 筛选条件哈希值
+     */
+    public static String generateFilterHash(java.util.List<String> types, String timeRange, String sortOption) {
+        StringBuilder sb = new StringBuilder();
+        if (types != null && !types.isEmpty()) {
+            sb.append("types:").append(String.join(",", types));
+        }
+        if (timeRange != null && !timeRange.isEmpty() && !"all".equals(timeRange)) {
+            if (sb.length() > 0) sb.append("|");
+            sb.append("time:").append(timeRange);
+        }
+        if (sortOption != null && !sortOption.isEmpty() && !"time".equals(sortOption)) {
+            if (sb.length() > 0) sb.append("|");
+            sb.append("sort:").append(sortOption);
+        }
+        // 使用MD5或其他哈希算法确保哈希值唯一性和长度固定
+        // 这里使用hashCode，对于缓存key来说已经足够
+        return sb.length() > 0 ? String.valueOf(sb.toString().hashCode()) : "";
+    }
+
+    /**
+     * 热门搜索关键词Key（Sorted Set，用于统计热门搜索）
+     */
+    public static String postSearchHotKeywordsKey() {
+        return key("post", "search", "hot", "keywords");
+    }
+
+    /**
+     * 搜索关键词前缀Key（用于清除相关缓存）
+     * @param keyword 搜索关键词
+     * @return Redis Key前缀
+     */
+    public static String postSearchKeyPrefix(String keyword) {
+        String keywordHash = String.valueOf(keyword.hashCode());
+        return key("post", "search", keywordHash);
+    }
+
     // ===================== 用户模块 =====================
 
     public static String userInfoKey(Long userId) {

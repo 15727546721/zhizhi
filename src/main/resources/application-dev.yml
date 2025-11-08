@@ -29,6 +29,10 @@ app:
     index:
       comments: comments
       posts: posts
+    # ES索引自动初始化配置
+    auto-init:
+      enabled: true  # 是否启用自动初始化（默认true）
+      sync-threshold: 0.5  # 同步阈值，如果ES数据量小于MySQL的此百分比，则自动同步（默认0.5，即50%）
 
 # 线程池配置
 thread:
@@ -93,4 +97,6 @@ minio:
 logging:
   level:
     cn.xu.infrastructure.persistent.repository: debug
+    cn.xu.infrastructure.persistent.read.elastic.init: info  # ES初始化器日志
+    cn.xu.infrastructure.persistent.read.elastic.service: info  # ES服务日志
   config: classpath:logback-spring.xml

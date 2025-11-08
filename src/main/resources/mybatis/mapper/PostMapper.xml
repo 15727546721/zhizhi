@@ -248,25 +248,86 @@
         ORDER BY create_time DESC
     </select>
     
-    <!-- 搜索帖子 -->
+    <!-- 搜索帖子（优化：仅搜索title和description，不搜索content以提高性能） -->
     <select id="searchPosts" resultMap="BaseResultMap">
         SELECT 
         <include refid="Base_Column_List"/>
         FROM post
         WHERE status = 1
           AND (title LIKE CONCAT('%', #{keyword}, '%') 
-               OR content LIKE CONCAT('%', #{keyword}, '%'))
+               OR description LIKE CONCAT('%', #{keyword}, '%'))
         ORDER BY create_time DESC
         LIMIT #{offset}, #{limit}
     </select>
     
-    <!-- 统计搜索结果数量 -->
+    <!-- 统计搜索结果数量（优化：仅搜索title和description） -->
     <select id="countSearchResults" resultType="java.lang.Long">
         SELECT COUNT(*)
         FROM post
         WHERE status = 1
           AND (title LIKE CONCAT('%', #{keyword}, '%') 
-               OR content LIKE CONCAT('%', #{keyword}, '%'))
+               OR description LIKE CONCAT('%', #{keyword}, '%'))
+    </select>
+    
+    <!-- 支持筛选的搜索帖子（数据库层面筛选，性能优化） -->
+    <select id="searchPostsWithFilters" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM post
+        WHERE status = 1
+          AND (title LIKE CONCAT('%', #{keyword}, '%') 
+               OR description LIKE CONCAT('%', #{keyword}, '%'))
+          <if test="types != null and types.size() > 0">
+              AND type IN
+              <foreach collection="types" item="type" open="(" separator="," close=")">
+                  #{type}
+              </foreach>
+          </if>
+          <if test="startTime != null">
+              AND create_time >= #{startTime}
+          </if>
+          <if test="endTime != null">
+              AND create_time &lt;= #{endTime}
+          </if>
+          <choose>
+              <when test="sortBy == 'hot'">
+                  <!-- 热度排序：使用与PostHotScorePolicy相同的权重计算基础热度值 -->
+                  <!-- 权重：like=3.0, comment=5.0, view=0.5, favorite=4.0 -->
+                  <!-- 注意：数据库层面无法精确实现时间衰减，这里使用基础热度值，时间衰减在ES中实现 -->
+                  ORDER BY (like_count * 3.0 + comment_count * 5.0 + view_count * 0.5 + favorite_count * 4.0) DESC, create_time DESC
+              </when>
+              <when test="sortBy == 'comment'">
+                  ORDER BY comment_count DESC, create_time DESC
+              </when>
+              <when test="sortBy == 'like'">
+                  ORDER BY like_count DESC, create_time DESC
+              </when>
+              <otherwise>
+                  ORDER BY create_time DESC
+              </otherwise>
+          </choose>
+        LIMIT #{offset}, #{limit}
+    </select>
+    
+    <!-- 统计支持筛选的搜索结果数量 -->
+    <select id="countSearchResultsWithFilters" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM post
+        WHERE status = 1
+          AND (title LIKE CONCAT('%', #{keyword}, '%') 
+               OR description LIKE CONCAT('%', #{keyword}, '%'))
+          <if test="types != null and types.size() > 0">
+              AND type IN
+              <foreach collection="types" item="type" open="(" separator="," close=")">
+                  #{type}
+              </foreach>
+          </if>
+          <if test="startTime != null">
+              AND create_time >= #{startTime}
+          </if>
+          <if test="endTime != null">
+              AND create_time &lt;= #{endTime}
+          </if>
     </select>
     
     <!-- 查询加精帖子 -->

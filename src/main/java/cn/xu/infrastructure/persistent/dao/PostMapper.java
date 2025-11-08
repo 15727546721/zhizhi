@@ -156,6 +156,25 @@ public interface PostMapper {
      * 统计根据标题搜索的帖子数量
      */
     Long countSearchResults(@Param("keyword") String keyword);
+    
+    /**
+     * 支持筛选的搜索帖子（分页）
+     */
+    List<Post> searchPostsWithFilters(@Param("keyword") String keyword,
+                                     @Param("types") List<String> types,
+                                     @Param("startTime") java.time.LocalDateTime startTime,
+                                     @Param("endTime") java.time.LocalDateTime endTime,
+                                     @Param("sortBy") String sortBy,
+                                     @Param("offset") int offset,
+                                     @Param("limit") int limit);
+    
+    /**
+     * 统计支持筛选的搜索结果数量
+     */
+    Long countSearchResultsWithFilters(@Param("keyword") String keyword,
+                                      @Param("types") List<String> types,
+                                      @Param("startTime") java.time.LocalDateTime startTime,
+                                      @Param("endTime") java.time.LocalDateTime endTime);
 
     /**
      * 根据帖子类型查询帖子列表

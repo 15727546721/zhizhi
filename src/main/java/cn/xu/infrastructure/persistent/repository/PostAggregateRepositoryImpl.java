@@ -316,6 +316,21 @@ public class PostAggregateRepositoryImpl implements IPostRepository {
     }
 
     @Override
+    public List<PostEntity> searchByTitleWithFilters(String keyword, java.util.List<String> types,
+                                                     java.time.LocalDateTime startTime, java.time.LocalDateTime endTime,
+                                                     String sortBy, int offset, int limit) {
+        List<Post> posts = postMapper.searchPostsWithFilters(keyword, types, startTime, endTime, sortBy, offset, limit);
+        return postConverter.toDomainEntities(posts);
+    }
+
+    @Override
+    public long countSearchByTitleWithFilters(String keyword, java.util.List<String> types,
+                                              java.time.LocalDateTime startTime, java.time.LocalDateTime endTime) {
+        Long count = postMapper.countSearchResultsWithFilters(keyword, types, startTime, endTime);
+        return count != null ? count : 0;
+    }
+
+    @Override
     public List<PostEntity> findByType(PostType type, int offset, int limit) {
         List<Post> posts = postMapper.findPostsByType(type.name(), offset, limit);
         return postConverter.toDomainEntities(posts);

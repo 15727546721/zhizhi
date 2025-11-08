@@ -726,19 +726,6 @@ public class PostService implements IPostService, TransactionParticipant {
                 .collect(Collectors.toList());
     }
 
-    @Override
-    public Page<PostEntity> searchPostsByTitle(String title, Pageable pageable) {
-        // 计算偏移量
-        int offset = (int) pageable.getOffset();
-        int size = pageable.getPageSize();
-        
-        // 查询数据
-        List<PostEntity> posts = postRepository.searchByTitle(title, offset, size);
-        long total = postRepository.countSearchByTitle(title);
-        
-        // 返回分页结果
-        return new PageImpl<>(posts, pageable, total);
-    }
     
     @Override
     public void acceptAnswer(Long postId, Long answerId, Long userId) {

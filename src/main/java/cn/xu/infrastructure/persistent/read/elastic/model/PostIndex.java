@@ -31,8 +31,17 @@ public class PostIndex {
     @Field(type = FieldType.Long)
     private Long categoryId;
 
+    @Field(type = FieldType.Keyword)
+    private String type; // 帖子类型：ARTICLE, POST, DISCUSSION, QUESTION
+
     @Field(type = FieldType.Long)
     private Long viewCount;
+    
+    @Field(type = FieldType.Long)
+    private Long shareCount; // 分享数
+    
+    @Field(type = FieldType.Boolean)
+    private Boolean isFeatured; // 是否加精
 
     @Field(type = FieldType.Long)
     private Long favoriteCount;

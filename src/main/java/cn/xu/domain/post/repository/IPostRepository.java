@@ -137,6 +137,34 @@ public interface IPostRepository {
     long countSearchByTitle(String title);
     
     /**
+     * 支持筛选的搜索帖子列表（数据库层面筛选，性能优化）
+     *
+     * @param keyword   搜索关键词
+     * @param types     帖子类型列表（可选）
+     * @param startTime 开始时间（可选）
+     * @param endTime   结束时间（可选）
+     * @param sortBy    排序方式（time/hot/comment/like）
+     * @param offset    偏移量
+     * @param limit     数量
+     * @return 帖子列表
+     */
+    List<PostEntity> searchByTitleWithFilters(String keyword, java.util.List<String> types,
+                                             java.time.LocalDateTime startTime, java.time.LocalDateTime endTime,
+                                             String sortBy, int offset, int limit);
+    
+    /**
+     * 统计支持筛选的搜索结果数量
+     *
+     * @param keyword   搜索关键词
+     * @param types     帖子类型列表（可选）
+     * @param startTime 开始时间（可选）
+     * @param endTime   结束时间（可选）
+     * @return 结果数量
+     */
+    long countSearchByTitleWithFilters(String keyword, java.util.List<String> types,
+                                      java.time.LocalDateTime startTime, java.time.LocalDateTime endTime);
+    
+    /**
      * 根据类型分页获取帖子列表
      *
      * @param type   帖子类型

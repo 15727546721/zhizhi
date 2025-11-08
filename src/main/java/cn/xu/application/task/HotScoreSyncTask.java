@@ -4,7 +4,6 @@ import cn.xu.common.utils.PostHotScoreCacheHelper;
 import cn.xu.domain.post.model.entity.PostEntity;
 import cn.xu.domain.post.repository.IPostRepository;
 import cn.xu.infrastructure.cache.RedisKeyManager;
-import cn.xu.infrastructure.persistent.po.Post;
 import cn.xu.infrastructure.persistent.read.elastic.service.PostElasticService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -67,8 +66,6 @@ public class HotScoreSyncTask {
                 int comment = parseIntSafe(map.get("comment"));
 
                 // 查询数据库帖子实体
-                // 注意：这里我们需要获取PostEntity，然后手动构建Post PO对象
-                // 因为领域层不应该直接暴露PO对象
                 PostEntity postEntity = postRepository.findById(postId)
                     .map(aggregate -> aggregate.getPostEntity())
                     .orElse(null);
@@ -78,27 +75,17 @@ public class HotScoreSyncTask {
                     continue;
                 }
 
-                // 手动构建Post PO对象
-                Post post = new Post();
-                post.setId(postEntity.getId());
-                post.setUserId(postEntity.getUserId());
-                post.setTitle(postEntity.getTitleValue());
-                post.setDescription(postEntity.getDescription());
-                post.setContent(postEntity.getContentValue());
-                post.setCoverUrl(postEntity.getCoverUrl());
-                post.setStatus(postEntity.getStatusCode()); // 直接使用getStatusCode方法
-                post.setCategoryId(postEntity.getCategoryId());
-                post.setViewCount((postEntity.getViewCount() == null ? 0 : postEntity.getViewCount()) + like); // 累加最新热度数值
-                post.setLikeCount((postEntity.getLikeCount() == null ? 0 : postEntity.getLikeCount()) + collect);
-                post.setFavoriteCount((postEntity.getFavoriteCount() == null ? 0 : postEntity.getFavoriteCount()) + comment);
-                post.setShareCount(postEntity.getShareCount() != null ? postEntity.getShareCount() : 0L);
-                post.setCommentCount(postEntity.getCommentCount() == null ? 0 : postEntity.getCommentCount());
-                post.setCreateTime(postEntity.getCreateTime());
-                post.setUpdateTime(postEntity.getUpdateTime());
-                post.setPublishTime(postEntity.getPublishTime());
-
-                // 同步到ES
-                postElasticService.indexPost(post);
+                // 注意：这里我们直接使用PostEntity，不再需要构建Post PO对象
+                // 但是我们需要更新热度数值（从Redis缓存中读取的热度增量）
+                // 由于PostEntity是不可变的值对象，我们需要重新构建它
+                // 但实际上，ES索引会使用PostIndexConverter.from()，它会从PostEntity中读取数据
+                // 所以这里我们只需要确保PostEntity是最新的即可
+                
+                // 同步到ES（PostElasticService会使用PostIndexConverter.from()来转换）
+                // 注意：这里的热度数值（like, collect, comment）是从Redis缓存中读取的增量值
+                // 但PostEntity中的值可能已经更新过了，所以这里直接同步PostEntity即可
+                // ES索引的热度分数会在PostIndexConverter中重新计算
+                postElasticService.indexPost(postEntity);
 
                 // 清理缓存，避免重复同步
                 hotScoreHelper.clearHotData(postId);

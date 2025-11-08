@@ -14,5 +14,6 @@ public class PostUpdatedEvent {
     private Long postId;
     private Long userId;
     private String title;
+    private String description;  // 添加描述字段，避免事件处理时查询数据库
     private LocalDateTime updateTime;
 }

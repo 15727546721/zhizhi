@@ -35,7 +35,8 @@ public class PostEventPublisher {
         PostCreatedEvent createdEvent = PostCreatedEvent.builder()
                 .postId(post.getId())
                 .userId(post.getUserId())
-                .title(post.getTitle().getTitle())
+                .title(post.getTitle() != null ? post.getTitle().getValue() : null)
+                .description(post.getDescription())  // 添加描述字段
                 .createTime(LocalDateTime.now())
                 .build();
         eventPublisher.publishEvent(createdEvent, "PostCreatedEvent");
@@ -58,7 +59,8 @@ public class PostEventPublisher {
         PostUpdatedEvent updatedEvent = PostUpdatedEvent.builder()
                 .postId(post.getId())
                 .userId(post.getUserId())
-                .title(post.getTitle().getTitle())
+                .title(post.getTitle() != null ? post.getTitle().getValue() : null)
+                .description(post.getDescription())  // 添加描述字段
                 .updateTime(LocalDateTime.now())
                 .build();
         eventPublisher.publishEvent(updatedEvent, "PostUpdatedEvent");

@@ -20,7 +20,7 @@
 
 ## 📚 项目简介
 
-知之 是一套前后端分离的开源社区系统，基于目前主流 Java Web 技术栈（SpringBoot + MyBatis + MySQL + Redis + Disruptor + Lucene + Sa-Token + Vue3...），包含文章、话题、评论、系统通知、点赞、关注、搜索等模块。
+知之 是一套前后端分离的开源社区系统，基于目前主流 Java Web 技术栈（SpringBoot + MyBatis + MySQL + Redis + Disruptor + Lucene + Sa-Token + Vue3...），包含帖子（支持文章、讨论、问答等多种类型）、话题、评论、系统通知、点赞、关注、搜索等模块。
 
 ## 🏗️ 架构设计
 
@@ -30,20 +30,22 @@
 
 详细规范请参考：[DDD规范文档](docs/architecture/ddd/DDD规范文档.md)
 
-### 文章查询策略模式
+### 帖子搜索策略模式
 
-本项目实现了文章查询的策略模式，支持在Elasticsearch和MySQL之间切换：
+本项目实现了帖子搜索的策略模式，支持在Elasticsearch和MySQL之间灵活切换：
 
-1. **Elasticsearch策略**：用于全文搜索和热门文章排行
-2. **MySQL策略**：作为兜底查询方案
+1. **Elasticsearch策略**：用于全文搜索，支持分词、相关性排序等高级搜索功能
+2. **MySQL策略**：作为兜底查询方案，使用LIKE查询进行简单搜索
 
-可以通过配置文件中的`app.post.query.strategy`参数来切换策略：
-- `elasticsearch`：使用Elasticsearch查询（默认）
-- `mysql`：使用MySQL查询
+#### 策略选择逻辑
 
-当Elasticsearch不可用时，系统会自动回退到MySQL查询。
+- 可以通过配置文件中的`app.post.query.strategy`参数指定首选策略
+- 如果配置的策略不可用，系统会自动按优先级选择可用策略：
+  1. 优先使用Elasticsearch（如果启用且可用）
+  2. 自动降级到MySQL（始终可用）
+- 如果在搜索过程中Elasticsearch失败，会自动降级到MySQL进行搜索
 
-### 配置说明
+#### 配置说明
 
 ```yaml
 # Elasticsearch配置
@@ -52,12 +54,29 @@ spring:
     enabled: true  # 启用Elasticsearch
     uris: 127.0.0.1:9200  # Elasticsearch地址
 
-# 文章查询策略配置
+# 帖子搜索策略配置
 app:
   post:
     query:
-      strategy: elasticsearch  # 帖子查询策略：elasticsearch 或 mysql
+      strategy: elasticsearch  # 帖子搜索策略：elasticsearch 或 mysql
+      # elasticsearch: 使用Elasticsearch进行全文搜索（推荐，需要ES服务）
+      # mysql: 使用MySQL进行简单搜索（兜底方案，始终可用）
 ```
+
+#### 策略特点
+
+- **Elasticsearch策略**：
+  - 支持中文分词（IK分词器）
+  - 支持相关性排序
+  - 支持高亮显示
+  - 性能优秀，适合大数据量搜索
+  - 需要Elasticsearch服务运行
+
+- **MySQL策略**：
+  - 无需额外服务
+  - 实现简单，稳定可靠
+  - 使用LIKE查询，性能相对较低
+  - 适合小数据量或ES不可用时的兜底方案
 
 ### 测试环境配置
 

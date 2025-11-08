@@ -10,6 +10,8 @@ import cn.xu.common.response.PageResponse;
 import cn.xu.common.response.ResponseEntity;
 import cn.xu.domain.follow.model.entity.FollowRelationEntity;
 import cn.xu.domain.follow.service.IFollowService;
+import cn.xu.application.service.SearchApplicationService;
+import cn.xu.api.web.model.vo.post.PostSearchResponse;
 import cn.xu.domain.post.model.entity.PostEntity;
 import cn.xu.domain.post.model.valobj.PostType;
 import cn.xu.domain.post.service.IPostService;
@@ -47,6 +49,8 @@ public class HomeController {
     private IUserService userService;
     @Resource
     private IFollowService followService;
+    @Resource
+    private SearchApplicationService searchApplicationService;
 
     @GetMapping("/page")
     @Operation(summary = "获取首页数据")
@@ -148,17 +152,55 @@ public class HomeController {
             int safePage = Math.max(1, page);
             int safeSize = Math.max(1, Math.min(size, 100)); // 限制页面大小最大为100
             
-            Pageable pageable = PageRequest.of(safePage - 1, safeSize); // Spring Data 从0开始计算页码
-            Page<PostEntity> postsPage = postService.searchPostsByTitle(keyword, pageable);
+            // 调用搜索应用服务
+            SearchApplicationService.SearchResult searchResult = 
+                    searchApplicationService.executeSearch(keyword, null, safePage, safeSize);
             
-            // 转换为PostListResponse页面
-            List<PostListResponse> postListResponses = convertToPostListResponses(postsPage.getContent());
+            // 将PostSearchResponse转换为PostListResponse
+            List<PostListResponse> postListResponses = new ArrayList<>();
+            for (PostSearchResponse response : searchResult.getPosts()) {
+                PostListResponse listResponse = new PostListResponse();
+                // 从PostSearchResponse构建PostEntity
+                PostEntity postEntity = PostEntity.builder()
+                        .id(response.getId())
+                        .title(response.getTitle() != null ? new cn.xu.domain.post.model.valobj.PostTitle(response.getTitle()) : null)
+                        .description(response.getDescription())
+                        .content(response.getContent() != null ? new cn.xu.domain.post.model.valobj.PostContent(response.getContent()) : null)
+                        .coverUrl(response.getCoverUrl())
+                        .userId(response.getUserId())
+                        .categoryId(response.getCategoryId())
+                        .type(response.getType() != null ? PostType.fromCode(response.getType()) : PostType.POST)
+                        .viewCount(response.getViewCount())
+                        .likeCount(response.getLikeCount())
+                        .commentCount(response.getCommentCount())
+                        .favoriteCount(response.getFavoriteCount())
+                        .shareCount(response.getShareCount())
+                        .isFeatured(response.getIsFeatured() != null ? response.getIsFeatured() : false)
+                        .createTime(response.getCreateTime())
+                        .updateTime(response.getUpdateTime())
+                        .publishTime(response.getPublishTime())
+                        .status(cn.xu.domain.post.model.valobj.PostStatus.PUBLISHED)
+                        .build();
+                listResponse.setPost(postEntity);
+                
+                // 设置用户信息（如果响应中包含）
+                if (response.getUserId() != null) {
+                    try {
+                        UserEntity user = userService.getUserById(response.getUserId());
+                        listResponse.setUser(user);
+                    } catch (Exception e) {
+                        log.warn("获取用户信息失败: userId={}", response.getUserId(), e);
+                    }
+                }
+                
+                postListResponses.add(listResponse);
+            }
             
             // 创建PageResponse对象
             PageResponse<List<PostListResponse>> pageResponse = PageResponse.ofList(
                 safePage, 
                 safeSize, 
-                postsPage.getTotalElements(), 
+                searchResult.getTotal(), 
                 postListResponses
             );
             

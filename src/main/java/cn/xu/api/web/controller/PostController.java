@@ -10,6 +10,7 @@ import cn.xu.api.web.model.dto.report.ReportRequestDTO;
 import cn.xu.api.web.model.vo.post.PostDetailResponse;
 import cn.xu.api.web.model.vo.post.PostListResponse;
 import cn.xu.api.web.model.vo.post.PostPageListResponse;
+import cn.xu.api.web.model.vo.post.PostSearchResponse;
 import cn.xu.common.ResponseCode;
 import cn.xu.common.annotation.ApiOperationLog;
 import cn.xu.common.exception.BusinessException;
@@ -33,6 +34,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -64,6 +66,8 @@ public class PostController {
     private IUserService userService;
     @Resource
     private ILikeService likeService;
+    @Resource
+    private cn.xu.application.service.SearchApplicationService searchApplicationService;
     @Resource
     private IFollowService followService;
     @Resource
@@ -111,6 +115,7 @@ public class PostController {
                 })
                 .collect(Collectors.toList());
     }
+
 
     @PostMapping("/page/category")
     @ApiOperationLog(description = "通过分类获取帖子列表")
@@ -206,6 +211,140 @@ public class PostController {
         }
     }
 
+    @GetMapping("/search")
+    @Operation(summary = "搜索帖子")
+    @ApiOperationLog(description = "搜索帖子")
+    public ResponseEntity<PageResponse<List<PostSearchResponse>>> searchPosts(
+            @Parameter(description = "搜索关键词") @RequestParam String keyword,
+            @Parameter(description = "帖子类型筛选（多个类型，用逗号分隔或重复参数）") @RequestParam(required = false) String[] types,
+            @Parameter(description = "发布时间范围筛选（all/day/week/month/year）") @RequestParam(required = false, defaultValue = "all") String timeRange,
+            @Parameter(description = "排序方式（time/hot/comment/like）") @RequestParam(required = false, defaultValue = "time") String sortOption,
+            @Parameter(description = "页码，默认为1") @RequestParam(defaultValue = "1") int page,
+            @Parameter(description = "页面大小，默认为10") @RequestParam(defaultValue = "10") int size,
+            HttpServletRequest request) {
+        try {
+            // 构建筛选条件
+            cn.xu.domain.search.model.valobj.SearchFilter.SearchFilterBuilder filterBuilder = 
+                    cn.xu.domain.search.model.valobj.SearchFilter.builder();
+            
+            // 处理类型筛选
+            if (types != null && types.length > 0) {
+                List<cn.xu.domain.post.model.valobj.PostType> postTypes = java.util.Arrays.stream(types)
+                        .filter(type -> type != null && !type.trim().isEmpty())
+                        .flatMap(type -> {
+                            // 支持逗号分隔的字符串，如 "ARTICLE,POST"
+                            return java.util.Arrays.stream(type.split(","))
+                                    .map(t -> t.trim().toUpperCase())
+                                    .filter(t -> !t.isEmpty());
+                        })
+                        .map(type -> cn.xu.domain.post.model.valobj.PostType.fromCode(type))
+                        .filter(type -> type != null)
+                        .distinct()
+                        .collect(java.util.stream.Collectors.toList());
+                if (!postTypes.isEmpty()) {
+                    filterBuilder.types(postTypes);
+                }
+            }
+            
+            // 处理时间范围筛选
+            java.time.LocalDateTime now = java.time.LocalDateTime.now();
+            java.time.LocalDateTime startTime = null;
+            switch (timeRange != null ? timeRange.toLowerCase() : "all") {
+                case "day":
+                    startTime = now.minusDays(1);
+                    break;
+                case "week":
+                    startTime = now.minusWeeks(1);
+                    break;
+                case "month":
+                    startTime = now.minusMonths(1);
+                    break;
+                case "year":
+                    startTime = now.minusYears(1);
+                    break;
+                default:
+                    // "all" 或其他值，不设置时间范围
+                    break;
+            }
+            if (startTime != null) {
+                filterBuilder.startTime(startTime);
+                filterBuilder.endTime(now);
+            }
+            
+            // 处理排序方式
+            cn.xu.domain.search.model.valobj.SearchFilter.SortOption sort = 
+                    cn.xu.domain.search.model.valobj.SearchFilter.SortOption.TIME; // 默认
+            if (sortOption != null) {
+                switch (sortOption.toLowerCase()) {
+                    case "hot":
+                        sort = cn.xu.domain.search.model.valobj.SearchFilter.SortOption.HOT;
+                        break;
+                    case "comment":
+                        sort = cn.xu.domain.search.model.valobj.SearchFilter.SortOption.COMMENT;
+                        break;
+                    case "like":
+                        sort = cn.xu.domain.search.model.valobj.SearchFilter.SortOption.LIKE;
+                        break;
+                    default:
+                        sort = cn.xu.domain.search.model.valobj.SearchFilter.SortOption.TIME;
+                        break;
+                }
+            }
+            filterBuilder.sortOption(sort);
+            
+            cn.xu.domain.search.model.valobj.SearchFilter filter = filterBuilder.build();
+            
+            // 调用搜索应用服务
+            cn.xu.application.service.SearchApplicationService.SearchResult searchResult = 
+                    searchApplicationService.executeSearch(keyword, filter, page, size);
+            
+            // 创建PageResponse对象
+            PageResponse<List<PostSearchResponse>> pageResponse = PageResponse.ofList(
+                searchResult.getPage(), 
+                searchResult.getSize(), 
+                searchResult.getTotal(), 
+                searchResult.getPosts()
+            );
+            
+            return ResponseEntity.<PageResponse<List<PostSearchResponse>>>builder()
+                    .code(ResponseCode.SUCCESS.getCode())
+                    .data(pageResponse)
+                    .build();
+        } catch (IllegalArgumentException e) {
+            log.warn("搜索参数错误: keyword={}, error={}", keyword, e.getMessage());
+            return ResponseEntity.<PageResponse<List<PostSearchResponse>>>builder()
+                    .code(ResponseCode.ILLEGAL_PARAMETER.getCode())
+                    .info(e.getMessage())
+                    .build();
+        } catch (Exception e) {
+            log.error("搜索帖子失败: keyword={}", keyword, e);
+            // 生产环境不返回详细错误信息，避免泄露系统内部信息
+            // 详细错误信息已记录在日志中
+            return ResponseEntity.<PageResponse<List<PostSearchResponse>>>builder()
+                    .code(ResponseCode.UN_ERROR.getCode())
+                    .info("搜索失败，请稍后重试")
+                    .build();
+        }
+    }
+
+    /**
+     * 获取客户端真实IP地址
+     */
+    private String getClientIp(HttpServletRequest request) {
+        String ip = request.getHeader("X-Forwarded-For");
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("X-Real-IP");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getRemoteAddr();
+        }
+        // 如果IP包含多个值（通过代理），取第一个
+        if (ip != null && ip.contains(",")) {
+            ip = ip.split(",")[0].trim();
+        }
+        return ip;
+    }
+
     @GetMapping("/{id}")
     @Operation(summary = "获取帖子详情")
     @ApiOperationLog(description = "获取帖子详情")
@@ -216,13 +355,7 @@ public class PostController {
 
         // 增加浏览量（带防刷机制）
         // 获取客户端IP地址
-        String clientIp = request.getRemoteAddr();
-        // 如果通过代理服务器，可能需要从header中获取真实IP
-        if (request.getHeader("X-Forwarded-For") != null) {
-            clientIp = request.getHeader("X-Forwarded-For");
-        } else if (request.getHeader("X-Real-IP") != null) {
-            clientIp = request.getHeader("X-Real-IP");
-        }
+        String clientIp = getClientIp(request);
         
         // 调用服务层增加浏览量，传入IP和用户ID用于防刷
         postService.viewPost(id, clientIp, currentUserId);

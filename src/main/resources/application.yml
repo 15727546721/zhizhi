@@ -63,9 +63,15 @@ app:
     index:
       comments: comments
       posts: posts
+    # ES索引自动初始化配置
+    auto-init:
+      enabled: true  # 是否启用自动初始化（默认true）
+      sync-threshold: 0.5  # 同步阈值，如果ES数据量小于MySQL的此百分比，则自动同步（默认0.5，即50%）
   post:
     query:
-      strategy: mysql  # 帖子查询策略：elasticsearch 或 mysql
+      strategy: elasticsearch  # 帖子查询策略：elasticsearch 或 mysql
+      cache:
+        enabled: true  # 是否启用搜索缓存，默认true
   event:
     enabled: true
     async-thread-pool-size: 10
