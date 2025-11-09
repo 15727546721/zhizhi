@@ -203,6 +203,16 @@ public interface CommentMapper {
      */
     List<CommentCountResult> batchCountByTargetIds(@Param("targetType") Integer targetType, @Param("targetIds") List<Long> targetIds);
     
+    /**
+     * 统计用户的评论数
+     */
+    Long countByUserId(@Param("userId") Long userId);
+    
+    /**
+     * 根据用户ID查询评论列表（分页）
+     */
+    List<Comment> findByUserId(@Param("userId") Long userId, @Param("offset") int offset, @Param("limit") int limit);
+    
     class CommentCountResult {
         private Long targetId;
         private Long count;

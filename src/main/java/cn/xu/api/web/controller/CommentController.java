@@ -53,6 +53,10 @@ public class CommentController {
     private CommentValidationService commentValidationService;
     @Resource
     private UserVOConverter userVOConverter;
+    @Resource
+    private cn.xu.domain.comment.repository.ICommentRepository commentRepository;
+    @Resource
+    private cn.xu.domain.comment.service.CommentAggregateDomainService commentAggregateDomainService;
 
     @PostMapping("/list")
     @Operation(summary = "获取评论列表")
@@ -388,5 +392,141 @@ public class CommentController {
             log.error("获取评论回复列表失败", e);
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "获取评论回复列表失败");
         }
+    }
+    
+    /**
+     * 获取用户评论列表
+     * @param userId 用户ID
+     * @param pageNo 页码
+     * @param pageSize 每页数量
+     * @return 用户评论列表
+     */
+    @GetMapping("/user/{userId}")
+    @Operation(summary = "获取用户评论列表")
+    @ApiOperationLog(description = "获取用户评论列表")
+    public ResponseEntity<cn.xu.common.response.PageResponse<java.util.List<cn.xu.api.web.model.vo.user.UserCommentItemVO>>> getUserComments(
+            @PathVariable("userId") Long userId,
+            @RequestParam(value = "pageNo", defaultValue = "1") Integer pageNo,
+            @RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize) {
+        try {
+            // 参数校验
+            commentValidationService.validatePageParams(pageNo, pageSize);
+            
+            // 计算偏移量
+            int offset = (pageNo - 1) * pageSize;
+            
+            // 查询评论列表
+            List<CommentEntity> commentEntities = commentRepository.findByUserId(userId, offset, pageSize);
+            
+            // 统计总数
+            Long total = commentRepository.countByUserId(userId);
+            
+            // 转换为VO列表
+            List<cn.xu.api.web.model.vo.user.UserCommentItemVO> commentItems = convertToUserCommentItemVOList(commentEntities);
+            
+            // 构建分页响应
+            cn.xu.common.response.PageResponse<java.util.List<cn.xu.api.web.model.vo.user.UserCommentItemVO>> pageResponse = 
+                    cn.xu.common.response.PageResponse.ofList(
+                            pageNo, pageSize, total != null ? total : 0L, commentItems);
+            
+            return ResponseEntity.<cn.xu.common.response.PageResponse<java.util.List<cn.xu.api.web.model.vo.user.UserCommentItemVO>>>builder()
+                    .code(ResponseCode.SUCCESS.getCode())
+                    .data(pageResponse)
+                    .build();
+        } catch (Exception e) {
+            log.error("获取用户评论列表失败，userId: {}", userId, e);
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "获取用户评论列表失败");
+        }
+    }
+    
+    /**
+     * 将评论实体列表转换为用户评论项VO列表
+     * @param commentEntities 评论实体列表
+     * @return 用户评论项VO列表
+     */
+    private List<cn.xu.api.web.model.vo.user.UserCommentItemVO> convertToUserCommentItemVOList(List<CommentEntity> commentEntities) {
+        if (commentEntities == null || commentEntities.isEmpty()) {
+            return new ArrayList<>();
+        }
+        
+        // 收集所有目标ID
+        java.util.Set<Long> targetIds = new java.util.HashSet<>();
+        for (CommentEntity entity : commentEntities) {
+            if (entity.getTargetId() != null && entity.getTargetType() != null && entity.getTargetType() == 1) {
+                // 只处理帖子类型的评论
+                targetIds.add(entity.getTargetId());
+            }
+        }
+        
+        // 批量查询帖子信息
+        java.util.Map<Long, String> targetTitleMap = new java.util.HashMap<>();
+        if (!targetIds.isEmpty()) {
+            try {
+                java.util.List<Long> targetIdList = new java.util.ArrayList<>(targetIds);
+                for (Long targetId : targetIdList) {
+                    try {
+                        java.util.Optional<cn.xu.domain.post.model.entity.PostEntity> postOpt = 
+                                postService.findPostEntityById(targetId);
+                        if (postOpt.isPresent()) {
+                            cn.xu.domain.post.model.entity.PostEntity post = postOpt.get();
+                            String title = post.getTitle() != null ? post.getTitle().getValue() : "无标题";
+                            targetTitleMap.put(targetId, title);
+                        }
+                    } catch (Exception e) {
+                        log.warn("查询帖子信息失败，targetId: {}", targetId, e);
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("批量查询帖子信息失败", e);
+            }
+        }
+        
+        // 获取当前登录用户ID（可能为null）
+        Long currentUserId = null;
+        try {
+            currentUserId = StpUtil.getLoginIdAsLong();
+        } catch (Exception e) {
+            // 用户未登录
+        }
+        
+        // 收集所有评论ID
+        List<Long> commentIds = new ArrayList<>();
+        for (CommentEntity entity : commentEntities) {
+            if (entity.getId() != null) {
+                commentIds.add(entity.getId());
+            }
+        }
+        
+        // 批量查询点赞状态
+        java.util.Map<Long, Boolean> likeMap = new java.util.HashMap<>();
+        if (currentUserId != null && !commentIds.isEmpty()) {
+            likeMap = likeApplicationService.batchCheckLikeStatus(currentUserId, commentIds, LikeType.COMMENT);
+        }
+        
+        // 填充用户信息
+        commentAggregateDomainService.fillUserInfo(commentEntities);
+        
+        // 转换为VO列表
+        List<cn.xu.api.web.model.vo.user.UserCommentItemVO> result = new ArrayList<>();
+        for (CommentEntity entity : commentEntities) {
+            // 转换评论为CommentResponse
+            CommentResponse commentResponse = convertToCommentVO(entity, likeMap, new java.util.HashMap<>());
+            
+            // 获取目标信息
+            String targetTitle = targetTitleMap.getOrDefault(entity.getTargetId(), "无标题");
+            String targetUrl = "/post/" + entity.getTargetId();
+            
+            cn.xu.api.web.model.vo.user.UserCommentItemVO item = 
+                    cn.xu.api.web.model.vo.user.UserCommentItemVO.builder()
+                            .comment(commentResponse)
+                            .targetId(entity.getTargetId())
+                            .targetTitle(targetTitle)
+                            .targetType(entity.getTargetType())
+                            .targetUrl(targetUrl)
+                            .build();
+            result.add(item);
+        }
+        
+        return result;
     }
 }

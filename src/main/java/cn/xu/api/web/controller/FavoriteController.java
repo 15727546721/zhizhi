@@ -3,14 +3,21 @@ package cn.xu.api.web.controller;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.api.web.dto.favorite.FavoriteCountResponse;
 import cn.xu.api.web.dto.favorite.FavoriteRequest;
+import cn.xu.api.web.model.vo.post.PostListResponse;
 import cn.xu.application.service.FavoriteApplicationService;
 import cn.xu.common.ResponseCode;
 import cn.xu.common.annotation.ApiOperationLog;
 import cn.xu.common.exception.BusinessException;
+import cn.xu.common.response.PageResponse;
 import cn.xu.common.response.ResponseEntity;
+import cn.xu.domain.favorite.model.entity.FavoriteEntity;
 import cn.xu.domain.favorite.model.entity.FavoriteFolderEntity;
 import cn.xu.domain.favorite.model.valobj.TargetType;
 import cn.xu.domain.favorite.service.IFavoriteService;
+import cn.xu.domain.post.model.entity.PostEntity;
+import cn.xu.domain.post.service.IPostService;
+import cn.xu.domain.user.model.entity.UserEntity;
+import cn.xu.domain.user.service.IUserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -19,7 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -35,6 +42,8 @@ public class FavoriteController {
 
     private final FavoriteApplicationService favoriteApplicationService;
     private final IFavoriteService favoriteService;
+    private final IPostService postService;
+    private final IUserService userService;
 
     /**
      * 收藏内容
@@ -279,6 +288,144 @@ public class FavoriteController {
             return ResponseEntity.<Void>builder()
                     .code(ResponseCode.UN_ERROR.getCode())
                     .info("操作失败，请稍后重试")
+                    .build();
+        }
+    }
+
+    /**
+     * 获取我的收藏列表
+     */
+    @Operation(summary = "获取我的收藏列表")
+    @PostMapping("/my")
+    @ApiOperationLog(description = "获取我的收藏列表")
+    public ResponseEntity<PageResponse<List<PostListResponse>>> getMyFavorites(@RequestBody Map<String, Object> request) {
+        try {
+            Long userId = StpUtil.getLoginIdAsLong();
+            Integer pageNo = request.get("pageNo") != null ? Integer.valueOf(request.get("pageNo").toString()) : 1;
+            Integer pageSize = request.get("pageSize") != null ? Integer.valueOf(request.get("pageSize").toString()) : 10;
+            String targetType = request.get("type") != null ? request.get("type").toString() : "POST";
+            Long folderId = request.get("folderId") != null ? Long.valueOf(request.get("folderId").toString()) : null;
+
+            // 参数校验
+            if (pageNo < 1) {
+                pageNo = 1;
+            }
+            if (pageSize < 1 || pageSize > 100) {
+                pageSize = 10;
+            }
+
+            // 计算分页参数
+            int offset = (pageNo - 1) * pageSize;
+            int safeOffset = Math.max(0, offset);
+            int safeLimit = Math.max(1, Math.min(pageSize, 100));
+
+            // 获取收藏的帖子ID列表（数据库层面分页）
+            List<Long> favoritedPostIds;
+            String apiTargetType = TargetType.fromCode(targetType).getApiCode();
+            
+            if (folderId != null) {
+                // 获取收藏夹中的收藏记录（这里需要先获取所有，然后过滤，因为收藏夹查询不支持分页）
+                List<FavoriteEntity> favorites = favoriteService.getTargetsInFolder(userId, folderId);
+                List<Long> allPostIds = favorites.stream()
+                        .filter(f -> "post".equalsIgnoreCase(f.getTargetType()) || "POST".equalsIgnoreCase(f.getTargetType()))
+                        .map(FavoriteEntity::getTargetId)
+                        .collect(Collectors.toList());
+                
+                // 内存分页
+                int endIndex = Math.min(safeOffset + safeLimit, allPostIds.size());
+                favoritedPostIds = allPostIds.subList(Math.min(safeOffset, allPostIds.size()), endIndex);
+            } else {
+                // 使用数据库分页查询
+                favoritedPostIds = favoriteService.getFavoritedTargetIdsWithPage(userId, apiTargetType, null, safeOffset, safeLimit);
+            }
+
+            // 计算总数
+            int total;
+            if (folderId != null) {
+                // 收藏夹中的总数
+                List<FavoriteEntity> allFavorites = favoriteService.getTargetsInFolder(userId, folderId);
+                total = (int) allFavorites.stream()
+                        .filter(f -> "post".equalsIgnoreCase(f.getTargetType()) || "POST".equalsIgnoreCase(f.getTargetType()))
+                        .count();
+            } else {
+                // 所有收藏的总数
+                total = favoriteService.countFavoritedItems(userId, apiTargetType);
+            }
+
+            // 如果没有收藏，直接返回空列表
+            if (favoritedPostIds == null || favoritedPostIds.isEmpty()) {
+                PageResponse<List<PostListResponse>> pageResponse = PageResponse.ofList(
+                    pageNo, 
+                    pageSize, 
+                    (long) total, 
+                    Collections.emptyList()
+                );
+                return ResponseEntity.<PageResponse<List<PostListResponse>>>builder()
+                        .code(ResponseCode.SUCCESS.getCode())
+                        .data(pageResponse)
+                        .build();
+            }
+
+            List<Long> pagePostIds = favoritedPostIds;
+
+            // 批量获取帖子详情
+            List<PostEntity> posts = postService.findPostsByIds(pagePostIds);
+            
+            // 获取用户信息
+            Set<Long> userIds = posts.stream()
+                    .map(PostEntity::getUserId)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+            
+            List<UserEntity> users = Collections.emptyList();
+            if (!userIds.isEmpty()) {
+                try {
+                    users = userService.batchGetUserInfo(new ArrayList<>(userIds));
+                } catch (Exception e) {
+                    log.warn("批量获取用户信息失败", e);
+                }
+            }
+            
+            Map<Long, UserEntity> userMap = users.stream()
+                    .collect(Collectors.toMap(UserEntity::getId, user -> user, (existing, replacement) -> existing));
+
+            // 转换为PostListResponse，保持收藏顺序
+            List<PostListResponse> postListResponses = pagePostIds.stream()
+                    .map(postId -> {
+                        PostEntity post = posts.stream()
+                                .filter(p -> p.getId().equals(postId))
+                                .findFirst()
+                                .orElse(null);
+                        if (post == null) {
+                            return null;
+                        }
+                        PostListResponse response = new PostListResponse();
+                        response.setPost(post);
+                        if (post.getUserId() != null) {
+                            response.setUser(userMap.get(post.getUserId()));
+                        }
+                        return response;
+                    })
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+
+            // 创建PageResponse对象
+            PageResponse<List<PostListResponse>> pageResponse = PageResponse.ofList(
+                pageNo, 
+                pageSize, 
+                (long) total, 
+                postListResponses
+            );
+
+            return ResponseEntity.<PageResponse<List<PostListResponse>>>builder()
+                    .code(ResponseCode.SUCCESS.getCode())
+                    .data(pageResponse)
+                    .build();
+        } catch (Exception e) {
+            log.error("获取我的收藏列表失败", e);
+            return ResponseEntity.<PageResponse<List<PostListResponse>>>builder()
+                    .code(ResponseCode.UN_ERROR.getCode())
+                    .info("获取收藏列表失败: " + e.getMessage())
                     .build();
         }
     }

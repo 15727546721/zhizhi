@@ -285,6 +285,14 @@ public interface IPostRepository {
     long countAll();
     
     /**
+     * 统计用户已发布帖子数量
+     *
+     * @param userId 用户ID
+     * @return 已发布帖子数量
+     */
+    long countPublishedByUserId(Long userId);
+    
+    /**
      * 根据帖子类型查找相关帖子
      *
      * @param postType 帖子类型

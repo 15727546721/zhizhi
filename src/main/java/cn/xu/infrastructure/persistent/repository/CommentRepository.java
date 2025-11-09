@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Repository
 @RequiredArgsConstructor
-public class CommentRepository implements ICommentRepository {
+public  class CommentRepository implements ICommentRepository {
 
     private final CommentMapper commentMapper;
     private final CommentConverter commentConverter;
@@ -196,5 +196,25 @@ public class CommentRepository implements ICommentRepository {
 
         Comment comment = commentConverter.toDataObject(commentEntity);
         commentMapper.updateComment(comment);
+    }
+    
+    @Override
+    public Long countByUserId(Long userId) {
+        if (userId == null) {
+            return 0L;
+        }
+        Long count = commentMapper.countByUserId(userId);
+        return count != null ? count : 0L;
+    }
+    
+    @Override
+    public List<CommentEntity> findByUserId(Long userId, int offset, int limit) {
+        if (userId == null) {
+            return java.util.Collections.emptyList();
+        }
+        List<Comment> comments = commentMapper.findByUserId(userId, offset, limit);
+        return comments.stream()
+                .map(commentConverter::toDomainEntity)
+                .collect(Collectors.toList());
     }
 }

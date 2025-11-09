@@ -349,4 +349,20 @@ public interface IPostService {
      */
     List<PostEntity> findRelatedPostsByType(PostType postType, Long excludePostId, int limit);
 
+    /**
+     * 统计用户已发布帖子数量
+     *
+     * @param userId 用户ID
+     * @return 已发布帖子数量
+     */
+    long countPublishedByUserId(Long userId);
+
+    /**
+     * 根据ID列表批量查询帖子
+     *
+     * @param postIds 帖子ID列表
+     * @return 帖子列表
+     */
+    List<PostEntity> findPostsByIds(List<Long> postIds);
+
 }

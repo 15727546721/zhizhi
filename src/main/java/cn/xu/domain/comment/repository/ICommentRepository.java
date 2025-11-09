@@ -157,4 +157,20 @@ public interface ICommentRepository {
      * @return 目标ID到评论数量的映射
      */
     Map<Long, Long> batchCountByTargetIds(Integer targetType, List<Long> targetIds);
+    
+    /**
+     * 统计用户的评论数
+     * @param userId 用户ID
+     * @return 评论数量
+     */
+    Long countByUserId(Long userId);
+    
+    /**
+     * 根据用户ID查询评论列表（分页）
+     * @param userId 用户ID
+     * @param offset 偏移量
+     * @param limit 数量
+     * @return 评论列表
+     */
+    List<CommentEntity> findByUserId(Long userId, int offset, int limit);
 }

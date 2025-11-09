@@ -28,7 +28,7 @@ import javax.validation.Valid;
 import java.util.List;
 
 @Slf4j
-@RequestMapping("/system")
+@RequestMapping("/api/system")
 @RestController
 @Tag(name = "后台用户管理", description = "后台用户相关接口")
 public class SysUserController {
@@ -143,15 +143,48 @@ public class SysUserController {
                 .build();
     }
 
-    @PostMapping("/upload")
+    @PostMapping("/user/upload")
     @Operation(summary = "上传用户头像")
     @ApiOperationLog(description = "上传用户头像")
-    public ResponseEntity<String> upload(@Parameter(description = "头像文件") @RequestParam("file") MultipartFile file) {
-        String url = userService.uploadAvatar(file);
-        return ResponseEntity.<String>builder()
-                .code(ResponseCode.SUCCESS.getCode())
-                .info("上传成功")
-                .data(url)
-                .build();
+    @SaCheckLogin
+    public ResponseEntity<String> uploadAvatar(@Parameter(description = "头像文件") @RequestParam("file") MultipartFile file) {
+        try {
+            if (file == null || file.isEmpty()) {
+                throw new BusinessException(ResponseCode.PARAM_ERROR.getCode(), "文件不能为空");
+            }
+            
+            log.info("上传用户头像 - fileName: {}, size: {}, contentType: {}", 
+                    file.getOriginalFilename(), file.getSize(), file.getContentType());
+            
+            String contentType = file.getContentType();
+            if (contentType == null || !contentType.startsWith("image/")) {
+                throw new BusinessException(ResponseCode.PARAM_ERROR.getCode(), "只能上传图片文件");
+            }
+            
+            long maxSize = 2 * 1024 * 1024;
+            if (file.getSize() > maxSize) {
+                throw new BusinessException(ResponseCode.PARAM_ERROR.getCode(), "文件大小不能超过 2MB");
+            }
+            
+            String url = userService.uploadAvatar(file);
+            log.info("用户头像上传成功 - url: {}", url);
+            return ResponseEntity.<String>builder()
+                    .code(ResponseCode.SUCCESS.getCode())
+                    .info("上传成功")
+                    .data(url)
+                    .build();
+        } catch (BusinessException e) {
+            log.warn("上传用户头像失败：{}", e.getMessage());
+            return ResponseEntity.<String>builder()
+                    .code(e.getCode() != null ? e.getCode() : ResponseCode.UN_ERROR.getCode())
+                    .info(e.getMessage())
+                    .build();
+        } catch (Exception e) {
+            log.error("上传用户头像失败", e);
+            return ResponseEntity.<String>builder()
+                    .code(ResponseCode.SYSTEM_ERROR.getCode())
+                    .info("上传头像失败：" + e.getMessage())
+                    .build();
+        }
     }
 }

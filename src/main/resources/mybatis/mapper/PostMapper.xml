@@ -248,6 +248,38 @@
         ORDER BY create_time DESC
     </select>
     
+    <!-- 根据用户ID和帖子状态分页查询帖子列表 -->
+    <select id="findPostsByUserIdAndStatus" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM post
+        WHERE user_id = #{userId}
+        <choose>
+            <when test="status != null and status == 'PUBLISHED'">
+                AND status = 1
+            </when>
+            <when test="status != null and status == 'DRAFT'">
+                AND status = 0
+            </when>
+            <when test="status != null and status == 'DELETED'">
+                AND status = 2
+            </when>
+            <when test="status != null and status == 'ARCHIVED'">
+                AND status = 3
+            </when>
+            <when test="status != null and status != ''">
+                <!-- 如果是数字字符串，直接使用 -->
+                AND status = CAST(#{status} AS UNSIGNED)
+            </when>
+            <otherwise>
+                <!-- 如果没有指定状态，默认查询已发布和草稿 -->
+                AND status IN (0, 1)
+            </otherwise>
+        </choose>
+        ORDER BY create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+    
     <!-- 搜索帖子（优化：仅搜索title和description，不搜索content以提高性能） -->
     <select id="searchPosts" resultMap="BaseResultMap">
         SELECT 

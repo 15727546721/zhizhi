@@ -65,4 +65,28 @@
         </foreach>
     </delete>
 
+    <!-- 根据用户ID获取话题统计信息 -->
+    <select id="selectTopicStatsByUserId" resultType="cn.xu.infrastructure.persistent.dao.PostTopicMapper$UserTopicStats">
+        SELECT 
+            pt.topic_id AS topicId,
+            COUNT(DISTINCT pt.post_id) AS postCount,
+            MAX(pt.create_time) AS lastPostTime
+        FROM post_topic pt
+        INNER JOIN post p ON pt.post_id = p.id
+        WHERE p.user_id = #{userId}
+          AND p.status = 'published'
+        GROUP BY pt.topic_id
+        ORDER BY postCount DESC, lastPostTime DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 根据用户ID统计话题数量 -->
+    <select id="countTopicsByUserId" resultType="java.lang.Long">
+        SELECT COUNT(DISTINCT pt.topic_id)
+        FROM post_topic pt
+        INNER JOIN post p ON pt.post_id = p.id
+        WHERE p.user_id = #{userId}
+          AND p.status = 'published'
+    </select>
+
 </mapper>

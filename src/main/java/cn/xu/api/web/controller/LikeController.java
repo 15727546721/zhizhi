@@ -3,13 +3,21 @@ package cn.xu.api.web.controller;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.api.web.model.dto.like.LikeCountResponse;
 import cn.xu.api.web.model.dto.like.LikeRequest;
+import cn.xu.api.web.model.vo.user.UserLikeItemVO;
 import cn.xu.application.service.LikeApplicationService;
 import cn.xu.common.ResponseCode;
 import cn.xu.common.annotation.ApiOperationLog;
 import cn.xu.common.exception.BusinessException;
+import cn.xu.common.response.PageResponse;
 import cn.xu.common.response.ResponseEntity;
+import cn.xu.domain.comment.model.entity.CommentEntity;
+import cn.xu.domain.comment.repository.ICommentRepository;
 import cn.xu.domain.like.model.LikeType;
+import cn.xu.domain.like.model.aggregate.LikeAggregate;
+import cn.xu.domain.like.repository.ILikeAggregateRepository;
 import cn.xu.domain.like.service.LikeStatisticsService;
+import cn.xu.domain.post.model.entity.PostEntity;
+import cn.xu.domain.post.service.IPostService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -18,7 +26,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -30,6 +43,9 @@ public class LikeController {
 
     private final LikeApplicationService likeApplicationService;
     private final LikeStatisticsService likeStatisticsService;
+    private final ILikeAggregateRepository likeAggregateRepository;
+    private final IPostService postService;
+    private final ICommentRepository commentRepository;
 
     @Operation(summary = "点赞")
     @PostMapping("/like")
@@ -253,5 +269,152 @@ public class LikeController {
                 .info(ResponseCode.SUCCESS.getMessage())
                 .data(statistics)
                 .build();
+    }
+    
+    /**
+     * 获取用户点赞列表
+     * @param userId 用户ID
+     * @param pageNo 页码
+     * @param pageSize 每页数量
+     * @return 用户点赞列表
+     */
+    @GetMapping("/user/{userId}")
+    @Operation(summary = "获取用户点赞列表")
+    @ApiOperationLog(description = "获取用户点赞列表")
+    public ResponseEntity<PageResponse<List<UserLikeItemVO>>> getUserLikes(
+            @PathVariable("userId") Long userId,
+            @RequestParam(value = "pageNo", defaultValue = "1") Integer pageNo,
+            @RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize) {
+        try {
+            // 参数校验
+            if (pageNo == null || pageNo < 1) {
+                pageNo = 1;
+            }
+            if (pageSize == null || pageSize < 1 || pageSize > 100) {
+                pageSize = 10;
+            }
+            
+            // 计算偏移量
+            int offset = (pageNo - 1) * pageSize;
+            
+            // 查询点赞列表
+            List<LikeAggregate> likeAggregates = likeAggregateRepository.findByUserId(userId, offset, pageSize);
+            
+            // 统计总数
+            long total = likeAggregateRepository.countByUserId(userId);
+            
+            // 转换为VO列表
+            List<UserLikeItemVO> likeItems = convertToUserLikeItemVOList(likeAggregates);
+            
+            // 构建分页响应
+            PageResponse<List<UserLikeItemVO>> pageResponse = 
+                    PageResponse.ofList(pageNo, pageSize, total, likeItems);
+            
+            return ResponseEntity.<PageResponse<List<UserLikeItemVO>>>builder()
+                    .code(ResponseCode.SUCCESS.getCode())
+                    .data(pageResponse)
+                    .build();
+        } catch (Exception e) {
+            log.error("获取用户点赞列表失败，userId: {}", userId, e);
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "获取用户点赞列表失败");
+        }
+    }
+    
+    /**
+     * 将点赞聚合根列表转换为用户点赞项VO列表
+     * @param likeAggregates 点赞聚合根列表
+     * @return 用户点赞项VO列表
+     */
+    private List<UserLikeItemVO> convertToUserLikeItemVOList(List<LikeAggregate> likeAggregates) {
+        if (likeAggregates == null || likeAggregates.isEmpty()) {
+            return new ArrayList<>();
+        }
+        
+        // 按类型分组收集目标ID
+        Map<LikeType, Set<Long>> targetIdsByType = new HashMap<>();
+        for (LikeAggregate aggregate : likeAggregates) {
+            LikeType type = aggregate.getType();
+            if (type != null && aggregate.getTargetId() != null) {
+                targetIdsByType.computeIfAbsent(type, k -> new java.util.HashSet<>())
+                    .add(aggregate.getTargetId());
+            }
+        }
+        
+        // 批量查询目标信息
+        Map<String, String> targetTitleMap = new HashMap<>();
+        Map<String, String> targetUrlMap = new HashMap<>();
+        
+        // 查询帖子信息
+        if (targetIdsByType.containsKey(LikeType.POST)) {
+            Set<Long> postIds = targetIdsByType.get(LikeType.POST);
+            for (Long postId : postIds) {
+                try {
+                    Optional<PostEntity> postOpt = postService.findPostEntityById(postId);
+                    if (postOpt.isPresent()) {
+                        PostEntity post = postOpt.get();
+                        String title = post.getTitle() != null ? post.getTitle().getValue() : "无标题";
+                        targetTitleMap.put("POST_" + postId, title);
+                        targetUrlMap.put("POST_" + postId, "/post/" + postId);
+                    }
+                } catch (Exception e) {
+                    log.warn("查询帖子信息失败，postId: {}", postId, e);
+                }
+            }
+        }
+        
+        // 查询评论信息
+        if (targetIdsByType.containsKey(LikeType.COMMENT)) {
+            Set<Long> commentIds = targetIdsByType.get(LikeType.COMMENT);
+            for (Long commentId : commentIds) {
+                try {
+                    CommentEntity comment = commentRepository.findById(commentId);
+                    if (comment != null) {
+                        // 评论内容作为标题（截取前50个字符）
+                        String content = comment.getContent() != null ? comment.getContent().getValue() : null;
+                        String title = content != null && content.length() > 50 
+                            ? content.substring(0, 50) + "..." 
+                            : (content != null ? content : "无内容");
+                        targetTitleMap.put("COMMENT_" + commentId, title);
+                        // 评论需要先找到所属的帖子，然后构建URL
+                        if (comment.getTargetId() != null && comment.getTargetType() != null && comment.getTargetType() == 1) {
+                            targetUrlMap.put("COMMENT_" + commentId, "/post/" + comment.getTargetId() + "#comment-" + commentId);
+                        } else {
+                            targetUrlMap.put("COMMENT_" + commentId, "#");
+                        }
+                    }
+                } catch (Exception e) {
+                    log.warn("查询评论信息失败，commentId: {}", commentId, e);
+                }
+            }
+        }
+        
+        // 构建VO列表
+        List<UserLikeItemVO> likeItems = new ArrayList<>();
+        for (LikeAggregate aggregate : likeAggregates) {
+            LikeType type = aggregate.getType();
+            Long targetId = aggregate.getTargetId();
+            
+            if (type == null || targetId == null) {
+                continue;
+            }
+            
+            String key = type.name() + "_" + targetId;
+            String targetTitle = targetTitleMap.getOrDefault(key, "未知");
+            String targetUrl = targetUrlMap.getOrDefault(key, "#");
+            
+            UserLikeItemVO item = UserLikeItemVO.builder()
+                    .likeId(aggregate.getId())
+                    .targetId(targetId)
+                    .targetTitle(targetTitle)
+                    .targetType(type.getCode())
+                    .targetTypeName(type.getDescription())
+                    .targetUrl(targetUrl)
+                    .likeTime(aggregate.getCreateTime())
+                    .build();
+            
+            likeItems.add(item);
+        }
+        
+        return likeItems;
     }
 }

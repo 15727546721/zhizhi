@@ -76,9 +76,9 @@ public class FollowController {
     @GetMapping("/following")
     @ApiOperationLog(description = "获取我的关注列表")
     public ResponseEntity<List<FollowRelationEntity>> getFollowingList(
-            @Parameter(description = "页码")
+            @Parameter(description = "页码") 
             @RequestParam(defaultValue = "1") Integer pageNum,
-            @Parameter(description = "每页数量")
+            @Parameter(description = "每页数量") 
             @RequestParam(defaultValue = "10") Integer pageSize) {
         log.info("获取关注列表，页码：{}，每页数量：{}", pageNum, pageSize);
         Long currentUserId = StpUtil.getLoginIdAsLong();
@@ -89,17 +89,65 @@ public class FollowController {
                 .build();
     }
 
+    @Operation(summary = "获取指定用户的关注列表")
+    @GetMapping("/following/{userId}")
+    @ApiOperationLog(description = "获取指定用户的关注列表")
+    public ResponseEntity<List<FollowRelationEntity>> getUserFollowingList(
+            @Parameter(description = "用户ID", required = true)
+            @PathVariable Long userId,
+            @Parameter(description = "页码") 
+            @RequestParam(defaultValue = "1") Integer pageNum,
+            @Parameter(description = "每页数量") 
+            @RequestParam(defaultValue = "10") Integer pageSize) {
+        log.info("获取指定用户的关注列表，用户ID：{}，页码：{}，每页数量：{}", userId, pageNum, pageSize);
+        if (userId == null || userId <= 0) {
+            return ResponseEntity.<List<FollowRelationEntity>>builder()
+                    .code(ResponseCode.ILLEGAL_PARAMETER.getCode())
+                    .info("用户ID不能为空")
+                    .build();
+        }
+        List<FollowRelationEntity> followingList = userFollowService.getFollowingList(userId, pageNum, pageSize);
+        return ResponseEntity.<List<FollowRelationEntity>>builder()
+                .code(ResponseCode.SUCCESS.getCode())
+                .data(followingList)
+                .build();
+    }
+
     @Operation(summary = "获取我的粉丝列表")
     @GetMapping("/followers")
     @ApiOperationLog(description = "获取我的粉丝列表")
     public ResponseEntity<List<FollowRelationEntity>> getFollowersList(
-            @Parameter(description = "页码")
+            @Parameter(description = "页码") 
             @RequestParam(defaultValue = "1") Integer pageNum,
-            @Parameter(description = "每页数量")
+            @Parameter(description = "每页数量") 
             @RequestParam(defaultValue = "10") Integer pageSize) {
         log.info("获取粉丝列表，页码：{}，每页数量：{}", pageNum, pageSize);
         Long currentUserId = StpUtil.getLoginIdAsLong();
         List<FollowRelationEntity> followersList = userFollowService.getFollowersList(currentUserId, pageNum, pageSize);
+        return ResponseEntity.<List<FollowRelationEntity>>builder()
+                .code(ResponseCode.SUCCESS.getCode())
+                .data(followersList)
+                .build();
+    }
+
+    @Operation(summary = "获取指定用户的粉丝列表")
+    @GetMapping("/followers/{userId}")
+    @ApiOperationLog(description = "获取指定用户的粉丝列表")
+    public ResponseEntity<List<FollowRelationEntity>> getUserFollowersList(
+            @Parameter(description = "用户ID", required = true)
+            @PathVariable Long userId,
+            @Parameter(description = "页码") 
+            @RequestParam(defaultValue = "1") Integer pageNum,
+            @Parameter(description = "每页数量") 
+            @RequestParam(defaultValue = "10") Integer pageSize) {
+        log.info("获取指定用户的粉丝列表，用户ID：{}，页码：{}，每页数量：{}", userId, pageNum, pageSize);
+        if (userId == null || userId <= 0) {
+            return ResponseEntity.<List<FollowRelationEntity>>builder()
+                    .code(ResponseCode.ILLEGAL_PARAMETER.getCode())
+                    .info("用户ID不能为空")
+                    .build();
+        }
+        List<FollowRelationEntity> followersList = userFollowService.getFollowersList(userId, pageNum, pageSize);
         return ResponseEntity.<List<FollowRelationEntity>>builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .data(followersList)

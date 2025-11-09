@@ -349,8 +349,12 @@ public class PostAggregateRepositoryImpl implements IPostRepository {
     }
 
     @Override
-    public List<PostEntity> findByUserIdAndStatus(Long userId, String postStatus, int pageNo, int pageSize) {
-        List<Post> posts = postMapper.findPostsByUserIdAndStatus(userId, postStatus, (pageNo - 1) * pageSize, pageSize);
+    public List<PostEntity> findByUserIdAndStatus(Long userId, String postStatus, int offset, int limit) {
+        // 确保 offset 不为负数
+        int safeOffset = Math.max(0, offset);
+        // 确保 limit 为正数
+        int safeLimit = Math.max(1, limit);
+        List<Post> posts = postMapper.findPostsByUserIdAndStatus(userId, postStatus, safeOffset, safeLimit);
         return postConverter.toDomainEntities(posts);
     }
 
@@ -431,6 +435,15 @@ public class PostAggregateRepositoryImpl implements IPostRepository {
     @Override
     public long countAll() {
         Long count = postMapper.countAll();
+        return count != null ? count : 0;
+    }
+    
+    @Override
+    public long countPublishedByUserId(Long userId) {
+        if (userId == null) {
+            return 0;
+        }
+        Long count = postMapper.countPublishedByUserId(userId);
         return count != null ? count : 0;
     }
 

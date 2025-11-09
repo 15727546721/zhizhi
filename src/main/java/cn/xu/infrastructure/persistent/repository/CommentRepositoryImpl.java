@@ -195,6 +195,24 @@ public class CommentRepositoryImpl implements ICommentRepository {
         }
         return resultMap;
     }
+    
+    @Override
+    public Long countByUserId(Long userId) {
+        if (userId == null) {
+            return 0L;
+        }
+        Long count = commentMapper.countByUserId(userId);
+        return count != null ? count : 0L;
+    }
+    
+    @Override
+    public List<CommentEntity> findByUserId(Long userId, int offset, int limit) {
+        if (userId == null) {
+            return new ArrayList<>();
+        }
+        List<Comment> comments = commentMapper.findByUserId(userId, offset, limit);
+        return commentConverter.toDomainEntities(comments);
+    }
 
     @Override
     public void update(CommentEntity commentEntity) {

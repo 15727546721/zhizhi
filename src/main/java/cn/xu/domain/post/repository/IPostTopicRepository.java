@@ -50,6 +50,59 @@ public interface IPostTopicRepository {
     void deletePostTopics(Long postId);
     
     /**
+     * 根据用户ID获取话题统计信息
+     *
+     * @param userId 用户ID
+     * @param offset 偏移量
+     * @param limit 数量
+     * @return 话题统计信息列表
+     */
+    List<UserTopicStats> getTopicStatsByUserId(Long userId, int offset, int limit);
+    
+    /**
+     * 根据用户ID统计话题数量
+     *
+     * @param userId 用户ID
+     * @return 话题数量
+     */
+    Long countTopicsByUserId(Long userId);
+    
+    /**
+     * 用户话题统计信息
+     */
+    class UserTopicStats {
+        private Long topicId;
+        private Long postCount;
+        private java.time.LocalDateTime lastPostTime;
+        
+        public UserTopicStats() {}
+        
+        public Long getTopicId() {
+            return topicId;
+        }
+        
+        public void setTopicId(Long topicId) {
+            this.topicId = topicId;
+        }
+        
+        public Long getPostCount() {
+            return postCount;
+        }
+        
+        public void setPostCount(Long postCount) {
+            this.postCount = postCount;
+        }
+        
+        public java.time.LocalDateTime getLastPostTime() {
+            return lastPostTime;
+        }
+        
+        public void setLastPostTime(java.time.LocalDateTime lastPostTime) {
+            this.lastPostTime = lastPostTime;
+        }
+    }
+    
+    /**
      * 帖子与话题的关联关系
      */
     class PostTopicRelation {

@@ -102,70 +102,110 @@ public class MinioService implements IFileStorageService {
 
     @Override
     public String uploadFile(MultipartFile file, String fileName) throws Exception {
-        // 检查MinIO是否启用
         if (!minioEnabled || minioClient == null) {
             log.warn("MinIO功能未启用或客户端未初始化，文件上传功能不可用");
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "文件上传服务不可用");
         }
         
+        if (file == null || file.isEmpty()) {
+            throw new BusinessException(ResponseCode.PARAM_ERROR.getCode(), "文件不能为空");
+        }
+        
         try (InputStream inputStream = file.getInputStream()) {
-            // 检查桶是否存在，不存在则创建
             checkAndCreateBucket();
             
-            // 使用 Base62 编码生成唯一的文件名
-            String uniqueFileName = generateUniqueFileName(Objects.requireNonNull(file.getOriginalFilename()));
+            String finalFileName;
+            if (fileName != null && !fileName.trim().isEmpty()) {
+                finalFileName = fileName.replaceAll("[^a-zA-Z0-9._/-]", "_");
+                if (finalFileName.contains("..")) {
+                    throw new BusinessException(ResponseCode.PARAM_ERROR.getCode(), "文件名包含非法字符");
+                }
+                if (finalFileName.startsWith("/")) {
+                    finalFileName = finalFileName.substring(1);
+                }
+            } else {
+                finalFileName = generateUniqueFileName(Objects.requireNonNull(file.getOriginalFilename()));
+            }
 
-            // 创建 PutObjectArgs 对象
             PutObjectArgs putObjectArgs = PutObjectArgs.builder()
                     .bucket(bucketName)
-                    .object(uniqueFileName)
+                    .object(finalFileName)
                     .stream(inputStream, file.getSize(), -1)
-                    .contentType(file.getContentType())
+                    .contentType(file.getContentType() != null ? file.getContentType() : "application/octet-stream")
                     .build();
 
-            // 调用 putObject 方法
             minioClient.putObject(putObjectArgs);
 
-            // 返回生成的文件 URL
-            String sharedUrl = minioUrl + "/" + bucketName + "/" + uniqueFileName;
+            String sharedUrl = minioUrl + "/" + bucketName + "/" + finalFileName;
             log.info("文件上传成功，可访问URL为：{}", sharedUrl);
             return sharedUrl;
         } catch (MinioException e) {
             log.error("上传文件到MinIO失败", e);
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "上传文件失败");
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "上传文件失败：" + e.getMessage());
+        } catch (Exception e) {
+            log.error("上传文件失败", e);
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "上传文件失败：" + e.getMessage());
         }
     }
 
     @Override
     public void deleteFile(String fileUrl) throws Exception {
-        // 检查MinIO是否启用
         if (!minioEnabled || minioClient == null) {
             log.warn("MinIO功能未启用或客户端未初始化，文件删除功能不可用");
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "文件删除服务不可用");
         }
         
-        log.info("开始删除文件: {}", fileUrl);
-        JSONObject jsonObject = JSONObject.parseObject(fileUrl);
-        fileUrl = jsonObject.getString("fileUrl");
         if (StringUtils.isEmpty(fileUrl)) {
-            log.error("文件URL为空，无法删除");
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "文件URL为空，无法删除");
+            return;
         }
+        
+        log.info("开始删除文件: {}", fileUrl);
+        
         try {
-            String objectName = fileUrl.substring(fileUrl.indexOf(bucketName) + bucketName.length() + 1);
+            String actualFileUrl = fileUrl;
+            if (fileUrl.trim().startsWith("{")) {
+                try {
+                    JSONObject jsonObject = JSONObject.parseObject(fileUrl);
+                    actualFileUrl = jsonObject.getString("fileUrl");
+                    if (StringUtils.isEmpty(actualFileUrl)) {
+                        return;
+                    }
+                } catch (Exception e) {
+                    log.debug("fileUrl不是JSON格式，使用原始URL: {}", fileUrl);
+                }
+            }
+            
+            String objectName;
+            int bucketIndex = actualFileUrl.indexOf(bucketName);
+            if (bucketIndex >= 0) {
+                objectName = actualFileUrl.substring(bucketIndex + bucketName.length() + 1);
+            } else {
+                if (actualFileUrl.contains("/")) {
+                    objectName = actualFileUrl.substring(actualFileUrl.lastIndexOf("/") + 1);
+                } else {
+                    objectName = actualFileUrl;
+                }
+                log.warn("URL中未找到bucketName，使用提取的对象名: {}", objectName);
+            }
+            
+            if (StringUtils.isEmpty(objectName)) {
+                log.warn("无法从URL中提取对象名，跳过删除: {}", actualFileUrl);
+                return;
+            }
 
-            // 构造 RemoveObjectArgs
             RemoveObjectArgs removeObjectArgs = RemoveObjectArgs.builder()
                     .bucket(bucketName)
                     .object(objectName)
                     .build();
 
-            // 调用 removeObject 方法删除文件
             minioClient.removeObject(removeObjectArgs);
             log.info("文件删除成功: {}", objectName);
         } catch (MinioException e) {
-            log.error("删除文件失败: {}", e.getMessage());
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "删除文件失败");
+            log.error("删除文件失败: {}", e.getMessage(), e);
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "删除文件失败：" + e.getMessage());
+        } catch (Exception e) {
+            log.error("删除文件时发生异常: {}", fileUrl, e);
+            throw e;
         }
     }
 

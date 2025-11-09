@@ -53,6 +53,21 @@
         WHERE user_id = #{userId}
         AND target_type = #{targetType}
         AND status = 1
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 分页获取用户收藏的内容ID列表 -->
+    <select id="selectFavoritedTargetIdsByUserIdWithPage" resultType="java.lang.Long">
+        SELECT target_id
+        FROM favorite
+        WHERE user_id = #{userId}
+        AND target_type = #{targetType}
+        AND status = 1
+        <if test="folderId != null">
+            AND folder_id = #{folderId}
+        </if>
+        ORDER BY create_time DESC
+        LIMIT #{offset}, #{limit}
     </select>
 
     <!-- 统计用户收藏的内容数量 -->

@@ -73,4 +73,28 @@ public class PostTopicRepository implements IPostTopicRepository {
         log.info("删除帖子话题 postId: {}", postId);
         postTopicDao.deleteByPostId(postId);
     }
+    
+    @Override
+    public List<IPostTopicRepository.UserTopicStats> getTopicStatsByUserId(Long userId, int offset, int limit) {
+        if (userId == null) {
+            return new LinkedList<>();
+        }
+        List<PostTopicMapper.UserTopicStats> statsList = postTopicDao.selectTopicStatsByUserId(userId, offset, limit);
+        return statsList.stream().map(stats -> {
+            IPostTopicRepository.UserTopicStats result = new IPostTopicRepository.UserTopicStats();
+            result.setTopicId(stats.getTopicId());
+            result.setPostCount(stats.getPostCount());
+            result.setLastPostTime(stats.getLastPostTime());
+            return result;
+        }).collect(Collectors.toList());
+    }
+    
+    @Override
+    public Long countTopicsByUserId(Long userId) {
+        if (userId == null) {
+            return 0L;
+        }
+        Long count = postTopicDao.countTopicsByUserId(userId);
+        return count != null ? count : 0L;
+    }
 }

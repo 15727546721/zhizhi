@@ -91,4 +91,20 @@ public interface LikeMapper {
      * @return 用户ID列表
      */
     List<Long> selectUserIdsByTargetId(@Param("targetId") Long targetId, @Param("type") Integer type);
+    
+    /**
+     * 分页查询用户的点赞列表
+     * @param userId 用户ID
+     * @param offset 偏移量
+     * @param limit 限制数量
+     * @return 点赞列表
+     */
+    List<Like> findByUserId(@Param("userId") Long userId, @Param("offset") int offset, @Param("limit") int limit);
+    
+    /**
+     * 统计用户的点赞总数
+     * @param userId 用户ID
+     * @return 点赞总数
+     */
+    long countByUserId(@Param("userId") Long userId);
 }

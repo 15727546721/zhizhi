@@ -29,6 +29,11 @@ public interface IFavoriteRepository {
     List<Long> findFavoritedTargetIdsByUserId(Long userId, String targetType);
 
     /**
+     * 分页获取用户收藏的内容ID列表
+     */
+    List<Long> findFavoritedTargetIdsByUserIdWithPage(Long userId, String targetType, Long folderId, int offset, int limit);
+
+    /**
      * 统计用户收藏的内容数量
      */
     int countFavoritedItemsByUserId(Long userId, String targetType);

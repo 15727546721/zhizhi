@@ -28,36 +28,28 @@ public class WebConfig implements WebMvcConfigurer {
                 .maxAge(3600);  // 预检请求的有效期，单位为秒
     }
 
-    /**
-     * 注册sa-token的拦截器，打开注解式鉴权功能 (如果您不需要此功能，可以删除此类)
-     */
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-
-        // 注册Sa-Token的路由拦截器
-        // 注册 Sa-Token 拦截器，打开注解式鉴权功能
         registry.addInterceptor(new SaInterceptor())
                 .addPathPatterns("/**")
                 .excludePathPatterns(
-                        "/system/login", 
-                        "/system/logout", 
+                        "/api/system/login", 
+                        "/api/system/logout", 
                         "/register", 
                         "/doc.html", 
                         "/webjars/**",
                         "/favicon.ico",
                         "/error",
                         "/swagger-resources/**",
-                        "/v3/api-docs/**"
+                        "/v3/api-docs/**",
+                        "/api/file/**"
                 );
-
     }
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-
         registry.addResourceHandler("/webjars/**").addResourceLocations(
                 "classpath:/META-INF/resources/webjars/");
         registry.addResourceHandler("doc.html").addResourceLocations("classpath:/META-INF/resources/");
-//        registry.addResourceHandler("/img/**").addResourceLocations("file:" + UPLOAD_FOLDER);
     }
 }

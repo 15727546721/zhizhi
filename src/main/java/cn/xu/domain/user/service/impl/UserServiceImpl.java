@@ -3,6 +3,7 @@ package cn.xu.domain.user.service.impl;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.api.system.model.dto.user.SysUserRequest;
 import cn.xu.api.web.model.dto.user.UpdateUserRequest;
+import cn.xu.api.web.model.dto.user.UpdateUserProfileRequest;
 import cn.xu.api.web.model.dto.user.UserLoginRequest;
 import cn.xu.api.web.model.dto.user.UserRegisterRequest;
 import cn.xu.common.ResponseCode;
@@ -99,6 +100,66 @@ public class UserServiceImpl implements IUserService {
                 .updateTime(LocalDateTime.now())
                 .build();
         userEventPublisher.publishUserUpdated(event);
+    }
+    
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateUserProfile(Long userId, UpdateUserProfileRequest request) {
+        try {
+            log.info("[用户服务] 开始更新用户资料 - userId: {}", userId);
+            
+            // 获取用户实体
+            UserEntity userEntity = getUserById(userId);
+            if (userEntity == null) {
+                log.error("[用户服务] 更新用户资料失败：用户不存在 - userId: {}", userId);
+                throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "用户不存在");
+            }
+            
+            // 更新可修改的字段（使用领域方法，符合DDD原则）
+            if (request.getNickname() != null) {
+                userEntity.setNickname(request.getNickname());
+            }
+            if (request.getAvatar() != null) {
+                userEntity.setAvatar(request.getAvatar());
+            }
+            if (request.getGender() != null) {
+                userEntity.setGender(request.getGender());
+            }
+            if (request.getRegion() != null) {
+                userEntity.setRegion(request.getRegion());
+            }
+            if (request.getBirthday() != null) {
+                userEntity.setBirthday(request.getBirthday());
+            }
+            if (request.getDescription() != null) {
+                userEntity.setDescription(request.getDescription());
+            }
+            if (request.getPhone() != null && !request.getPhone().trim().isEmpty()) {
+                userEntity.setPhone(new Phone(request.getPhone()));
+            }
+            
+            // 更新修改时间
+            userEntity.setUpdateTime(LocalDateTime.now());
+            
+            // 保存更新
+            userRepository.update(userEntity);
+            
+            log.info("[用户服务] 用户资料更新成功 - userId: {}", userId);
+            
+            // 发布用户更新事件
+            UserUpdatedEvent event = UserUpdatedEvent.builder()
+                    .userId(userEntity.getId())
+                    .username(userEntity.getUsernameValue())
+                    .updateTime(LocalDateTime.now())
+                    .build();
+            userEventPublisher.publishUserUpdated(event);
+            
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("[用户服务] 更新用户资料失败 - userId: {}, request: {}", userId, request, e);
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "更新用户资料失败：" + e.getMessage());
+        }
     }
 
     @Override
@@ -352,35 +413,54 @@ public class UserServiceImpl implements IUserService {
             log.info("[用户服务] 开始上传用户头像 - fileName: {}, size: {}",
                     file.getOriginalFilename(), file.getSize());
 
-            // 获取当前用户
             UserEntity currentUser = getCurrentUser();
             if (currentUser == null) {
                 throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "用户未登录");
             }
 
-            // 生成文件存储路径
-            String fileName = String.format("avatar/%s/%s_%s",
+            String originalFileName = file.getOriginalFilename();
+            if (originalFileName == null || originalFileName.isEmpty()) {
+                originalFileName = "avatar.jpg";
+            }
+            
+            String extension = "";
+            int lastDotIndex = originalFileName.lastIndexOf('.');
+            if (lastDotIndex > 0) {
+                extension = originalFileName.substring(lastDotIndex);
+            } else {
+                String contentType = file.getContentType();
+                if (contentType != null) {
+                    if (contentType.contains("jpeg") || contentType.contains("jpg")) {
+                        extension = ".jpg";
+                    } else if (contentType.contains("png")) {
+                        extension = ".png";
+                    } else if (contentType.contains("gif")) {
+                        extension = ".gif";
+                    } else {
+                        extension = ".jpg";
+                    }
+                } else {
+                    extension = ".jpg";
+                }
+            }
+            
+            String safeFileName = String.format("avatar/%s/%s_%d%s",
                     LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMM")),
                     currentUser.getId(),
-                    file.getOriginalFilename()
+                    System.currentTimeMillis(),
+                    extension
             );
 
-            // 上传新头像
-            String avatarUrl = fileStorageService.uploadFile(file, fileName);
-
-            // 获取旧头像URL
+            String avatarUrl = fileStorageService.uploadFile(file, safeFileName);
             String oldAvatarUrl = currentUser.getAvatar();
 
-            // 更新用户头像URL
             currentUser.setAvatar(avatarUrl);
             userRepository.save(currentUser);
 
-            // 如果存在旧头像且不是默认头像，则删除
-            if (StringUtils.isNotEmpty(oldAvatarUrl)) {
+            if (StringUtils.isNotEmpty(oldAvatarUrl) && !oldAvatarUrl.equals("default-avatar.png")) {
                 try {
                     fileStorageService.deleteFile(oldAvatarUrl);
                 } catch (Exception e) {
-                    // 删除旧头像失败不影响主流程，只记录日志
                     log.error("删除旧头像失败: {}", oldAvatarUrl, e);
                 }
             }

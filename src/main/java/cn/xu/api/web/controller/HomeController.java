@@ -443,15 +443,11 @@ public class HomeController {
         }
     }
 
-    /**
-     * 将帖子实体列表转换为PostListResponse列表
-     */
     private List<PostListResponse> convertToPostListResponses(List<PostEntity> posts) {
         if (posts == null || posts.isEmpty()) {
             return Collections.emptyList();
         }
         
-        // 收集所有帖子的作者ID
         Set<Long> userIds = new HashSet<>();
         posts.forEach(post -> {
             if (post.getUserId() != null) {
@@ -459,7 +455,6 @@ public class HomeController {
             }
         });
         
-        // 批量获取用户信息
         List<UserEntity> users = Collections.emptyList();
         try {
             users = userService.batchGetUserInfo(new ArrayList<>(userIds));
@@ -467,18 +462,41 @@ public class HomeController {
             log.warn("批量获取用户信息失败", e);
         }
         
-        // 构建用户ID到用户实体的映射
         java.util.Map<Long, UserEntity> userMap = users.stream()
                 .collect(Collectors.toMap(UserEntity::getId, user -> user, (existing, replacement) -> existing));
         
         return posts.stream()
                 .map(post -> {
-                    PostListResponse vo = new PostListResponse();
-                    vo.setPost(post);
-                    // 设置作者信息
-                    if (post.getUserId() != null) {
-                        vo.setUser(userMap.get(post.getUserId()));
-                    }
+                    UserEntity user = post.getUserId() != null ? userMap.get(post.getUserId()) : null;
+                    
+                    cn.xu.api.web.model.vo.post.PostListItemVO.PostListItemVOBuilder postItemBuilder = cn.xu.api.web.model.vo.post.PostListItemVO.builder()
+                            .id(post.getId())
+                            .title(post.getTitle() != null ? post.getTitle().getValue() : null)
+                            .description(post.getDescription())
+                            .content(post.getContent() != null ? post.getContent().getValue() : null)
+                            .coverUrl(post.getCoverUrl())
+                            .type(post.getType() != null ? post.getType().getCode() : null)
+                            .status(post.getStatus() != null ? post.getStatus().getCode() : null)
+                            .userId(post.getUserId())
+                            .nickname(user != null ? user.getNickname() : null)
+                            .avatar(user != null ? user.getAvatar() : null)
+                            .viewCount(post.getViewCount())
+                            .likeCount(post.getLikeCount())
+                            .commentCount(post.getCommentCount())
+                            .favoriteCount(post.getFavoriteCount())
+                            .createTime(post.getCreateTime())
+                            .updateTime(post.getUpdateTime())
+                            .publishTime(post.getPublishTime())
+                            .tagNameList(new String[]{});
+                    
+                    cn.xu.api.web.model.vo.post.PostListItemVO postItem = postItemBuilder.build();
+                    
+                    PostListResponse vo = PostListResponse.builder()
+                            .postItem(postItem)
+                            .post(post)
+                            .user(user)
+                            .build();
+                    
                     return vo;
                 })
                 .collect(Collectors.toList());

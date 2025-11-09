@@ -215,4 +215,58 @@ public class LikeAggregateRepositoryImpl implements ILikeAggregateRepository {
             return new ArrayList<>();
         }
     }
+    
+    @Override
+    public List<LikeAggregate> findByUserId(Long userId, int offset, int limit) {
+        try {
+            log.info("[点赞聚合根] 开始查询用户点赞列表，用户: {}, 偏移量: {}, 限制: {}", userId, offset, limit);
+            
+            if (userId == null) {
+                return new ArrayList<>();
+            }
+            
+            List<Like> likes = likeDao.findByUserId(userId, offset, limit);
+            if (likes == null || likes.isEmpty()) {
+                return new ArrayList<>();
+            }
+            
+            List<LikeAggregate> aggregates = new ArrayList<>();
+            for (Like like : likes) {
+                LikeAggregate aggregate = LikeAggregate.restore(
+                    like.getId(),
+                    like.getUserId(),
+                    like.getTargetId(),
+                    like.getType() != null ? LikeType.valueOf(like.getType()) : null,
+                    like.getStatus() != null ? LikeStatus.valueOf(like.getStatus()) : null,
+                    like.getCreateTime(),
+                    like.getCreateTime()
+                );
+                aggregates.add(aggregate);
+            }
+            
+            log.info("[点赞聚合根] 查询用户点赞列表成功，用户: {}, 数量: {}", userId, aggregates.size());
+            return aggregates;
+        } catch (Exception e) {
+            log.error("[点赞聚合根] 查询用户点赞列表失败，用户: {}", userId, e);
+            return new ArrayList<>();
+        }
+    }
+    
+    @Override
+    public long countByUserId(Long userId) {
+        try {
+            log.info("[点赞聚合根] 开始统计用户点赞总数，用户: {}", userId);
+            
+            if (userId == null) {
+                return 0;
+            }
+            
+            long count = likeDao.countByUserId(userId);
+            log.info("[点赞聚合根] 统计用户点赞总数成功，用户: {}, 数量: {}", userId, count);
+            return count;
+        } catch (Exception e) {
+            log.error("[点赞聚合根] 统计用户点赞总数失败，用户: {}", userId, e);
+            return 0;
+        }
+    }
 }

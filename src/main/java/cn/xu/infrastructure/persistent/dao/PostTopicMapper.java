@@ -25,4 +25,49 @@ public interface PostTopicMapper {
     
     // 根据帖子ID列表查询话题关联信息
     List<PostTopic> selectByPostIds(@Param("postIds") List<Long> postIds);
+    
+    // 根据用户ID获取话题统计信息（话题ID、参与次数、最后参与时间）
+    List<cn.xu.infrastructure.persistent.dao.PostTopicMapper.UserTopicStats> selectTopicStatsByUserId(
+        @Param("userId") Long userId, 
+        @Param("offset") int offset, 
+        @Param("limit") int limit
+    );
+    
+    // 根据用户ID统计话题数量
+    Long countTopicsByUserId(@Param("userId") Long userId);
+    
+    /**
+     * 用户话题统计信息
+     */
+    class UserTopicStats {
+        private Long topicId;
+        private Long postCount;
+        private java.time.LocalDateTime lastPostTime;
+        
+        public UserTopicStats() {}
+        
+        public Long getTopicId() {
+            return topicId;
+        }
+        
+        public void setTopicId(Long topicId) {
+            this.topicId = topicId;
+        }
+        
+        public Long getPostCount() {
+            return postCount;
+        }
+        
+        public void setPostCount(Long postCount) {
+            this.postCount = postCount;
+        }
+        
+        public java.time.LocalDateTime getLastPostTime() {
+            return lastPostTime;
+        }
+        
+        public void setLastPostTime(java.time.LocalDateTime lastPostTime) {
+            this.lastPostTime = lastPostTime;
+        }
+    }
 }

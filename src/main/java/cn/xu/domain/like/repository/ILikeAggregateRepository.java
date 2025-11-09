@@ -78,4 +78,20 @@ public interface ILikeAggregateRepository {
      * @return 用户ID列表
      */
     java.util.List<Long> findUserIdsByTarget(Long targetId, LikeType type);
+    
+    /**
+     * 分页查询用户的点赞列表
+     * @param userId 用户ID
+     * @param offset 偏移量
+     * @param limit 限制数量
+     * @return 点赞列表
+     */
+    java.util.List<LikeAggregate> findByUserId(Long userId, int offset, int limit);
+    
+    /**
+     * 统计用户的点赞总数
+     * @param userId 用户ID
+     * @return 点赞总数
+     */
+    long countByUserId(Long userId);
 }

@@ -334,9 +334,14 @@ public class PostService implements IPostService, TransactionParticipant {
 
     @Override
     public List<PostEntity> getUserPosts(Long userId, String postStatus, int pageNo, int pageSize) {
+        // 确保 pageNo 至少为 1
+        int safePageNo = Math.max(1, pageNo);
+        // 确保 pageSize 至少为 1
+        int safePageSize = Math.max(1, pageSize);
+        // 计算偏移量
+        int offset = (safePageNo - 1) * safePageSize;
         // 查询用户帖子
-        int offset = Math.max(0, (pageNo - 1) * pageSize);
-        List<PostEntity> posts = postRepository.findByUserIdAndStatus(userId, postStatus, offset, pageSize);
+        List<PostEntity> posts = postRepository.findByUserIdAndStatus(userId, postStatus, offset, safePageSize);
         if (posts == null) {
             return new ArrayList<>(); // 返回空列表而不是抛出异常
         }
@@ -889,6 +894,22 @@ public class PostService implements IPostService, TransactionParticipant {
     public List<PostEntity> findAnswersByQuestionId(Long questionId, Integer pageNo, Integer pageSize) {
         int offset = Math.max(0, (pageNo - 1) * pageSize);
         return postRepository.findAnswersByQuestionId(questionId, offset, pageSize);
+    }
+    
+    @Override
+    public long countPublishedByUserId(Long userId) {
+        if (userId == null) {
+            return 0;
+        }
+        return postRepository.countPublishedByUserId(userId);
+    }
+
+    @Override
+    public List<PostEntity> findPostsByIds(List<Long> postIds) {
+        if (postIds == null || postIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+        return postRepository.findPostsByIds(postIds);
     }
     
     /**

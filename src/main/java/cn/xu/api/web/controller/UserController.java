@@ -2,11 +2,14 @@ package cn.xu.api.web.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.stp.StpUtil;
+import cn.xu.api.web.model.converter.UserProfileVOConverter;
 import cn.xu.api.web.model.converter.UserVOConverter;
 import cn.xu.api.web.model.dto.user.UpdateUserRequest;
+import cn.xu.api.web.model.dto.user.UpdateUserProfileRequest;
 import cn.xu.api.web.model.dto.user.UserLoginRequest;
 import cn.xu.api.web.model.dto.user.UserRegisterRequest;
 import cn.xu.api.web.model.vo.user.UserLoginResponse;
+import cn.xu.api.web.model.vo.user.UserProfileVO;
 import cn.xu.common.ResponseCode;
 import cn.xu.common.annotation.ApiOperationLog;
 import cn.xu.common.exception.BusinessException;
@@ -16,6 +19,7 @@ import cn.xu.api.web.model.vo.user.UserRankingResponse;
 import cn.xu.api.web.model.vo.user.UserResponse;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.service.IUserService;
+import cn.xu.domain.user.service.UserProfileApplicationService;
 import cn.xu.domain.user.service.UserValidationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -24,6 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import javax.validation.Valid;
 import java.util.List;
 
 @Slf4j
@@ -40,6 +45,12 @@ public class UserController {
     
     @Resource
     private UserVOConverter userVOConverter;
+    
+    @Resource
+    private UserProfileApplicationService userProfileApplicationService;
+    
+    @Resource
+    private UserProfileVOConverter userProfileVOConverter;
 
     @PostMapping("/register")
     @Operation(summary = "用户注册", description = "用户注册接口")
@@ -118,6 +129,7 @@ public class UserController {
     @ApiOperationLog(description = "更新用户信息")
     @SaCheckLogin
     @Operation(summary = "更新用户信息", description = "更新当前登录用户的信息")
+    @Deprecated
     public ResponseEntity<Void> updateUser(@RequestBody UpdateUserRequest user) {
         long userId = StpUtil.getLoginIdAsLong();
         if (userId != user.getId()) {
@@ -128,6 +140,44 @@ public class UserController {
                 .code(ResponseCode.SUCCESS.getCode())
                 .info("用户信息更新成功")
                 .build();
+    }
+    
+    /**
+     * 更新用户资料
+     * 只允许用户修改自己的资料，用户ID从token中获取，防止越权
+     * 
+     * @param request 更新用户资料请求
+     * @return 响应结果
+     */
+    @PostMapping("/profile/update")
+    @ApiOperationLog(description = "更新用户资料")
+    @SaCheckLogin
+    @Operation(summary = "更新用户资料", description = "更新当前登录用户的资料信息，用户ID从token中获取，防止越权")
+    public ResponseEntity<UserResponse> updateUserProfile(@RequestBody @Valid UpdateUserProfileRequest request) {
+        try {
+            // 从token中获取当前登录用户ID，确保安全性
+            Long userId = StpUtil.getLoginIdAsLong();
+            log.info("更新用户资料，用户ID：{}", userId);
+            
+            // 调用服务层更新用户资料
+            userService.updateUserProfile(userId, request);
+            
+            // 获取更新后的用户信息并返回
+            UserEntity updatedUser = userService.getUserInfo(userId);
+            UserResponse userResponse = userVOConverter.convertToUserResponse(updatedUser);
+            
+            return ResponseEntity.<UserResponse>builder()
+                    .code(ResponseCode.SUCCESS.getCode())
+                    .data(userResponse)
+                    .info("用户资料更新成功")
+                    .build();
+        } catch (BusinessException e) {
+            log.warn("更新用户资料失败：{}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("更新用户资料异常", e);
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "更新用户资料失败");
+        }
     }
     
     @GetMapping("/ranking")
@@ -167,5 +217,52 @@ public class UserController {
                 .code(ResponseCode.SUCCESS.getCode())
                 .data(pageResponse)
                 .build();
+    }
+    
+    @GetMapping("/profile/{userId}")
+    @Operation(summary = "获取个人主页", description = "获取指定用户的个人主页数据，包含基本信息、统计数据等")
+    @ApiOperationLog(description = "获取个人主页")
+    public ResponseEntity<UserProfileVO> getUserProfile(
+            @Parameter(description = "用户ID") @PathVariable Long userId) {
+        log.info("获取个人主页，用户ID：{}", userId);
+        
+        try {
+            // 获取当前登录用户ID（可能为null，表示未登录）
+            Long currentUserId = null;
+            try {
+                if (StpUtil.isLogin()) {
+                    currentUserId = StpUtil.getLoginIdAsLong();
+                }
+            } catch (Exception e) {
+                // 未登录，忽略
+                log.debug("用户未登录，currentUserId为null");
+            }
+            
+            // 调用应用服务获取个人主页数据
+            UserProfileApplicationService.UserProfileData profileData = 
+                    userProfileApplicationService.getUserProfile(userId, currentUserId);
+            
+            // 转换为VO
+            UserProfileVO profileVO = userProfileVOConverter.convertToUserProfileVO(profileData);
+            
+            return ResponseEntity.<UserProfileVO>builder()
+                    .code(ResponseCode.SUCCESS.getCode())
+                    .data(profileVO)
+                    .info("获取个人主页成功")
+                    .build();
+                    
+        } catch (BusinessException e) {
+            log.warn("获取个人主页失败，用户ID：{}，错误：{}", userId, e.getMessage());
+            return ResponseEntity.<UserProfileVO>builder()
+                    .code(e.getCode() != null ? e.getCode() : ResponseCode.UN_ERROR.getCode())
+                    .info(e.getMessage())
+                    .build();
+        } catch (Exception e) {
+            log.error("获取个人主页失败，用户ID：{}", userId, e);
+            return ResponseEntity.<UserProfileVO>builder()
+                    .code(ResponseCode.SYSTEM_ERROR.getCode())
+                    .info("获取个人主页失败：" + e.getMessage())
+                    .build();
+        }
     }
 }

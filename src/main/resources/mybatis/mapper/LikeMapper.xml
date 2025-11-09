@@ -98,5 +98,22 @@
         AND type = #{type}
         AND status = 1
     </select>
+    
+    <select id="findByUserId" resultType="cn.xu.infrastructure.persistent.po.Like">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM `like`
+        WHERE user_id = #{userId}
+        AND status = 1
+        ORDER BY create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+    
+    <select id="countByUserId" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM `like`
+        WHERE user_id = #{userId}
+        AND status = 1
+    </select>
 
 </mapper>

@@ -3,8 +3,11 @@ package cn.xu.api.web.controller;
 import cn.xu.common.ResponseCode;
 import cn.xu.common.annotation.ApiOperationLog;
 import cn.xu.common.request.PageRequest;
+import cn.xu.common.response.PageResponse;
 import cn.xu.common.response.ResponseEntity;
+import cn.xu.api.web.model.vo.user.UserTopicItemVO;
 import cn.xu.domain.post.model.entity.TopicEntity;
+import cn.xu.domain.post.repository.IPostTopicRepository;
 import cn.xu.domain.post.service.IPostTopicService;
 import cn.xu.domain.post.service.ITopicService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -16,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 话题控制器
@@ -31,6 +35,8 @@ public class TopicController {
     private ITopicService topicService;
     @Resource
     private IPostTopicService postTopicService;
+    @Resource
+    private IPostTopicRepository postTopicRepository;
 
     /**
      * 创建话题
@@ -196,5 +202,88 @@ public class TopicController {
                     .info("设置帖子话题失败: " + e.getMessage())
                     .build();
         }
+    }
+    
+    /**
+     * 获取用户话题列表
+     *
+     * @param userId 用户ID
+     * @param pageRequest 分页请求
+     * @return 用户话题列表
+     */
+    @GetMapping("/user/{userId}")
+    @Operation(summary = "获取用户话题列表", description = "根据用户ID获取该用户参与的话题列表")
+    @ApiOperationLog(description = "获取用户话题列表")
+    public ResponseEntity<PageResponse<List<UserTopicItemVO>>> getUserTopics(
+            @Parameter(description = "用户ID") @PathVariable Long userId,
+            PageRequest pageRequest) {
+        try {
+            log.info("获取用户话题列表，用户ID：{}", userId);
+            
+            int pageNo = pageRequest.getPageNo() != null ? pageRequest.getPageNo() : 1;
+            int pageSize = pageRequest.getPageSize() != null ? pageRequest.getPageSize() : 10;
+            int offset = (pageNo - 1) * pageSize;
+            
+            // 获取用户话题统计信息
+            List<IPostTopicRepository.UserTopicStats> topicStatsList = 
+                    postTopicRepository.getTopicStatsByUserId(userId, offset, pageSize);
+            
+            // 统计总数
+            Long total = postTopicRepository.countTopicsByUserId(userId);
+            
+            // 转换为VO
+            List<UserTopicItemVO> topicItemList = convertToUserTopicItemVOList(topicStatsList);
+            
+            // 构建分页响应
+            PageResponse<List<UserTopicItemVO>> pageResponse = 
+                    PageResponse.ofList(pageNo, pageSize, total != null ? total : 0L, topicItemList);
+            
+            return ResponseEntity.<PageResponse<List<UserTopicItemVO>>>builder()
+                    .code(ResponseCode.SUCCESS.getCode())
+                    .data(pageResponse)
+                    .info("获取用户话题列表成功")
+                    .build();
+                    
+        } catch (Exception e) {
+            log.error("获取用户话题列表失败，用户ID：{}", userId, e);
+            return ResponseEntity.<PageResponse<List<UserTopicItemVO>>>builder()
+                    .code(ResponseCode.UN_ERROR.getCode())
+                    .info("获取用户话题列表失败: " + e.getMessage())
+                    .build();
+        }
+    }
+    
+    /**
+     * 将话题统计信息转换为VO列表
+     */
+    private List<UserTopicItemVO> convertToUserTopicItemVOList(List<IPostTopicRepository.UserTopicStats> statsList) {
+        if (statsList == null || statsList.isEmpty()) {
+            return new ArrayList<>();
+        }
+        
+        return statsList.stream().map(stats -> {
+            // 获取话题详情
+            TopicEntity topic = topicService.getTopicById(stats.getTopicId());
+            
+            if (topic == null) {
+                // 如果话题不存在，返回基本信息
+                return UserTopicItemVO.builder()
+                        .topicId(stats.getTopicId())
+                        .topicName("未知话题")
+                        .postCount(stats.getPostCount())
+                        .lastPostTime(stats.getLastPostTime())
+                        .totalUsageCount(0L)
+                        .build();
+            }
+            
+            return UserTopicItemVO.builder()
+                    .topicId(topic.getId())
+                    .topicName(topic.getName())
+                    .topicDescription(topic.getDescription())
+                    .postCount(stats.getPostCount())
+                    .lastPostTime(stats.getLastPostTime())
+                    .totalUsageCount(topic.getUsageCount() != null ? (long) topic.getUsageCount() : 0L)
+                    .build();
+        }).collect(Collectors.toList());
     }
 }

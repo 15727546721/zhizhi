@@ -2,6 +2,7 @@ package cn.xu.domain.user.service;
 
 import cn.xu.api.system.model.dto.user.SysUserRequest;
 import cn.xu.api.web.model.dto.user.UpdateUserRequest;
+import cn.xu.api.web.model.dto.user.UpdateUserProfileRequest;
 import cn.xu.api.web.model.dto.user.UserLoginRequest;
 import cn.xu.api.web.model.dto.user.UserRegisterRequest;
 import cn.xu.common.request.PageRequest;
@@ -122,8 +123,19 @@ public interface IUserService {
      * 更新用户信息
      *
      * @param user
+     * @deprecated 请使用 updateUserProfile 方法
      */
+    @Deprecated
     void update(UpdateUserRequest user);
+    
+    /**
+     * 更新用户资料
+     * 只允许用户修改自己的资料，用户ID从token中获取
+     * 
+     * @param userId 用户ID（从token中获取，确保安全性）
+     * @param request 更新用户资料请求
+     */
+    void updateUserProfile(Long userId, UpdateUserProfileRequest request);
 
     /**
      * 批量获取用户信息

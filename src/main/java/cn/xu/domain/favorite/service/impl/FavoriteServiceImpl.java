@@ -219,8 +219,18 @@ public class FavoriteServiceImpl implements IFavoriteService {
     
     @Override
     public List<Long> getFavoritedTargetIds(Long userId, String targetType) {
+        // 将字符串转换为枚举
         TargetType targetTypeEnum = TargetType.fromCode(targetType);
-        return favoriteRepository.findFavoritedTargetIdsByUserId(userId, targetTypeEnum.getDbCode());
+        String dbTargetType = targetTypeEnum.getDbCode();
+        return favoriteRepository.findFavoritedTargetIdsByUserId(userId, dbTargetType);
+    }
+
+    @Override
+    public List<Long> getFavoritedTargetIdsWithPage(Long userId, String targetType, Long folderId, int offset, int limit) {
+        // 将字符串转换为枚举
+        TargetType targetTypeEnum = TargetType.fromCode(targetType);
+        String dbTargetType = targetTypeEnum.getDbCode();
+        return favoriteRepository.findFavoritedTargetIdsByUserIdWithPage(userId, dbTargetType, folderId, offset, limit);
     }
     
     @Override

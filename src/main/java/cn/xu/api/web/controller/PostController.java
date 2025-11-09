@@ -8,6 +8,7 @@ import cn.xu.api.web.model.dto.post.PostPageQueryRequest;
 import cn.xu.api.web.model.dto.post.PublishOrDraftPostRequest;
 import cn.xu.api.web.model.dto.report.ReportRequestDTO;
 import cn.xu.api.web.model.vo.post.PostDetailResponse;
+import cn.xu.api.web.model.vo.post.PostListItemVO;
 import cn.xu.api.web.model.vo.post.PostListResponse;
 import cn.xu.api.web.model.vo.post.PostPageListResponse;
 import cn.xu.api.web.model.vo.post.PostSearchResponse;
@@ -77,6 +78,7 @@ public class PostController {
 
     /**
      * 将帖子实体列表转换为PostListResponse列表
+     * 使用扁平化的PostListItemVO，避免直接暴露领域实体
      */
     private List<PostListResponse> convertToPostListResponses(List<PostEntity> posts) {
         if (posts == null || posts.isEmpty()) {
@@ -103,15 +105,98 @@ public class PostController {
         java.util.Map<Long, UserEntity> userMap = users.stream()
                 .collect(Collectors.toMap(UserEntity::getId, user -> user, (existing, replacement) -> existing));
         
+        // 批量获取帖子的标签信息
+        List<Long> postIds = posts.stream()
+                .map(PostEntity::getId)
+                .filter(java.util.Objects::nonNull)
+                .collect(Collectors.toList());
+        
+        java.util.Map<Long, List<String>> postTagMap = new java.util.HashMap<>();
+        if (!postIds.isEmpty()) {
+            try {
+                // 批量获取帖子标签关系
+                List<IPostTagService.PostTagRelation> tagRelations = postTagService.batchGetTagIdsByPostIds(postIds);
+                
+                // 收集所有标签ID
+                Set<Long> allTagIds = new java.util.HashSet<>();
+                tagRelations.forEach(relation -> {
+                    if (relation.getTagIds() != null) {
+                        allTagIds.addAll(relation.getTagIds());
+                    }
+                });
+                
+                // 批量获取标签信息
+                java.util.Map<Long, String> tagMap = new java.util.HashMap<>();
+                if (!allTagIds.isEmpty()) {
+                    // 获取所有标签，然后过滤出需要的标签
+                    List<cn.xu.domain.post.model.entity.TagEntity> allTags = tagService.getTagList();
+                    if (allTags != null) {
+                        allTags.stream()
+                                .filter(tag -> allTagIds.contains(tag.getId()))
+                                .forEach(tag -> tagMap.put(tag.getId(), tag.getName()));
+                    }
+                }
+                
+                // 构建帖子ID到标签名称列表的映射
+                tagRelations.forEach(relation -> {
+                    if (relation.getTagIds() != null) {
+                        List<String> tagNames = relation.getTagIds().stream()
+                                .map(tagId -> tagMap.getOrDefault(tagId, ""))
+                                .filter(name -> name != null && !name.isEmpty())
+                                .collect(Collectors.toList());
+                        if (!tagNames.isEmpty()) {
+                            postTagMap.put(relation.getPostId(), tagNames);
+                        }
+                    }
+                });
+            } catch (Exception e) {
+                log.warn("批量获取帖子标签失败", e);
+            }
+        }
+        
+        // 构建最终的标签名称映射
+        java.util.Map<Long, String[]> finalTagMap = postTagMap.entrySet().stream()
+                .collect(Collectors.toMap(
+                        java.util.Map.Entry::getKey,
+                        entry -> entry.getValue().toArray(new String[0])
+                ));
+        
         return posts.stream()
                 .map(post -> {
-                    PostListResponse vo = new PostListResponse();
-                    vo.setPost(post);
-                    // 设置作者信息
-                    if (post.getUserId() != null) {
-                        vo.setUser(userMap.get(post.getUserId()));
-                    }
-                    return vo;
+                    // 获取用户信息
+                    UserEntity user = post.getUserId() != null ? userMap.get(post.getUserId()) : null;
+                    
+                    // 获取标签名称列表
+                    String[] tagNameList = finalTagMap.getOrDefault(post.getId(), new String[]{});
+                    
+                    // 构建扁平化的PostListItemVO
+                    PostListItemVO postItem = PostListItemVO.builder()
+                            .id(post.getId())
+                            .title(post.getTitle() != null ? post.getTitle().getValue() : null)
+                            .description(post.getDescription())
+                            .content(post.getContent() != null ? post.getContent().getValue() : null)
+                            .coverUrl(post.getCoverUrl())
+                            .type(post.getType() != null ? post.getType().getCode() : null)
+                            .status(post.getStatus() != null ? post.getStatus().getCode() : null)
+                            .userId(post.getUserId())
+                            .nickname(user != null ? user.getNickname() : null)
+                            .avatar(user != null ? user.getAvatar() : null)
+                            .viewCount(post.getViewCount())
+                            .likeCount(post.getLikeCount())
+                            .commentCount(post.getCommentCount())
+                            .favoriteCount(post.getFavoriteCount())
+                            .createTime(post.getCreateTime())
+                            .updateTime(post.getUpdateTime())
+                            .publishTime(post.getPublishTime())
+                            .tagNameList(tagNameList)
+                            .build();
+                    
+                    // 构建PostListResponse（同时设置postItem、post和user以保持兼容性）
+                    return PostListResponse.builder()
+                            .postItem(postItem)
+                            .post(post)
+                            .user(user)
+                            .build();
                 })
                 .collect(Collectors.toList());
     }
@@ -759,6 +844,102 @@ public class PostController {
             return ResponseEntity.<List<PostEntity>>builder()
                     .code(ResponseCode.UN_ERROR.getCode())
                     .info("获取回答列表失败")
+                    .build();
+        }
+    }
+
+    @PostMapping("/my")
+    @Operation(summary = "获取我的帖子列表")
+    @SaCheckLogin
+    @ApiOperationLog(description = "获取我的帖子列表")
+    public ResponseEntity<PageResponse<List<PostListResponse>>> getMyPosts(@RequestBody Map<String, Object> request) {
+        try {
+            Long userId = StpUtil.getLoginIdAsLong();
+            Integer pageNo = request.get("pageNo") != null ? Integer.valueOf(request.get("pageNo").toString()) : 1;
+            Integer pageSize = request.get("pageSize") != null ? Integer.valueOf(request.get("pageSize").toString()) : 10;
+            String status = request.get("status") != null ? request.get("status").toString() : "PUBLISHED";
+            String type = request.get("type") != null ? request.get("type").toString() : null;
+
+            // 参数校验
+            postValidationService.validatePageParams(pageNo, pageSize);
+
+            // 查询我的帖子列表
+            List<PostEntity> posts = postService.getUserPosts(userId, status, pageNo, pageSize);
+            
+            // 转换为PostListResponse列表
+            List<PostListResponse> postListResponses = convertToPostListResponses(posts);
+            
+            // 获取总数
+            long total = postService.countPublishedByUserId(userId);
+            
+            // 创建PageResponse对象
+            PageResponse<List<PostListResponse>> pageResponse = PageResponse.ofList(
+                pageNo, 
+                pageSize, 
+                total, 
+                postListResponses
+            );
+            
+            return ResponseEntity.<PageResponse<List<PostListResponse>>>builder()
+                    .code(ResponseCode.SUCCESS.getCode())
+                    .data(pageResponse)
+                    .build();
+        } catch (Exception e) {
+            log.error("获取我的帖子列表失败", e);
+            return ResponseEntity.<PageResponse<List<PostListResponse>>>builder()
+                    .code(ResponseCode.UN_ERROR.getCode())
+                    .info("获取帖子列表失败: " + e.getMessage())
+                    .build();
+        }
+    }
+
+    @PostMapping("/user/{userId}")
+    @Operation(summary = "获取指定用户的帖子列表")
+    @ApiOperationLog(description = "获取指定用户的帖子列表")
+    public ResponseEntity<PageResponse<List<PostListResponse>>> getUserPosts(
+            @PathVariable Long userId,
+            @RequestBody Map<String, Object> request) {
+        try {
+            Integer pageNo = request.get("pageNo") != null ? Integer.valueOf(request.get("pageNo").toString()) : 1;
+            Integer pageSize = request.get("pageSize") != null ? Integer.valueOf(request.get("pageSize").toString()) : 10;
+            String status = request.get("status") != null ? request.get("status").toString() : "PUBLISHED";
+            String type = request.get("type") != null ? request.get("type").toString() : null;
+
+            // 参数校验
+            if (userId == null || userId <= 0) {
+                return ResponseEntity.<PageResponse<List<PostListResponse>>>builder()
+                        .code(ResponseCode.ILLEGAL_PARAMETER.getCode())
+                        .info("用户ID不能为空")
+                        .build();
+            }
+            postValidationService.validatePageParams(pageNo, pageSize);
+
+            // 查询指定用户的帖子列表（只返回已发布的）
+            List<PostEntity> posts = postService.getUserPosts(userId, status, pageNo, pageSize);
+            
+            // 转换为PostListResponse列表
+            List<PostListResponse> postListResponses = convertToPostListResponses(posts);
+            
+            // 获取总数
+            long total = postService.countPublishedByUserId(userId);
+            
+            // 创建PageResponse对象
+            PageResponse<List<PostListResponse>> pageResponse = PageResponse.ofList(
+                pageNo, 
+                pageSize, 
+                total, 
+                postListResponses
+            );
+            
+            return ResponseEntity.<PageResponse<List<PostListResponse>>>builder()
+                    .code(ResponseCode.SUCCESS.getCode())
+                    .data(pageResponse)
+                    .build();
+        } catch (Exception e) {
+            log.error("获取用户帖子列表失败，userId: {}", userId, e);
+            return ResponseEntity.<PageResponse<List<PostListResponse>>>builder()
+                    .code(ResponseCode.UN_ERROR.getCode())
+                    .info("获取帖子列表失败: " + e.getMessage())
                     .build();
         }
     }

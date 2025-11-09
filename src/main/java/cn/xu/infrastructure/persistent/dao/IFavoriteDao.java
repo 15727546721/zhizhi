@@ -34,6 +34,16 @@ public interface IFavoriteDao {
     List<Long> selectFavoritedTargetIdsByUserId(@Param("userId") Long userId, @Param("targetType") String targetType);
 
     /**
+     * 分页获取用户收藏的内容ID列表
+     */
+    List<Long> selectFavoritedTargetIdsByUserIdWithPage(
+            @Param("userId") Long userId, 
+            @Param("targetType") String targetType,
+            @Param("folderId") Long folderId,
+            @Param("offset") int offset,
+            @Param("limit") int limit);
+
+    /**
      * 统计用户收藏的内容数量
      */
     int countFavoritedItemsByUserId(@Param("userId") Long userId, @Param("targetType") String targetType);

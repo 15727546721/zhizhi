@@ -291,6 +291,23 @@
     WHERE target_type = #{targetType} AND target_id = #{targetId}
   </select>
   
+  <!-- 统计用户的评论数 -->
+  <select id="countByUserId" resultType="java.lang.Long">
+    SELECT COUNT(*)
+    FROM comment
+    WHERE user_id = #{userId}
+  </select>
+  
+  <!-- 根据用户ID查询评论列表（分页） -->
+  <select id="findByUserId" resultMap="BaseResultMap">
+    SELECT
+    <include refid="Base_Column_List"/>
+    FROM comment
+    WHERE user_id = #{userId}
+    ORDER BY create_time DESC
+    LIMIT #{offset}, #{limit}
+  </select>
+  
   <!-- 批量统计目标的评论数 -->
   <select id="batchCountByTargetIds" resultType="cn.xu.infrastructure.persistent.dao.CommentMapper$CommentCountResult">
     SELECT target_id as targetId, COUNT(*) as count
