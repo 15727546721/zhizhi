@@ -1,4 +1,4 @@
-package cn.xu.infrastructure.util;
+  package cn.xu.infrastructure.util;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

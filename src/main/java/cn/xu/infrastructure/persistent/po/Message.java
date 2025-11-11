@@ -58,6 +58,11 @@ public class Message implements Serializable {
     private Integer isRead;
 
     /**
+     * 消息状态：1-正常（对方可收到） 2-未送达（对方收不到，仅数据库记录）
+     */
+    private Integer status;
+
+    /**
      * 创建时间
      */
     private Date createTime;

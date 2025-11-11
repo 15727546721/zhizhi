@@ -13,19 +13,20 @@
         <result property="content" column="content" jdbcType="VARCHAR"/>
         <result property="targetId" column="target_id" jdbcType="BIGINT"/>
         <result property="isRead" column="is_read" jdbcType="TINYINT"/>
+        <result property="status" column="status" jdbcType="TINYINT"/>
         <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
         <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        id,type,sender_id,receiver_id,title,content,target_id,is_read,create_time,update_time
+        id,type,sender_id,receiver_id,title,content,target_id,is_read,status,create_time,update_time
     </sql>
 
     <insert id="insert" parameterType="cn.xu.infrastructure.persistent.po.Message" useGeneratedKeys="true" keyProperty="id">
         insert into message
-        (type, sender_id, receiver_id, title, content, target_id, is_read, create_time, update_time)
+        (type, sender_id, receiver_id, title, content, target_id, is_read, status, create_time, update_time)
         values
-        (#{type}, #{senderId}, #{receiverId}, #{title}, #{content}, #{targetId}, #{isRead}, #{createTime}, #{updateTime})
+        (#{type}, #{senderId}, #{receiverId}, #{title}, #{content}, #{targetId}, #{isRead}, #{status}, #{createTime}, #{updateTime})
     </insert>
 
     <update id="update" parameterType="cn.xu.infrastructure.persistent.po.Message">
@@ -38,6 +39,7 @@
             <if test="content != null">content = #{content},</if>
             <if test="targetId != null">target_id = #{targetId},</if>
             <if test="isRead != null">is_read = #{isRead},</if>
+            <if test="status != null">status = #{status},</if>
             update_time = #{updateTime}
         </set>
         where id = #{id}
@@ -89,5 +91,103 @@
 
     <select id="exists" resultType="boolean">
         select count(1) from message where id = #{id}
+    </select>
+    
+    <!-- ==================== 私信相关查询 ==================== -->
+    
+    <!-- 查询接收者的私信（只查询status=1的消息） -->
+    <select id="selectPrivateMessagesByReceiver" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM message
+        WHERE type = 2
+        AND receiver_id = #{receiverId}
+        AND sender_id = #{senderId}
+        AND status = #{status}
+        ORDER BY create_time ASC
+        LIMIT #{offset}, #{limit}
+    </select>
+    
+    <!-- 查询发送者的私信（查询所有消息，包括status=2） -->
+    <select id="selectPrivateMessagesBySender" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM message
+        WHERE type = 2
+        AND sender_id = #{senderId}
+        AND receiver_id = #{receiverId}
+        ORDER BY create_time ASC
+        LIMIT #{offset}, #{limit}
+    </select>
+    
+    <!-- 查询两个用户之间的所有私信（合并发送和接收）
+         分页逻辑：第一页显示最新的N条消息（按时间正序，最新的在最后）
+         后续页面显示更早的消息（按时间正序）
+         
+         防骚扰机制：
+         1. 发送方能看到自己发送的所有消息（status=1,2,3）
+         2. 接收方只能看到 status=1 的消息（已投递）
+            - status=1: 首条消息、对方回复后的消息、互关消息
+            - status=2: 防骚扰拦截的消息（未回复前的后续消息）
+            - status=3: 被屏蔽的消息
+    -->
+    <select id="selectPrivateMessagesBetweenUsers" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM message
+        WHERE type = 2
+        AND (
+            -- 当前用户作为发送者的消息（可以看到所有状态，包括status=2,3）
+            (sender_id = #{userId1} AND receiver_id = #{userId2})
+            OR 
+            -- 当前用户作为接收者的消息（只能看到status=1的消息）
+            (sender_id = #{userId2} AND receiver_id = #{userId1} AND status = 1)
+        )
+        ORDER BY create_time DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+    
+    <!-- 统计未读私信数（只统计status=1的已投递未读消息） -->
+    <select id="countUnreadPrivateMessages" resultType="long">
+        SELECT COUNT(1)
+        FROM message
+        WHERE type = 2
+        AND receiver_id = #{receiverId}
+        AND sender_id = #{senderId}
+        AND is_read = 0
+        AND status = 1
+    </select>
+    
+    <!-- 标记私信为已读 -->
+    <update id="markPrivateMessagesAsRead">
+        UPDATE message
+        SET is_read = 1,
+            update_time = NOW()
+        WHERE type = 2
+        AND receiver_id = #{receiverId}
+        AND sender_id = #{senderId}
+        AND is_read = 0
+    </update>
+    
+    <!-- 更新消息状态 -->
+    <update id="updateMessageStatus">
+        UPDATE message
+        SET status = #{newStatus},
+            update_time = NOW()
+        WHERE type = 2
+        AND sender_id = #{senderId}
+        AND receiver_id = #{receiverId}
+        AND status = #{oldStatus}
+    </update>
+    
+    <!-- 查询用户的所有对话的最后一条消息（优化版本：使用conversation表） -->
+    <select id="selectLastPrivateMessagesByUser" resultMap="BaseResultMap">
+        SELECT m.*
+        FROM message m
+        INNER JOIN conversation c ON (
+            (c.user_id_1 = #{userId} AND (m.sender_id = c.user_id_2 OR m.receiver_id = c.user_id_2))
+            OR (c.user_id_2 = #{userId} AND (m.sender_id = c.user_id_1 OR m.receiver_id = c.user_id_1))
+        )
+        WHERE m.type = 2
+        AND m.create_time = c.last_message_time
+        ORDER BY c.last_message_time DESC
+        LIMIT #{limit} OFFSET #{offset}
     </select>
 </mapper>

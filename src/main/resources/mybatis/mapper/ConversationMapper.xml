@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.xu.infrastructure.persistent.dao.ConversationMapper">
+    
+    <resultMap id="BaseResultMap" type="cn.xu.infrastructure.persistent.po.Conversation">
+        <id column="id" property="id"/>
+        <result column="user_id_1" property="userId1"/>
+        <result column="user_id_2" property="userId2"/>
+        <result column="created_by" property="createdBy"/>
+        <result column="last_message_time" property="lastMessageTime"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+    
+    <sql id="Base_Column_List">
+        id, user_id_1, user_id_2, created_by, last_message_time, create_time, update_time
+    </sql>
+    
+    <insert id="insert" parameterType="cn.xu.infrastructure.persistent.po.Conversation" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO `conversation` (user_id_1, user_id_2, created_by, last_message_time, create_time, update_time)
+        VALUES (#{userId1}, #{userId2}, #{createdBy}, #{lastMessageTime}, #{createTime}, #{updateTime})
+    </insert>
+    
+    <update id="update" parameterType="cn.xu.infrastructure.persistent.po.Conversation">
+        UPDATE `conversation`
+        SET last_message_time = #{lastMessageTime},
+            update_time = #{updateTime}
+        WHERE id = #{id}
+    </update>
+    
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM `conversation`
+        WHERE id = #{id}
+    </select>
+    
+    <select id="selectByUserPair" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM `conversation`
+        WHERE user_id_1 = #{userId1} AND user_id_2 = #{userId2}
+        LIMIT 1
+    </select>
+    
+    <select id="existsConversation" resultType="boolean">
+        SELECT COUNT(1) > 0
+        FROM `conversation`
+        WHERE user_id_1 = #{userId1} AND user_id_2 = #{userId2}
+    </select>
+    
+    <select id="selectByUserId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM `conversation`
+        WHERE user_id_1 = #{userId} OR user_id_2 = #{userId}
+        ORDER BY last_message_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+    
+    <delete id="deleteById">
+        DELETE FROM `conversation`
+        WHERE id = #{id}
+    </delete>
+</mapper>
+

@@ -21,7 +21,9 @@ public class FavoriteCacheRepository {
     private static final String FAVORITE_COUNT_KEY_PREFIX = "favorite:count:";
     private static final String USER_FAVORITE_KEY_PREFIX = "user:favorite:";
     private static final String FOLDER_CONTENT_COUNT_PREFIX = "favorite:folder:content:";
-    private static final int DEFAULT_CACHE_TTL = 3600; // 1小时
+    private static final int DEFAULT_CACHE_TTL = 3600; // 1小时（用于用户关系缓存）
+    // 计数类数据不应该过期，使用一个很长的过期时间（30天）作为兜底
+    private static final int COUNT_CACHE_TTL = 30 * 24 * 3600; // 30天
     
     /**
      * 获取目标的收藏数
@@ -58,8 +60,8 @@ public class FavoriteCacheRepository {
         String key = buildFavoriteCountKey(targetId, targetType);
         try {
             Long newValue = redisTemplate.opsForValue().increment(key, delta);
-            // 设置过期时间
-            redisTemplate.expire(key, DEFAULT_CACHE_TTL, TimeUnit.SECONDS);
+            // 计数类数据使用长期过期时间，避免数据丢失
+            redisTemplate.expire(key, COUNT_CACHE_TTL, TimeUnit.SECONDS);
             return newValue != null ? newValue : 0L;
         } catch (Exception e) {
             log.error("增加收藏数失败 - key: {}", key, e);
@@ -77,7 +79,8 @@ public class FavoriteCacheRepository {
     public void setFavoriteCount(Long targetId, String targetType, Long count) {
         String key = buildFavoriteCountKey(targetId, targetType);
         try {
-            redisTemplate.opsForValue().set(key, count, DEFAULT_CACHE_TTL, TimeUnit.SECONDS);
+            // 计数类数据使用长期过期时间，避免数据丢失
+            redisTemplate.opsForValue().set(key, count, COUNT_CACHE_TTL, TimeUnit.SECONDS);
         } catch (Exception e) {
             log.error("设置收藏数失败 - key: {}", key, e);
         }

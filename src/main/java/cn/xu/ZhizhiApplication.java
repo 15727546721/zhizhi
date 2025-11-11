@@ -22,6 +22,7 @@ import java.net.UnknownHostException;
  */
 @Slf4j
 @SpringBootApplication(
+    scanBasePackages = {"cn.xu"},
     exclude = {
         ElasticsearchDataAutoConfiguration.class,
         ElasticsearchRepositoriesAutoConfiguration.class

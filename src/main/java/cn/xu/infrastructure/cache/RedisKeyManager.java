@@ -245,4 +245,46 @@ public class RedisKeyManager {
     public static String notificationCountKey(Long userId) {
         return key("notification", "count", userId);
     }
+
+    // ===================== 私信模块 =====================
+
+    /**
+     * 私信未读数Key
+     * @param receiverId 接收者ID
+     * @param senderId 发送者ID
+     * @return Redis Key
+     */
+    public static String privateMessageUnreadCountKey(Long receiverId, Long senderId) {
+        return key("private_message", "unread", receiverId, senderId);
+    }
+
+    /**
+     * 用户所有私信未读数Key（Hash结构，存储所有对话的未读数）
+     * @param userId 用户ID
+     * @return Redis Key
+     */
+    public static String privateMessageUnreadCountMapKey(Long userId) {
+        return key("private_message", "unread_map", userId);
+    }
+
+    /**
+     * 对话列表Key
+     * @param userId 用户ID
+     * @param pageNo 页码
+     * @param pageSize 每页数量
+     * @return Redis Key
+     */
+    public static String privateMessageConversationListKey(Long userId, Integer pageNo, Integer pageSize) {
+        return key("private_message", "conversation_list", userId, pageNo, pageSize);
+    }
+
+    /**
+     * 对话列表缓存过期时间（秒）
+     */
+    public static final int CONVERSATION_LIST_CACHE_TTL = 300; // 5分钟
+
+    /**
+     * 未读数缓存过期时间（秒）
+     */
+    public static final int UNREAD_COUNT_CACHE_TTL = 600; // 10分钟
 }

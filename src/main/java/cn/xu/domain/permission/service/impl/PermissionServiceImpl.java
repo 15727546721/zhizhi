@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
  * @author Lily
  */
 @Slf4j
-@Service
+@Service("permissionService")
 public class PermissionServiceImpl implements IPermissionService {
 
     @Resource
