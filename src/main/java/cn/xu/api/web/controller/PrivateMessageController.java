@@ -211,6 +211,22 @@ public class PrivateMessageController {
                 .build();
     }
     
+    @Operation(summary = "查询当前用户是否屏蔽了对方")
+    @GetMapping("/users/{userId}/is-blocked")
+    @SaCheckLogin
+    @ApiOperationLog(description = "查询当前用户是否屏蔽了对方")
+    public ResponseEntity<Boolean> checkIfBlocked(
+            @Parameter(description = "对方用户ID", required = true)
+            @PathVariable Long userId) {
+        Long currentUserId = StpUtil.getLoginIdAsLong();
+        // 当前用户是否屏蔽了对方：existsBlock(blocker=current, blocked=other)
+        boolean hasBlocked = privateMessageApplicationService.existsBlock(currentUserId, userId);
+        return ResponseEntity.<Boolean>builder()
+                .code(ResponseCode.SUCCESS.getCode())
+                .data(hasBlocked)
+                .build();
+    }
+    
     @Operation(summary = "获取屏蔽列表")
     @GetMapping("/users/blocks")
     @SaCheckLogin
