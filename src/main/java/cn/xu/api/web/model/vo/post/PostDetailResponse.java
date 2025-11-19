@@ -2,6 +2,7 @@ package cn.xu.api.web.model.vo.post;
 
 import cn.xu.api.web.model.vo.user.UserResponse;
 import cn.xu.domain.post.model.entity.TagEntity;
+import cn.xu.domain.post.model.entity.TopicEntity;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -40,6 +41,9 @@ public class PostDetailResponse {
     
     @Schema(description = "标签列表")
     private List<TagEntity> tags;
+    
+    @Schema(description = "话题列表")
+    private List<TopicEntity> topics;
     
     @Schema(description = "话题ID列表")
     private List<Long> topicIds;

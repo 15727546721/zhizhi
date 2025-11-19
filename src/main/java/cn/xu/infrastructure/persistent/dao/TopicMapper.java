@@ -56,4 +56,12 @@ public interface TopicMapper {
      * @return 话题PO
      */
     Topic findByName(@Param("name") String name);
+    
+    /**
+     * 根据ID列表批量查询话题
+     *
+     * @param ids 话题ID列表
+     * @return 话题PO列表
+     */
+    List<Topic> selectByIds(@Param("ids") List<Long> ids);
 }

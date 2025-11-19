@@ -44,4 +44,12 @@ public class TopicServiceImpl implements ITopicService {
     public List<TopicEntity> getHotTopics(int limit) {
         return topicRepository.getHotTopics(limit);
     }
+    
+    @Override
+    public List<TopicEntity> batchGetTopics(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+        return topicRepository.getTopicsByIds(ids);
+    }
 }

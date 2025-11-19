@@ -250,12 +250,12 @@ public interface IPostRepository {
     /**
      * 统计热门帖子数量
      *
-     * @return 帖子数量
+     * @return 热门帖总数
      */
     long countHotPosts();
     
     /**
-     * 统计指定标签的帖子数量
+     * 统计指定标签下的帖子数量
      *
      * @param tagId 标签ID
      * @return 帖子数量
@@ -263,7 +263,7 @@ public interface IPostRepository {
     long countByTagId(Long tagId);
     
     /**
-     * 统计指定用户的帖子数量
+     * 统计由多个用户发布的帖子数量
      *
      * @param userIds 用户ID列表
      * @return 帖子数量
@@ -273,33 +273,60 @@ public interface IPostRepository {
     /**
      * 统计精选帖子数量
      *
-     * @return 帖子数量
+     * @return 精选帖数量
      */
     long countFeaturedPosts();
     
     /**
      * 统计所有帖子数量
      *
-     * @return 帖子数量
+     * @return 总帖子数
      */
     long countAll();
     
     /**
-     * 统计用户已发布帖子数量
+     * 统计用户已发布的帖子数量
      *
      * @param userId 用户ID
-     * @return 已发布帖子数量
+     * @return 帖子数量
      */
     long countPublishedByUserId(Long userId);
     
     /**
-     * 根据帖子类型查找相关帖子
+     * 根据排序规则分页查询帖子
      *
-     * @param postType 帖子类型
-     * @param excludePostId 要排除的帖子ID
-     * @param limit 返回的帖子数量限制
-     * @return 相关帖子列表
+     * @param offset 偏移量
+     * @param limit  数量
+     * @param sortBy 排序字段
+     * @return 帖子列表
+     */
+    List<PostEntity> findAllWithSort(int offset, int limit, String sortBy);
+    
+    /**
+     * 查询同类型的相关推荐帖子
+     *
+     * @param postType      帖子类型
+     * @param excludePostId 排除的帖子ID
+     * @param limit         数量
+     * @return 推荐帖子列表
      */
     List<PostEntity> findRelatedPostsByType(PostType postType, Long excludePostId, int limit);
-
+    
+    /**
+     * 根据话题分页查询帖子
+     *
+     * @param topicId 话题ID
+     * @param offset  偏移量
+     * @param limit   数量
+     * @return 帖子列表
+     */
+    List<PostEntity> findPostsByTopicId(Long topicId, int offset, int limit);
+    
+    /**
+     * 统计话题下的帖子数量
+     *
+     * @param topicId 话题ID
+     * @return 帖子数量
+     */
+    long countPostsByTopicId(Long topicId);
 }

@@ -503,4 +503,26 @@
         </foreach>
         ORDER BY create_time DESC
     </select>
+    <!-- 根据话题ID查询帖子列表 -->
+    <select id="findPostsByTopicId" resultMap="BaseResultMap">
+        SELECT p.id, p.user_id, p.category_id, p.type, p.status, p.title, p.content, p.cover_url, 
+               p.view_count, p.like_count, p.comment_count, p.favorite_count, p.is_featured, 
+               p.accepted_answer_id, p.publish_time, p.create_time, p.update_time
+        FROM post p
+        INNER JOIN post_topic pt ON p.id = pt.post_id
+        WHERE p.status = 1
+          AND pt.topic_id = #{topicId}
+        ORDER BY p.create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+    
+    <!-- 统计指定话题的帖子数量 -->
+    <select id="countPostsByTopicId" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM post p
+        INNER JOIN post_topic pt ON p.id = pt.post_id
+        WHERE p.status = 1
+          AND pt.topic_id = #{topicId}
+    </select>
+
 </mapper>

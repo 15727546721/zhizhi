@@ -42,6 +42,12 @@
         LIMIT #{offset}, #{limit}
     </select>
 
+    <select id="countPostsByTopicId" resultType="java.lang.Long">
+        SELECT COUNT(post_id)
+        FROM post_topic
+        WHERE topic_id = #{topicId}
+    </select>
+
     <select id="selectByPostIds" resultMap="BaseResultMap">
         SELECT
         <include refid="Base_Column_List"/>

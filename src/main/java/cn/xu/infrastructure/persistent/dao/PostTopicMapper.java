@@ -23,6 +23,9 @@ public interface PostTopicMapper {
     // 根据话题ID查询帖子ID列表
     List<Long> selectPostIdsByTopicId(@Param("topicId") Long topicId, @Param("offset") int offset, @Param("limit") int limit);
     
+    // 根据话题ID统计帖子数量
+    Long countPostsByTopicId(@Param("topicId") Long topicId);
+    
     // 根据帖子ID列表查询话题关联信息
     List<PostTopic> selectByPostIds(@Param("postIds") List<Long> postIds);
     

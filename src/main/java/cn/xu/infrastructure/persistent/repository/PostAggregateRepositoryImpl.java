@@ -298,6 +298,7 @@ public class PostAggregateRepositoryImpl implements IPostRepository {
      * @param sortBy 排序方式 (newest, most_commented, most_bookmarked, most_liked, popular)
      * @return 帖子列表
      */
+    @Override
     public List<PostEntity> findAllWithSort(int offset, int limit, String sortBy) {
         List<Post> posts = postMapper.getPostPageListWithSort(offset, limit, sortBy);
         return postConverter.toDomainEntities(posts);
@@ -456,5 +457,20 @@ public class PostAggregateRepositoryImpl implements IPostRepository {
         int safeLimit = Math.min(limit, 50); // 限制最大返回数量
         List<Post> posts = postMapper.findRelatedPostsByType(postType.name(), excludePostId, safeLimit);
         return postConverter.toDomainEntities(posts);
+    }
+
+    @Override
+    public List<PostEntity> findPostsByTopicId(Long topicId, int offset, int limit) {
+        List<Post> posts = postMapper.findPostsByTopicId(topicId, offset, limit);
+        return postConverter.toDomainEntities(posts);
+    }
+
+    @Override
+    public long countPostsByTopicId(Long topicId) {
+        if (topicId == null) {
+            return 0;
+        }
+        Long count = postMapper.countPostsByTopicId(topicId);
+        return count != null ? count : 0;
     }
 }

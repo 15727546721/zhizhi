@@ -309,58 +309,6 @@ public class HomeController {
         }
     }
 
-    @GetMapping("/recommend")
-    @Operation(summary = "获取推荐帖子")
-    public ResponseEntity<PageResponse<List<PostListResponse>>> getRecommendedPosts(
-            @Parameter(description = "页码，默认为1") @RequestParam(defaultValue = "1") int page,
-            @Parameter(description = "页面大小，默认为10") @RequestParam(defaultValue = "10") int size,
-            @Parameter(description = "分类ID，可选") @RequestParam(required = false) Long categoryId) {
-        try {
-            // 确保页码至少为1
-            int safePage = Math.max(1, page);
-            int safeSize = Math.max(1, Math.min(size, 100)); // 限制页面大小最大为100
-            
-            Long currentUserId = StpUtil.isLogin() ? StpUtil.getLoginIdAsLong() : null;
-            
-            // 统一使用推荐服务，它会根据用户是否有行为数据自动选择推荐策略：
-            // - 匿名用户（未登录）：热门+精选
-            // - 新用户（已登录但无行为数据）：热门+精选
-            // - 有行为数据的用户（已登录且有关注）：关注+热门+精选
-            List<PostEntity> recommendedPosts;
-            long total;
-            if (currentUserId != null) {
-                recommendedPosts = postService.findRecommendedPosts(currentUserId, safePage, safeSize, categoryId);
-                total = postService.countRecommendedPosts(currentUserId, categoryId);
-            } else {
-                // 未登录用户也使用推荐服务，会返回热门+精选
-                recommendedPosts = postService.findRecommendedPosts(null, safePage, safeSize, categoryId);
-                total = postService.countRecommendedPosts(null, categoryId);
-            }
-            
-            // 转换为PostListResponse列表
-            List<PostListResponse> postListResponses = convertToPostListResponses(recommendedPosts);
-            
-            // 创建PageResponse对象
-            PageResponse<List<PostListResponse>> pageResponse = PageResponse.ofList(
-                safePage, 
-                safeSize, 
-                total, 
-                postListResponses
-            );
-            
-            return ResponseEntity.<PageResponse<List<PostListResponse>>>builder()
-                    .code(ResponseCode.SUCCESS.getCode())
-                    .data(pageResponse)
-                    .build();
-        } catch (Exception e) {
-            log.error("获取推荐帖子失败", e);
-            return ResponseEntity.<PageResponse<List<PostListResponse>>>builder()
-                    .code(ResponseCode.UN_ERROR.getCode())
-                    .info("获取推荐帖子失败: " + e.getMessage())
-                    .build();
-        }
-    }
-
     @GetMapping("/related")
     @Operation(summary = "获取相关推荐帖子")
     public ResponseEntity<PageResponse<List<PostListResponse>>> getRelatedPosts(

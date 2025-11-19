@@ -27,6 +27,7 @@ public class PostVOConverter {
                                              String categoryName, 
                                              List<TagEntity> tags, 
                                              List<Long> topicIds,
+                                             List<cn.xu.domain.post.model.entity.TopicEntity> topics,
                                              Long acceptedAnswerId,
                                              boolean isLiked, 
                                              boolean isFavorited, 
@@ -46,6 +47,7 @@ public class PostVOConverter {
                 .coverUrl(post.getCoverUrl())
                 .categoryName(categoryName)
                 .tags(tags != null ? tags : Collections.emptyList())
+                .topics(topics != null ? topics : Collections.emptyList())
                 .topicIds(topicIds != null ? topicIds : Collections.emptyList())
                 .acceptedAnswerId(acceptedAnswerId)
                 .viewCount(post.getViewCount())

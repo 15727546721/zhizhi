@@ -20,16 +20,15 @@ import cn.xu.domain.like.service.ILikeService;
 import cn.xu.domain.post.model.aggregate.PostAggregate;
 import cn.xu.domain.post.model.entity.PostEntity;
 import cn.xu.domain.post.model.entity.TagEntity;
+import cn.xu.domain.post.model.entity.TopicEntity;
 import cn.xu.domain.post.model.valobj.PostStatus;
 import cn.xu.domain.post.model.valobj.PostType;
 import cn.xu.domain.post.repository.IPostRepository;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.service.IUserService;
 import cn.xu.infrastructure.cache.RedisService;
-import cn.xu.infrastructure.persistent.repository.PostAggregateRepositoryImpl;
 import cn.xu.infrastructure.transaction.TransactionParticipant;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -51,6 +50,8 @@ public class PostService implements IPostService, TransactionParticipant {
     @Resource
     private IPostTagService tagService;
     @Resource
+    private ITopicService topicService;
+    @Resource
     private IPostTopicService postTopicService;
     @Resource
     private ICommentService commentService;
@@ -70,9 +71,6 @@ public class PostService implements IPostService, TransactionParticipant {
     private RedisService redisService;
     @Resource
     private PostVOConverter postVOConverter;
-    @Resource
-    @org.springframework.beans.factory.annotation.Qualifier("simpleRecommendService")
-    private cn.xu.domain.recommend.service.IRecommendService recommendService;
     
     // 用于存储临时浏览量数据
     private final Map<Long, Long> viewCountBuffer = new HashMap<>();
@@ -442,135 +440,53 @@ public class PostService implements IPostService, TransactionParticipant {
             String userKey = "post:view:user:" + postId + ":" + userId;
             if (!redisService.hasKey(userKey)) {
                 shouldIncrement = true;
-                // 设置用户访问记录，5分钟过期
-                redisService.set(userKey, "1", 300);
+                // 设置用户访问记录，10分钟过期
+                redisService.set(userKey, "1", 600);
             }
         }
         
-        // 如果需要增加浏览量
         if (shouldIncrement) {
+            // 如果在事务中，暂存操作
+            if (tempOperation.get() != null) {
+                tempOperation.get().setOperation(PostOperationType.VIEW);
+                tempOperation.get().setPostId(postId);
+                log.debug("在事务中暂存帖子浏览操作: postId={}", postId);
+                return;
+            }
+            
             postRepository.incrementViewCount(postId);
-        }
-    }
-    
-    /**
-     * 更新帖子的话题关联
-     * 
-     * @param postId 帖子ID
-     * @param topicIds 话题ID列表
-     * @param userId 当前用户ID
-     */
-    public void updatePostTopics(Long postId, List<Long> topicIds, Long userId) {
-        // 获取现有帖子以验证权限
-        Optional<PostAggregate> existingAggregateOpt = postRepository.findById(postId);
-        if (!existingAggregateOpt.isPresent()) {
-            throw new IllegalArgumentException("帖子不存在");
-        }
-        
-        PostAggregate existingAggregate = existingAggregateOpt.get();
-        existingAggregate.validateOwnership(userId);
-        
-        // 更新话题关联
-        existingAggregate.setTopics(topicIds);
-        
-        // 如果在事务中，暂存操作
-        if (tempOperation.get() != null) {
-            tempOperation.get().setOperation(PostOperationType.UPDATE);
-            tempOperation.get().setPostAggregate(existingAggregate);
-            log.debug("在事务中暂存帖子话题更新操作: postId={}", postId);
-            return;
-        }
-        
-        postRepository.update(existingAggregate);
-    }
-    
-    /**
-     * 定时任务：批量更新浏览量到数据库
-     * 每5分钟执行一次
-     */
-    @Scheduled(fixedRate = 300000) // 5分钟
-    public void batchUpdateViewCount() {
-        // 批量更新浏览量的逻辑
-        try {
-            // 获取所有有浏览量更新的帖子ID
-            // 这里应该从Redis中获取所有有浏览量变化的帖子
-            // 由于RedisService中没有提供获取所有key的方法，我们暂时留空
-            // 在实际应用中，可以考虑使用Redis的scan命令或者维护一个专门的key来记录有更新的帖子ID
-            log.debug("定时任务：批量更新浏览量到数据库");
-        } catch (Exception e) {
-            log.error("批量更新浏览量失败", e);
         }
     }
 
     @Override
     public void updatePostHotScore(Long postId) {
-        PostEntity post = postQueryDomainService.findPostById(postId);
-        postHotScoreDomainService.updateHotScore(postId, post);
-    }
+        if (postId == null) {
+            log.warn("更新帖子热度失败：postId为空");
+            return;
+        }
 
-    @Override
-    public List<PostEntity> getPostPageListByCategoryId(Long categoryId, Integer pageNo, Integer pageSize) {
-        int offset = Math.max(0, (pageNo - 1) * pageSize);
-        return postRepository.findByCategoryId(categoryId, offset, pageSize);
-    }
-
-    @Override
-    public List<PostEntity> getPostPageList(Integer pageNo, Integer pageSize) {
-        int offset = Math.max(0, (pageNo - 1) * pageSize);
-        return postRepository.findAll(offset, pageSize);
-    }
-
-    @Override
-    public List<PostEntity> getPostPageList(PostPageQueryRequest request) {
-        int offset = Math.max(0, (request.getPageNo() - 1) * request.getPageSize());
-        // 根据排序方式查询帖子列表
-        switch (request.getSortBy()) {
-            case "newest":
-                return postRepository.findAll(offset, request.getPageSize());
-            case "most_commented":
-                // 实现按评论数排序的查询
-                if (postRepository instanceof PostAggregateRepositoryImpl) {
-                    return ((PostAggregateRepositoryImpl) postRepository).findAllWithSort(offset, request.getPageSize(), "most_commented");
+        try {
+            postRepository.findById(postId).ifPresent(postAggregate -> {
+                PostEntity postEntity = postAggregate.getPostEntity();
+                if (postEntity == null) {
+                    log.warn("更新帖子热度失败：postId={} 对应实体为空", postId);
+                    return;
                 }
-                return postRepository.findAll(offset, request.getPageSize());
-            case "most_bookmarked":
-                // 实现按收藏数排序的查询
-                if (postRepository instanceof PostAggregateRepositoryImpl) {
-                    return ((PostAggregateRepositoryImpl) postRepository).findAllWithSort(offset, request.getPageSize(), "most_bookmarked");
-                }
-                return postRepository.findAll(offset, request.getPageSize());
-            case "most_liked":
-                // 实现按点赞数排序的查询
-                if (postRepository instanceof PostAggregateRepositoryImpl) {
-                    return ((PostAggregateRepositoryImpl) postRepository).findAllWithSort(offset, request.getPageSize(), "most_liked");
-                }
-                return postRepository.findAll(offset, request.getPageSize());
-            case "popular":
-                // 实现按浏览量排序的查询
-                if (postRepository instanceof PostAggregateRepositoryImpl) {
-                    return ((PostAggregateRepositoryImpl) postRepository).findAllWithSort(offset, request.getPageSize(), "popular");
-                }
-                return postRepository.findAll(offset, request.getPageSize());
-            default:
-                return postRepository.findAll(offset, request.getPageSize());
+                postHotScoreDomainService.updateHotScore(postId, postEntity);
+            });
+        } catch (Exception e) {
+            log.error("更新帖子热度分数异常，postId={}", postId, e);
         }
     }
 
-
-    
     @Override
     public PostDetailResponse getPostDetail(Long id, Long currentUserId) {
-        // 查询帖子详情
         Optional<PostAggregate> postAggregateOpt = postRepository.findById(id);
-        if (!postAggregateOpt.isPresent() || postAggregateOpt.get().getPostEntity() == null) {
+        if (!postAggregateOpt.isPresent()) {
             return null;
         }
         
-        PostAggregate postAggregate = postAggregateOpt.get();
-        PostEntity post = postAggregate.getPostEntity();
-        
-        // 注意：浏览量增加已在Controller中通过带防刷机制的viewPost方法处理
-        // 此处不再重复增加浏览量
+        PostEntity post = postAggregateOpt.get().getPostEntity();
         
         // 查询作者信息
         UserEntity author = userService.getUserById(post.getUserId());
@@ -583,11 +499,13 @@ public class PostService implements IPostService, TransactionParticipant {
         
         // 查询话题信息
         List<Long> topicIds = null;
+        List<TopicEntity> topics = null;
         if (postTopicService != null) {
             topicIds = postTopicService.getTopicsByPostId(id);
+            if (topicService != null && topicIds != null && !topicIds.isEmpty()) {
+                topics = topicService.batchGetTopics(topicIds);
+            }
         }
-        
-
         
         // 设置用户相关状态
         boolean isLiked = false;
@@ -615,37 +533,36 @@ public class PostService implements IPostService, TransactionParticipant {
                     isFavorited = false;
                 }
             } catch (Exception e) {
-                log.warn("检查收藏状态失败: userId={}, postId={}, postType={}", currentUserId, id, post.getType(), e);
-                isFavorited = false;
+                log.warn("检查收藏状态失败: userId={}, postId={}", currentUserId, id, e);
             }
             
-            // 是否为作者
-            isAuthor = post.getUserId().equals(currentUserId);
+            isAuthor = currentUserId.equals(post.getUserId());
             
-            // 是否已关注作者
-            try {
-                isFollowed = followService != null ? followService.isFollowing(currentUserId, post.getUserId()) : false;
-            } catch (Exception e) {
-                log.warn("检查关注状态失败: followerId={}, followedId={}", currentUserId, post.getUserId(), e);
+            if (!isAuthor && followService != null) {
+                try {
+                    isFollowed = followService.isFollowing(currentUserId, post.getUserId());
+                } catch (Exception e) {
+                    log.warn("检查关注状态失败: userId={}, targetId={}", currentUserId, post.getUserId(), e);
+                }
             }
         }
         
-        // 使用转换器转换为VO对象
         return postVOConverter.convertToPostDetailResponse(
-                post, 
-                author, 
-                "", // 需要从分类服务获取分类名称，这里先留空
-                tags, 
+                post,
+                author,
+                null,
+                tags,
                 topicIds,
-                null, // acceptedAnswerId，问答帖需要，这里先留空
+                topics,
+                post.getAcceptedAnswerId(),
                 isLiked,
-                isFavorited, 
-                isAuthor, 
-                isFollowed);
+                isFavorited,
+                isAuthor,
+                isFollowed
+        );
     }
 
     /**
-     * 获取收藏的TargetType
      * 所有类型的帖子都使用POST作为TargetType，因为都是post表的记录
      * @param postType PostType枚举（此参数保留以便将来扩展）
      * @return TargetType的API代码
@@ -676,6 +593,23 @@ public class PostService implements IPostService, TransactionParticipant {
     }
 
     @Override
+    public List<PostEntity> getPostPageListByCategoryId(Long categoryId, Integer pageNo, Integer pageSize) {
+        int offset = Math.max(0, (pageNo - 1) * pageSize);
+        return postRepository.findByCategoryId(categoryId, offset, pageSize);
+    }
+
+    @Override
+    public List<PostEntity> getPostPageList(Integer pageNo, Integer pageSize) {
+        int offset = Math.max(0, (pageNo - 1) * pageSize);
+        return postRepository.findAll(offset, pageSize);
+    }
+
+    @Override
+    public List<PostEntity> getPostPageList(PostPageQueryRequest request) {
+        return postQueryDomainService.queryPosts(request);
+    }
+
+    @Override
     public List<PostPageListResponse> getPostPageListWithSort(PostPageQueryRequest request) {
         // 查询帖子列表
         List<PostEntity> postList = getPostPageList(request);
@@ -688,15 +622,11 @@ public class PostService implements IPostService, TransactionParticipant {
                 .collect(Collectors.toList());
         
         List<UserEntity> userList = userService.batchGetUserInfo(userIds);
-        java.util.Map<Long, UserEntity> userMap = userList.stream()
+        Map<Long, UserEntity> userMap = userList.stream()
                 .collect(Collectors.toMap(UserEntity::getId, user -> user));
         
-        // 获取帖子ID列表
-        List<Long> postIds = postList.stream()
-                .map(PostEntity::getId)
-                .collect(Collectors.toList());
-        
-        // 获取标签信息
+        // 批量获取帖子标签
+        List<Long> postIds = postList.stream().map(PostEntity::getId).collect(Collectors.toList());
         Map<Long, String[]> postTagsMap = new HashMap<>();
         if (tagService != null && !postIds.isEmpty()) {
             try {
@@ -717,18 +647,46 @@ public class PostService implements IPostService, TransactionParticipant {
                 log.warn("批量获取帖子标签信息失败", e);
             }
         }
-        
+
+        // 批量获取帖子话题
+        Map<Long, List<TopicEntity>> postTopicsMap = new HashMap<>();
+        if (postTopicService != null && !postIds.isEmpty()) {
+            try {
+                List<IPostTopicService.PostTopicRelation> relations = postTopicService.batchGetTopicIdsByPostIds(postIds);
+                // 获取所有涉及的话题ID
+                Set<Long> allTopicIds = relations.stream()
+                        .flatMap(r -> r.getTopicIds().stream())
+                        .collect(Collectors.toSet());
+                
+                if (!allTopicIds.isEmpty()) {
+                    List<TopicEntity> topics = topicService.batchGetTopics(new ArrayList<>(allTopicIds));
+                    Map<Long, TopicEntity> topicMap = topics.stream()
+                            .collect(Collectors.toMap(TopicEntity::getId, t -> t));
+                    
+                    for (IPostTopicService.PostTopicRelation r : relations) {
+                        List<TopicEntity> postTopics = r.getTopicIds().stream()
+                                .map(topicMap::get)
+                                .filter(Objects::nonNull)
+                                .collect(Collectors.toList());
+                        postTopicsMap.put(r.getPostId(), postTopics);
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("批量获取帖子话题信息失败", e);
+            }
+        }
+    
         // 转换为VO对象
         return postList.stream()
                 .map(post -> PostPageListResponse.builder()
                         .post(post)
                         .user(userMap.get(post.getUserId()))
                         .tags(postTagsMap.getOrDefault(post.getId(), new String[0]))
+                        .topics(postTopicsMap.getOrDefault(post.getId(), new ArrayList<>()))
                         .build())
                 .collect(Collectors.toList());
     }
 
-    
     @Override
     public void acceptAnswer(Long postId, Long answerId, Long userId) {
         Optional<PostAggregate> postAggregateOpt = postRepository.findById(postId);
@@ -750,10 +708,6 @@ public class PostService implements IPostService, TransactionParticipant {
         if (answerId == null) {
             throw new IllegalArgumentException("回答ID不能为空");
         }
-        
-        // 这里应该添加对回答的验证逻辑
-        // 例如：检查回答是否属于当前问题，是否已发布等
-        // 暂时省略具体实现，但应该在实际应用中添加
         
         // 设置已采纳的回答
         postAggregate.setAcceptedAnswer(answerId);
@@ -813,32 +767,7 @@ public class PostService implements IPostService, TransactionParticipant {
     
     @Override
     public long countHotPosts() {
-        // 这里需要在IPostRepository中添加对应的方法
-        // 暂时返回0，实际实现需要添加对应的DAO方法
-        return 0;
-    }
-    
-    @Override
-    public List<PostEntity> findRecommendedPosts(Long userId, Integer pageNo, Integer pageSize, Long categoryId) {
-        // 使用推荐服务获取推荐帖子
-        if (recommendService != null) {
-            return recommendService.getRecommendedPosts(userId, pageNo, pageSize, categoryId);
-        }
-        
-        // 降级处理：如果没有推荐服务，返回热门帖子
-        int offset = Math.max(0, (pageNo - 1) * pageSize);
-        if (categoryId != null) {
-            // 如果指定了分类，返回该分类的热门帖子
-            return postRepository.findByCategoryId(categoryId, offset, pageSize);
-        }
-        return postRepository.findHotPosts(offset, pageSize);
-    }
-    
-    @Override
-    public long countRecommendedPosts(Long userId, Long categoryId) {
-        // 这里需要在IPostRepository中添加对应的方法
-        // 暂时返回0，实际实现需要添加对应的DAO方法
-        return 0;
+        return postRepository.countHotPosts();
     }
     
     @Override
@@ -849,9 +778,7 @@ public class PostService implements IPostService, TransactionParticipant {
     
     @Override
     public long countPostsByTagId(Long tagId) {
-        // 这里需要在IPostRepository中添加对应的方法
-        // 暂时返回0，实际实现需要添加对应的DAO方法
-        return 0;
+        return postRepository.countByTagId(tagId);
     }
     
     @Override
@@ -862,9 +789,7 @@ public class PostService implements IPostService, TransactionParticipant {
     
     @Override
     public long countPostsByUserIds(List<Long> userIds) {
-        // 这里需要在IPostRepository中添加对应的方法
-        // 暂时返回0，实际实现需要添加对应的DAO方法
-        return 0;
+        return postRepository.countByUserIds(userIds);
     }
     
     /**
@@ -882,9 +807,7 @@ public class PostService implements IPostService, TransactionParticipant {
     
     @Override
     public long countFeaturedPosts() {
-        // 这里需要在IPostRepository中添加对应的方法
-        // 暂时返回0，实际实现需要添加对应的DAO方法
-        return 0;
+        return postRepository.countFeaturedPosts();
     }
     
     @Override
@@ -921,6 +844,17 @@ public class PostService implements IPostService, TransactionParticipant {
                 .collect(Collectors.toList());
     }
     
+    @Override
+    public List<PostEntity> findPostsByTopicId(Long topicId, Integer pageNo, Integer pageSize) {
+        int offset = Math.max(0, (pageNo - 1) * pageSize);
+        return postRepository.findPostsByTopicId(topicId, offset, pageSize);
+    }
+
+    @Override
+    public long countPostsByTopicId(Long topicId) {
+        return postRepository.countPostsByTopicId(topicId);
+    }
+
     @Override
     public void commit() throws Exception {
         PostOperation operation = tempOperation.get();

@@ -49,6 +49,15 @@ public class PostTopicRepository implements IPostTopicRepository {
     }
 
     @Override
+    public Long countPostsByTopicId(Long topicId) {
+        if (topicId == null) {
+            return 0L;
+        }
+        Long count = postTopicDao.countPostsByTopicId(topicId);
+        return count != null ? count : 0L;
+    }
+
+    @Override
     public List<PostTopicRelation> batchGetTopicIdsByPostIds(List<Long> postIds) {
         if (postIds == null || postIds.isEmpty()) {
             return new LinkedList<>();

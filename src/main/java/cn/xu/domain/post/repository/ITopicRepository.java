@@ -49,6 +49,14 @@ public interface ITopicRepository {
     List<TopicEntity> getHotTopics(int limit);
     
     /**
+     * 批量获取话题
+     *
+     * @param ids 话题ID列表
+     * @return 话题实体列表
+     */
+    List<TopicEntity> getTopicsByIds(List<Long> ids);
+    
+    /**
      * 根据帖子ID获取话题ID列表
      *
      * @param postId 帖子ID

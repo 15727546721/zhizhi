@@ -18,6 +18,7 @@ import cn.xu.domain.like.model.LikeType;
 import cn.xu.domain.like.service.ILikeService;
 import cn.xu.domain.post.model.aggregate.PostAggregate;
 import cn.xu.domain.post.model.entity.PostEntity;
+import cn.xu.domain.post.model.entity.TopicEntity;
 import cn.xu.domain.post.model.valobj.PostContent;
 import cn.xu.domain.post.model.valobj.PostStatus;
 import cn.xu.domain.post.model.valobj.PostTitle;
@@ -54,6 +55,8 @@ public class PostController {
     private IPostTagService postTagService;
     @Resource
     private IPostTopicService postTopicService;
+    @Resource
+    private ITopicService topicService;
     @Resource
     private ITagService tagService;
     @Resource
@@ -249,6 +252,115 @@ public class PostController {
                     .build();
         } catch (Exception e) {
             log.error("通过分类获取帖子列表失败", e);
+            return ResponseEntity.<PageResponse<List<PostPageListResponse>>>builder()
+                    .code(ResponseCode.UN_ERROR.getCode())
+                    .info("获取帖子列表失败")
+                    .build();
+        }
+    }
+
+    @PostMapping("/page/topic")
+    @ApiOperationLog(description = "通过话题获取帖子列表")
+    @Operation(summary = "通过话题获取帖子列表")
+    public ResponseEntity<PageResponse<List<PostPageListResponse>>> getPostByTopicId(@RequestBody PostPageQueryRequest request) {
+        try {
+            // 参数校验
+            postValidationService.validatePageParams(request.getPageNo(), request.getPageSize());
+            
+            Long topicId = request.getTopicId();
+            if (topicId == null) {
+                throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "话题ID不能为空");
+            }
+            
+            List<PostEntity> postList = postService.findPostsByTopicId(topicId, request.getPageNo(), request.getPageSize());
+            long total = postService.countPostsByTopicId(topicId);
+            
+            // 获取用户信息
+            List<Long> userIds = postList.stream()
+                    .map(PostEntity::getUserId)
+                    .filter(Objects::nonNull)
+                    .distinct()
+                    .collect(Collectors.toList());
+            
+            List<UserEntity> userList = userService.batchGetUserInfo(userIds);
+            java.util.Map<Long, UserEntity> userMap = userList.stream()
+                    .collect(Collectors.toMap(UserEntity::getId, user -> user));
+            
+            // 批量获取帖子标签
+             List<Long> postIds = postList.stream().map(PostEntity::getId).collect(Collectors.toList());
+             Map<Long, String[]> postTagsMap = new HashMap<>();
+             if (tagService != null && !postIds.isEmpty()) {
+                 try {
+                     List<IPostTagService.PostTagRelation> postTagRelations = postTagService.batchGetTagIdsByPostIds(postIds);
+                     for (IPostTagService.PostTagRelation relation : postTagRelations) {
+                         Long postId = relation.getPostId();
+                         String[] tags;
+                         if (relation.getTagIds() != null) {
+                             tags = relation.getTagIds().stream()
+                                     .map(String::valueOf)
+                                     .toArray(String[]::new);
+                         } else {
+                             tags = new String[0];
+                         }
+                         postTagsMap.put(postId, tags);
+                     }
+                 } catch (Exception e) {
+                     log.warn("批量获取帖子标签信息失败", e);
+                 }
+             }
+
+             // 批量获取帖子话题
+             Map<Long, List<TopicEntity>> postTopicsMap = new HashMap<>();
+             if (postTopicService != null && !postIds.isEmpty()) {
+                 try {
+                     List<IPostTopicService.PostTopicRelation> relations = postTopicService.batchGetTopicIdsByPostIds(postIds);
+                     // 获取所有涉及的话题ID
+                     Set<Long> allTopicIds = relations.stream()
+                             .flatMap(r -> r.getTopicIds().stream())
+                             .collect(Collectors.toSet());
+                     
+                     if (!allTopicIds.isEmpty()) {
+                         List<TopicEntity> topics = topicService.batchGetTopics(new ArrayList<>(allTopicIds));
+                         Map<Long, TopicEntity> topicMap = topics.stream()
+                                 .collect(Collectors.toMap(TopicEntity::getId, t -> t));
+                         
+                         for (IPostTopicService.PostTopicRelation r : relations) {
+                             List<TopicEntity> postTopics = r.getTopicIds().stream()
+                                     .map(topicMap::get)
+                                     .filter(Objects::nonNull)
+                                     .collect(Collectors.toList());
+                             postTopicsMap.put(r.getPostId(), postTopics);
+                         }
+                     }
+                 } catch (Exception e) {
+                     log.warn("批量获取帖子话题信息失败", e);
+                 }
+             }
+            
+            // 转换为PostPageListResponse列表
+            List<PostPageListResponse> result = postList.stream()
+                    .map(post -> PostPageListResponse.builder()
+                            .post(post)
+                            .user(userMap.get(post.getUserId()))
+                            .tags(postTagsMap.getOrDefault(post.getId(), new String[0]))
+                            .topics(postTopicsMap.getOrDefault(post.getId(), new ArrayList<>()))
+                            .build())
+                    .collect(Collectors.toList());
+            
+            // 创建分页响应对象
+            PageResponse<List<PostPageListResponse>> pageResponse = PageResponse.ofList(
+                request.getPageNo(),
+                request.getPageSize(),
+                total,
+                result
+            );
+
+            return ResponseEntity.<PageResponse<List<PostPageListResponse>>>builder()
+                    .code(ResponseCode.SUCCESS.getCode())
+                    .data(pageResponse)
+                    .build();
+        } catch (Exception e) {
+            log.error("通过话题获取帖子列表失败", e);
             return ResponseEntity.<PageResponse<List<PostPageListResponse>>>builder()
                     .code(ResponseCode.UN_ERROR.getCode())
                     .info("获取帖子列表失败")

@@ -5,7 +5,8 @@ import cn.dev33.satoken.stp.StpInterface;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.infrastructure.persistent.repository.PermissionRepository;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -19,11 +20,11 @@ import java.util.stream.Collectors;
  * 
  * @author Lily
  */
-@Slf4j
 @Component
 @RequiredArgsConstructor
 public class UserPermission implements StpInterface {
 
+    private static final Logger log = LoggerFactory.getLogger(UserPermission.class);
     private final PermissionRepository permissionRepository;
 
     private static final String ROLE_LIST_KEY = "ROLE_LIST";

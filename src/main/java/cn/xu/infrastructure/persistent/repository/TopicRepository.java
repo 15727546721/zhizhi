@@ -67,6 +67,17 @@ public class TopicRepository implements ITopicRepository {
     }
     
     @Override
+    public List<TopicEntity> getTopicsByIds(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return new ArrayList<>();
+        }
+        List<Topic> topics = topicMapper.selectByIds(ids);
+        return topics.stream()
+                .map(this::convertToEntity)
+                .collect(Collectors.toList());
+    }
+    
+    @Override
     public List<Long> findTopicIdsByPostId(Long postId) {
         if (postId == null) {
             return new ArrayList<>();

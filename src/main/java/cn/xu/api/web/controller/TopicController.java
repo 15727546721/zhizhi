@@ -1,5 +1,7 @@
 package cn.xu.api.web.controller;
 
+import cn.dev33.satoken.stp.StpUtil;
+import cn.xu.api.web.model.vo.topic.TopicDetailVO;
 import cn.xu.api.web.model.vo.user.UserTopicItemVO;
 import cn.xu.common.ResponseCode;
 import cn.xu.common.annotation.ApiOperationLog;
@@ -9,6 +11,7 @@ import cn.xu.common.response.ResponseEntity;
 import cn.xu.domain.post.model.entity.TopicEntity;
 import cn.xu.domain.post.repository.IPostTopicRepository;
 import cn.xu.domain.post.service.IPostTopicService;
+import cn.xu.domain.post.service.ITopicFollowService;
 import cn.xu.domain.post.service.ITopicService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -37,6 +40,8 @@ public class TopicController {
     private IPostTopicService postTopicService;
     @Resource
     private IPostTopicRepository postTopicRepository;
+    @Resource
+    private ITopicFollowService topicFollowService;
 
     /**
      * 创建话题
@@ -59,6 +64,42 @@ public class TopicController {
             return ResponseEntity.builder()
                     .code(ResponseCode.UN_ERROR.getCode())
                     .info("创建话题失败: " + e.getMessage())
+                    .build();
+        }
+    }
+
+    /**
+     * 获取话题详情
+     *
+     * @param id 话题ID
+     * @return 话题详情
+     */
+    @GetMapping("/{id}")
+    @Operation(summary = "获取话题详情")
+    @ApiOperationLog(description = "获取话题详情")
+    public ResponseEntity<TopicDetailVO> getTopicDetail(@Parameter(description = "话题ID") @PathVariable Long id) {
+        try {
+            TopicEntity topic = topicService.getTopicById(id);
+            if (topic == null) {
+                return ResponseEntity.<TopicDetailVO>builder()
+                        .code(ResponseCode.UN_ERROR.getCode())
+                        .info("话题不存在")
+                        .build();
+            }
+            
+            Long followerCount = topicFollowService.getTopicFollowerCount(id);
+            TopicDetailVO vo = TopicDetailVO.from(topic, followerCount);
+            
+            return ResponseEntity.<TopicDetailVO>builder()
+                    .code(ResponseCode.SUCCESS.getCode())
+                    .info("获取话题详情成功")
+                    .data(vo)
+                    .build();
+        } catch (Exception e) {
+            log.error("获取话题详情失败", e);
+            return ResponseEntity.<TopicDetailVO>builder()
+                    .code(ResponseCode.UN_ERROR.getCode())
+                    .info("获取话题详情失败: " + e.getMessage())
                     .build();
         }
     }
@@ -203,7 +244,86 @@ public class TopicController {
                     .build();
         }
     }
-    
+
+    /**
+     * 关注话题
+     *
+     * @param topicId 话题ID
+     * @return 响应结果
+     */
+    @PostMapping("/follow/{topicId}")
+    @Operation(summary = "关注话题")
+    @ApiOperationLog(description = "关注话题")
+    public ResponseEntity followTopic(@Parameter(description = "话题ID") @PathVariable Long topicId) {
+        try {
+            Long userId = StpUtil.getLoginIdAsLong();
+            topicFollowService.follow(userId, topicId);
+            return ResponseEntity.builder()
+                    .code(ResponseCode.SUCCESS.getCode())
+                    .info("关注话题成功")
+                    .build();
+        } catch (Exception e) {
+            log.error("关注话题失败", e);
+            return ResponseEntity.builder()
+                    .code(ResponseCode.UN_ERROR.getCode())
+                    .info("关注话题失败: " + e.getMessage())
+                    .build();
+        }
+    }
+
+    /**
+     * 取消关注话题
+     *
+     * @param topicId 话题ID
+     * @return 响应结果
+     */
+    @PostMapping("/unfollow/{topicId}")
+    @Operation(summary = "取消关注话题")
+    @ApiOperationLog(description = "取消关注话题")
+    public ResponseEntity unfollowTopic(@Parameter(description = "话题ID") @PathVariable Long topicId) {
+        try {
+            Long userId = StpUtil.getLoginIdAsLong();
+            topicFollowService.unfollow(userId, topicId);
+            return ResponseEntity.builder()
+                    .code(ResponseCode.SUCCESS.getCode())
+                    .info("取消关注话题成功")
+                    .build();
+        } catch (Exception e) {
+            log.error("取消关注话题失败", e);
+            return ResponseEntity.builder()
+                    .code(ResponseCode.UN_ERROR.getCode())
+                    .info("取消关注话题失败: " + e.getMessage())
+                    .build();
+        }
+    }
+
+    /**
+     * 检查是否已关注话题
+     *
+     * @param topicId 话题ID
+     * @return 是否已关注
+     */
+    @GetMapping("/isFollowing/{topicId}")
+    @Operation(summary = "检查是否已关注话题")
+    @ApiOperationLog(description = "检查是否已关注话题")
+    public ResponseEntity<Boolean> isFollowingTopic(@Parameter(description = "话题ID") @PathVariable Long topicId) {
+        try {
+            Long userId = StpUtil.getLoginIdAsLong();
+            boolean isFollowing = topicFollowService.isFollowing(userId, topicId);
+            return ResponseEntity.<Boolean>builder()
+                    .code(ResponseCode.SUCCESS.getCode())
+                    .info("获取关注状态成功")
+                    .data(isFollowing)
+                    .build();
+        } catch (Exception e) {
+            log.error("获取关注状态失败", e);
+            return ResponseEntity.<Boolean>builder()
+                    .code(ResponseCode.UN_ERROR.getCode())
+                    .info("获取关注状态失败: " + e.getMessage())
+                    .build();
+        }
+    }
+
     /**
      * 获取用户话题列表
      *

@@ -2,116 +2,120 @@
 
 ## 1. 概述
 
-本项目采用事件驱动架构（Event-Driven Architecture）来实现领域间的松耦合和业务逻辑的自动串联。通过基于Disruptor的高性能消息队列机制，各个领域可以在不直接依赖其他领域的情况下进行通信和协作。
+知之社区现已全面切换到 Spring Event 作为事件驱动引擎。通过 Spring 自带的 `ApplicationEventPublisher` + `@EventListener` 机制，我们实现了领域之间的解耦协作、异步扩展以及更易维护的事件总线。
 
 ## 2. 架构设计
 
 ### 2.1 事件发布
 
-每个领域都定义了自己的事件发布器（EventPublisher），负责发布该领域内的业务事件：
+每个领域都有独立的事件发布器，负责封装领域事件并交给 Spring 事件总线：
 
-- PostEventPublisher: 帖子领域事件发布器
-- CommentEventPublisher: 评论领域事件发布器
-- LikeEventPublisher: 点赞领域事件发布器
-- UserEventPublisher: 用户领域事件发布器
+- `PostEventPublisher`
+- `CommentEventPublisher`
+- `LikeEventPublisher`
+- `UserEventPublisher`
+- `EssayEventPublisher` 等
 
-### 2.2 事件处理
+发布器内部统一依赖 `ApplicationEventPublisher`，并根据业务封装事件实体，例如 `PostCreatedEvent`、`CommentDeletedEvent`。
 
-事件处理分为两个层次：
+### 2.2 事件总线
 
-1. **Disruptor队列**: 所有事件首先发布到Disruptor高性能队列中，实现异步处理
-2. **事件监听**: 通过@DisruptorListener注解标识的监听方法处理具体业务逻辑
+基础设施层提供了 `SpringEventBus`，对外暴露了统一的 `EventBus` 接口。好处：
 
-### 2.3 事件类型
+1. 可以集中控制事件开关（`app.event.enabled`）。
+2. 统一打日志、度量指标。
+3. 保持与历史 Disruptor 总线相同的调用方式，方便迁移与回滚。
 
-目前支持的事件类型包括：
+### 2.3 事件监听
 
-- 用户事件: UserRegisteredEvent, UserLoggedInEvent, UserUpdatedEvent
-- 帖子事件: PostCreatedEvent, PostUpdatedEvent, PostDeletedEvent
-- 评论事件: CommentCreatedEvent, CommentUpdatedEvent, CommentDeletedEvent
-- 点赞事件: LikeEvent
-
-## 3. 技术实现
-
-### 3.1 Disruptor集成
-
-项目集成了LMAX Disruptor作为高性能消息队列：
-
-1. **事件生产者**: EventPublisher负责将事件发布到Disruptor队列
-2. **环形缓冲区**: 使用RingBuffer存储事件，支持高并发处理
-3. **事件消费者**: EventConsumer从队列中消费事件并转发给Spring事件系统
-4. **工作池**: 使用多个消费者线程并行处理事件
-
-### 3.2 事件监听机制
-
-使用自定义的@DisruptorListener注解实现事件监听：
+监听器直接使用 Spring 的 `@EventListener` 或 `@TransactionalEventListener`：
 
 ```java
 @Component
-public class UserEventListener {
-    
-    @DisruptorListener(eventType = "PostCreatedEvent")
+public class PostEventHandler {
+
+    @EventListener
     public void handlePostCreated(PostCreatedEvent event) {
-        // 处理帖子创建事件
+        // 增加积分 / 刷新缓存 / 推送消息 等
     }
 }
 ```
+
+根据需要还可以配合 `@Async` 实现异步监听，或者通过 `@Order` 控制执行顺序。
+
+### 2.4 事件类型
+
+目前支持的核心事件包括：
+
+- 用户：`UserRegisteredEvent`, `UserUpdatedEvent`
+- 帖子：`PostCreatedEvent`, `PostUpdatedEvent`, `PostDeletedEvent`
+- 评论：`CommentCreatedEvent`, `CommentDeletedEvent`
+- 点赞/收藏：`LikeEvent`, `FavoriteEvent`
+- 私信/通知等其它领域事件
+
+## 3. 技术实现
+
+1. **发布端**：组装事件 -> `ApplicationEventPublisher#publishEvent`。
+2. **消费端**：`@EventListener` 自动注册，Spring 完成事件派发。
+3. **线程模型**：默认同步；在监听器上加 `@Async("eventExecutor")` 可切到异步线程池。
+4. **配置管理**：`EventConfig` 暴露 `app.event.enabled` 统一开关，可在不同环境快速启停事件。
 
 ## 4. 使用示例
 
 ### 4.1 发布事件
 
-在业务逻辑中发布事件：
+```java
+postEventPublisher.publishCreated(postEntity);
+```
+
+发布器内部：
 
 ```java
-// 发布帖子创建事件
 PostCreatedEvent event = PostCreatedEvent.builder()
-    .postId(post.getId())
-    .userId(post.getUserId())
-    .title(post.getTitle().getTitle())
-    .createTime(LocalDateTime.now())
-    .build();
-eventPublisher.publishEvent(event, "PostCreatedEvent");
+        .postId(post.getId())
+        .userId(post.getUserId())
+        .title(post.getTitle().getValue())
+        .createTime(LocalDateTime.now())
+        .build();
+eventPublisher.publishEvent(event);
 ```
 
 ### 4.2 监听事件
 
-创建事件监听器处理事件：
-
 ```java
 @Component
-public class UserEventListener {
-    
-    @DisruptorListener(eventType = "PostCreatedEvent")
+public class UserPointListener {
+
+    @Async("eventExecutor")
+    @EventListener
     public void handlePostCreated(PostCreatedEvent event) {
-        // 处理帖子创建后的业务逻辑
-        // 例如：增加用户积分
+        userPointService.increasePoints(event.getUserId(), PointRule.POST_CREATE);
     }
 }
 ```
 
-## 5. 业务逻辑串联
+## 5. 业务串联
 
-通过事件机制，实现了以下业务逻辑的自动串联：
+Spring Event 驱动下，以下业务实现松耦合协作：
 
-1. **用户积分系统**: 用户发帖、评论、点赞等操作会自动增加积分
-2. **活跃度统计**: 用户的各种操作会自动更新活跃度
-3. **通知系统**: 用户的操作会自动触发相关通知
-4. **数据统计**: 各种操作会自动更新相关统计数据
+1. **积分与等级系统**
+2. **通知与站内信**
+3. **Redis / Elasticsearch 缓存同步**
+4. **活跃度与热度统计**
+5. **推荐、排行榜、订阅推送**
 
-## 6. 性能优势
+## 6. 优势
 
-1. **高吞吐量**: Disruptor提供比传统队列高10倍的吞吐量
-2. **低延迟**: 基于环形缓冲区的设计实现纳秒级延迟
-3. **无锁设计**: 减少线程竞争，提高并发性能
-4. **内存效率**: 通过对象复用减少GC压力
+- **Spring 原生支持**：不需额外第三方依赖，维护和排查更简单。
+- **统一模型**：发布/订阅接口与过去保持一致，可平滑迁移。
+- **扩展性**：可灵活增加 `@EventListener`、`@Async`、`@TransactionalEventListener` 等特性。
+- **可测试性**：事件是普通 POJO，配合 Spring Test 很容易写集成测试。
 
-## 7. 扩展性
+## 7. 扩展步骤
 
-要添加新的业务逻辑，只需：
+1. 定义事件类（POJO + Builder）。
+2. 在领域服务/应用服务中调用发布器。
+3. 编写监听器并加上 `@EventListener`。
+4. 如需异步，在监听器上加 `@Async` 并配置线程池。
 
-1. 定义新的事件类型
-2. 在相应的业务逻辑中发布事件
-3. 创建事件监听器并使用@DisruptorListener注解处理事件
-
-这种方式保证了系统的松耦合和良好的扩展性，同时通过Disruptor提供了卓越的性能表现。
+Spring Event 方案已经完全替换了旧的 Disruptor 组件（相关 Bean/依赖已移除），如需重新启用 Disruptor，可参考 `SPRING_EVENT_MIGRATION.md` 的回滚指南。*** End Patch

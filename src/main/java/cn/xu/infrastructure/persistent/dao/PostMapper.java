@@ -269,4 +269,15 @@ public interface PostMapper {
     List<Post> findRelatedPostsByType(@Param("type") String type,
                                      @Param("excludePostId") Long excludePostId,
                                      @Param("limit") int limit);
+    /**
+     * 根据话题ID查询帖子列表
+     */
+    List<Post> findPostsByTopicId(@Param("topicId") Long topicId,
+                                  @Param("offset") int offset,
+                                  @Param("limit") int limit);
+
+    /**
+     * 统计指定话题的帖子数量
+     */
+    Long countPostsByTopicId(@Param("topicId") Long topicId);
 }

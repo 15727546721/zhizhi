@@ -47,4 +47,11 @@ public interface ITopicService {
      * @return 话题实体列表
      */
     List<TopicEntity> getHotTopics(int limit);
+    /**
+     * 批量获取话题
+     *
+     * @param ids 话题ID列表
+     * @return 话题实体列表
+     */
+    List<TopicEntity> batchGetTopics(List<Long> ids);
 }

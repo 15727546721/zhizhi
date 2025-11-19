@@ -35,6 +35,14 @@ public interface IPostTopicRepository {
     List<Long> getPostIdsByTopicId(Long topicId, int offset, int limit);
     
     /**
+     * 统计指定话题下的帖子数量
+     * 
+     * @param topicId 话题ID
+     * @return 帖子数量
+     */
+    Long countPostsByTopicId(Long topicId);
+    
+    /**
      * 批量获取帖子的话题ID列表
      *
      * @param postIds 帖子ID列表

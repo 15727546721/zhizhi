@@ -24,4 +24,10 @@ public class PostPageQueryRequest extends PageRequest {
      */
     @Schema(description = "帖子类型")
     private String type;
+    
+    /**
+     * 话题ID
+     */
+    @Schema(description = "话题ID")
+    private Long topicId;
 }

@@ -20,7 +20,7 @@
 
 ## 📚 项目简介
 
-知之 是一套前后端分离的开源社区系统，基于目前主流 Java Web 技术栈（SpringBoot + MyBatis + MySQL + Redis + Disruptor + Lucene + Sa-Token + Vue3...），包含帖子（支持文章、讨论、问答等多种类型）、话题、评论、系统通知、点赞、关注、搜索等模块。
+知之 是一套前后端分离的开源社区系统，基于目前主流 Java Web 技术栈（SpringBoot + MyBatis + MySQL + Redis + Spring Event + Lucene + Sa-Token + Vue3...），包含帖子（支持文章、讨论、问答等多种类型）、话题、评论、系统通知、点赞、关注、搜索等模块。
 
 ## 🏗️ 架构设计
 

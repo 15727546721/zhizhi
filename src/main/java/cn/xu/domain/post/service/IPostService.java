@@ -242,24 +242,22 @@ public interface IPostService {
     long countHotPosts();
     
     /**
-     * 查找推荐帖子
+     * 根据话题ID查找帖子
      *
-     * @param userId   用户ID
+     * @param topicId  话题ID
      * @param pageNo   页码
      * @param pageSize 页面大小
-     * @param categoryId 分类ID，可选
      * @return 帖子列表
      */
-    List<PostEntity> findRecommendedPosts(Long userId, Integer pageNo, Integer pageSize, Long categoryId);
+    List<PostEntity> findPostsByTopicId(Long topicId, Integer pageNo, Integer pageSize);
     
     /**
-     * 统计推荐帖子数量
+     * 统计指定话题的帖子数量
      *
-     * @param userId 用户ID
-     * @param categoryId 分类ID，可选
+     * @param topicId 话题ID
      * @return 帖子数量
      */
-    long countRecommendedPosts(Long userId, Long categoryId);
+    long countPostsByTopicId(Long topicId);
     
     /**
      * 根据标签ID查找帖子

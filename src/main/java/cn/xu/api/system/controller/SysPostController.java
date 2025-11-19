@@ -54,8 +54,8 @@ public class SysPostController {
     private TransactionTemplate transactionTemplate;
     @Autowired(required = false) // 设置为非必需，允许Elasticsearch不可用
     private PostElasticService postElasticService;
-    @Resource
-    private PostEventPublisher eventPublisher;
+    @Autowired
+    private PostEventPublisher postEventPublisher;
 
     @PostMapping("/uploadCover")
     @Operation(summary = "上传帖子封面")
@@ -113,7 +113,7 @@ public class SysPostController {
                 }
 
                 //4. 发布帖子创建事件
-                eventPublisher.publishCreated(post);
+                postEventPublisher.publishCreated(post);
 
                 return 1;
             } catch (Exception e) {
@@ -172,7 +172,7 @@ public class SysPostController {
                 }
 
                 //4. 发布帖子更新事件
-                eventPublisher.publishUpdated(post);
+                postEventPublisher.publishUpdated(post);
 
                 return 1;
             } catch (Exception e) {
@@ -198,7 +198,7 @@ public class SysPostController {
                 PostEntity post = PostEntity.builder()
                         .id(postId)
                         .build();
-                eventPublisher.publishDeleted(postId);
+                postEventPublisher.publishDeleted(postId);
             }
             return ResponseEntity.builder()
                     .code(ResponseCode.SUCCESS.getCode())
@@ -354,7 +354,7 @@ public class SysPostController {
                 }
                 
                 // 4. 发布帖子创建事件
-                eventPublisher.publishCreated(post);
+                postEventPublisher.publishCreated(post);
                 
                 return 1;
             } catch (Exception e) {
