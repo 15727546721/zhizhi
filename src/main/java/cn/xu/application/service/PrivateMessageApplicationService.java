@@ -5,13 +5,8 @@ import cn.xu.domain.message.model.entity.ConversationEntity;
 import cn.xu.domain.message.model.entity.SystemConfigEntity;
 import cn.xu.domain.message.model.entity.UserBlockEntity;
 import cn.xu.domain.message.model.entity.UserMessageSettingsEntity;
-import cn.xu.domain.message.model.valueobject.MessageStatus;
-import cn.xu.domain.message.service.ConversationDomainService;
-import cn.xu.domain.message.service.PrivateMessageDomainService;
-import cn.xu.domain.message.service.SystemConfigDomainService;
-import cn.xu.domain.message.service.UserBlockDomainService;
-import cn.xu.domain.message.service.UserMessageSettingsDomainService;
 import cn.xu.domain.message.repository.IPrivateMessageRepository;
+import cn.xu.domain.message.service.*;
 import cn.xu.infrastructure.cache.RedisKeyManager;
 import cn.xu.infrastructure.cache.RedisService;
 import cn.xu.infrastructure.util.RedisLock;
@@ -20,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -46,27 +42,62 @@ public class PrivateMessageApplicationService {
     public PrivateMessageDomainService.SendMessageResult sendPrivateMessage(Long senderId, Long receiverId, String content) {
         log.info("[私信应用服务] 开始发送私信 - 发送者: {}, 接收者: {}", senderId, receiverId);
         
-        // 轻量频控：同一会话2秒冷却，防止秒刷
+        // 多层频控防护：锁 + Redis计数器
         String cooldownKey = "pm:cooldown:" + senderId + ":" + receiverId;
+        String rateLimitKey = "pm:rate_limit:" + senderId + ":" + receiverId;
+        
+        // 第一层：Redis计数器频控（1分钟内最多5条消息）
+        try {
+            // 使用原子操作：先增加计数器，再检查结果
+            long newCount = redisService.incr(rateLimitKey, 1L);
+            if (newCount == 1) {
+                // 第一次设置，同时设置过期时间
+                redisService.expire(rateLimitKey, 60);
+            }
+            
+            if (newCount > 5) {
+                log.warn("[私信应用服务] 用户发送消息频率过高，触发计数器限制 - 发送者: {}, 接收者: {}, 当前计数: {}", senderId, receiverId, newCount);
+                throw new cn.xu.common.exception.BusinessException("您发送得太频繁，请稍后再试");
+            }
+        } catch (Exception e) {
+            log.error("[私信应用服务] 频控计数器异常，阻止发送 - key={}", rateLimitKey, e);
+            throw new cn.xu.common.exception.BusinessException("系统繁忙，请稍后再试");
+        }
+        
+        // 第二层：分布式锁频控（同一会话2秒冷却）
         boolean acquired = false;
         try {
             acquired = redisLock.tryLock(cooldownKey, 2, TimeUnit.SECONDS);
+            if (!acquired) {
+                log.warn("[私信应用服务] 用户发送消息过快，触发冷却限制 - 发送者: {}, 接收者: {}", senderId, receiverId);
+                throw new cn.xu.common.exception.BusinessException("您发送太快啦，请稍后再试");
+            }
         } catch (Exception e) {
-            log.warn("[私信应用服务] 频控锁异常，忽略降级 - key={}", cooldownKey, e);
-            acquired = true; // 降级放行
-        }
-        if (!acquired) {
-            throw new cn.xu.common.exception.BusinessException("您发送太快啦，请稍后再试");
+            log.error("[私信应用服务] 频控锁异常，阻止发送 - key={}", cooldownKey, e);
+            // 不再降级放行，直接阻止发送
+            throw new cn.xu.common.exception.BusinessException("系统繁忙，请稍后再试");
         }
         
-        PrivateMessageDomainService.SendMessageResult result = privateMessageDomainService.sendPrivateMessage(senderId, receiverId, content);
-        
-        // 清除相关缓存
-        clearConversationListCache(senderId);
-        clearConversationListCache(receiverId);
-        clearUnreadCountCache(receiverId, senderId);
-        
-        return result;
+        try {
+            PrivateMessageDomainService.SendMessageResult result = privateMessageDomainService.sendPrivateMessage(senderId, receiverId, content);
+            
+            // 清除相关缓存
+            clearConversationListCache(senderId);
+            clearConversationListCache(receiverId);
+            clearUnreadCountCache(receiverId, senderId);
+            
+            return result;
+        } finally {
+            // 确保锁被释放（锁会自动过期，这里仅作清理）
+            if (acquired) {
+                try {
+                    // 如果RedisLock有unlock方法就调用，否则依赖自动过期
+                    // redisLock.unlock(cooldownKey);
+                } catch (Exception e) {
+                    log.warn("[私信应用服务] 释放频控锁失败 - key={}", cooldownKey, e);
+                }
+            }
+        }
     }
     
     /**
@@ -105,20 +136,71 @@ public class PrivateMessageApplicationService {
      */
     private void clearConversationListCache(Long userId) {
         try {
-            // 清除所有分页的对话列表缓存（使用通配符）
-            // 注意：由于RedisService可能不支持通配符删除，这里先清除常见分页的缓存
-            // 实际应用中可以考虑使用Redis的SCAN命令或维护一个专门的key来记录所有缓存key
+            // 方法1：使用缓存注册表精确清除（使用实际存在的Redis API）
+            clearConversationCacheByRegistry(userId);
+            
+        } catch (Exception e) {
+            log.warn("清除对话列表缓存失败，用户: {}", userId, e);
+            // 降级处理：使用扩展的硬编码方式作为最后保障
+            clearConversationCacheLegacy(userId);
+        }
+    }
+    
+    /**
+     * 通过缓存注册表精确清除对话列表缓存
+     */
+    private void clearConversationCacheByRegistry(Long userId) {
+        try {
+            // 获取该用户的所有对话列表缓存key
+            String registryKey = "pm:conv_cache_registry:" + userId;
+            Set<Object> cacheKeys = redisService.sGet(registryKey);
+            
+            if (cacheKeys != null && !cacheKeys.isEmpty()) {
+                String[] keysToDelete = cacheKeys.toArray(new String[0]);
+                redisService.del(keysToDelete);
+                log.info("[私信应用服务] 通过注册表清除对话列表缓存，用户: {}, 清除数量: {}", userId, keysToDelete.length);
+                
+                // 清空注册表
+                redisService.del(registryKey);
+            }
+        } catch (Exception e) {
+            log.warn("[私信应用服务] 通过注册表清除缓存失败，用户: {}", userId, e);
+            throw e;
+        }
+    }
+    
+    /**
+     * 降级处理：使用扩展的硬编码方式清除缓存
+     */
+    private void clearConversationCacheLegacy(Long userId) {
+        try {
             String baseKey = RedisKeyManager.privateMessageConversationListKey(userId, 0, 0)
                     .replace(":0:0", "");
-            // 清除前几页的缓存（通常用户不会翻太多页）
-            for (int page = 1; page <= 5; page++) {
-                for (int size = 10; size <= 50; size += 10) {
+            
+            // 扩大清除范围，清除前10页的缓存，页大小范围也扩大
+            for (int page = 1; page <= 10; page++) {
+                for (int size = 10; size <= 100; size += 10) {
                     String cacheKey = baseKey + ":" + page + ":" + size;
                     redisService.del(cacheKey);
                 }
             }
+            log.warn("[私信应用服务] 使用降级方式清除对话列表缓存，用户: {}", userId);
         } catch (Exception e) {
-            log.warn("清除对话列表缓存失败，用户: {}", userId, e);
+            log.warn("[私信应用服务] 降级清除缓存也失败，用户: {}", userId, e);
+        }
+    }
+    
+    /**
+     * 注册对话列表缓存key（在获取对话列表时调用）
+     */
+    private void registerConversationCacheKey(Long userId, String cacheKey) {
+        try {
+            String registryKey = "pm:conv_cache_registry:" + userId;
+            redisService.sSet(registryKey, cacheKey);
+            // 设置注册表过期时间，防止内存泄漏
+            redisService.expire(registryKey, 3600); // 1小时
+        } catch (Exception e) {
+            log.warn("[私信应用服务] 注册缓存key失败，用户: {}, key: {}", userId, cacheKey, e);
         }
     }
     

@@ -5,7 +5,6 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 
 import java.util.Collections;
-import java.util.concurrent.TimeUnit;
 
 /**
  * 基于Redis的限流工具类

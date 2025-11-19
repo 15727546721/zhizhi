@@ -1,8 +1,11 @@
 package cn.xu.api.web.controller;
 
 import cn.xu.common.ResponseCode;
+import cn.xu.common.response.ResponseEntity;
+import cn.xu.domain.post.model.aggregate.PostAggregate;
 import cn.xu.domain.post.model.entity.PostEntity;
 import cn.xu.domain.post.repository.IPostRepository;
+import cn.xu.infrastructure.persistent.read.elastic.repository.PostElasticRepository;
 import cn.xu.infrastructure.persistent.read.elastic.service.PostElasticService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -11,12 +14,8 @@ import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-   import cn.xu.infrastructure.persistent.read.elastic.repository.PostElasticRepository;
-import cn.xu.infrastructure.persistent.read.elastic.model.PostIndex;
-import cn.xu.common.response.ResponseEntity;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
-import cn.xu.domain.post.model.aggregate.PostAggregate;
 
 import java.util.List;
 import java.util.Set;

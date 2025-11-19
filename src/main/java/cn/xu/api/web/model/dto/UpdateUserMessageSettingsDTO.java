@@ -2,8 +2,6 @@ package cn.xu.api.web.model.dto;
 
 import lombok.Data;
 
-import javax.validation.constraints.NotNull;
-
 /**
  * 更新用户私信设置DTO
  */

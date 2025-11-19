@@ -6,11 +6,7 @@ import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.api.web.model.dto.SendPrivateMessageDTO;
 import cn.xu.api.web.model.dto.UpdateSystemConfigDTO;
 import cn.xu.api.web.model.dto.UpdateUserMessageSettingsDTO;
-import cn.xu.api.web.model.vo.ConversationVO;
-import cn.xu.api.web.model.vo.PrivateMessageVO;
-import cn.xu.api.web.model.vo.SystemConfigVO;
-import cn.xu.api.web.model.vo.UserBlockVO;
-import cn.xu.api.web.model.vo.UserMessageSettingsVO;
+import cn.xu.api.web.model.vo.*;
 import cn.xu.application.service.PrivateMessageApplicationService;
 import cn.xu.common.ResponseCode;
 import cn.xu.common.annotation.ApiOperationLog;
@@ -20,7 +16,6 @@ import cn.xu.domain.message.model.entity.ConversationEntity;
 import cn.xu.domain.message.model.entity.SystemConfigEntity;
 import cn.xu.domain.message.model.entity.UserBlockEntity;
 import cn.xu.domain.message.model.entity.UserMessageSettingsEntity;
-import cn.xu.domain.message.model.valueobject.MessageStatus;
 import cn.xu.domain.message.service.PrivateMessageDomainService;
 import cn.xu.domain.user.model.entity.UserEntity;
 import cn.xu.domain.user.service.IUserService;
@@ -33,11 +28,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**

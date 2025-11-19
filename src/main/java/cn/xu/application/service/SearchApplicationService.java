@@ -2,7 +2,6 @@ package cn.xu.application.service;
 
 import cn.xu.api.web.model.vo.post.PostSearchResponse;
 import cn.xu.domain.post.model.entity.PostEntity;
-import cn.xu.domain.post.model.valobj.PostType;
 import cn.xu.domain.search.model.valobj.SearchFilter;
 import cn.xu.domain.search.service.ISearchDomainService;
 import cn.xu.domain.search.service.ISearchStatisticsService;

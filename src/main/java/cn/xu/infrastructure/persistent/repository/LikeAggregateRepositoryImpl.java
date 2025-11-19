@@ -269,4 +269,49 @@ public class LikeAggregateRepositoryImpl implements ILikeAggregateRepository {
             return 0;
         }
     }
+    
+    @Override
+    public java.util.Map<Long, Boolean> batchCheckLikeStatus(Long userId, java.util.List<Long> targetIds, LikeType type) {
+        try {
+            log.info("[点赞聚合根] 开始批量查询点赞状态，用户: {}, 目标数量: {}, 类型: {}", userId, targetIds != null ? targetIds.size() : 0, type);
+            
+            if (userId == null || targetIds == null || targetIds.isEmpty()) {
+                return new java.util.HashMap<>();
+            }
+            
+            java.util.Map<Long, Boolean> result = new java.util.HashMap<>();
+            
+            // 批量查询用户对指定目标的点赞记录
+            java.util.List<Like> likes = likeDao.findByUserIdAndTargetIds(userId, type.getCode(), targetIds);
+            
+            // 构建已点赞的目标ID集合
+            java.util.Set<Long> likedTargetIds = new java.util.HashSet<>();
+            if (likes != null) {
+                for (Like like : likes) {
+                    if (like != null && like.getTargetId() != null) {
+                        likedTargetIds.add(like.getTargetId());
+                    }
+                }
+            }
+            
+            // 构建结果Map
+            for (Long targetId : targetIds) {
+                boolean isLiked = likedTargetIds.contains(targetId);
+                result.put(targetId, isLiked);
+            }
+            
+            log.info("[点赞聚合根] 批量查询点赞状态成功，用户: {}, 实际点赞数量: {}", userId, likedTargetIds.size());
+            return result;
+        } catch (Exception e) {
+            log.error("[点赞聚合根] 批量查询点赞状态失败，用户: {}, 目标数量: {}, 类型: {}", userId, targetIds != null ? targetIds.size() : 0, type, e);
+            // 异常时返回全false
+            java.util.Map<Long, Boolean> result = new java.util.HashMap<>();
+            if (targetIds != null) {
+                for (Long targetId : targetIds) {
+                    result.put(targetId, false);
+                }
+            }
+            return result;
+        }
+    }
 }

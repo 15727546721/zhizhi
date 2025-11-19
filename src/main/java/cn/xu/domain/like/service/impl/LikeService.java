@@ -12,6 +12,9 @@ import cn.xu.infrastructure.cache.LikeCacheRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /**
  * 点赞应用服务
@@ -37,6 +40,7 @@ public class LikeService implements ILikeService {
     private LikeTargetRepositoryManager likeTargetRepositoryManager;
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void like(Long userId, LikeType type, Long targetId) {
         checkParams(userId, type, targetId);
         
@@ -59,7 +63,6 @@ public class LikeService implements ILikeService {
             } catch (Exception e) {
                 log.error("[点赞服务] 更新数据库点赞数失败，目标: {}, 类型: {}, 增量: +1", targetId, type, e);
                 // 如果该类型不需要更新数据库中的点赞数，可以忽略异常
-                // 例如某些类型可能只更新缓存，不更新数据库表
                 if (!type.isPost() && !type.isEssay() && !type.isComment()) {
                     log.warn("[点赞服务] 点赞类型 {} 无需更新数据库点赞数，仅更新缓存", type);
                 } else {
@@ -67,13 +70,25 @@ public class LikeService implements ILikeService {
                 }
             }
             
-            // 更新缓存（确保数据库更新成功后再更新缓存）
-            likeCacheRepository.incrementLikeCount(targetId, type, 1);
-            likeCacheRepository.addUserLikeRelation(userId, targetId, type);
-            log.info("[点赞服务] 更新缓存成功，用户: {}, 目标: {}, 类型: {}", userId, targetId, type);
+            // 使用事务同步管理器，在事务提交后执行Redis更新
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    try {
+                        // 1. 删除点赞数缓存（Cache Aside）
+                        likeCacheRepository.deleteLikeCount(targetId, type);
+                        
+                        // 2. 添加用户点赞关系缓存
+                        likeCacheRepository.addUserLikeRelation(userId, targetId, type);
+                        
+                        log.info("[点赞服务] 事务提交后更新缓存成功，用户: {}, 目标: {}, 类型: {}", userId, targetId, type);
+                    } catch (Exception e) {
+                        log.error("[点赞服务] 事务提交后更新缓存失败，用户: {}, 目标: {}, 类型: {}", userId, targetId, type, e);
+                    }
+                }
+            });
         } catch (BusinessException e) {
             log.error("点赞失败: userId={}, targetId={}, type={}", userId, targetId, type, e);
-            // 直接抛出业务异常，让上层处理
             throw e;
         } catch (Exception e) {
             log.error("点赞失败: userId={}, targetId={}, type={}", userId, targetId, type, e);
@@ -82,6 +97,7 @@ public class LikeService implements ILikeService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void unlike(Long userId, LikeType type, Long targetId) {
         checkParams(userId, type, targetId);
         
@@ -103,7 +119,6 @@ public class LikeService implements ILikeService {
                 log.info("[点赞服务] 更新数据库点赞数成功，目标: {}, 类型: {}, 增量: -1", targetId, type);
             } catch (Exception e) {
                 log.error("[点赞服务] 更新数据库点赞数失败，目标: {}, 类型: {}, 增量: -1", targetId, type, e);
-                // 如果该类型不需要更新数据库中的点赞数，可以忽略异常
                 if (!type.isPost() && !type.isEssay() && !type.isComment()) {
                     log.warn("[点赞服务] 点赞类型 {} 无需更新数据库点赞数，仅更新缓存", type);
                 } else {
@@ -111,13 +126,24 @@ public class LikeService implements ILikeService {
                 }
             }
             
-            // 更新缓存（确保数据库更新成功后再更新缓存）
-            likeCacheRepository.incrementLikeCount(targetId, type, -1);
+            // 立即移除用户点赞关系缓存（防止False Positive）
             likeCacheRepository.removeUserLikeRelation(userId, targetId, type);
-            log.info("[点赞服务] 更新缓存成功，用户: {}, 目标: {}, 类型: {}", userId, targetId, type);
+            
+            // 使用事务同步管理器，在事务提交后执行点赞数缓存清理
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    try {
+                        // 删除点赞数缓存
+                        likeCacheRepository.deleteLikeCount(targetId, type);
+                        log.info("[点赞服务] 事务提交后清理计数缓存成功，目标: {}, 类型: {}", targetId, type);
+                    } catch (Exception e) {
+                        log.error("[点赞服务] 事务提交后清理计数缓存失败，目标: {}, 类型: {}", targetId, type, e);
+                    }
+                }
+            });
         } catch (BusinessException e) {
             log.error("取消点赞失败: userId={}, targetId={}, type={}", userId, targetId, type, e);
-            // 直接抛出业务异常，让上层处理
             throw e;
         } catch (Exception e) {
             log.error("取消点赞失败: userId={}, targetId={}, type={}", userId, targetId, type, e);

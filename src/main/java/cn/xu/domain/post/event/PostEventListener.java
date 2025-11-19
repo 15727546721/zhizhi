@@ -3,23 +3,25 @@ package cn.xu.domain.post.event;
 import cn.xu.domain.comment.event.CommentCreatedEvent;
 import cn.xu.domain.comment.event.CommentDeletedEvent;
 import cn.xu.domain.like.event.LikeEvent;
-import cn.xu.infrastructure.event.annotation.DisruptorListener;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 /**
- * 帖子领域事件监听器
- * 处理其他领域发布的与帖子相关的事件
- * 注意：帖子热度更新已移到DataConsistencyService中统一处理
+ * 帖子事件监听器
+ * 使用Spring Event机制异步处理帖子相关事件
+ * 注意：帖子热度更新已移到各事件对应的监听器中处理
  */
 @Slf4j
 @Component
 public class PostEventListener {
 
     /**
-     * 处理评论创建事件，可以在这里处理其他帖子相关逻辑
+     * 处理评论创建事件
      */
-    @DisruptorListener(eventType = "CommentCreatedEvent", priority = 20)
+    @Async
+    @EventListener
     public void handleCommentCreated(CommentCreatedEvent event) {
         try {
             log.info("处理评论创建事件: {}", event);
@@ -39,7 +41,8 @@ public class PostEventListener {
     /**
      * 处理评论删除事件，可以在这里处理其他帖子相关逻辑
      */
-    @DisruptorListener(eventType = "CommentDeletedEvent", priority = 20)
+    @Async
+    @EventListener
     public void handleCommentDeleted(CommentDeletedEvent event) {
         try {
             log.info("处理评论删除事件: {}", event);
@@ -53,7 +56,8 @@ public class PostEventListener {
     /**
      * 处理点赞事件，可以在这里处理其他帖子相关逻辑
      */
-    @DisruptorListener(eventType = "LikeEvent", priority = 20)
+    @Async
+    @EventListener
     public void handleLikeEvent(LikeEvent event) {
         try {
             log.info("处理点赞事件: {}", event);

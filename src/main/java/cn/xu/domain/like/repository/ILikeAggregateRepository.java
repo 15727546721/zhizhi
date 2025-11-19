@@ -3,6 +3,8 @@ package cn.xu.domain.like.repository;
 import cn.xu.domain.like.model.LikeType;
 import cn.xu.domain.like.model.aggregate.LikeAggregate;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -86,7 +88,7 @@ public interface ILikeAggregateRepository {
      * @param limit 限制数量
      * @return 点赞列表
      */
-    java.util.List<LikeAggregate> findByUserId(Long userId, int offset, int limit);
+    List<LikeAggregate> findByUserId(Long userId, int offset, int limit);
     
     /**
      * 统计用户的点赞总数
@@ -94,4 +96,13 @@ public interface ILikeAggregateRepository {
      * @return 点赞总数
      */
     long countByUserId(Long userId);
+    
+    /**
+     * 批量查询用户对多个目标的点赞状态
+     * @param userId 用户ID
+     * @param targetIds 目标ID列表
+     * @param type 点赞类型
+     * @return 点赞状态Map，key为目标ID，value为是否点赞
+     */
+    Map<Long, Boolean> batchCheckLikeStatus(Long userId, List<Long> targetIds, LikeType type);
 }

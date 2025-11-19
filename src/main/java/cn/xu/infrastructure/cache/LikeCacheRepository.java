@@ -87,6 +87,21 @@ public class LikeCacheRepository {
     }
     
     /**
+     * 删除目标的点赞数缓存
+     * 
+     * @param targetId 目标ID
+     * @param type 点赞类型
+     */
+    public void deleteLikeCount(Long targetId, LikeType type) {
+        String key = buildLikeCountKey(targetId, type);
+        try {
+            redisTemplate.delete(key);
+        } catch (Exception e) {
+            log.error("删除点赞数缓存失败 - key: {}", key, e);
+        }
+    }
+    
+    /**
      * 记录用户点赞关系
      * 
      * @param userId 用户ID
@@ -119,6 +134,48 @@ public class LikeCacheRepository {
             redisTemplate.opsForSet().remove(key, value);
         } catch (Exception e) {
             log.error("移除用户点赞关系失败 - key: {}, value: {}", key, value, e);
+        }
+    }
+    
+    /**
+     * 批量检查用户是否点赞了指定目标
+     * 
+     * @param userId 用户ID
+     * @param targetIds 目标ID列表
+     * @param type 点赞类型
+     * @return 点赞状态Map，只包含已点赞的记录，key为目标ID，value为true
+     */
+    public java.util.Map<Long, Boolean> batchCheckUserLikeRelations(Long userId, java.util.List<Long> targetIds, LikeType type) {
+        if (userId == null || targetIds == null || targetIds.isEmpty()) {
+            return new java.util.HashMap<>();
+        }
+        
+        java.util.Map<Long, Boolean> result = new java.util.HashMap<>();
+        String key = buildUserLikeKey(userId);
+        
+        try {
+            // 批量查询用户的所有点赞关系
+            // 注意：由于Redis缓存可能是部分加载（Partial Cache），即只缓存了用户点赞的部分记录
+            // 所以这里不能因为Redis中没有找到就认为用户没有点赞（返回false）
+            // 只能确认"Redis中存在的肯定是已点赞的"（返回true）
+            // 对于Redis中不存在的，需要交给上层去查数据库确认
+            java.util.Set<Object> userLikedValues = redisTemplate.opsForSet().members(key);
+            
+            if (userLikedValues != null && !userLikedValues.isEmpty()) {
+                // 缓存中有数据，检查每个目标是否被用户点赞
+                for (Long targetId : targetIds) {
+                    String valueToCheck = buildLikeRelationValue(targetId, type);
+                    if (userLikedValues.contains(valueToCheck)) {
+                        result.put(targetId, true);
+                    }
+                }
+            }
+            
+            return result;
+        } catch (Exception e) {
+            log.error("批量检查用户点赞关系失败 - userId: {}, targetIds: {}, type: {}", userId, targetIds, type, e);
+            // 异常时返回空Map，让上层去查数据库降级
+            return new java.util.HashMap<>();
         }
     }
     

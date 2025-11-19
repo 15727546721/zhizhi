@@ -70,7 +70,22 @@ public class FavoriteCacheRepository {
     }
     
     /**
-     * 设置目标的收藏数
+     * 删除目标的收藏数缓存
+     * 
+     * @param targetId 目标ID
+     * @param targetType 目标类型
+     */
+    public void deleteFavoriteCount(Long targetId, String targetType) {
+        String key = buildFavoriteCountKey(targetId, targetType);
+        try {
+            redisTemplate.delete(key);
+        } catch (Exception e) {
+            log.error("删除收藏数缓存失败 - key: {}", key, e);
+        }
+    }
+
+    /**
+     * 记录用户收藏关系
      * 
      * @param targetId 目标ID
      * @param targetType 目标类型

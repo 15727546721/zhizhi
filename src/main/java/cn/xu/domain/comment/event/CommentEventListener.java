@@ -6,16 +6,17 @@ import cn.xu.domain.comment.service.HotScoreService;
 import cn.xu.domain.post.model.aggregate.PostAggregate;
 import cn.xu.domain.post.repository.IPostRepository;
 import cn.xu.domain.post.service.IPostService;
-import cn.xu.infrastructure.event.annotation.DisruptorListener;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
 
 /**
- * 评论事件监听处理器
- * 使用Disruptor事件监听器统一处理评论相关事件
+ * 评论事件监听器
+ * 使用Spring Event机制异步处理评论相关事件
  */
 @Slf4j
 @Component
@@ -28,9 +29,10 @@ public class CommentEventListener {
     private final IPostRepository postRepository;
 
     /**
-     * 处理评论创建事件（使用Disruptor监听器）
+     * 处理评论创建事件
      */
-    @DisruptorListener(eventType = "CommentCreatedEvent", priority = 10)
+    @Async
+    @EventListener
     public void handleCommentCreatedEvent(CommentCreatedEvent event) {
         try {
             log.info("处理评论创建事件: {}", event);
@@ -54,7 +56,8 @@ public class CommentEventListener {
     /**
      * 处理评论点赞事件
      */
-    @DisruptorListener(eventType = "CommentLikedEvent", priority = 10)
+    @Async
+    @EventListener
     public void handleCommentLikedEvent(CommentLikedEvent event) {
         try {
             log.info("处理评论点赞事件: {}", event);
@@ -71,7 +74,8 @@ public class CommentEventListener {
     /**
      * 处理评论删除事件
      */
-    @DisruptorListener(eventType = "CommentDeletedEvent", priority = 10)
+    @Async
+    @EventListener
     public void handleCommentDeletedEvent(CommentDeletedEvent event) {
         try {
             log.info("处理评论删除事件: {}", event);

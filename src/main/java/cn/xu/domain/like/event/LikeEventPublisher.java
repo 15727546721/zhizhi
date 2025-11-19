@@ -1,20 +1,27 @@
 package cn.xu.domain.like.event;
 
 import cn.xu.domain.like.model.LikeType;
-import cn.xu.infrastructure.event.disruptor.EventPublisher;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 
+/**
+ * 点赞事件发布器
+ * 使用Spring Event机制发布点赞相关事件
+ */
+@Slf4j
 @Component
+@RequiredArgsConstructor
 public class LikeEventPublisher {
 
-    private final EventPublisher eventPublisher;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public LikeEventPublisher(EventPublisher eventPublisher) {
-        this.eventPublisher = eventPublisher;
-    }
-
+    /**
+     * 发布点赞/取消点赞事件
+     */
     public void publish(Long userId, Long targetId, LikeType targetType, Boolean likeStatus) {
         LikeEvent event = LikeEvent.builder()
                 .userId(userId)
@@ -23,12 +30,14 @@ public class LikeEventPublisher {
                 .status(likeStatus)
                 .createTime(LocalDateTime.now())
                 .build();
-
-        eventPublisher.publishEvent(event, "LikeEvent");
+                
+        log.debug("发布点赞事件: userId={}, targetId={}, type={}, status={}", 
+                 userId, targetId, targetType, likeStatus);
+        eventPublisher.publishEvent(event);
     }
     
     /**
-     * 发布点赞事件的重载方法，支持更多参数
+     * 发布点赞事件（带标题）
      */
     public void publish(Long userId, Long targetId, LikeType targetType, Boolean likeStatus, String targetTitle) {
         LikeEvent event = LikeEvent.builder()
@@ -38,7 +47,9 @@ public class LikeEventPublisher {
                 .status(likeStatus)
                 .createTime(LocalDateTime.now())
                 .build();
-
-        eventPublisher.publishEvent(event, "LikeEvent");
+                
+        log.debug("发布点赞事件: userId={}, targetId={}, type={}, status={}, title={}", 
+                 userId, targetId, targetType, likeStatus, targetTitle);
+        eventPublisher.publishEvent(event);
     }
 }

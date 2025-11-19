@@ -1,91 +1,63 @@
 package cn.xu.domain.post.event;
 
 import cn.xu.domain.post.model.entity.PostEntity;
-import cn.xu.infrastructure.event.disruptor.EventPublisher;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 
 /**
- * 帖子事件发布服务（应用服务）
+ * 帖子事件发布器
+ * 使用Spring Event机制发布帖子相关事件
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class PostEventPublisher {
 
-    private final EventPublisher eventPublisher;
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * 发布帖子创建事件
      */
     public void publishCreated(PostEntity post) {
-        PostEvent event = PostEvent.builder()
-                .post(post)
-                .eventType(PostEvent.PostEventType.CREATED)
-                .createTime(LocalDateTime.now())
-                .operatorId(post.getUserId())
-                .build();
-        log.info("[帖子服务] 发布帖子创建事件: {}", event);
-        eventPublisher.publishEvent(event, "PostEvent");
-        
-        // 发布新的帖子创建事件
-        PostCreatedEvent createdEvent = PostCreatedEvent.builder()
+        PostCreatedEvent event = PostCreatedEvent.builder()
                 .postId(post.getId())
                 .userId(post.getUserId())
                 .title(post.getTitle() != null ? post.getTitle().getValue() : null)
-                .description(post.getDescription())  // 添加描述字段
+                .description(post.getDescription())
                 .createTime(LocalDateTime.now())
                 .build();
-        eventPublisher.publishEvent(createdEvent, "PostCreatedEvent");
+        log.debug("发布帖子创建事件: postId={}", post.getId());
+        eventPublisher.publishEvent(event);
     }
 
     /**
      * 发布帖子更新事件
      */
     public void publishUpdated(PostEntity post) {
-        PostEvent event = PostEvent.builder()
-                .post(post)
-                .eventType(PostEvent.PostEventType.UPDATED)
-                .createTime(LocalDateTime.now())
-                .operatorId(post.getUserId())
-                .build();
-        log.info("[帖子服务] 发布帖子更新事件: {}", event);
-        eventPublisher.publishEvent(event, "PostEvent");
-        
-        // 发布新的帖子更新事件
-        PostUpdatedEvent updatedEvent = PostUpdatedEvent.builder()
+        PostUpdatedEvent event = PostUpdatedEvent.builder()
                 .postId(post.getId())
                 .userId(post.getUserId())
                 .title(post.getTitle() != null ? post.getTitle().getValue() : null)
-                .description(post.getDescription())  // 添加描述字段
+                .description(post.getDescription())
                 .updateTime(LocalDateTime.now())
                 .build();
-        eventPublisher.publishEvent(updatedEvent, "PostUpdatedEvent");
+        log.debug("发布帖子更新事件: postId={}", post.getId());
+        eventPublisher.publishEvent(event);
     }
 
     /**
      * 发布帖子删除事件
      */
     public void publishDeleted(Long postId) {
-        PostEntity post = PostEntity.builder()
-                .id(postId)
-                .build();
-        PostEvent event = PostEvent.builder()
-                .post(post)
-                .eventType(PostEvent.PostEventType.DELETED)
-                .createTime(LocalDateTime.now())
-                .build();
-        log.info("[帖子服务] 发布帖子删除事件: {}", event);
-        eventPublisher.publishEvent(event, "PostEvent");
-        
-        // 发布新的帖子删除事件
-        PostDeletedEvent deletedEvent = PostDeletedEvent.builder()
+        PostDeletedEvent event = PostDeletedEvent.builder()
                 .postId(postId)
                 .deleteTime(LocalDateTime.now())
                 .build();
-        eventPublisher.publishEvent(deletedEvent, "PostDeletedEvent");
+        log.debug("发布帖子删除事件: postId={}", postId);
+        eventPublisher.publishEvent(event);
     }
 }

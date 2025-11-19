@@ -1,11 +1,11 @@
 package cn.xu.api.web.controller;
 
+import cn.xu.api.web.model.vo.user.UserTopicItemVO;
 import cn.xu.common.ResponseCode;
 import cn.xu.common.annotation.ApiOperationLog;
 import cn.xu.common.request.PageRequest;
 import cn.xu.common.response.PageResponse;
 import cn.xu.common.response.ResponseEntity;
-import cn.xu.api.web.model.vo.user.UserTopicItemVO;
 import cn.xu.domain.post.model.entity.TopicEntity;
 import cn.xu.domain.post.repository.IPostTopicRepository;
 import cn.xu.domain.post.service.IPostTopicService;

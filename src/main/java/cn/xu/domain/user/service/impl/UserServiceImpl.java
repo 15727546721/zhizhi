@@ -2,8 +2,8 @@ package cn.xu.domain.user.service.impl;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.api.system.model.dto.user.SysUserRequest;
-import cn.xu.api.web.model.dto.user.UpdateUserRequest;
 import cn.xu.api.web.model.dto.user.UpdateUserProfileRequest;
+import cn.xu.api.web.model.dto.user.UpdateUserRequest;
 import cn.xu.api.web.model.dto.user.UserLoginRequest;
 import cn.xu.api.web.model.dto.user.UserRegisterRequest;
 import cn.xu.common.ResponseCode;

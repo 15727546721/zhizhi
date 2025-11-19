@@ -15,6 +15,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+
 /**
  * 收藏服务实现类
  */
@@ -92,16 +95,28 @@ public class FavoriteServiceImpl implements IFavoriteService {
                 // 先更新数据库中的收藏数（确保数据一致性）
                 updateTargetFavoriteCount(targetId, targetTypeEnum, true);
                 
-                // 然后更新Redis缓存（数据库更新成功后再更新缓存）
-                favoriteCacheRepository.incrementFavoriteCount(targetId, dbTargetType, 1);
-                
-                // 添加用户收藏关系缓存
-                favoriteCacheRepository.addUserFavoriteRelation(userId, targetId, dbTargetType);
-                
-                // 更新用户收藏数量缓存
-                favoriteCacheRepository.incrementUserFavoriteCount(userId, dbTargetType);
-                
-                log.info("[收藏服务] 更新缓存成功，用户: {}, 目标: {}, 类型: {}", userId, targetId, targetTypeEnum);
+                // 使用事务同步管理器，在事务提交后执行Redis更新
+                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        try {
+                            // 1. 删除收藏数缓存（Cache Aside模式：更新DB后删除缓存）
+                            // 下次读取时会从DB加载最新值，避免并发导致的脏数据
+                            favoriteCacheRepository.deleteFavoriteCount(targetId, dbTargetType);
+                            
+                            // 2. 添加用户收藏关系缓存
+                            // 在事务提交后执行，避免"Redis成功但DB回滚"导致的数据不一致
+                            favoriteCacheRepository.addUserFavoriteRelation(userId, targetId, dbTargetType);
+                            
+                            // 3. 更新用户收藏数量缓存（简单的Increment可能也会有不一致，但先保持现状，或改为删除）
+                            favoriteCacheRepository.incrementUserFavoriteCount(userId, dbTargetType);
+                            
+                            log.info("[收藏服务] 事务提交后更新缓存成功，用户: {}, 目标: {}, 类型: {}", userId, targetId, dbTargetType);
+                        } catch (Exception e) {
+                            log.error("[收藏服务] 事务提交后更新缓存失败，用户: {}, 目标: {}, 类型: {}", userId, targetId, dbTargetType, e);
+                        }
+                    }
+                });
             }
             
             log.info("[收藏服务] 收藏操作成功完成");
@@ -134,10 +149,13 @@ public class FavoriteServiceImpl implements IFavoriteService {
             } else {
                 log.warn("[收藏服务] 用户未收藏，无需取消操作，用户: {}, 目标: {}, 类型: {}", userId, targetId, targetTypeEnum);
                 // 即使数据库状态为未收藏，也要确保缓存一致性
-                boolean cachedFavorited = favoriteCacheRepository.checkUserFavoriteRelation(userId, targetId, dbTargetType);
-                if (cachedFavorited) {
+                Boolean cachedFavorited = favoriteCacheRepository.checkUserFavoriteRelation(userId, targetId, dbTargetType);
+                // 注意：这里checkUserFavoriteRelation返回null(Error)或true/false
+                // 如果是Partial Cache，false不代表没收藏。但在"取消收藏"场景下，我们主要关心"是否需要从Redis移除"。
+                // 如果Redis里有(true)，那肯定要移除。
+                if (Boolean.TRUE.equals(cachedFavorited)) {
                     favoriteCacheRepository.removeUserFavoriteRelation(userId, targetId, dbTargetType);
-                    favoriteCacheRepository.incrementFavoriteCount(targetId, dbTargetType, -1);
+                    favoriteCacheRepository.deleteFavoriteCount(targetId, dbTargetType); // 删除缓存
                     log.info("[收藏服务] 清理不一致的缓存数据，用户: {}, 目标: {}, 类型: {}", userId, targetId, targetTypeEnum);
                 }
                 return; // 已经取消收藏，直接返回
@@ -155,7 +173,9 @@ public class FavoriteServiceImpl implements IFavoriteService {
                         folderEntity.setContentCount(newCount);
                         favoriteFolderRepository.update(folderEntity);
                         favoriteFolderRepository.updateContentCount(folderId, newCount);
-                        // 更新缓存
+                        
+                        // 这里也可以放到事务后更新缓存，但收藏夹数量一致性要求可能没那么高
+                        // 暂时保持同步更新，或者也移到afterCommit
                         favoriteCacheRepository.decrementFolderContentCount(folderId);
                         log.info("[收藏服务] 更新收藏夹内容数量，收藏夹ID: {}, 新数量: {}", folderId, newCount);
                     }
@@ -164,16 +184,26 @@ public class FavoriteServiceImpl implements IFavoriteService {
                 // 先更新数据库中的收藏数（确保数据一致性）
                 updateTargetFavoriteCount(targetId, targetTypeEnum, false);
                 
-                // 然后更新Redis缓存（数据库更新成功后再更新缓存）
-                favoriteCacheRepository.incrementFavoriteCount(targetId, dbTargetType, -1);
-                
-                // 移除用户收藏关系缓存
+                // 立即移除用户收藏关系缓存（在事务提交前），防止False Positive
                 favoriteCacheRepository.removeUserFavoriteRelation(userId, targetId, dbTargetType);
                 
-                // 更新用户收藏数量缓存
-                favoriteCacheRepository.decrementUserFavoriteCount(userId, dbTargetType);
-                
-                log.info("[收藏服务] 更新缓存成功，用户: {}, 目标: {}, 类型: {}", userId, targetId, targetTypeEnum);
+                // 使用事务同步管理器，在事务提交后执行其他Redis更新
+                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        try {
+                            // 1. 删除收藏数缓存（Cache Aside模式）
+                            favoriteCacheRepository.deleteFavoriteCount(targetId, dbTargetType);
+                            
+                            // 2. 更新用户收藏数量缓存
+                            favoriteCacheRepository.decrementUserFavoriteCount(userId, dbTargetType);
+                            
+                            log.info("[收藏服务] 事务提交后更新缓存成功，用户: {}, 目标: {}, 类型: {}", userId, targetId, dbTargetType);
+                        } catch (Exception e) {
+                            log.error("[收藏服务] 事务提交后更新缓存失败，用户: {}, 目标: {}, 类型: {}", userId, targetId, dbTargetType, e);
+                        }
+                    }
+                });
             }
             
             log.info("[收藏服务] 取消收藏操作成功完成");

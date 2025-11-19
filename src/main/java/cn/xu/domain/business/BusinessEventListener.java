@@ -10,7 +10,8 @@ import cn.xu.domain.post.event.PostUpdatedEvent;
 import cn.xu.domain.user.event.UserLoggedInEvent;
 import cn.xu.domain.user.event.UserRegisteredEvent;
 import cn.xu.domain.user.event.UserUpdatedEvent;
-import cn.xu.infrastructure.event.annotation.DisruptorListener;
+import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Async;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -29,7 +30,8 @@ public class BusinessEventListener {
     /**
      * 处理用户注册事件
      */
-    @DisruptorListener(eventType = "UserRegisteredEvent", priority = 5)
+    @Async
+    @EventListener
     public void handleUserRegistered(UserRegisteredEvent event) {
         try {
             log.info("处理用户注册事件: {}", event);
@@ -43,7 +45,8 @@ public class BusinessEventListener {
     /**
      * 处理用户登录事件
      */
-    @DisruptorListener(eventType = "UserLoggedInEvent", priority = 5)
+    @Async
+    @EventListener
     public void handleUserLoggedIn(UserLoggedInEvent event) {
         try {
             log.info("处理用户登录事件: {}", event);
@@ -57,7 +60,8 @@ public class BusinessEventListener {
     /**
      * 处理用户更新事件
      */
-    @DisruptorListener(eventType = "UserUpdatedEvent", priority = 5)
+    @Async
+    @EventListener
     public void handleUserUpdated(UserUpdatedEvent event) {
         try {
             log.info("处理用户更新事件: {}", event);
@@ -71,7 +75,8 @@ public class BusinessEventListener {
     /**
      * 处理帖子创建事件
      */
-    @DisruptorListener(eventType = "PostCreatedEvent", priority = 5)
+    @Async
+    @EventListener
     public void handlePostCreated(PostCreatedEvent event) {
         try {
             log.info("处理帖子创建事件: {}", event);
@@ -85,7 +90,8 @@ public class BusinessEventListener {
     /**
      * 处理帖子更新事件
      */
-    @DisruptorListener(eventType = "PostUpdatedEvent", priority = 5)
+    @Async
+    @EventListener
     public void handlePostUpdated(PostUpdatedEvent event) {
         try {
             log.info("处理帖子更新事件: {}", event);
@@ -99,7 +105,8 @@ public class BusinessEventListener {
     /**
      * 处理帖子删除事件
      */
-    @DisruptorListener(eventType = "PostDeletedEvent", priority = 5)
+    @Async
+    @EventListener
     public void handlePostDeleted(PostDeletedEvent event) {
         try {
             log.info("处理帖子删除事件: {}", event);
@@ -113,7 +120,8 @@ public class BusinessEventListener {
     /**
      * 处理评论创建事件
      */
-    @DisruptorListener(eventType = "CommentCreatedEvent", priority = 5)
+    @Async
+    @EventListener
     public void handleCommentCreated(CommentCreatedEvent event) {
         try {
             log.info("处理评论创建事件: {}", event);
@@ -127,7 +135,8 @@ public class BusinessEventListener {
     /**
      * 处理评论更新事件
      */
-    @DisruptorListener(eventType = "CommentUpdatedEvent", priority = 5)
+    @Async
+    @EventListener
     public void handleCommentUpdated(CommentUpdatedEvent event) {
         try {
             log.info("处理评论更新事件: {}", event);
@@ -141,7 +150,8 @@ public class BusinessEventListener {
     /**
      * 处理评论删除事件
      */
-    @DisruptorListener(eventType = "CommentDeletedEvent", priority = 5)
+    @Async
+    @EventListener
     public void handleCommentDeleted(CommentDeletedEvent event) {
         try {
             log.info("处理评论删除事件: {}", event);
@@ -155,7 +165,8 @@ public class BusinessEventListener {
     /**
      * 处理点赞事件
      */
-    @DisruptorListener(eventType = "LikeEvent", priority = 5)
+    @Async
+    @EventListener
     public void handleLikeEvent(LikeEvent event) {
         try {
             log.info("处理点赞事件: {}", event);

@@ -5,7 +5,8 @@ import cn.xu.domain.post.event.PostDeletedEvent;
 import cn.xu.domain.post.event.PostUpdatedEvent;
 import cn.xu.domain.post.model.aggregate.PostAggregate;
 import cn.xu.domain.post.model.entity.PostEntity;
-import cn.xu.infrastructure.event.annotation.DisruptorListener;
+import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Async;
 import cn.xu.infrastructure.persistent.read.elastic.service.PostElasticService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,7 +38,8 @@ public class PostSearchCacheService {
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     private cn.xu.infrastructure.util.RedisLock redisLock;
 
-    @DisruptorListener(eventType = "PostCreatedEvent", priority = 10)
+    @Async
+    @EventListener
     public void handlePostCreated(PostCreatedEvent event) {
         try {
             syncElasticsearchIndexAsync(event.getPostId());
@@ -51,7 +53,8 @@ public class PostSearchCacheService {
         }
     }
 
-    @DisruptorListener(eventType = "PostUpdatedEvent", priority = 10)
+    @Async
+    @EventListener
     public void handlePostUpdated(PostUpdatedEvent event) {
         try {
             syncElasticsearchIndexAsync(event.getPostId());
@@ -65,7 +68,8 @@ public class PostSearchCacheService {
         }
     }
 
-    @DisruptorListener(eventType = "PostDeletedEvent", priority = 10)
+    @Async
+    @EventListener
     public void handlePostDeleted(PostDeletedEvent event) {
         try {
             if (postElasticService != null) {

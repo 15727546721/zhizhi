@@ -115,5 +115,18 @@
         WHERE user_id = #{userId}
         AND status = 1
     </select>
+    
+    <select id="findByUserIdAndTargetIds" resultType="cn.xu.infrastructure.persistent.po.Like">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM `like`
+        WHERE user_id = #{userId}
+        AND type = #{type}
+        AND target_id IN
+        <foreach collection="targetIds" item="targetId" open="(" separator="," close=")">
+            #{targetId}
+        </foreach>
+        AND status = 1
+    </select>
 
 </mapper>

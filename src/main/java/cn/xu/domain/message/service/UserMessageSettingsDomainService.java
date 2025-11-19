@@ -1,6 +1,5 @@
 package cn.xu.domain.message.service;
 
-import cn.xu.common.exception.BusinessException;
 import cn.xu.domain.message.model.entity.UserMessageSettingsEntity;
 import cn.xu.domain.message.repository.IUserMessageSettingsRepository;
 import lombok.RequiredArgsConstructor;

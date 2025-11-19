@@ -1,19 +1,20 @@
 package cn.xu.domain.like.event;
 
-import cn.xu.domain.like.model.LikeType;
+import cn.xu.domain.comment.service.HotScoreService;
 import cn.xu.domain.like.model.aggregate.LikeAggregate;
 import cn.xu.domain.like.repository.ILikeAggregateRepository;
 import cn.xu.domain.post.service.IPostService;
-import cn.xu.infrastructure.event.annotation.DisruptorListener;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
 
 /**
- * 点赞事件监听处理器
- * 使用Disruptor事件监听器统一处理点赞相关事件
+ * 点赞事件监听器
+ * 使用Spring Event机制异步处理点赞相关事件
  */
 @Slf4j
 @Component
@@ -22,11 +23,13 @@ public class LikeEventListener {
 
     private final ILikeAggregateRepository likeAggregateRepository;
     private final IPostService postService;
+    private final HotScoreService hotScoreService;
 
     /**
-     * 处理点赞事件（使用Disruptor监听器）
+     * 处理点赞事件
      */
-    @DisruptorListener(eventType = "LikeEvent", priority = 10)
+    @Async
+    @EventListener
     public void onLikeEvent(LikeEvent event) {
         log.info("处理点赞事件: {}", event);
         try {
@@ -68,10 +71,15 @@ public class LikeEventListener {
                     event.getUserId(), event.getTargetId(), event.getType());
         }
 
-        // 如果是帖子点赞，更新帖子热度分数
-        if (event.getType().isPost() && shouldUpdate) {
-            postService.updatePostHotScore(event.getTargetId());
-            log.info("更新帖子热度分数: postId={}", event.getTargetId());
+        // 根据点赞类型更新热度分数
+        if (shouldUpdate) {
+            if (event.getType().isPost()) {
+                postService.updatePostHotScore(event.getTargetId());
+                log.info("更新帖子热度分数: postId={}", event.getTargetId());
+            } else if (event.getType().isComment()) {
+                hotScoreService.updateHotScore(event.getTargetId());
+                log.info("更新评论热度分数: commentId={}", event.getTargetId());
+            }
         }
 
         log.info("点赞处理完成: userId={}, targetId={}, type={}", 
@@ -96,10 +104,15 @@ public class LikeEventListener {
             }
         }
 
-        // 如果是帖子点赞，更新帖子热度分数
-        if (event.getType().isPost() && shouldUpdate) {
-            postService.updatePostHotScore(event.getTargetId());
-            log.info("更新帖子热度分数: postId={}", event.getTargetId());
+        // 根据点赞类型更新热度分数
+        if (shouldUpdate) {
+            if (event.getType().isPost()) {
+                postService.updatePostHotScore(event.getTargetId());
+                log.info("更新帖子热度分数: postId={}", event.getTargetId());
+            } else if (event.getType().isComment()) {
+                hotScoreService.updateHotScore(event.getTargetId());
+                log.info("更新评论热度分数: commentId={}", event.getTargetId());
+            }
         }
 
         log.info("取消点赞处理完成: userId={}, targetId={}, type={}", 
