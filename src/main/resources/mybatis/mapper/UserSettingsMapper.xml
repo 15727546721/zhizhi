@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.xu.repository.mapper.UserSettingsMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="cn.xu.model.entity.UserSettings">
+        <id column="id" property="id" />
+        <result column="user_id" property="userId" />
+        <result column="profile_visibility" property="profileVisibility" />
+        <result column="show_online_status" property="showOnlineStatus" />
+        <result column="email_notification" property="emailNotification" />
+        <result column="browser_notification" property="browserNotification" />
+        <result column="sound_notification" property="soundNotification" />
+        <result column="email_verified" property="emailVerified" />
+        <result column="email_verify_token" property="emailVerifyToken" />
+        <result column="email_verify_expire_time" property="emailVerifyExpireTime" />
+        <result column="password_reset_token" property="passwordResetToken" />
+        <result column="password_reset_expire_time" property="passwordResetExpireTime" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+    </resultMap>
+
+    <!-- 插入 -->
+    <insert id="insert" parameterType="cn.xu.model.entity.UserSettings" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO user_settings (
+            user_id,
+            profile_visibility,
+            show_online_status,
+            email_notification,
+            browser_notification,
+            sound_notification,
+            email_verified,
+            email_verify_token,
+            email_verify_expire_time,
+            create_time,
+            update_time
+        ) VALUES (
+            #{userId},
+            #{profileVisibility},
+            #{showOnlineStatus},
+            #{emailNotification},
+            #{browserNotification},
+            #{soundNotification},
+            #{emailVerified},
+            #{emailVerifyToken},
+            #{emailVerifyExpireTime},
+            #{createTime},
+            #{updateTime}
+        )
+    </insert>
+
+    <!-- 更新 -->
+    <update id="update" parameterType="cn.xu.model.entity.UserSettings">
+        UPDATE user_settings
+        <set>
+            <if test="profileVisibility != null">profile_visibility = #{profileVisibility},</if>
+            <if test="showOnlineStatus != null">show_online_status = #{showOnlineStatus},</if>
+            <if test="emailNotification != null">email_notification = #{emailNotification},</if>
+            <if test="browserNotification != null">browser_notification = #{browserNotification},</if>
+            <if test="soundNotification != null">sound_notification = #{soundNotification},</if>
+            <if test="emailVerified != null">email_verified = #{emailVerified},</if>
+            update_time = NOW()
+        </set>
+        WHERE user_id = #{userId}
+    </update>
+    
+    <!-- 清空邮箱验证令牌（验证成功后调用） -->
+    <update id="clearEmailVerifyToken">
+        UPDATE user_settings
+        SET email_verify_token = NULL,
+            email_verify_expire_time = NULL,
+            email_verified = TRUE,
+            update_time = NOW()
+        WHERE user_id = #{userId}
+    </update>
+    
+    <!-- 设置邮箱验证令牌 -->
+    <update id="setEmailVerifyToken">
+        UPDATE user_settings
+        SET email_verify_token = #{token},
+            email_verify_expire_time = #{expireTime},
+            update_time = NOW()
+        WHERE user_id = #{userId}
+    </update>
+    
+    <!-- 设置密码重置令牌 -->
+    <update id="setPasswordResetToken">
+        UPDATE user_settings
+        SET password_reset_token = #{token},
+            password_reset_expire_time = #{expireTime},
+            update_time = NOW()
+        WHERE user_id = #{userId}
+    </update>
+    
+    <!-- 根据密码重置令牌查询 -->
+    <select id="selectByPasswordResetToken" resultMap="BaseResultMap">
+        SELECT * FROM user_settings
+        WHERE password_reset_token = #{token}
+    </select>
+    
+    <!-- 清空密码重置令牌 -->
+    <update id="clearPasswordResetToken">
+        UPDATE user_settings
+        SET password_reset_token = NULL,
+            password_reset_expire_time = NULL,
+            update_time = NOW()
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- 根据用户ID查询 -->
+    <select id="selectByUserId" resultMap="BaseResultMap">
+        SELECT * FROM user_settings
+        WHERE user_id = #{userId}
+    </select>
+
+    <!-- 根据邮箱验证令牌查询 -->
+    <select id="selectByEmailVerifyToken" resultMap="BaseResultMap">
+        SELECT * FROM user_settings
+        WHERE email_verify_token = #{token}
+    </select>
+
+    <!-- 删除（实际不使用，保留接口） -->
+    <delete id="deleteByUserId">
+        DELETE FROM user_settings
+        WHERE user_id = #{userId}
+    </delete>
+
+</mapper>
+

@@ -2,59 +2,61 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="cn.xu.infrastructure.persistent.dao.PostMapper">
+<mapper namespace="cn.xu.repository.mapper.PostMapper">
 
-    <resultMap id="BaseResultMap" type="cn.xu.infrastructure.persistent.po.Post">
+    <resultMap id="BaseResultMap" type="cn.xu.model.entity.Post">
         <id property="id" column="id" jdbcType="BIGINT"/>
         <result property="userId" column="user_id" jdbcType="BIGINT"/>
-        <result property="categoryId" column="category_id" jdbcType="BIGINT"/>
-        <result property="type" column="type" jdbcType="VARCHAR"/>
         <result property="status" column="status" jdbcType="TINYINT"/>
         <result property="title" column="title" jdbcType="VARCHAR"/>
+        <result property="description" column="description" jdbcType="VARCHAR"/>
         <result property="content" column="content" jdbcType="VARCHAR"/>
         <result property="coverUrl" column="cover_url" jdbcType="VARCHAR"/>
         <result property="viewCount" column="view_count" jdbcType="BIGINT"/>
         <result property="likeCount" column="like_count" jdbcType="BIGINT"/>
         <result property="commentCount" column="comment_count" jdbcType="BIGINT"/>
         <result property="favoriteCount" column="favorite_count" jdbcType="BIGINT"/>
+        <result property="shareCount" column="share_count" jdbcType="BIGINT"/>
         <result property="isFeatured" column="is_featured" jdbcType="TINYINT"/>
-        <result property="acceptedAnswerId" column="accepted_answer_id" jdbcType="BIGINT"/>
-        <result property="publishTime" column="publish_time" jdbcType="TIMESTAMP"/>
         <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
         <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        id, user_id, category_id, type, status, title, content, cover_url, view_count, like_count, 
-        comment_count, favorite_count, is_featured, accepted_answer_id, publish_time, create_time, update_time
+        id, user_id, status, title, description, content, cover_url, view_count, like_count, 
+        comment_count, favorite_count, share_count, is_featured, create_time, update_time
     </sql>
     
-    <insert id="insert" parameterType="cn.xu.infrastructure.persistent.po.Post" useGeneratedKeys="true"
+    <!-- 带表别名的列列表，用于JOIN查询 -->
+    <sql id="Post_Column_List">
+        p.id, p.user_id, p.status, p.title, p.description, p.content, p.cover_url, p.view_count, p.like_count, 
+        p.comment_count, p.favorite_count, p.share_count, p.is_featured, p.create_time, p.update_time
+    </sql>
+    
+    <insert id="insert" parameterType="cn.xu.model.entity.Post" useGeneratedKeys="true"
             keyProperty="id">
-        INSERT INTO post (user_id, category_id, type, status, title, content, cover_url, view_count, 
-                         like_count, comment_count, favorite_count, is_featured, accepted_answer_id, publish_time, 
-                         create_time, update_time)
-        VALUES (#{userId}, #{categoryId}, #{type}, #{status}, #{title}, #{content}, #{coverUrl},
-                #{viewCount}, #{likeCount}, #{commentCount}, #{favoriteCount}, #{isFeatured}, #{acceptedAnswerId},
-                #{publishTime}, now(), now())
+        INSERT INTO post (user_id, status, title, description, content, cover_url, view_count, 
+                         like_count, comment_count, favorite_count, share_count, is_featured, 
+                         create_time)
+        VALUES (#{userId}, #{status}, #{title}, #{description}, #{content}, #{coverUrl},
+                #{viewCount}, #{likeCount}, #{commentCount}, #{favoriteCount}, #{shareCount}, #{isFeatured},
+                #{createTime})
     </insert>
     
     <update id="update">
         UPDATE post
         SET user_id = #{userId},
-            category_id = #{categoryId},
-            type = #{type},
             status = #{status},
             title = #{title},
+            description = #{description},
             content = #{content},
             cover_url = #{coverUrl},
             view_count = #{viewCount},
             like_count = #{likeCount},
             comment_count = #{commentCount},
             favorite_count = #{favoriteCount},
+            share_count = #{shareCount},
             is_featured = #{isFeatured},
-            accepted_answer_id = #{acceptedAnswerId},
-            publish_time = #{publishTime},
             update_time = now()
         WHERE id = #{id}
     </update>
@@ -62,6 +64,13 @@
     <update id="updateStatus">
         UPDATE post
         SET status = #{status},
+            update_time = now()
+        WHERE id = #{id}
+    </update>
+    
+    <update id="updateFeatured">
+        UPDATE post
+        SET is_featured = #{isFeatured},
             update_time = now()
         WHERE id = #{id}
     </update>
@@ -89,6 +98,18 @@
         SET favorite_count = favorite_count + #{count, jdbcType=BIGINT}
         WHERE id = #{postId, jdbcType=BIGINT}
     </update>
+    
+    <update id="increaseFavoriteCount">
+        UPDATE post
+        SET favorite_count = COALESCE(favorite_count, 0) + 1
+        WHERE id = #{postId}
+    </update>
+    
+    <update id="decreaseFavoriteCount">
+        UPDATE post
+        SET favorite_count = GREATEST(COALESCE(favorite_count, 0) - 1, 0)
+        WHERE id = #{postId}
+    </update>
 
     <delete id="deleteByIds">
         DELETE FROM post WHERE id IN
@@ -97,7 +118,7 @@
         </foreach>
     </delete>
 
-    <select id="findById" resultType="cn.xu.infrastructure.persistent.po.Post" resultMap="BaseResultMap">
+    <select id="findById" resultType="cn.xu.model.entity.Post" resultMap="BaseResultMap">
         SELECT 
         <include refid="Base_Column_List"/>
         FROM post
@@ -192,6 +213,13 @@
         WHERE user_id = #{userId} AND status = 1
     </select>
     
+    <!-- 统计用户草稿数量 -->
+    <select id="countDraftsByUserId" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM post
+        WHERE user_id = #{userId} AND status = 0
+    </select>
+    
     <!-- 获取已发布帖子列表（分页） -->
     <select id="getPublishedPostPageList" resultMap="BaseResultMap">
         SELECT 
@@ -200,25 +228,6 @@
         WHERE status = 1
         ORDER BY create_time DESC
         LIMIT #{offset}, #{limit}
-    </select>
-    
-    <!-- 根据分类ID查询帖子列表 -->
-    <select id="getPostPageByCategory" resultMap="BaseResultMap">
-        SELECT 
-        <include refid="Base_Column_List"/>
-        FROM post
-        WHERE status = 1
-          AND category_id = #{categoryId}
-        ORDER BY create_time DESC
-        LIMIT #{offset}, #{size}
-    </select>
-    
-    <!-- 统计分类下的帖子数量 -->
-    <select id="countByCategoryId" resultType="java.lang.Long">
-        SELECT COUNT(*)
-        FROM post
-        WHERE status = 1
-          AND category_id = #{categoryId}
     </select>
     
     <!-- 查询热门帖子 -->
@@ -236,6 +245,102 @@
         SELECT COUNT(*)
         FROM post
         WHERE status = 1
+    </select>
+    
+    <!-- 按时间范围查询热门帖子（周榜/月榜） -->
+    <select id="findHotPostsByTimeRange" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM post
+        WHERE status = 1
+          AND create_time >= #{startTime}
+        ORDER BY (like_count + comment_count * 2 + favorite_count * 3) DESC, create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+    
+    <!-- 统计时间范围内的帖子数量 -->
+    <select id="countPostsByTimeRange" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM post
+        WHERE status = 1
+          AND create_time >= #{startTime}
+    </select>
+    
+    <!-- 按排序方式查询帖子（多维度排行榜） -->
+    <select id="findPostsBySort" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM post
+        WHERE status = 1
+        ORDER BY
+        <choose>
+            <when test="sort == 'hot'">
+                (COALESCE(like_count,0) + COALESCE(comment_count,0) * 2 + COALESCE(favorite_count,0) * 3) DESC
+            </when>
+            <when test="sort == 'likes'">
+                COALESCE(like_count, 0) DESC
+            </when>
+            <when test="sort == 'favorites'">
+                COALESCE(favorite_count, 0) DESC
+            </when>
+            <when test="sort == 'comments'">
+                COALESCE(comment_count, 0) DESC
+            </when>
+            <when test="sort == 'views'">
+                COALESCE(view_count, 0) DESC
+            </when>
+            <when test="sort == 'latest'">
+                create_time DESC
+            </when>
+            <otherwise>
+                (COALESCE(like_count,0) + COALESCE(comment_count,0) * 2 + COALESCE(favorite_count,0) * 3) DESC
+            </otherwise>
+        </choose>
+        , create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+    
+    <!-- 按时间范围和排序方式查询帖子 -->
+    <select id="findPostsByTimeRangeAndSort" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM post
+        WHERE status = 1
+          AND create_time >= #{startTime}
+        ORDER BY
+        <choose>
+            <when test="sort == 'hot'">
+                (COALESCE(like_count,0) + COALESCE(comment_count,0) * 2 + COALESCE(favorite_count,0) * 3) DESC
+            </when>
+            <when test="sort == 'likes'">
+                COALESCE(like_count, 0) DESC
+            </when>
+            <when test="sort == 'favorites'">
+                COALESCE(favorite_count, 0) DESC
+            </when>
+            <when test="sort == 'comments'">
+                COALESCE(comment_count, 0) DESC
+            </when>
+            <when test="sort == 'views'">
+                COALESCE(view_count, 0) DESC
+            </when>
+            <when test="sort == 'latest'">
+                create_time DESC
+            </when>
+            <otherwise>
+                (COALESCE(like_count,0) + COALESCE(comment_count,0) * 2 + COALESCE(favorite_count,0) * 3) DESC
+            </otherwise>
+        </choose>
+        , create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+    
+    <!-- 查询热门标签 -->
+    <select id="findHotTags" resultType="cn.xu.model.entity.Tag">
+        SELECT id, name, description, is_recommended, usage_count, sort, create_time, update_time
+        FROM tag
+        ORDER BY COALESCE(usage_count, 0) DESC
+        LIMIT #{limit}
     </select>
     
     <!-- 查询用户发布的帖子 -->
@@ -309,12 +414,6 @@
         WHERE status = 1
           AND (title LIKE CONCAT('%', #{keyword}, '%') 
                OR description LIKE CONCAT('%', #{keyword}, '%'))
-          <if test="types != null and types.size() > 0">
-              AND type IN
-              <foreach collection="types" item="type" open="(" separator="," close=")">
-                  #{type}
-              </foreach>
-          </if>
           <if test="startTime != null">
               AND create_time >= #{startTime}
           </if>
@@ -348,12 +447,6 @@
         WHERE status = 1
           AND (title LIKE CONCAT('%', #{keyword}, '%') 
                OR description LIKE CONCAT('%', #{keyword}, '%'))
-          <if test="types != null and types.size() > 0">
-              AND type IN
-              <foreach collection="types" item="type" open="(" separator="," close=")">
-                  #{type}
-              </foreach>
-          </if>
           <if test="startTime != null">
               AND create_time >= #{startTime}
           </if>
@@ -379,6 +472,50 @@
         FROM post
         WHERE status = 1
           AND is_featured = 1
+    </select>
+    
+    <!-- 按标签查询热门帖子 -->
+    <select id="findHotPostsByTagId" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Post_Column_List"/>
+        FROM post p
+        INNER JOIN post_tag pt ON p.id = pt.post_id
+        WHERE p.status = 1
+          AND pt.tag_id = #{tagId}
+        ORDER BY (p.like_count * 3.0 + p.comment_count * 5.0 + p.view_count * 0.5 + p.favorite_count * 4.0) DESC, p.create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+    
+    <!-- 统计按标签筛选的热门帖子数量 -->
+    <select id="countHotPostsByTagId" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM post p
+        INNER JOIN post_tag pt ON p.id = pt.post_id
+        WHERE p.status = 1
+          AND pt.tag_id = #{tagId}
+    </select>
+    
+    <!-- 按标签查询精选帖子 -->
+    <select id="findFeaturedPostsByTagId" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Post_Column_List"/>
+        FROM post p
+        INNER JOIN post_tag pt ON p.id = pt.post_id
+        WHERE p.status = 1
+          AND p.is_featured = 1
+          AND pt.tag_id = #{tagId}
+        ORDER BY p.create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+    
+    <!-- 统计按标签筛选的精选帖子数量 -->
+    <select id="countFeaturedPostsByTagId" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM post p
+        INNER JOIN post_tag pt ON p.id = pt.post_id
+        WHERE p.status = 1
+          AND p.is_featured = 1
+          AND pt.tag_id = #{tagId}
     </select>
     
     <!-- 根据用户ID列表查询帖子列表 -->
@@ -420,30 +557,10 @@
         </foreach>
     </select>
     
-    <!-- 根据帖子类型查询帖子列表 -->
-    <select id="findPostsByType" resultMap="BaseResultMap">
-        SELECT 
-        <include refid="Base_Column_List"/>
-        FROM post
-        WHERE status = 1
-          AND type = #{type}
-        ORDER BY create_time DESC
-        LIMIT #{offset}, #{limit}
-    </select>
-    
-    <!-- 统计指定类型的帖子数量 -->
-    <select id="countPostsByType" resultType="java.lang.Long">
-        SELECT COUNT(*)
-        FROM post
-        WHERE status = 1
-          AND type = #{type}
-    </select>
-    
     <!-- 根据标签ID查询帖子列表 -->
     <select id="findPostsByTagId" resultMap="BaseResultMap">
-        SELECT p.id, p.user_id, p.category_id, p.type, p.status, p.title, p.content, p.cover_url, 
-               p.view_count, p.like_count, p.comment_count, p.favorite_count, p.is_featured, 
-               p.accepted_answer_id, p.publish_time, p.create_time, p.update_time
+        SELECT 
+        <include refid="Post_Column_List"/>
         FROM post p
         INNER JOIN post_tag pt ON p.id = pt.post_id
         WHERE p.status = 1
@@ -461,37 +578,6 @@
           AND pt.tag_id = #{tagId}
     </select>
     
-    <!-- 根据问题ID查询回答列表 -->
-    <select id="findAnswersByQuestionId" resultMap="BaseResultMap">
-        SELECT 
-        <include refid="Base_Column_List"/>
-        FROM post
-        WHERE status = 1
-          AND (type = 'POST' OR type = 'ANSWER')
-          AND accepted_answer_id = #{questionId}
-        ORDER BY create_time DESC
-        LIMIT #{offset}, #{limit}
-    </select>
-    
-    <!-- 统计所有帖子数量 -->
-    <select id="countAll" resultType="java.lang.Long">
-        SELECT COUNT(*)
-        FROM post
-        WHERE status = 1
-    </select>
-    
-    <!-- 根据帖子类型查找相关帖子（排除指定帖子） -->
-    <select id="findRelatedPostsByType" resultMap="BaseResultMap">
-        SELECT 
-        <include refid="Base_Column_List"/>
-        FROM post
-        WHERE status = 1
-          AND type = #{type}
-          AND id != #{excludePostId}
-        ORDER BY create_time DESC
-        LIMIT #{limit}
-    </select>
-    
     <!-- 根据ID列表查询帖子列表 -->
     <select id="findPostsByIds" resultMap="BaseResultMap">
         SELECT 
@@ -503,26 +589,132 @@
         </foreach>
         ORDER BY create_time DESC
     </select>
-    <!-- 根据话题ID查询帖子列表 -->
-    <select id="findPostsByTopicId" resultMap="BaseResultMap">
-        SELECT p.id, p.user_id, p.category_id, p.type, p.status, p.title, p.content, p.cover_url, 
-               p.view_count, p.like_count, p.comment_count, p.favorite_count, p.is_featured, 
-               p.accepted_answer_id, p.publish_time, p.create_time, p.update_time
-        FROM post p
-        INNER JOIN post_topic pt ON p.id = pt.post_id
-        WHERE p.status = 1
-          AND pt.topic_id = #{topicId}
-        ORDER BY p.create_time DESC
+    
+    <!-- 统计所有已发布帖子数量 -->
+    <select id="countAll" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM post
+        WHERE status = 1
+    </select>
+
+    <!-- 批量更新帖子计数（用于Redis同步） -->
+    <update id="updateCounts">
+        UPDATE post
+        SET view_count = #{viewCount},
+            like_count = #{likeCount},
+            comment_count = #{commentCount},
+            favorite_count = #{favoriteCount},
+            update_time = NOW()
+        WHERE id = #{postId}
+    </update>
+
+    <!-- 分页查询所有帖子（用于批量索引） -->
+    <select id="findAllWithPagination" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM post
+        WHERE status = 1
+        ORDER BY id ASC
         LIMIT #{offset}, #{limit}
     </select>
     
-    <!-- 统计指定话题的帖子数量 -->
-    <select id="countPostsByTopicId" resultType="java.lang.Long">
-        SELECT COUNT(*)
+    <!-- 按状态统计帖子数 -->
+    <select id="countByStatus" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM post WHERE status = #{status}
+    </select>
+    
+    <!-- 统计加精帖子数 -->
+    <select id="countFeatured" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM post WHERE is_featured = 1 AND status = 1
+    </select>
+
+    <!-- ============================================== -->
+    <!-- 后台管理专用查询（不查询content字段，优化性能） -->
+    <!-- ============================================== -->
+    
+    <!-- 后台帖子列表VO映射 -->
+    <resultMap id="SysPostListResultMap" type="cn.xu.controller.admin.model.vo.SysPostListVO">
+        <id property="id" column="id" jdbcType="BIGINT"/>
+        <result property="userId" column="user_id" jdbcType="BIGINT"/>
+        <result property="nickname" column="nickname" jdbcType="VARCHAR"/>
+        <result property="title" column="title" jdbcType="VARCHAR"/>
+        <result property="description" column="description" jdbcType="VARCHAR"/>
+        <result property="coverUrl" column="cover_url" jdbcType="VARCHAR"/>
+        <result property="status" column="status" jdbcType="TINYINT"/>
+        <result property="isFeatured" column="is_featured" jdbcType="TINYINT"/>
+        <result property="viewCount" column="view_count" jdbcType="BIGINT"/>
+        <result property="likeCount" column="like_count" jdbcType="BIGINT"/>
+        <result property="favoriteCount" column="favorite_count" jdbcType="BIGINT"/>
+        <result property="commentCount" column="comment_count" jdbcType="BIGINT"/>
+        <result property="shareCount" column="share_count" jdbcType="BIGINT"/>
+        <result property="tagNames" column="tag_names" jdbcType="VARCHAR"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+    
+    <!-- 后台帖子列表查询（不包含content，联表查询用户和标签） -->
+    <select id="findPostListForAdmin" resultMap="SysPostListResultMap">
+        SELECT 
+            p.id,
+            p.user_id,
+            u.nickname,
+            p.title,
+            p.description,
+            p.cover_url,
+            p.status,
+            p.is_featured,
+            p.view_count,
+            p.like_count,
+            p.favorite_count,
+            p.comment_count,
+            p.share_count,
+            GROUP_CONCAT(DISTINCT t.name ORDER BY t.name SEPARATOR ',') AS tag_names,
+            p.create_time,
+            p.update_time
         FROM post p
-        INNER JOIN post_topic pt ON p.id = pt.post_id
-        WHERE p.status = 1
-          AND pt.topic_id = #{topicId}
+        LEFT JOIN `user` u ON p.user_id = u.id
+        LEFT JOIN post_tag pt ON p.id = pt.post_id
+        LEFT JOIN tag t ON pt.tag_id = t.id
+        <where>
+            <if test="title != null and title != ''">
+                AND p.title LIKE CONCAT('%', #{title}, '%')
+            </if>
+            <if test="status != null">
+                AND p.status = #{status}
+            </if>
+            <if test="userId != null">
+                AND p.user_id = #{userId}
+            </if>
+            <if test="tagId != null">
+                AND pt.tag_id = #{tagId}
+            </if>
+        </where>
+        GROUP BY p.id
+        ORDER BY p.create_time DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+    
+    <!-- 后台帖子总数统计（支持筛选条件） -->
+    <select id="countPostsForAdmin" resultType="java.lang.Long">
+        SELECT COUNT(DISTINCT p.id)
+        FROM post p
+        <if test="tagId != null">
+            LEFT JOIN post_tag pt ON p.id = pt.post_id
+        </if>
+        <where>
+            <if test="title != null and title != ''">
+                AND p.title LIKE CONCAT('%', #{title}, '%')
+            </if>
+            <if test="status != null">
+                AND p.status = #{status}
+            </if>
+            <if test="userId != null">
+                AND p.user_id = #{userId}
+            </if>
+            <if test="tagId != null">
+                AND pt.tag_id = #{tagId}
+            </if>
+        </where>
     </select>
 
 </mapper>

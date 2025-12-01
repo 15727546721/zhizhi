@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="cn.xu.infrastructure.persistent.dao.UserBlockMapper">
+<mapper namespace="cn.xu.repository.mapper.UserBlockMapper">
     
-    <resultMap id="BaseResultMap" type="cn.xu.infrastructure.persistent.po.UserBlock">
+    <resultMap id="BaseResultMap" type="cn.xu.model.entity.UserBlock">
         <id column="id" property="id"/>
         <result column="user_id" property="userId"/>
         <result column="blocked_user_id" property="blockedUserId"/>
@@ -13,7 +13,7 @@
         id, user_id, blocked_user_id, create_time
     </sql>
     
-    <insert id="insert" parameterType="cn.xu.infrastructure.persistent.po.UserBlock" useGeneratedKeys="true" keyProperty="id">
+    <insert id="insert" parameterType="cn.xu.model.entity.UserBlock" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO `user_block` (user_id, blocked_user_id, create_time)
         VALUES (#{userId}, #{blockedUserId}, #{createTime})
     </insert>
@@ -55,5 +55,10 @@
         FROM `user_block`
         WHERE user_id = #{userId}
     </select>
+    
+    <delete id="deleteByUserAndBlockedUser">
+        DELETE FROM `user_block`
+        WHERE user_id = #{userId} AND blocked_user_id = #{blockedUserId}
+    </delete>
 </mapper>
 

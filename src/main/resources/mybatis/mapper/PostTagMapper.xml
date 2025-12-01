@@ -2,9 +2,9 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="cn.xu.infrastructure.persistent.dao.PostTagMapper">
+<mapper namespace="cn.xu.repository.mapper.PostTagMapper">
 
-    <resultMap id="BaseResultMap" type="cn.xu.infrastructure.persistent.po.PostTag">
+    <resultMap id="BaseResultMap" type="cn.xu.model.entity.PostTag">
         <id property="id" column="id" jdbcType="BIGINT"/>
         <result property="postId" column="post_id" jdbcType="BIGINT"/>
         <result property="tagId" column="tag_id" jdbcType="BIGINT"/>
@@ -25,6 +25,22 @@
         VALUES
         <foreach collection="tagIds" item="tagId" separator=",">
             (#{postId}, #{tagId}, now())
+        </foreach>
+    </insert>
+    
+    <insert id="insertBatchByList">
+        INSERT INTO post_tag (post_id, tag_id, create_time)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.postId}, #{item.tagId}, now())
+        </foreach>
+    </insert>
+    
+    <insert id="insertTags">
+        INSERT INTO post_tag (post_id, tag_id, create_time)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.postId}, #{item.tagId}, now())
         </foreach>
     </insert>
 
@@ -69,6 +85,14 @@
         DELETE FROM post_tag
         WHERE tag_id = #{tagId}
     </delete>
+    
+    <delete id="deleteByPostIds">
+        DELETE FROM post_tag
+        WHERE post_id IN
+        <foreach collection="postIds" item="postId" open="(" separator="," close=")">
+            #{postId}
+        </foreach>
+    </delete>
 
     <select id="countByTagId" resultType="int">
         SELECT COUNT(*)
@@ -76,27 +100,13 @@
         WHERE tag_id = #{tagId}
     </select>
 
-    <select id="selectHotTags" resultType="cn.xu.infrastructure.persistent.dao.PostTagMapper$TagStatistics">
+    <select id="selectHotTags" resultType="cn.xu.repository.mapper.PostTagMapper$TagStatistics">
         SELECT 
             t.id as tagId,
             t.name as tagName,
             COUNT(pt.tag_id) as usageCount
-        FROM tags t
+        FROM tag t
         LEFT JOIN post_tag pt ON t.id = pt.tag_id
-        GROUP BY t.id, t.name
-        ORDER BY usageCount DESC
-        LIMIT #{limit}
-    </select>
-
-    <select id="selectTagStatisticsByPostType" resultType="cn.xu.infrastructure.persistent.dao.PostTagMapper$TagStatistics">
-        SELECT 
-            t.id as tagId,
-            t.name as tagName,
-            COUNT(pt.tag_id) as usageCount
-        FROM tags t
-        LEFT JOIN post_tag pt ON t.id = pt.tag_id
-        LEFT JOIN post p ON pt.post_id = p.id
-        WHERE p.type = #{postType}
         GROUP BY t.id, t.name
         ORDER BY usageCount DESC
         LIMIT #{limit}

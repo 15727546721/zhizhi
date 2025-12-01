@@ -1,0 +1,118 @@
+package cn.xu.repository.impl;
+
+import cn.xu.model.entity.Post;
+import cn.xu.model.entity.PostTag;
+import cn.xu.repository.IPostTagRepository;
+import cn.xu.repository.mapper.PostMapper;
+import cn.xu.repository.mapper.PostTagMapper;
+import cn.xu.repository.mapper.TagMapper;
+import cn.xu.service.post.PostTagService;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Repository;
+
+import javax.annotation.Resource;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+@Slf4j
+@Repository
+public class PostTagRepository implements IPostTagRepository {
+
+    @Resource
+    private PostTagMapper postTagDao;
+    
+    @Resource
+    private PostMapper postMapper;
+    
+    @Resource
+    private TagMapper tagMapper;
+
+    @Override
+    public void savePostTag(Long postId, List<Long> tagIds) {
+        log.info("保存帖子标签 postId: {}, tagIds: {}", postId, tagIds);
+        
+        if (tagIds == null || tagIds.isEmpty()) {
+            log.warn("标签列表为空，不保存");
+            return;
+        }
+        
+        // 1. 先删除旧的关联（如果存在）
+        postTagDao.deleteByPostId(postId);
+        
+        // 2. 插入新的关联
+        List<PostTag> postTags = new LinkedList<>();
+        for (Long tagId : tagIds) {
+            postTags.add(PostTag.builder().postId(postId).tagId(tagId).build());
+        }
+        postTagDao.insertBatchByList(postTags);
+        
+        // 3. 更新标签使用次数
+        tagMapper.incrementUsageCountBatch(tagIds);
+        log.info("更新标签使用次数, tagIds: {}", tagIds);
+    }
+
+    @Override
+    public List<Long> getTagIdsByPostId(Long postId) {
+        if (postId == null) {
+            return new LinkedList<>();
+        }
+        return postTagDao.selectTagIdsByPostId(postId);
+    }
+
+    @Override
+    public List<Post> getPostsByTagId(Long tagId, int offset, int limit) {
+        // 根据标签ID获取帖子列表的逻辑
+        if (tagId == null) {
+            return new LinkedList<>();
+        }
+        // 获取帖子ID列表
+        List<Long> postIds = postTagDao.selectPostIdsByTagId(tagId, offset, limit);
+        // 直接使用PostMapper查询帖子信息并返回
+        return postMapper.findPostsByIds(postIds);
+    }
+
+    @Override
+    public List<PostTagService.PostTagRelation> batchGetTagIdsByPostIds(List<Long> postIds) {
+        // 批量获取帖子的标签ID列表的逻辑
+        if (postIds == null || postIds.isEmpty()) {
+            return new LinkedList<>();
+        }
+        List<PostTag> postTags = postTagDao.selectByPostIds(postIds);
+        
+        // 按postId分组标签ID
+        Map<Long, List<Long>> postIdToTagIdsMap = postTags.stream()
+                .collect(Collectors.groupingBy(
+                        PostTag::getPostId,
+                        Collectors.mapping(PostTag::getTagId, Collectors.toList())
+                ));
+        
+        // 构建PostTagRelation列表
+        return postIdToTagIdsMap.entrySet().stream()
+                .map(entry -> new PostTagService.PostTagRelation(entry.getKey(), entry.getValue()))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public void deletePostTags(Long postId) {
+        log.info("删除帖子标签 postId: {}", postId);
+        postTagDao.deleteByPostId(postId);
+    }
+
+    @Override
+    public List<PostTagService.TagStatistics> getHotTags(int limit) {
+        // 获取热门标签列表的逻辑
+        List<PostTagMapper.TagStatistics> tagStatistics = postTagDao.selectHotTags(limit);
+        return tagStatistics.stream()
+                .map(stat -> new PostTagService.TagStatistics(stat.getTagId(), stat.getTagName(), stat.getUsageCount()))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<PostTagService.TagStatistics> getRecommendedTags() {
+        // 获取推荐标签列表的逻辑
+        // 这里简单实现为获取前10个热门标签作为推荐
+        return getHotTags(10);
+    }
+}

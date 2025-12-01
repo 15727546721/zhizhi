@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="cn.xu.infrastructure.persistent.dao.UserMessageSettingsMapper">
+<mapper namespace="cn.xu.repository.mapper.UserMessageSettingsMapper">
 
-    <resultMap id="BaseResultMap" type="cn.xu.infrastructure.persistent.po.UserMessageSettings">
+    <resultMap id="BaseResultMap" type="cn.xu.model.entity.UserMessageSettings">
         <id property="id" column="id" jdbcType="BIGINT"/>
         <result property="userId" column="user_id" jdbcType="BIGINT"/>
         <result property="allowStrangerMessage" column="allow_stranger_message" jdbcType="TINYINT"/>
@@ -16,14 +16,14 @@
         id, user_id, allow_stranger_message, allow_non_mutual_follow_message, message_notification_enabled, create_time, update_time
     </sql>
 
-    <insert id="insert" parameterType="cn.xu.infrastructure.persistent.po.UserMessageSettings" useGeneratedKeys="true" keyProperty="id">
+    <insert id="insert" parameterType="cn.xu.model.entity.UserMessageSettings" useGeneratedKeys="true" keyProperty="id">
         insert into user_message_settings
         (user_id, allow_stranger_message, allow_non_mutual_follow_message, message_notification_enabled, create_time, update_time)
         values
         (#{userId}, #{allowStrangerMessage}, #{allowNonMutualFollowMessage}, #{messageNotificationEnabled}, #{createTime}, #{updateTime})
     </insert>
 
-    <update id="update" parameterType="cn.xu.infrastructure.persistent.po.UserMessageSettings">
+    <update id="update" parameterType="cn.xu.model.entity.UserMessageSettings">
         update user_message_settings
         <set>
             <if test="allowStrangerMessage != null">allow_stranger_message = #{allowStrangerMessage},</if>

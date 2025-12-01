@@ -17,8 +17,6 @@ import java.net.UnknownHostException;
 
 /**
  * 知之社区系统启动类
- * 
- * @author Lily
  */
 @Slf4j
 @SpringBootApplication(

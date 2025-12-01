@@ -21,4 +21,14 @@ public class PageRequest {
     @Min(value = 1, message = "每页数量不能小于1")
     @Max(value = 100, message = "每页数量不能大于100")
     private Integer pageSize = 10;
+
+    /**
+     * 静态工厂方法
+     */
+    public static PageRequest of(int pageNo, int pageSize) {
+        PageRequest request = new PageRequest();
+        request.setPageNo(pageNo);
+        request.setPageSize(pageSize);
+        return request;
+    }
 }

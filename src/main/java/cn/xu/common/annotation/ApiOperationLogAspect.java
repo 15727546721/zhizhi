@@ -1,6 +1,6 @@
 package cn.xu.common.annotation;
 
-import cn.xu.common.utils.JsonUtils;
+import cn.xu.support.util.JsonUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -109,8 +109,18 @@ public class ApiOperationLogAspect {
      * @return JSON 字符串
      */
     private String toJsonStr(Object object) {
+        // 处理 MultipartFile 数组
+        if (object instanceof MultipartFile[]) {
+            MultipartFile[] files = (MultipartFile[]) object;
+            String filesInfo = Arrays.stream(files)
+                    .map(file -> String.format("{\"fileName\":\"%s\", \"size\":%d}", 
+                            file.getOriginalFilename(), file.getSize()))
+                    .collect(Collectors.joining(", "));
+            return "[" + filesInfo + "]";
+        }
+        
+        // 处理单个 MultipartFile
         if (object instanceof MultipartFile) {
-            // 如果是 MultipartFile，则仅记录文件的元数据
             MultipartFile file = (MultipartFile) object;
             return String.format("{\"fileName\":\"%s\", \"size\":%d}", file.getOriginalFilename(), file.getSize());
         }

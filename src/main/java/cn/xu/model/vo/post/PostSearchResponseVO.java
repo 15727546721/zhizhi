@@ -1,0 +1,69 @@
+package cn.xu.model.vo.post;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+/**
+ * 帖子搜索响应VO
+ * 用于PostSearchService返回的搜索结果
+ * 
+ * @author zhizhi
+ */
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Schema(description = "帖子搜索响应数据")
+public class PostSearchResponseVO {
+    
+    @Schema(description = "帖子ID")
+    private Long id;
+    
+    @Schema(description = "标题")
+    private String title;
+    
+    @Schema(description = "描述/摘要")
+    private String description;
+    
+    @Schema(description = "内容摘要")
+    private String content;
+    
+    @Schema(description = "封面图")
+    private String coverUrl;
+    
+    @Schema(description = "作者ID")
+    private Long userId;
+    
+    @Schema(description = "作者名称")
+    private String authorName;
+    
+    @Schema(description = "作者头像")
+    private String avatar;
+    
+    @Schema(description = "浏览数")
+    private Long viewCount;
+    
+    @Schema(description = "点赞数")
+    private Long likeCount;
+    
+    @Schema(description = "评论数")
+    private Long commentCount;
+    
+    @Schema(description = "收藏数")
+    private Long favoriteCount;
+    
+    @Schema(description = "分享数")
+    private Long shareCount;
+    
+    @Schema(description = "是否加精")
+    private Boolean isFeatured;
+    
+    @Schema(description = "创建时间")
+    private java.time.LocalDateTime createTime;
+    
+    @Schema(description = "更新时间")
+    private java.time.LocalDateTime updateTime;
+}

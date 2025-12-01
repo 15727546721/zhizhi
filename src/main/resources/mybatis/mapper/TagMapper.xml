@@ -2,32 +2,36 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="cn.xu.infrastructure.persistent.dao.TagMapper">
+<mapper namespace="cn.xu.repository.mapper.TagMapper">
 
-    <resultMap id="BaseResultMap" type="cn.xu.infrastructure.persistent.po.Tag">
+    <resultMap id="BaseResultMap" type="cn.xu.model.entity.Tag">
         <id property="id" column="id" jdbcType="BIGINT"/>
         <result property="name" column="name" jdbcType="VARCHAR"/>
+        <result property="description" column="description" jdbcType="VARCHAR"/>
+        <result property="isRecommended" column="is_recommended" jdbcType="TINYINT"/>
+        <result property="usageCount" column="usage_count" jdbcType="INTEGER"/>
+        <result property="sort" column="sort" jdbcType="INTEGER"/>
         <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
         <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
     </resultMap>
 
-    <resultMap id="PostAndTagAggMap" type="cn.xu.domain.post.model.aggregate.PostAndTagAgg">
+    <resultMap id="PostAndTagAggMap" type="cn.xu.model.dto.post.PostAndTagAgg">
         <result property="postId" column="postId" jdbcType="BIGINT"/>
-        <result property="tags" column="tags" jdbcType="VARCHAR"/>
+        <result property="tag" column="tag" jdbcType="VARCHAR"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        id, name, create_time, update_time
+        id, name, description, is_recommended, usage_count, sort, create_time, update_time
     </sql>
 
     <insert id="addTag">
-        INSERT INTO tags (name, create_time, update_time)
-        VALUES (#{name}, NOW(), NOW())
+        INSERT INTO tag (name, description, is_recommended, usage_count, sort, create_time, update_time)
+        VALUES (#{name}, #{description}, #{isRecommended}, #{usageCount}, #{sort}, NOW(), NOW())
     </insert>
 
     <select id="getTagNamesByPostId" resultType="java.lang.String">
         SELECT t.name
-        FROM tags t
+        FROM tag t
         INNER JOIN post_tag ptr ON t.id = ptr.tag_id
         WHERE ptr.post_id = #{postId}
     </select>
@@ -38,9 +42,9 @@
         SUBSTRING_INDEX(
         GROUP_CONCAT(t.name ORDER BY t.id SEPARATOR ','),
         ',', 3
-        ) AS tags
+        ) AS tag
         FROM post_tag ptr
-        JOIN tags t ON ptr.tag_id = t.id
+        JOIN tag t ON ptr.tag_id = t.id
         <if test="postIds != null and postIds.size() > 0">
             WHERE ptr.post_id IN
             <foreach item="id" collection="postIds" open="(" separator="," close=")">
@@ -53,7 +57,7 @@
     <select id="searchTags" resultMap="BaseResultMap">
         SELECT 
         <include refid="Base_Column_List"/>
-        FROM tags
+        FROM tag
         WHERE name LIKE CONCAT('%', #{keyword}, '%')
         ORDER BY create_time DESC
     </select>
@@ -62,12 +66,16 @@
         SELECT 
         t.id,
         t.name,
+        t.description,
+        t.is_recommended,
+        t.usage_count,
+        t.sort,
         t.create_time,
         t.update_time
-        FROM tags t
+        FROM tag t
         LEFT JOIN post_tag pt ON t.id = pt.tag_id
         LEFT JOIN post p ON pt.post_id = p.id AND p.status = 1
-        GROUP BY t.id, t.name, t.create_time, t.update_time
+        GROUP BY t.id, t.name, t.description, t.is_recommended, t.usage_count, t.sort, t.create_time, t.update_time
         HAVING COUNT(pt.tag_id) > 0
         ORDER BY 
             -- 综合热度分数计算：
@@ -90,9 +98,13 @@
         SELECT 
         t.id,
         t.name,
+        t.description,
+        t.is_recommended,
+        t.usage_count,
+        t.sort,
         t.create_time,
         t.update_time
-        FROM tags t
+        FROM tag t
         LEFT JOIN post_tag pt ON t.id = pt.tag_id
         LEFT JOIN post p ON pt.post_id = p.id AND p.status = 1
         <where>
@@ -109,7 +121,7 @@
                 <!-- all: 不添加时间限制，统计全部 -->
             </choose>
         </where>
-        GROUP BY t.id, t.name, t.create_time, t.update_time
+        GROUP BY t.id, t.name, t.description, t.is_recommended, t.usage_count, t.sort, t.create_time, t.update_time
         HAVING COUNT(pt.tag_id) > 0
         ORDER BY 
             -- 综合热度分数计算：
@@ -131,26 +143,64 @@
     <select id="getAllTags" resultMap="BaseResultMap">
         SELECT 
         <include refid="Base_Column_List"/>
-        FROM tags
+        FROM tag
         ORDER BY create_time DESC
     </select>
     
     <select id="getTagById" resultMap="BaseResultMap">
         SELECT 
         <include refid="Base_Column_List"/>
-        FROM tags
+        FROM tag
         WHERE id = #{id}
     </select>
     
     <update id="updateTag">
-        UPDATE tags
+        UPDATE tag
         SET name = #{name},
             update_time = NOW()
         WHERE id = #{id}
     </update>
     
+    <update id="updateTagFull">
+        UPDATE tag
+        SET name = #{tag.name},
+            description = #{tag.description},
+            is_recommended = #{tag.isRecommended},
+            usage_count = #{tag.usageCount},
+            sort = #{tag.sort},
+            update_time = #{tag.updateTime}
+        WHERE id = #{tag.id}
+    </update>
+    
     <delete id="deleteTag">
-        DELETE FROM tags
+        DELETE FROM tag
         WHERE id = #{id}
     </delete>
+    
+    <!-- 批量增加标签使用次数 -->
+    <update id="incrementUsageCountBatch">
+        UPDATE tag
+        SET usage_count = usage_count + 1,
+            update_time = NOW()
+        WHERE id IN
+        <foreach collection="tagIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+    
+    <!-- 批量减少标签使用次数 -->
+    <update id="decrementUsageCountBatch">
+        UPDATE tag
+        SET usage_count = GREATEST(usage_count - 1, 0),
+            update_time = NOW()
+        WHERE id IN
+        <foreach collection="tagIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+    
+    <!-- 统计所有标签数 -->
+    <select id="countAll" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM tag
+    </select>
 </mapper>

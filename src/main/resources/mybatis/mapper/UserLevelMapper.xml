@@ -2,9 +2,9 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="cn.xu.infrastructure.persistent.dao.UserLevelMapper">
+<mapper namespace="cn.xu.repository.mapper.UserLevelMapper">
 
-    <resultMap id="BaseResultMap" type="cn.xu.infrastructure.persistent.po.UserLevel">
+    <resultMap id="BaseResultMap" type="cn.xu.model.entity.UserLevel">
         <id property="id" column="id" jdbcType="BIGINT"/>
         <result property="userId" column="user_id" jdbcType="BIGINT"/>
         <result property="level" column="level" jdbcType="INTEGER"/>
@@ -25,12 +25,12 @@
         WHERE user_id = #{userId}
     </select>
 
-    <insert id="insert" parameterType="cn.xu.infrastructure.persistent.po.UserLevel" useGeneratedKeys="true" keyProperty="id">
+    <insert id="insert" parameterType="cn.xu.model.entity.UserLevel" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO user_level (user_id, level, level_name, current_exp, next_level_exp, create_time, update_time)
         VALUES (#{userId}, #{level}, #{levelName}, #{currentExp}, #{nextLevelExp}, now(), now())
     </insert>
 
-    <update id="update" parameterType="cn.xu.infrastructure.persistent.po.UserLevel">
+    <update id="update" parameterType="cn.xu.model.entity.UserLevel">
         UPDATE user_level
         SET level = #{level},
             level_name = #{levelName},

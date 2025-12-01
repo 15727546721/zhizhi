@@ -2,9 +2,9 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="cn.xu.infrastructure.persistent.dao.UserBadgeMapper">
+<mapper namespace="cn.xu.repository.mapper.UserBadgeMapper">
 
-    <resultMap id="BaseResultMap" type="cn.xu.infrastructure.persistent.po.UserBadge">
+    <resultMap id="BaseResultMap" type="cn.xu.model.entity.UserBadge">
         <id property="id" column="id" jdbcType="BIGINT"/>
         <result property="userId" column="user_id" jdbcType="BIGINT"/>
         <result property="badgeId" column="badge_id" jdbcType="BIGINT"/>
@@ -28,12 +28,12 @@
         WHERE user_id = #{userId}
     </select>
 
-    <insert id="insert" parameterType="cn.xu.infrastructure.persistent.po.UserBadge" useGeneratedKeys="true" keyProperty="id">
+    <insert id="insert" parameterType="cn.xu.model.entity.UserBadge" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO user_badge (user_id, badge_id, badge_name, badge_description, badge_icon, status, obtain_time, expire_time, create_time, update_time)
         VALUES (#{userId}, #{badgeId}, #{badgeName}, #{badgeDescription}, #{badgeIcon}, #{status}, #{obtainTime}, #{expireTime}, now(), now())
     </insert>
 
-    <update id="update" parameterType="cn.xu.infrastructure.persistent.po.UserBadge">
+    <update id="update" parameterType="cn.xu.model.entity.UserBadge">
         UPDATE user_badge
         SET status = #{status},
             obtain_time = #{obtainTime},

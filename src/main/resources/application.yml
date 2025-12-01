@@ -6,13 +6,32 @@ spring:
   # 激活开发环境配置
   profiles:
     active: dev
+  # 邮件服务配置（请替换为您的真实配置）
+  mail:
+    host: smtp.qq.com                          # SMTP服务器地址（QQ邮箱示例）
+    port: 587                                   # SMTP端口（587-TLS, 465-SSL）
+    username: your_email@qq.com                 # 发件人邮箱（请替换）
+    password: your_authorization_code           # 邮箱授权码（请替换，不是密码）
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: true                            # 启用SMTP认证
+          starttls:
+            enable: true                        # 启用TLS
+            required: true
+          connectiontimeout: 5000               # 连接超时（毫秒）
+          timeout: 5000                         # 读取超时
+          writetimeout: 5000                    # 写入超时
   # 文件上传配置
   servlet:
     multipart:
       enabled: true
-      max-file-size: 10MB
-      max-request-size: 10MB
-      file-size-threshold: 2KB
+      max-file-size: 100MB
+      max-request-size: 100MB
+      file-size-threshold: 10MB  # 超过此大小才写入磁盘
+      location: ${java.io.tmpdir}  # 临时文件位置
+      resolve-lazily: false  # 立即解析（避免延迟）
 
 server:
   port: 8091
@@ -21,7 +40,7 @@ server:
 logging:
   config: classpath:logback-spring.xml
   level:
-    cn.xu.infrastructure.persistent.repository: debug
+    cn.xu.repository.impl: debug
 
 # 评论热度计算策略配置
 comment:
@@ -46,6 +65,15 @@ minio:
   secretKey: superadmin
   bucketName: zhizhi
   enabled: true  # 启用MinIO
+
+# 文件访问配置
+file:
+  access:
+    mode: direct  # 访问模式: direct(直接), proxy(代理), cdn(CDN)
+  proxy:
+    base-url: http://localhost:8091/api/file  # 代理服务URL（proxy模式使用）
+  cdn:
+    base-url: https://cdn.example.com  # CDN URL（cdn模式使用）
 
 # Sa-Token配置
 sa-token:

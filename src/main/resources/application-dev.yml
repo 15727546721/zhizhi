@@ -3,6 +3,23 @@ server:
 
 # 数据库配置
 spring:
+  # 邮件服务配置
+  mail:
+    host: smtp.qq.com                          # SMTP服务器地址
+    port: 587                                   # SMTP端口（587-TLS, 465-SSL）
+    username: your_email@qq.com                 # 发件人邮箱（请替换）
+    password: your_authorization_code           # 邮箱授权码（请替换，不是密码）
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
   datasource:
     username: root
     password: 123456
@@ -51,7 +68,7 @@ thread:
 mybatis:
   mapper-locations: classpath:mybatis/mapper/*.xml
   config-location: classpath:mybatis/config/mybatis-config.xml
-  type-handlers-package: cn.xu.infrastructure.persistent.handler
+  # type-handlers-package: cn.xu.support.handler  # 暂无自定义TypeHandler
 
 # Sa-Token配置
 sa-token:
@@ -99,7 +116,7 @@ minio:
 # 日志
 logging:
   level:
-    cn.xu.infrastructure.persistent.repository: debug
-    cn.xu.infrastructure.persistent.read.elastic.init: info  # ES初始化器日志
-    cn.xu.infrastructure.persistent.read.elastic.service: info  # ES服务日志
+    cn.xu.repository.impl: debug
+    cn.xu.repository.read.elastic.init: info  # ES初始化器日志
+    cn.xu.repository.read.elastic.service: info  # ES服务日志
   config: classpath:logback-spring.xml
