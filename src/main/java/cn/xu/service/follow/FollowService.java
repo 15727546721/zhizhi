@@ -1,6 +1,7 @@
-﻿package cn.xu.service.follow;
+package cn.xu.service.follow;
 
 import cn.xu.cache.FollowCacheRepository;
+import cn.xu.event.publisher.SocialEventPublisher;
 import cn.xu.model.entity.Follow;
 import cn.xu.model.entity.User;
 import cn.xu.model.vo.FollowUserVO;
@@ -22,10 +23,6 @@ import java.util.stream.Collectors;
 
 /**
  * 关注服务
- * 整合关注功能，直接使用Follow PO
- *
- * @author zhizhi
- * @since 2025-11-24
  */
 @Slf4j
 @Service
@@ -35,6 +32,7 @@ public class FollowService {
     private final FollowRepository followRepository;
     private final FollowCacheRepository followCacheRepository;
     private final UserRepository userRepository;
+    private final SocialEventPublisher socialEventPublisher;
 
     // ==================== 核心功能 ====================
 
@@ -61,7 +59,7 @@ public class FollowService {
                 log.info("[关注服务] 已经关注，无需重复操作 - {}", follow.getSimpleInfo());
                 return;
             }
-            // 如果之前取消关注过，重新关注
+            // 检查当前用户是否关注了这个粉丝（互相关注）
             follow.follow();
             followRepository.save(follow);
             log.info("[关注服务] 重新关注成功 - {}", follow.getSimpleInfo());
@@ -76,22 +74,26 @@ public class FollowService {
         userRepository.increaseFollowCount(followerId);
         userRepository.increaseFansCount(followedId);
 
-        // 事务后更新缓存
+        // 事务后更新缓存和发布事件
         TransactionSynchronizationManager.registerSynchronization(
                 new TransactionSynchronization() {
                     @Override
                     public void afterCommit() {
-                        log.debug("[关注服务] 清除关注缓存 - followerId: {}, followedId: {}", followerId, followedId);
+                        log.debug("[关注服务] 更新缓存 - followerId: {}, followedId: {}", followerId, followedId);
                         followCacheRepository.removeFollowRelationCache(followerId, followedId);
                         followCacheRepository.removeUserFollowCache(followerId);
                         followCacheRepository.removeUserFollowCache(followedId);
+                        
+                        // 发布关注事件
+                        socialEventPublisher.publishFollowed(followerId, followedId);
+                        log.debug("[关注服务] 发布关注事件 - followerId: {}, followeeId: {}", followerId, followedId);
                     }
                 }
         );
     }
 
     /**
-     * 执行取消关注
+     * 取消关注
      *
      * @param followerId 关注者ID
      * @param followedId 被关注者ID
@@ -104,16 +106,16 @@ public class FollowService {
         Follow.validateFollowRelation(followerId, followedId);
 
         // 查询关注关系
-        Follow follow = followRepository.findByFollowerIdAndFollowedId(followerId, followedId)
-                .orElseThrow(() -> new BusinessException("关注关系不存在"));
+        Optional<Follow> existingFollow = followRepository.findByFollowerIdAndFollowedId(followerId, followedId);
 
-        // 如果已经是未关注状态，直接返回
-        if (!follow.isFollowed()) {
-            log.info("[关注服务] 已经是未关注状态 - {}", follow.getSimpleInfo());
+        // 幂等处理：如果关系不存在或已取消关注，直接返回
+        if (!existingFollow.isPresent() || !existingFollow.get().isFollowed()) {
+            log.info("[关注服务] 未关注或已取消，幂等返回 - followerId: {}, followedId: {}", followerId, followedId);
             return;
         }
 
         // 执行取消关注
+        Follow follow = existingFollow.get();
         follow.unfollow();
         followRepository.save(follow);
 
@@ -123,7 +125,7 @@ public class FollowService {
 
         log.info("[关注服务] 取消关注成功 - {}", follow.getSimpleInfo());
 
-        // 事务后更新缓存
+        // 事务后更新缓存和发布事件
         TransactionSynchronizationManager.registerSynchronization(
                 new TransactionSynchronization() {
                     @Override
@@ -132,6 +134,10 @@ public class FollowService {
                         followCacheRepository.removeFollowRelationCache(followerId, followedId);
                         followCacheRepository.removeUserFollowCache(followerId);
                         followCacheRepository.removeUserFollowCache(followedId);
+                        
+                        // 发布取消关注事件
+                        socialEventPublisher.publishUnfollowed(followerId, followedId);
+                        log.debug("[关注服务] 发布取消关注事件 - followerId: {}, followeeId: {}", followerId, followedId);
                     }
                 }
         );
@@ -330,7 +336,7 @@ public class FollowService {
             return Collections.emptyList();
         }
 
-        // 获取被关注用户的ID列表
+        // 获取关注用户ID列表
         List<Long> followedUserIds = followList.stream()
                 .map(Follow::getFollowedId)
                 .collect(Collectors.toList());
@@ -422,6 +428,62 @@ public class FollowService {
                             .build();
                 })
                 .filter(vo -> vo != null)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 搜索关注用户（用于@提及）
+     *
+     * @param userId 当前用户ID
+     * @param keyword 搜索关键词（匹配昵称或用户名）
+     * @param limit 返回数量限制
+     * @return 匹配的关注用户列表
+     */
+    public List<FollowUserVO> searchFollowingUsers(Long userId, String keyword, Integer limit) {
+        if (userId == null) {
+            return Collections.emptyList();
+        }
+        if (limit == null || limit <= 0) {
+            limit = 10;
+        }
+        if (limit > 50) {
+            limit = 50; // 限制最大返回数量
+        }
+
+        // 获取用户的全部关注ID（限制500个）
+        List<Long> followingUserIds = getFollowingUserIds(userId, 500);
+        if (followingUserIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // 批量查询用户信息
+        List<User> users = userRepository.findByIds(followingUserIds);
+        if (users.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // 按关键词过滤（昵称或用户名包含关键词）
+        String lowerKeyword = (keyword == null) ? "" : keyword.toLowerCase().trim();
+        final int maxLimit = limit;
+
+        return users.stream()
+                .filter(user -> {
+                    if (lowerKeyword.isEmpty()) {
+                        return true; // 无关键词时返回全部
+                    }
+                    String nickname = user.getNickname() != null ? user.getNickname().toLowerCase() : "";
+                    String username = user.getUsername() != null ? user.getUsername().toLowerCase() : "";
+                    return nickname.contains(lowerKeyword) || username.contains(lowerKeyword);
+                })
+                .limit(maxLimit)
+                .map(user -> FollowUserVO.builder()
+                        .userId(user.getId())
+                        .nickname(user.getNickname())
+                        .avatar(user.getAvatar())
+                        .username(user.getUsername())
+                        .description(user.getDescription())
+                        .isFollowing(true)
+                        .build())
                 .collect(Collectors.toList());
     }
 }

@@ -5,7 +5,8 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 /**
- * 用户私信设置Mapper
+ * 用户私信设置Mapper接口
+
  */
 @Mapper
 public interface UserMessageSettingsMapper {
@@ -29,4 +30,3 @@ public interface UserMessageSettingsMapper {
      */
     int deleteByUserId(@Param("userId") Long userId);
 }
-

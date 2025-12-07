@@ -1,7 +1,6 @@
-﻿package cn.xu.controller.web;
+package cn.xu.controller.web;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
-import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.common.ResponseCode;
 import cn.xu.common.annotation.ApiOperationLog;
 import cn.xu.common.response.PageResponse;
@@ -13,7 +12,8 @@ import cn.xu.model.vo.post.PostListVO;
 import cn.xu.service.follow.FollowService;
 import cn.xu.service.post.PostService;
 import cn.xu.service.post.TagService;
-import cn.xu.service.user.UserService;
+import cn.xu.service.user.IUserService;
+import cn.xu.support.util.LoginUserUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -28,10 +28,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * 首页控制器
- *
- * @author xu
- * @since 2025-11-25
+ * 首页接口
  */
 @Slf4j
 @RestController
@@ -44,10 +41,21 @@ public class HomeController {
     @Resource(name = "tagService")
     private TagService tagService;
     @Resource(name = "userService")
-    private UserService userService;
+    private IUserService userService;
     @Resource
     private FollowService followService;
 
+    /**
+     * 获取帖子列表
+     * 
+     * <p>支持按标签筛选和排序（最新、热门），返回分页的帖子列表
+     * 
+     * @param tagId 标签ID（可选），为空时返回所有帖子
+     * @param sort 排序方式：latest(最新)、hot(热门)，默认为latest
+     * @param page 页码，从1开始，默认为1
+     * @param size 每页数量，默认为10
+     * @return 分页的帖子列表
+     */
     @GetMapping("/posts")
     @Operation(summary = "getPosts")
     @ApiOperationLog(description = "getPosts")
@@ -81,6 +89,16 @@ public class HomeController {
                 .code(ResponseCode.SUCCESS.getCode()).data(pageResponse).build();
     }
 
+    /**
+     * 获取关注用户的帖子列表
+     * 
+     * <p>返回当前登录用户关注的所有用户发布的帖子，按时间倒序排列
+     * <p>需要登录后才能访问
+     * 
+     * @param page 页码，从1开始，默认为1
+     * @param size 每页数量，默认为10
+     * @return 分页的帖子列表，如果未关注任何用户则返回空列表
+     */
     @GetMapping("/following")
     @SaCheckLogin
     @Operation(summary = "getFollowingPosts")
@@ -88,7 +106,7 @@ public class HomeController {
     public ResponseEntity<PageResponse<List<PostListVO>>> getFollowingPosts(
             @Parameter(description = "page") @RequestParam(defaultValue = "1") Integer page,
             @Parameter(description = "size") @RequestParam(defaultValue = "10") Integer size) {
-        Long currentUserId = StpUtil.getLoginIdAsLong();
+        Long currentUserId = LoginUserUtil.getLoginUserId();
         List<Long> followingUserIds = followService.getFollowingUserIds(currentUserId, 500);
         if (followingUserIds.isEmpty()) {
             PageResponse<List<PostListVO>> empty = PageResponse.ofList(page, size, 0L, Collections.emptyList());
@@ -103,6 +121,16 @@ public class HomeController {
                 .code(ResponseCode.SUCCESS.getCode()).data(pageResponse).build();
     }
 
+    /**
+     * 获取精选帖子列表
+     * 
+     * <p>返回管理员标记为精选的帖子，支持按标签筛选
+     * 
+     * @param tagId 标签ID（可选），为空时返回所有精选帖子
+     * @param page 页码，从1开始，默认为1
+     * @param size 每页数量，默认为10
+     * @return 分页的精选帖子列表
+     */
     @GetMapping("/featured")
     @Operation(summary = "getFeaturedPosts")
     @ApiOperationLog(description = "getFeaturedPosts")
@@ -125,6 +153,17 @@ public class HomeController {
                 .code(ResponseCode.SUCCESS.getCode()).data(pageResponse).build();
     }
 
+    /**
+     * 获取热门帖子列表
+     * 
+     * <p>根据热度评分排序返回热门帖子，支持按标签筛选
+     * <p>热度评分综合考虑了浏览量、点赞数、评论数、收藏数等指标
+     * 
+     * @param tagId 标签ID（可选），为空时返回所有热门帖子
+     * @param page 页码，从1开始，默认为1
+     * @param size 每页数量，默认为10
+     * @return 分页的热门帖子列表
+     */
     @GetMapping("/hot")
     @Operation(summary = "getHotPosts")
     @ApiOperationLog(description = "getHotPosts")
@@ -147,6 +186,16 @@ public class HomeController {
                 .code(ResponseCode.SUCCESS.getCode()).data(pageResponse).build();
     }
 
+    /**
+     * 获取相关推荐帖子列表
+     * 
+     * <p>用于帖子详情页的侧边栏推荐，返回热门帖子并排除指定帖子
+     * 
+     * @param excludeId 要排除的帖子ID（可选），通常为当前正在查看的帖子
+     * @param page 页码，从1开始，默认为1
+     * @param size 每页数量，默认为5
+     * @return 分页的推荐帖子列表
+     */
     @GetMapping("/related")
     @Operation(summary = "getRelatedPosts")
     @ApiOperationLog(description = "getRelatedPosts")
@@ -167,27 +216,23 @@ public class HomeController {
                 .code(ResponseCode.SUCCESS.getCode()).data(pageResponse).build();
     }
 
-    @GetMapping("/search")
-    @Operation(summary = "searchPosts")
-    @ApiOperationLog(description = "searchPosts")
-    public ResponseEntity<PageResponse<List<PostListVO>>> searchPosts(
-            @Parameter(description = "keyword") @RequestParam String keyword,
-            @Parameter(description = "page") @RequestParam(defaultValue = "1") Integer page,
-            @Parameter(description = "size") @RequestParam(defaultValue = "10") Integer size) {
-        List<Post> posts = postService.getLatestPosts(page, size);
-        long total = postService.countAllPosts();
-        List<PostListVO> result = convert(posts);
-        PageResponse<List<PostListVO>> pageResponse = PageResponse.ofList(page, size, total, result);
-        return ResponseEntity.<PageResponse<List<PostListVO>>>builder()
-                .code(ResponseCode.SUCCESS.getCode()).data(pageResponse).build();
-    }
-
+    /**
+     * 将帖子实体列表转换为VO列表
+     * 
+     * <p>批量查询用户信息并组装到帖子VO中，避免N+1查询问题
+     * 
+     * @param posts 帖子实体列表
+     * @return 帖子VO列表，包含用户信息和统计数据
+     */
     private List<PostListVO> convert(List<Post> posts) {
         if (posts == null || posts.isEmpty()) return Collections.emptyList();
         Set<Long> userIds = new HashSet<>();
         posts.forEach(p -> { if (p.getUserId() != null) userIds.add(p.getUserId()); });
         List<User> users = Collections.emptyList();
-        try { users = userService.batchGetUserInfo(new ArrayList<>(userIds)); } catch (Exception e) { log.warn("batchGetUserInfo failed", e); }
+        try { 
+            Map<Long, User> tempMap = userService.batchGetUserInfo(new ArrayList<>(userIds));
+            users = new ArrayList<>(tempMap.values());
+        } catch (Exception e) { log.warn("batchGetUserInfo failed", e); }
         Map<Long, User> userMap = users.stream().collect(Collectors.toMap(User::getId, u -> u, (a, b) -> a));
         return posts.stream().map(post -> {
             User user = post.getUserId() != null ? userMap.get(post.getUserId()) : null;

@@ -7,19 +7,15 @@ import java.util.List;
 
 /**
  * 文件存储服务接口
- * 抽象文件存储操作，支持多种存储实现（MinIO、OSS、本地等）
- * 
- * DDD实用主义：
- * - 接口简洁，只包含核心操作
- * - 避免过度抽象，直接使用Spring的MultipartFile
- * - 返回值简单明了，方便使用
+ * <p>抽象文件存储操作，支持多种存储实现（MinIO、OSS、本地等）</p>
+ 
  */
 public interface FileStorageService {
     
     /**
      * 上传文件
      * 
-     * @param file 文件
+     * @param file     文件
      * @param fileName 文件名（包含扩展名）
      * @return 文件访问URL
      */
@@ -36,7 +32,7 @@ public interface FileStorageService {
     /**
      * 下载文件
      * 
-     * @param fileName 文件名
+     * @param fileName  文件名
      * @param localPath 本地保存路径
      */
     void downloadFile(String fileName, String localPath) throws Exception;

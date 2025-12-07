@@ -1,4 +1,4 @@
-﻿package cn.xu.controller.web;
+package cn.xu.controller.web;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.common.ResponseCode;
@@ -11,7 +11,7 @@ import cn.xu.model.entity.Comment;
 import cn.xu.model.entity.Like;
 import cn.xu.model.entity.Post;
 import cn.xu.model.vo.user.UserLikeItemVO;
-import cn.xu.repository.ICommentRepository;
+import cn.xu.service.comment.CommentService;
 import cn.xu.service.like.LikeService;
 import cn.xu.service.like.LikeStatisticsService;
 import cn.xu.service.post.PostService;
@@ -22,7 +22,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
-
 import javax.validation.Valid;
 import java.util.List;
 import java.util.Optional;
@@ -31,10 +30,9 @@ import java.util.stream.Collectors;
 /**
  * 点赞控制器
  * 
- * <p>提供点赞、取消点赞、查询点赞状态、获取点赞数等功能接口
- * 
- * @author xu
- * @since 2025-11-25
+ * <p>提供点赞、取消点赞、查询点赞状态、获取点赞数等功能接口</p>
+ * <p>支持多种点赞类型：帖子(POST)、评论(COMMENT)、随笔(ESSAY)</p>
+
  */
 @Slf4j
 @Tag(name = "点赞接口", description = "点赞相关API")
@@ -46,8 +44,18 @@ public class LikeController {
     private final LikeService likeService;
     private final LikeStatisticsService likeStatisticsService;
     private final PostService postService;
-    private final ICommentRepository commentRepository;
+    private final CommentService commentService;
 
+    /**
+     * 点赞
+     * 
+     * <p>对指定目标进行点赞，支持帖子、评论、随笔等类型
+     * <p>需要登录后才能访问
+     * 
+     * @param request 点赞请求，包含目标ID和类型(POST/COMMENT/ESSAY)
+     * @return 操作结果
+     * @throws BusinessException 当重复点赞或目标不存在时抛出
+     */
     @Operation(summary = "点赞")
     @PostMapping("/like")
     @ApiOperationLog(description = "点赞")
@@ -81,6 +89,16 @@ public class LikeController {
         }
     }
 
+    /**
+     * 取消点赞
+     * 
+     * <p>取消对指定目标的点赞
+     * <p>需要登录后才能访问
+     * 
+     * @param request 取消点赞请求，包含目标ID和类型
+     * @return 操作结果
+     * @throws BusinessException 当未点赞或目标不存在时抛出
+     */
     @Operation(summary = "取消点赞")
     @PostMapping("/unlike")
     @ApiOperationLog(description = "取消点赞")
@@ -114,6 +132,16 @@ public class LikeController {
         }
     }
     
+    /**
+     * 检查点赞状态
+     * 
+     * <p>检查当前登录用户是否已点赞指定目标
+     * <p>需要登录后才能访问
+     * 
+     * @param targetId 目标ID
+     * @param type 点赞类型：POST(帖子)、COMMENT(评论)、ESSAY(随笔)
+     * @return true-已点赞，false-未点赞
+     */
     @Operation(summary = "检查点赞状态")
     @GetMapping("/status")
     @ApiOperationLog(description = "检查点赞状态")
@@ -141,6 +169,16 @@ public class LikeController {
         }
     }
     
+    /**
+     * 获取点赞数
+     * 
+     * <p>获取指定目标的点赞数量
+     * <p>公开接口，无需登录；登录后会额外返回当前用户的点赞状态
+     * 
+     * @param targetId 目标ID
+     * @param type 点赞类型：POST(帖子)、COMMENT(评论)、ESSAY(随笔)
+     * @return 点赞数量和当前用户点赞状态
+     */
     @Operation(summary = "获取点赞数")
     @GetMapping("/count")
     @ApiOperationLog(description = "获取点赞数")
@@ -176,6 +214,15 @@ public class LikeController {
         }
     }
     
+    /**
+     * 批量获取点赞数
+     * 
+     * <p>批量获取多个目标的点赞数量，适用于列表页面展示
+     * <p>公开接口，无需登录；登录后会额外返回当前用户的点赞状态
+     * 
+     * @param requests 点赞请求列表，每个请求包含目标ID和类型
+     * @return 每个目标的点赞数量和当前用户点赞状态
+     */
     @Operation(summary = "批量获取点赞数")
     @PostMapping("/counts")
     @ApiOperationLog(description = "批量获取点赞数")
@@ -252,6 +299,15 @@ public class LikeController {
         }
     }
     
+    /**
+     * 获取用户点赞统计
+     * 
+     * <p>获取指定用户的点赞统计信息，包括给出的点赞数和收到的点赞数
+     * <p>公开接口，无需登录
+     * 
+     * @param userId 用户ID
+     * @return 用户点赞统计信息
+     */
     @Operation(summary = "获取用户点赞统计")
     @GetMapping("/user/statistics")
     @ApiOperationLog(description = "获取用户点赞统计")
@@ -268,10 +324,14 @@ public class LikeController {
     
     /**
      * 获取用户点赞列表
+     * 
+     * <p>分页获取指定用户的所有点赞记录，包含目标详情
+     * <p>公开接口，无需登录
+     * 
      * @param userId 用户ID
-     * @param pageNo 页码
-     * @param pageSize 每页数量
-     * @return 用户点赞列表
+     * @param pageNo 页码，从1开始，默认为1
+     * @param pageSize 每页数量，默认为10
+     * @return 分页的用户点赞列表，包含目标标题和链接
      */
     @GetMapping("/user/{userId}")
     @Operation(summary = "获取用户点赞列表")
@@ -337,7 +397,7 @@ public class LikeController {
                     break;
                 case COMMENT:
                     // 获取评论信息
-                    Comment comment = commentRepository.findById(like.getTargetId());
+                    Comment comment = commentService.getCommentById(like.getTargetId());
                     if (comment != null) {
                         String contentValue = comment.getContent();
                         vo.setTargetTitle(contentValue != null && contentValue.length() > 50 

@@ -1,13 +1,13 @@
-﻿package cn.xu.controller.web;
+package cn.xu.controller.web;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
-import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.common.ResponseCode;
 import cn.xu.common.annotation.ApiOperationLog;
 import cn.xu.common.response.PageResponse;
 import cn.xu.common.response.ResponseEntity;
 import cn.xu.model.dto.post.DraftRequest;
 import cn.xu.model.dto.post.PostPageQueryRequest;
+import cn.xu.model.dto.post.PostTagRelation;
 import cn.xu.model.dto.post.PublishOrDraftPostRequest;
 import cn.xu.model.dto.search.SearchFilter;
 import cn.xu.model.entity.Like;
@@ -17,22 +17,22 @@ import cn.xu.model.vo.post.PostDetailVO;
 import cn.xu.model.vo.post.PostItemVO;
 import cn.xu.model.vo.post.PostListVO;
 import cn.xu.model.vo.post.PostSearchResponseVO;
+import cn.xu.model.vo.user.UserVO;
 import cn.xu.service.favorite.FavoriteService;
 import cn.xu.service.follow.FollowService;
 import cn.xu.service.like.LikeService;
 import cn.xu.service.post.PostService;
-import cn.xu.service.post.PostTagService;
 import cn.xu.service.post.PostValidationService;
 import cn.xu.service.post.TagService;
-import cn.xu.service.user.UserService;
+import cn.xu.service.user.IUserService;
 import cn.xu.support.exception.BusinessException;
+import cn.xu.support.util.LoginUserUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.bind.annotation.*;
-
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
@@ -40,13 +40,18 @@ import java.util.stream.Collectors;
 
 /**
  * 帖子控制器
+ * <p>
+ * 职责：帖子内容管理、交互操作
+ * <ul>
+ *   <li>内容：创建、发布、编辑、删除、草稿</li>
+ *   <li>查询：列表、详情、搜索、排行榜</li>
+ *   <li>交互：点赞、收藏、分享、浏览</li>
+ * </ul>
  *
- * <p>提供帖子的创建、发布、查询、删除、点赞、分享等功能接口
- *
- * @author xu
- * @since 2025-11-25
+ * @author zhizhi
+ * @since 1.0
  */
-@RequestMapping("api/post")
+@RequestMapping("/api/post")
 @RestController
 @Tag(name = "帖子接口", description = "帖子相关API")
 @Slf4j
@@ -59,7 +64,7 @@ public class PostController {
     @Resource
     private TransactionTemplate transactionTemplate;
     @Resource(name = "userService")
-    private UserService userService;
+    private IUserService userService;
     @Resource
     private LikeService likeService;
     @Resource
@@ -72,8 +77,7 @@ public class PostController {
     private FavoriteService favoriteService;
 
     /**
-     * 将帖子实体列表转换为PostListVO列表
-     * 使用扁平化的PostItemVO，避免直接暴露领域实体
+     * Post列表转换为PostListVO（批量获取用户和标签信息）
      */
     private List<PostListVO> convertToPostListVOs(List<Post> posts) {
         if (posts == null || posts.isEmpty()) {
@@ -89,28 +93,25 @@ public class PostController {
         });
 
         // 批量获取用户信息
-        List<User> users = Collections.emptyList();
+        Map<Long, User> tempUserMap;
         try {
-            users = userService.batchGetUserInfo(new ArrayList<>(userIds));
+            tempUserMap = userService.batchGetUserInfo(new ArrayList<>(userIds));
         } catch (Exception e) {
             log.warn("批量获取用户信息失败", e);
+            tempUserMap = new HashMap<>();
         }
-
-        // 构建用户ID到用户实体的映射
-        java.util.Map<Long, User> userMap = users.stream()
-                .collect(Collectors.toMap(User::getId, user -> user, (existing, replacement) -> existing));
+        final Map<Long, User> userMap = tempUserMap;
 
         // 批量获取帖子的标签信息
         List<Long> postIds = posts.stream()
                 .map(Post::getId)
-                .filter(java.util.Objects::nonNull)
                 .collect(Collectors.toList());
 
         java.util.Map<Long, List<String>> postTagMap = new java.util.HashMap<>();
         if (!postIds.isEmpty()) {
             try {
                 // 批量获取帖子标签关系
-                List<PostTagService.PostTagRelation> tagRelations = tagService.batchGetTagIdsByPostIds(postIds);
+                List<PostTagRelation> tagRelations = tagService.batchGetTagIdsByPostIds(postIds);
 
                 // 收集所有标签ID
                 Set<Long> allTagIds = new java.util.HashSet<>();
@@ -120,16 +121,11 @@ public class PostController {
                     }
                 });
 
-                // 批量获取标签信息
+                // 批量获取标签信息（优化：使用批量查询代替全表扫描）
                 java.util.Map<Long, String> tagMap = new java.util.HashMap<>();
                 if (!allTagIds.isEmpty()) {
-                    // 获取所有标签，然后过滤出需要的标签
-                    List<cn.xu.model.entity.Tag> allTags = tagService.getTagList();
-                    if (allTags != null) {
-                        allTags.stream()
-                                .filter(tag -> allTagIds.contains(tag.getId()))
-                                .forEach(tag -> tagMap.put(tag.getId(), tag.getName()));
-                    }
+                    java.util.Map<Long, cn.xu.model.entity.Tag> tagObjMap = tagService.batchGetTags(allTagIds);
+                    tagObjMap.forEach((id, tag) -> tagMap.put(id, tag.getName()));
                 }
 
                 // 构建帖子ID到标签名称列表的映射
@@ -150,7 +146,7 @@ public class PostController {
         }
 
         // 构建最终的标签名称映射
-        java.util.Map<Long, String[]> finalTagMap = postTagMap.entrySet().stream()
+        final java.util.Map<Long, String[]> finalTagMap = postTagMap.entrySet().stream()
                 .collect(Collectors.toMap(
                         java.util.Map.Entry::getKey,
                         entry -> entry.getValue().toArray(new String[0])
@@ -192,6 +188,9 @@ public class PostController {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * 分页获取帖子列表（支持多种排序，公开接口）
+     */
     @PostMapping("/page")
     @ApiOperationLog(description = "分页获取帖子列表（支持排序）")
     @Operation(summary = "分页获取帖子列表（支持排序）")
@@ -230,6 +229,9 @@ public class PostController {
         }
     }
 
+    /**
+     * 搜索帖子（支持时间范围、排序方式筛选）
+     */
     @GetMapping("/search")
     @Operation(summary = "搜索帖子")
     @ApiOperationLog(description = "搜索帖子")
@@ -263,7 +265,7 @@ public class PostController {
                     startTime = now.minusYears(1);
                     break;
                 default:
-                    // "all" 或其他值，不设置时间范围
+                    // "all" 或其它值，不设置时间范围
                     break;
             }
             if (startTime != null) {
@@ -328,7 +330,7 @@ public class PostController {
     }
 
     /**
-     * 获取客户端真实IP地址
+     * 获取客户端IP
      */
     private String getClientIp(HttpServletRequest request) {
         String ip = request.getHeader("X-Forwarded-For");
@@ -346,11 +348,7 @@ public class PostController {
     }
 
     /**
-     * 获取帖子详情
-     *
-     * @param id 帖子ID
-     * @param request HTTP请求对象（用于获取IP）
-     * @return 帖子详情
+     * 获取帖子详情（含作者、标签、统计、交互状态）
      */
     @GetMapping("/{id}")
     @Operation(summary = "获取帖子详情", description = "返回帖子完整信息，包括内容、作者、标签、统计数据和用户交互状态")
@@ -363,7 +361,7 @@ public class PostController {
 
         try {
             // 1. 获取当前用户ID（可能未登录）
-            Long currentUserId = StpUtil.isLogin() ? StpUtil.getLoginIdAsLong() : null;
+            Long currentUserId = LoginUserUtil.getLoginUserIdOptional().orElse(null);
 
             // 2. 增加浏览量（带防刷机制）
             String clientIp = getClientIp(request);
@@ -380,7 +378,7 @@ public class PostController {
 
             Post post = postOpt.get();
 
-            // 4. 权限校验：只有已发布的帖子或自己的草稿可以查看
+            // 4. 权限校验：只有已发布的帖子或自己的草稿才可以查看
             if (post.getStatus() != Post.STATUS_PUBLISHED) {
                 if (currentUserId == null || !currentUserId.equals(post.getUserId())) {
                     return ResponseEntity.<PostDetailVO>builder()
@@ -402,11 +400,14 @@ public class PostController {
             log.error("获取帖子详情失败: postId={}", id, e);
             return ResponseEntity.<PostDetailVO>builder()
                     .code(ResponseCode.UN_ERROR.getCode())
-                    .info("获取帖子详情失败: " + e.getMessage())
+                    .info("获取帖子详情失败，请稍后重试")
                     .build();
         }
     }
 
+    /**
+     * 创建帖子（支持直接发布或保存为草稿）
+     */
     @PostMapping("/create")
     @Operation(summary = "创建帖子")
     @ApiOperationLog(description = "创建帖子")
@@ -422,7 +423,7 @@ public class PostController {
             log.info("创建帖子，标题：{}，状态：{}",
                     request.getTitle(), request.getStatus());
 
-            Long userId = StpUtil.getLoginIdAsLong();
+            Long userId = LoginUserUtil.getLoginUserId();
             Long postId;
 
             // 根据状态决定是创建草稿还是直接发布
@@ -475,6 +476,9 @@ public class PostController {
         }
     }
 
+    /**
+     * 发布/更新帖子（草稿发布或已发布帖子更新）
+     */
     @PostMapping("/publish")
     @Operation(summary = "发布帖子（更新帖子）")
     @SaCheckLogin
@@ -491,7 +495,7 @@ public class PostController {
             );
             postValidationService.validateTagIds(request.getTagIds());
 
-            Long userId = StpUtil.getLoginIdAsLong();
+            Long userId = LoginUserUtil.getLoginUserId();
 
             // 根据状态决定是更新草稿还是发布
             if ("DRAFT".equals(request.getStatus())) {
@@ -547,429 +551,270 @@ public class PostController {
         }
     }
 
+    /**
+     * 保存帖子草稿（支持新建和更新）
+     */
     @PostMapping("/saveDraft")
-    @Operation(summary = "保存帖子草稿", description = "支持新建草稿和更新已有草稿")
+    @Operation(summary = "保存帖子草稿")
     @SaCheckLogin
     @ApiOperationLog(description = "保存帖子草稿")
     public ResponseEntity<Long> saveDraft(@RequestBody DraftRequest draftRequest) {
-        log.info("保存帖子草稿，ID：{}，标题：{}", draftRequest.getId(), draftRequest.getTitle());
-        Long userId = StpUtil.getLoginIdAsLong();
-
+        Long userId = LoginUserUtil.getLoginUserId();
         try {
             Long postId;
             if (draftRequest.getId() != null) {
-                // 更新已有草稿
-                postService.updateDraft(
-                        draftRequest.getId(),
-                        userId,
-                        draftRequest.getTitle(),
-                        draftRequest.getContent(),
-                        draftRequest.getDescription(),
-                        draftRequest.getCoverUrl(),
-                        draftRequest.getTagIds()
-                );
+                postService.updateDraft(draftRequest.getId(), userId, draftRequest.getTitle(),
+                        draftRequest.getContent(), draftRequest.getDescription(),
+                        draftRequest.getCoverUrl(), draftRequest.getTagIds());
                 postId = draftRequest.getId();
-                log.info("草稿更新成功，ID:{}", postId);
             } else {
-                // 创建新草稿
-                postId = postService.createDraft(
-                        userId,
-                        draftRequest.getTitle(),
-                        draftRequest.getContent(),
-                        draftRequest.getDescription(),
-                        draftRequest.getCoverUrl(),
-                        draftRequest.getTagIds()
-                );
-                log.info("草稿创建成功，ID:{}", postId);
+                postId = postService.createDraft(userId, draftRequest.getTitle(),
+                        draftRequest.getContent(), draftRequest.getDescription(),
+                        draftRequest.getCoverUrl(), draftRequest.getTagIds());
             }
-            return ResponseEntity.<Long>builder()
-                    .code(ResponseCode.SUCCESS.getCode())
-                    .data(postId)
-                    .info("草稿保存成功")
-                    .build();
+            return ResponseEntity.<Long>builder().code(ResponseCode.SUCCESS.getCode())
+                    .data(postId).info("草稿保存成功").build();
         } catch (Exception e) {
             log.error("保存草稿失败", e);
-            return ResponseEntity.<Long>builder()
-                    .code(ResponseCode.UN_ERROR.getCode())
-                    .info("保存草稿失败: " + e.getMessage())
-                    .build();
+            return ResponseEntity.<Long>builder().code(ResponseCode.UN_ERROR.getCode())
+                    .info("保存草稿失败").build();
         }
     }
 
+    /**
+     * 获取我的草稿列表
+     */
     @PostMapping("/drafts")
     @Operation(summary = "获取我的草稿列表")
     @SaCheckLogin
     @ApiOperationLog(description = "获取我的草稿列表")
     public ResponseEntity<PageResponse<List<PostListVO>>> getMyDrafts(@RequestBody Map<String, Object> request) {
         try {
-            Long userId = StpUtil.getLoginIdAsLong();
+            Long userId = LoginUserUtil.getLoginUserId();
             Integer pageNo = request.get("pageNo") != null ? Integer.valueOf(request.get("pageNo").toString()) : 1;
             Integer pageSize = request.get("pageSize") != null ? Integer.valueOf(request.get("pageSize").toString()) : 10;
-
-            // 参数校验
             postValidationService.validatePageParams(pageNo, pageSize);
-
-            // 查询草稿列表（status=0表示草稿）
             List<Post> drafts = postService.getUserPostsByStatus(userId, Post.STATUS_DRAFT, pageNo, pageSize);
-
-            // 转换为PostListVO列表
-            List<PostListVO> draftResponses = convertToPostListVOs(drafts);
-
-            // 获取草稿总数
             long total = postService.countUserDrafts(userId);
-
-            // 创建PageResponse对象
-            PageResponse<List<PostListVO>> pageResponse = PageResponse.ofList(
-                    pageNo,
-                    pageSize,
-                    total,
-                    draftResponses
-            );
-
             return ResponseEntity.<PageResponse<List<PostListVO>>>builder()
                     .code(ResponseCode.SUCCESS.getCode())
-                    .data(pageResponse)
+                    .data(PageResponse.ofList(pageNo, pageSize, total, convertToPostListVOs(drafts)))
                     .build();
         } catch (Exception e) {
             log.error("获取草稿列表失败", e);
             return ResponseEntity.<PageResponse<List<PostListVO>>>builder()
-                    .code(ResponseCode.UN_ERROR.getCode())
-                    .info("获取草稿列表失败: " + e.getMessage())
-                    .build();
+                    .code(ResponseCode.UN_ERROR.getCode()).info("获取草稿列表失败").build();
         }
     }
 
+    /**
+     * 删除草稿（仅能删除自己的草稿）
+     */
     @DeleteMapping("/draft/{id}")
     @Operation(summary = "删除草稿")
     @SaCheckLogin
     @ApiOperationLog(description = "删除草稿")
     public ResponseEntity<?> deleteDraft(@PathVariable Long id) {
         try {
-            Long userId = StpUtil.getLoginIdAsLong();
-
-            // 验证草稿是否存在且属于当前用户
+            Long userId = LoginUserUtil.getLoginUserId();
             Optional<Post> postOpt = postService.getPostById(id);
             if (!postOpt.isPresent()) {
-                return ResponseEntity.builder()
-                        .code(ResponseCode.UN_ERROR.getCode())
-                        .info("草稿不存在")
-                        .build();
+                return ResponseEntity.builder().code(ResponseCode.UN_ERROR.getCode()).info("草稿不存在").build();
             }
-
             Post post = postOpt.get();
             if (!userId.equals(post.getUserId())) {
-                return ResponseEntity.builder()
-                        .code(ResponseCode.UN_ERROR.getCode())
-                        .info("无权删除此草稿")
-                        .build();
+                return ResponseEntity.builder().code(ResponseCode.UN_ERROR.getCode()).info("无权删除此草稿").build();
             }
-
             if (post.getStatus() != Post.STATUS_DRAFT) {
-                return ResponseEntity.builder()
-                        .code(ResponseCode.UN_ERROR.getCode())
-                        .info("只能删除草稿状态的帖子")
-                        .build();
+                return ResponseEntity.builder().code(ResponseCode.UN_ERROR.getCode()).info("只能删除草稿状态的帖子").build();
             }
-
-            // 删除草稿
             postService.deletePost(id, userId, false);
-
-            return ResponseEntity.builder()
-                    .code(ResponseCode.SUCCESS.getCode())
-                    .info("草稿删除成功")
-                    .build();
+            return ResponseEntity.builder().code(ResponseCode.SUCCESS.getCode()).info("草稿删除成功").build();
         } catch (Exception e) {
             log.error("删除草稿失败，id={}", id, e);
-            return ResponseEntity.builder()
-                    .code(ResponseCode.UN_ERROR.getCode())
-                    .info("删除草稿失败")
-                    .build();
+            return ResponseEntity.builder().code(ResponseCode.UN_ERROR.getCode()).info("删除草稿失败").build();
         }
     }
 
+    /**
+     * 分享帖子（增加分享数）
+     */
     @GetMapping("/share/{id}")
     @Operation(summary = "增加分享数")
     @ApiOperationLog(description = "增加帖子分享数")
     public ResponseEntity sharePost(@PathVariable Long id) {
         try {
-            // 验证帖子是否存在
             Optional<Post> postOpt = postService.getPostById(id);
             if (!postOpt.isPresent()) {
-                return ResponseEntity.builder()
-                        .code(ResponseCode.UN_ERROR.getCode())
-                        .info("帖子不存在")
-                        .build();
+                return ResponseEntity.builder().code(ResponseCode.UN_ERROR.getCode()).info("帖子不存在").build();
             }
-
-            // 增加分享数
             postService.increaseShareCount(id);
-            return ResponseEntity.builder()
-                    .code(ResponseCode.SUCCESS.getCode())
-                    .info("分享成功")
-                    .build();
+            return ResponseEntity.builder().code(ResponseCode.SUCCESS.getCode()).info("分享成功").build();
         } catch (Exception e) {
             log.error("分享帖子失败，postId={}", id, e);
-            return ResponseEntity.builder()
-                    .code(ResponseCode.UN_ERROR.getCode())
-                    .info("分享失败")
-                    .build();
+            return ResponseEntity.builder().code(ResponseCode.UN_ERROR.getCode()).info("分享失败").build();
         }
     }
 
+    /**
+     * 增加帖子浏览数
+     */
     @GetMapping("/view")
     @Operation(summary = "增加帖子浏览数")
     @ApiOperationLog(description = "增加帖子浏览数")
     public ResponseEntity<?> viewPost(@Parameter(description = "帖子ID") @RequestParam Long postId) {
         try {
             postService.viewPost(postId, null, null);
-            return ResponseEntity.builder()
-                    .code(ResponseCode.SUCCESS.getCode())
-                    .info("帖子阅读数+1成功")
-                    .build();
+            return ResponseEntity.builder().code(ResponseCode.SUCCESS.getCode()).info("帖子阅读数+1成功").build();
         } catch (Exception e) {
             log.error("增加帖子浏览量失败", e);
-            return ResponseEntity.builder()
-                    .code(ResponseCode.UN_ERROR.getCode())
-                    .info("增加帖子浏览量失败")
-                    .build();
+            return ResponseEntity.builder().code(ResponseCode.UN_ERROR.getCode()).info("增加帖子浏览量失败").build();
         }
     }
 
     @GetMapping("/like/{id}")
     @Operation(summary = "帖子点赞")
     @ApiOperationLog(description = "帖子点赞")
-    public ResponseEntity<?> likePost(@Parameter(description = "帖子ID") @PathVariable("id") Long id) {
-        Long userId = StpUtil.getLoginIdAsLong();
-        try {
-            likeService.like(userId, Like.LikeType.POST.getCode(), id);
-            return ResponseEntity.builder()
-                    .code(ResponseCode.SUCCESS.getCode())
-                    .info("帖子点赞成功")
-                    .build();
-        } catch (BusinessException e) {
-            // LikeService已有自愈能力，不需要手动修复
-            throw e;
-        }
+    public ResponseEntity<?> likePost(@PathVariable("id") Long id) {
+        Long userId = LoginUserUtil.getLoginUserId();
+        likeService.like(userId, Like.LikeType.POST.getCode(), id);
+        return ResponseEntity.builder().code(ResponseCode.SUCCESS.getCode()).info("帖子点赞成功").build();
     }
 
     @GetMapping("/unlike/{id}")
     @Operation(summary = "取消帖子点赞")
     @ApiOperationLog(description = "取消帖子点赞")
-    public ResponseEntity<?> unlikePost(@Parameter(description = "帖子ID") @PathVariable("id") Long postId) {
-        Long userId = StpUtil.getLoginIdAsLong();
-        try {
-            likeService.unlike(userId, Like.LikeType.POST.getCode(), postId);
-            return ResponseEntity.builder()
-                    .code(ResponseCode.SUCCESS.getCode())
-                    .info("帖子取消点赞成功")
-                    .build();
-        } catch (BusinessException e) {
-            throw e;
-        }
+    public ResponseEntity<?> unlikePost(@PathVariable("id") Long postId) {
+        Long userId = LoginUserUtil.getLoginUserId();
+        likeService.unlike(userId, Like.LikeType.POST.getCode(), postId);
+        return ResponseEntity.builder().code(ResponseCode.SUCCESS.getCode()).info("帖子取消点赞成功").build();
     }
 
+    /**
+     * 获取我的帖子列表
+     */
     @PostMapping("/my")
     @Operation(summary = "获取我的帖子列表")
     @SaCheckLogin
     @ApiOperationLog(description = "获取我的帖子列表")
     public ResponseEntity<PageResponse<List<PostListVO>>> getMyPosts(@RequestBody Map<String, Object> request) {
         try {
-            Long userId = StpUtil.getLoginIdAsLong();
+            Long userId = LoginUserUtil.getLoginUserId();
             Integer pageNo = request.get("pageNo") != null ? Integer.valueOf(request.get("pageNo").toString()) : 1;
             Integer pageSize = request.get("pageSize") != null ? Integer.valueOf(request.get("pageSize").toString()) : 10;
             String status = request.get("status") != null ? request.get("status").toString() : "PUBLISHED";
-
-            // 参数校验
             postValidationService.validatePageParams(pageNo, pageSize);
-
-            // 查询我的帖子列表
-            List<Post> posts = postService.getUserPostsByStatus(userId,
-                    "PUBLISHED".equals(status) ? 1 : 0, pageNo, pageSize);
-
-            // 转换为PostListVO列表
-            List<PostListVO> postListResponses = convertToPostListVOs(posts);
-
-            // 获取总数
-            long total = postService.countUserPublishedPosts(userId);
-
-            // 创建PageResponse对象
-            PageResponse<List<PostListVO>> pageResponse = PageResponse.ofList(
-                    pageNo,
-                    pageSize,
-                    total,
-                    postListResponses
-            );
-
+            List<Post> posts = postService.getUserPostsByStatus(userId, "PUBLISHED".equals(status) ? 1 : 0, pageNo, pageSize);
+            long total = "PUBLISHED".equals(status) ? postService.countUserPublishedPosts(userId) : postService.countUserDrafts(userId);
             return ResponseEntity.<PageResponse<List<PostListVO>>>builder()
                     .code(ResponseCode.SUCCESS.getCode())
-                    .data(pageResponse)
+                    .data(PageResponse.ofList(pageNo, pageSize, total, convertToPostListVOs(posts)))
                     .build();
         } catch (Exception e) {
             log.error("获取我的帖子列表失败", e);
             return ResponseEntity.<PageResponse<List<PostListVO>>>builder()
-                    .code(ResponseCode.UN_ERROR.getCode())
-                    .info("获取帖子列表失败: " + e.getMessage())
-                    .build();
+                    .code(ResponseCode.UN_ERROR.getCode()).info("获取帖子列表失败").build();
         }
     }
 
+    /**
+     * 获取指定用户的帖子列表（公开接口）
+     */
     @PostMapping("/user/{userId}")
     @Operation(summary = "获取指定用户的帖子列表")
     @ApiOperationLog(description = "获取指定用户的帖子列表")
-    public ResponseEntity<PageResponse<List<PostListVO>>> getUserPosts(
-            @PathVariable Long userId,
-            @RequestBody Map<String, Object> request) {
+    public ResponseEntity<PageResponse<List<PostListVO>>> getUserPosts(@PathVariable Long userId, @RequestBody Map<String, Object> request) {
         try {
             Integer pageNo = request.get("pageNo") != null ? Integer.valueOf(request.get("pageNo").toString()) : 1;
             Integer pageSize = request.get("pageSize") != null ? Integer.valueOf(request.get("pageSize").toString()) : 10;
             String status = request.get("status") != null ? request.get("status").toString() : "PUBLISHED";
-
-            // 参数校验
             if (userId == null || userId <= 0) {
                 return ResponseEntity.<PageResponse<List<PostListVO>>>builder()
-                        .code(ResponseCode.ILLEGAL_PARAMETER.getCode())
-                        .info("用户ID不能为空")
-                        .build();
+                        .code(ResponseCode.ILLEGAL_PARAMETER.getCode()).info("用户ID不能为空").build();
             }
             postValidationService.validatePageParams(pageNo, pageSize);
-
-            // 查询指定用户的帖子列表（只返回已发布的）
-            List<Post> posts = postService.getUserPostsByStatus(userId,
-                    "PUBLISHED".equals(status) ? 1 : 0, pageNo, pageSize);
-
-            // 转换为PostListVO列表
-            List<PostListVO> postListResponses = convertToPostListVOs(posts);
-
-            // 获取总数
-            long total = postService.countUserPublishedPosts(userId);
-
-            // 创建PageResponse对象
-            PageResponse<List<PostListVO>> pageResponse = PageResponse.ofList(
-                    pageNo,
-                    pageSize,
-                    total,
-                    postListResponses
-            );
-
+            List<Post> posts = postService.getUserPostsByStatus(userId, "PUBLISHED".equals(status) ? 1 : 0, pageNo, pageSize);
+            long total = "PUBLISHED".equals(status) ? postService.countUserPublishedPosts(userId) : postService.countUserDrafts(userId);
             return ResponseEntity.<PageResponse<List<PostListVO>>>builder()
                     .code(ResponseCode.SUCCESS.getCode())
-                    .data(pageResponse)
+                    .data(PageResponse.ofList(pageNo, pageSize, total, convertToPostListVOs(posts)))
                     .build();
         } catch (Exception e) {
             log.error("获取用户帖子列表失败，userId: {}", userId, e);
             return ResponseEntity.<PageResponse<List<PostListVO>>>builder()
-                    .code(ResponseCode.UN_ERROR.getCode())
-                    .info("获取帖子列表失败: " + e.getMessage())
-                    .build();
+                    .code(ResponseCode.UN_ERROR.getCode()).info("获取帖子列表失败").build();
         }
     }
 
-    // ==================== 帖子详情辅助方法 ====================
+    /**
+     * 获取收藏排行榜
+     */
+    @GetMapping("/favorite/ranking")
+    @Operation(summary = "获取收藏排行榜")
+    @ApiOperationLog(description = "获取收藏排行榜")
+    public ResponseEntity<List<PostListVO>> getFavoriteRanking(@RequestParam(defaultValue = "10") Integer limit) {
+        try {
+            int safeLimit = Math.max(1, Math.min(limit, 100));
+            List<Post> posts = postService.getPostsByFavoriteCount(safeLimit);
+            return ResponseEntity.<List<PostListVO>>builder()
+                    .code(ResponseCode.SUCCESS.getCode()).data(convertToPostListVOs(posts)).build();
+        } catch (Exception e) {
+            log.error("获取收藏排行榜失败", e);
+            return ResponseEntity.<List<PostListVO>>builder()
+                    .code(ResponseCode.UN_ERROR.getCode()).info("获取收藏排行榜失败").build();
+        }
+    }
 
     /**
-     * 构建帖子详情响应对象
+     * 构建PostDetailVO（含作者、标签、交互状态）
      */
     private PostDetailVO buildPostDetailVO(Post post, Long currentUserId) {
-        // 1. 获取作者信息
-        cn.xu.model.vo.user.UserVO author = null;
+        UserVO author = null;
         if (post.getUserId() != null) {
             try {
                 User user = userService.getUserById(post.getUserId());
-                author = convertToUserResponse(user);
+                author = convertToUserDetailVO(user);
             } catch (Exception e) {
-                log.warn("获取作者信息失败 userId={}", post.getUserId(), e);
+                log.warn("获取作者信息失败: userId={}", post.getUserId(), e);
             }
         }
-
-        // 2. 获取标签信息
         List<cn.xu.model.vo.tag.TagVO> tags = Collections.emptyList();
         try {
             List<cn.xu.model.entity.Tag> entityTags = tagService.getTagsByPostId(post.getId());
             tags = entityTags.stream()
-                    .map(tag -> cn.xu.model.vo.tag.TagVO.builder()
-                            .id(tag.getId())
-                            .name(tag.getName())
-                            .build())
+                    .map(tag -> cn.xu.model.vo.tag.TagVO.builder().id(tag.getId()).name(tag.getName()).build())
                     .collect(java.util.stream.Collectors.toList());
         } catch (Exception e) {
             log.warn("获取帖子标签失败: postId={}", post.getId(), e);
         }
-
-        // 3. 获取用户交互状态（仅登录用户）
-        boolean isLiked = false;
-        boolean isFavorited = false;
-        boolean isFollowed = false;
-        boolean isAuthor = false;
-
+        boolean isLiked = false, isFavorited = false, isFollowed = false, isAuthor = false;
         if (currentUserId != null) {
             isAuthor = currentUserId.equals(post.getUserId());
-
-            try {
-                // 检查是否点赞
-                isLiked = likeService.checkStatus(currentUserId, Like.LikeType.POST.getCode(), post.getId());
-            } catch (Exception e) {
-                log.warn("检查点赞状态失败", e);
-            }
-
-            try {
-                // 检查是否收藏
-                isFavorited = favoriteService.isFavorited(currentUserId, post.getId(), "POST");
-            } catch (Exception e) {
-                log.warn("检查收藏状态失败", e);
-            }
-
-            try {
-                // 检查是否关注作者
-                if (post.getUserId() != null && !isAuthor) {
-                    isFollowed = followService.isFollowed(currentUserId, post.getUserId());
-                }
-            } catch (Exception e) {
-                log.warn("检查关注状态失败", e);
-            }
+            try { isLiked = likeService.checkStatus(currentUserId, Like.LikeType.POST.getCode(), post.getId()); } catch (Exception e) {}
+            try { isFavorited = favoriteService.isFavorited(currentUserId, post.getId(), "POST"); } catch (Exception e) {}
+            try { if (post.getUserId() != null && !isAuthor) isFollowed = followService.isFollowed(currentUserId, post.getUserId()); } catch (Exception e) {}
         }
-
-        // 4. 构建响应对象
         return PostDetailVO.builder()
-                .id(post.getId())
-                .title(post.getTitle())
-                .description(post.getDescription())
-                .content(post.getContent())
-                .coverUrl(post.getCoverUrl())
-                .author(author)
-                .tags(tags)
-                .viewCount(post.getViewCount())
-                .likeCount(post.getLikeCount())
-                .commentCount(post.getCommentCount())
-                .favoriteCount(post.getFavoriteCount())
-                .shareCount(post.getShareCount())
-                .status(post.getStatus())
-                .isFeatured(post.getIsFeatured() == 1)
-                .isLiked(isLiked)
-                .isFavorited(isFavorited)
-                .isFollowed(isFollowed)
-                .createTime(post.getCreateTime())
-                .updateTime(post.getUpdateTime())
+                .id(post.getId()).title(post.getTitle()).description(post.getDescription())
+                .content(post.getContent()).coverUrl(post.getCoverUrl()).author(author).tags(tags)
+                .viewCount(post.getViewCount()).likeCount(post.getLikeCount())
+                .commentCount(post.getCommentCount()).favoriteCount(post.getFavoriteCount())
+                .shareCount(post.getShareCount()).status(post.getStatus())
+                .isFeatured(post.getIsFeatured() == 1).isLiked(isLiked).isFavorited(isFavorited)
+                .isFollowed(isFollowed).createTime(post.getCreateTime()).updateTime(post.getUpdateTime())
                 .build();
     }
 
     /**
-     * 转换User为UserVO
+     * User转换为UserVO
      */
-    private cn.xu.model.vo.user.UserVO convertToUserResponse(User user) {
-        if (user == null) {
-            return null;
-        }
-
-        return cn.xu.model.vo.user.UserVO.builder()
-                .id(user.getId())
-                .username(user.getUsername())
-                .nickname(user.getNickname())
-                .avatar(user.getAvatar())
-                .description(user.getDescription())
-                .followCount(user.getFollowCount())
-                .fansCount(user.getFansCount())
-                .likeCount(user.getLikeCount())
-                .createTime(user.getCreateTime())
+    private UserVO convertToUserDetailVO(User user) {
+        if (user == null) return null;
+        return UserVO.builder()
+                .id(user.getId()).username(user.getUsername()).nickname(user.getNickname())
+                .avatar(user.getAvatar()).description(user.getDescription())
+                .followCount(user.getFollowCount()).fansCount(user.getFansCount())
+                .likeCount(user.getLikeCount()).createTime(user.getCreateTime())
                 .build();
     }
 }

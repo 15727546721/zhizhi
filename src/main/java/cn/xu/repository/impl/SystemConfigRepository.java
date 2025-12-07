@@ -11,9 +11,9 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * 系统配置仓储实现类
- * 
- * 简化设计：直接使用PO，移除Entity/Converter转换
+ * 系统配置仓储实现
+ * <p>负责系统配置的持久化操作</p>
+ 
  */
 @Repository
 @RequiredArgsConstructor

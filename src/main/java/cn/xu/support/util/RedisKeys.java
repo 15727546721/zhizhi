@@ -5,7 +5,11 @@ import cn.xu.model.entity.Like;
 import java.util.Objects;
 
 /**
- * Redis Key 工具类，统一管理业务相关 Redis Key
+ * Redis Key 工具类
+ * <p>统一管理业务相关 Redis Key</p>
+ *
+ * @author xu
+ * @since 1.0.0
  */
 public class RedisKeys {
 
@@ -13,7 +17,7 @@ public class RedisKeys {
      * 点赞关系 Hash Key
      * 格式：like:{类型}:{目标ID}
      * Hash字段：userId
-     * Hash值：点赞状态 ("1" 点赞, "0" 取消)
+     * Hash值：点赞状态("1" 点赞, "0" 取消)
      */
     public static String likeRelationKey(Integer type, Long targetId) {
         Like.LikeType likeType = Objects.requireNonNull(Like.LikeType.valueOf(type), "点赞类型不能为空");

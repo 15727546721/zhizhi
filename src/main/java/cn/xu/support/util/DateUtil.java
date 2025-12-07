@@ -1,7 +1,4 @@
 package cn.xu.support.util;
-/**
- * 时间操作工具类
- */
 
 import cn.xu.support.exception.BusinessException;
 import org.slf4j.Logger;
@@ -13,6 +10,11 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.regex.Pattern;
 
+/**
+ * 时间操作工具类
+ * <p>提供日期格式化、解析等工具方法</p>
+ 
+ */
 public class DateUtil {
 
     public static final String STARTTIME = " 00:00:00";
@@ -72,7 +74,7 @@ public class DateUtil {
             Date date = sf1.parse(dateString);
             return date;
         } catch (Exception e) {
-            throw new BusinessException("时间转化格式错误" + "[dateString=" + dateString + "]" + "[FORMAT_STRING=" + FORMAT_STRING + "]");
+            throw new BusinessException("时间转换格式错误" + "[dateString=" + dateString + "]" + "[FORMAT_STRING=" + FORMAT_STRING + "]");
         }
     }
 
@@ -187,7 +189,7 @@ public class DateUtil {
     }
 
     /**
-     * 将  String 转换成  date
+     * 将 String 转换成 date
      *
      * @param dateTime
      * @return
@@ -204,7 +206,7 @@ public class DateUtil {
     }
 
     /**
-     * 将  String 转换成  date
+     * 将 String 转换成 date
      *
      * @param dateTime
      * @return
@@ -221,7 +223,7 @@ public class DateUtil {
     }
 
     /**
-     * 将  date 转换成  时间戳
+     * 将 date 转换成 时间戳
      *
      * @return
      */
@@ -234,7 +236,7 @@ public class DateUtil {
     }
 
     /**
-     * Date 转换成  String
+     * Date 转换成 String
      *
      * @param dateTime
      * @return
@@ -246,7 +248,7 @@ public class DateUtil {
     }
 
     /**
-     * Date 转换成  String
+     * Date 转换成 String
      *
      * @param dateTime
      * @return
@@ -364,7 +366,7 @@ public class DateUtil {
     }
 
     /**
-     * 获取当月的 天数
+     * 获取当月的天数
      */
     public static int getCurrentMonthDay() {
         Calendar a = Calendar.getInstance();
@@ -375,7 +377,7 @@ public class DateUtil {
     }
 
     /**
-     * 得到二个日期间的间隔天数
+     * 得到两个日期间的间隔天数
      *
      * @param date1
      * @param date2
@@ -448,7 +450,7 @@ public class DateUtil {
     }
 
     /**
-     * 根据年 月 获取对应的月份 天数
+     * 根据年月获取对应的月份数天数
      */
     public static int getDaysByYearMonth(int year, int month) {
 
@@ -503,7 +505,6 @@ public class DateUtil {
      * @param hour
      * @return
      */
-    @SuppressWarnings("unused")
     public static String getTime(double hour) {
         Calendar calendar = new GregorianCalendar(TimeZone.getDefault());
         long time = (long) (System.currentTimeMillis() + hour * 60 * 60 * 1000L);
@@ -520,7 +521,7 @@ public class DateUtil {
      */
     private static int getMondayPlus() {
         Calendar cd = Calendar.getInstance();
-        // 获得今天是一周的第几天，星期日是第一天，星期二是第二天......
+        // 获得今天是一周的第几天，星期日是第一天，星期二是第二天.....
         // 因为按中国礼拜一作为第一天所以这里减1
         int dayOfWeek = cd.get(Calendar.DAY_OF_WEEK) - 1;
         if (dayOfWeek == 1) {
@@ -554,7 +555,7 @@ public class DateUtil {
     }
 
     /**
-     * 获取某个日期 在加上 秒数的时间
+     * 获取某个日期 在加一种秒数的时间
      *
      * @param beforeDate yyyy-MM-dd HH:mm:ss
      * @param timeSecond 加减的秒数
@@ -563,7 +564,7 @@ public class DateUtil {
     public static String getDateStr(Date beforeDate, Long timeSecond) {
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         try {
-            // 返回毫秒数 + 添加的毫秒数
+            // 返回毫秒数+ 添加的毫秒数
             Long time = beforeDate.getTime() + timeSecond * 1000;
             return format.format(time);
         } catch (Exception e) {

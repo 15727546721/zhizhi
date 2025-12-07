@@ -8,12 +8,16 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
+/**
+ * 评论回复的响应数据
+ */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @Schema(description = "评论回复Response")
 public class CommentReplyResponse {
+
     @Schema(description = "评论ID")
     private Long id;
 
@@ -29,13 +33,13 @@ public class CommentReplyResponse {
     @Schema(description = "评论用户头像")
     private String avatar;
 
-    @Schema(description = "被回复用户ID")
+    @Schema(description = "被回复的用户ID")
     private Long replyUserId;
 
-    @Schema(description = "被回复用户昵称")
+    @Schema(description = "被回复的用户昵称")
     private String replyNickname;
 
-    @Schema(description = "被回复用户头像")
+    @Schema(description = "被回复的用户头像")
     private String replyAvatar;
 
     @Schema(description = "创建时间")

@@ -1,379 +1,473 @@
 package cn.xu.service.message;
 
-import cn.xu.model.entity.Conversation;
+import cn.xu.event.publisher.MessageEventPublisher;
 import cn.xu.model.entity.PrivateMessage;
 import cn.xu.model.entity.User;
-import cn.xu.repository.IConversationRepository;
+import cn.xu.model.entity.UserConversation;
+import cn.xu.model.vo.ConversationListVO;
+import cn.xu.repository.IGreetingRecordRepository;
 import cn.xu.repository.IPrivateMessageRepository;
 import cn.xu.repository.IUserBlockRepository;
+import cn.xu.repository.IUserConversationRepository;
 import cn.xu.service.follow.FollowService;
 import cn.xu.service.user.IUserService;
 import cn.xu.support.exception.BusinessException;
-import cn.xu.support.util.RateLimiter;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import javax.annotation.PostConstruct;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * 私信服务
- * 
- * <p>提供私信的发送、接收、管理等功能
- * <ul>
- * <li>发送私信</li>
- * <li>接收私信</li>
- * <li>管理会话</li>
- * </ul>
  *
- * @author xu  
- * @since 2025-11-26
+ * <p>权限规则:
+ * <ul>
+ *   <li>互关 - 完全开放</li>
+ *   <li>对方回复过 - 完全开放（自由会话）</li>
+ *   <li>陌生人/单向关注 - 可发1条打招呼消息</li>
+ *   <li>拉黑 - 不可发</li>
+ * </ul>
  */
-@Service
 @Slf4j
+@Service
+@RequiredArgsConstructor
 public class PrivateMessageService {
 
-    private final IPrivateMessageRepository privateMessageRepository;
-    private final IConversationRepository conversationRepository; 
+    private final IUserConversationRepository conversationRepository;
+    private final IPrivateMessageRepository messageRepository;
     private final IUserBlockRepository userBlockRepository;
+    private final IGreetingRecordRepository greetingRecordRepository;
     private final IUserService userService;
     private final FollowService followService;
-    private final RedisTemplate<String, Object> redisTemplate;
-    
-    /** 消息限流器，防止用户频繁发送消息 */
-    private RateLimiter messageLimiter;
-    
-    /** 每分钟最大消息数 */
-    private static final int MAX_MESSAGES_PER_MINUTE = 10;
-    private static final int RATE_LIMIT_WINDOW_SECONDS = 60;
-    
-    public PrivateMessageService(
-            IPrivateMessageRepository privateMessageRepository,
-            IConversationRepository conversationRepository,
-            IUserBlockRepository userBlockRepository,
-            IUserService userService,
-            FollowService followService,
-            RedisTemplate<String, Object> redisTemplate) {
-        this.privateMessageRepository = privateMessageRepository;
-        this.conversationRepository = conversationRepository;
-        this.userBlockRepository = userBlockRepository;
-        this.userService = userService;
-        this.followService = followService;
-        this.redisTemplate = redisTemplate;
-    }
-    
-    @PostConstruct
-    public void init() {
-        // 初始化限流器
-        this.messageLimiter = new RateLimiter(
-                redisTemplate,
-                "rate:private_message",
-                MAX_MESSAGES_PER_MINUTE,
-                RATE_LIMIT_WINDOW_SECONDS
-        );
-        log.info("[私信服务] 初始化完成 - 限流配置: {}条/{}秒", MAX_MESSAGES_PER_MINUTE, RATE_LIMIT_WINDOW_SECONDS);
-    }
+    private final MessageEventPublisher eventPublisher;
 
-    // ==================== 发送消息 ====================
+    /** 消息内容最大长度 */
+    private static final int MAX_CONTENT_LENGTH = 1000;
+    /** 消息预览最大长度 */
+    private static final int MAX_PREVIEW_LENGTH = 100;
+
+    // ==================== 权限检查 ====================
 
     /**
-     * 发送私信消息
-     * 
-     * <p>消息状态说明:
+     * 检查私信发送权限
+     *
+     * <p>权限规则（按优先级）：
      * <ul>
-     * <li>status=1 已发送</li>
-     * <li>status=1 待审核</li>
-     * <li>status=2 已删除</li>
-     * <li>status=1 已读</li>
+     *   <li>1. 拉黑 → 不可发送</li>
+     *   <li>2. 互关 → 完全开放</li>
+     *   <li>3. 对方回复过 → 完全开放（自由会话）</li>
+     *   <li>4. 已发送打招呼消息 → 等待对方回复</li>
+     *   <li>5. 陌生人/单向关注 → 允许发送1条打招呼消息</li>
      * </ul>
+     *
+     * @param senderId   发送者ID
+     * @param receiverId 接收者ID
+     * @return 权限检查结果
+     */
+    public PermissionResult canSendDM(Long senderId, Long receiverId) {
+        // 1. 拉黑检查 → 不可发送（区分提示语）
+        if (userBlockRepository.existsBlock(senderId, receiverId)) {
+            // 我屏蔽了对方
+            return PermissionResult.denied("你已屏蔽对方，无法发送消息");
+        }
+        if (userBlockRepository.existsBlock(receiverId, senderId)) {
+            // 对方屏蔽了我（隐私保护，用模糊说法）
+            return PermissionResult.denied("对方设置了消息权限，暂时无法发送");
+        }
+
+        // 2. 互关检查 → 完全开放
+        if (isMutualFollow(senderId, receiverId)) {
+            log.debug("[权限] 互关，允许发送 sender:{} receiver:{}", senderId, receiverId);
+            return PermissionResult.allowed();
+        }
+
+        // 3. 对方回复过 → 完全开放（自由会话）
+        boolean hasReply = messageRepository.hasReplyFrom(senderId, receiverId);
+        if (hasReply) {
+            log.debug("[权限] 对方已回复，允许发送 sender:{} receiver:{}", senderId, receiverId);
+            return PermissionResult.allowed();
+        }
+
+        // 4. 打招呼消息检查 → 已发送过则等待回复
+        if (greetingRecordRepository.hasSentGreeting(senderId, receiverId)) {
+            return PermissionResult.denied("已发送消息，等待对方回复后可继续发送");
+        }
+
+        // 5. 陌生人/单向关注 → 允许发送1条打招呼消息
+        log.debug("[权限] 允许发送打招呼消息 sender:{} receiver:{}", senderId, receiverId);
+        return PermissionResult.allowedAsGreeting();
+    }
+
+    /** 检查是否互相关注 */
+    private boolean isMutualFollow(Long userId1, Long userId2) {
+        return followService.isFollowed(userId1, userId2) 
+            && followService.isFollowed(userId2, userId1);
+    }
+
+    // ==================== 消息发送 ====================
+
+    /**
+     * 发送私信（自动识别文本/图片）
+     *
+     * @param senderId   发送者ID
+     * @param receiverId 接收者ID
+     * @param content    消息内容（支持JSON格式图片: {"type":"image","url":"..."}）
+     * @return 发送结果
      */
     @Transactional(rollbackFor = Exception.class)
     public SendResult sendMessage(Long senderId, Long receiverId, String content) {
-        log.info("[私信服务] 发送消息 - 发送者: {}, 接收者: {}", senderId, receiverId);
+        log.info("[发送私信] sender:{} → receiver:{}", senderId, receiverId);
 
-        // 0. 限流检查
-        if (messageLimiter != null && !messageLimiter.allowRequest(String.valueOf(senderId))) {
-            log.warn("[私信服务] 发送频率超限 - 用户: {}", senderId);
-            throw new BusinessException("发送过于频繁，请稍后再试");
-        }
-
-        // 1. 参数校验
+        // 参数校验
         validateSendRequest(senderId, receiverId, content);
 
-        // 2. 检查是否被拉黑
-        if (userBlockRepository.existsBlock(receiverId, senderId)) {
-            log.warn("[私信服务] 用户被拉黑 - 发送者: {}, 接收者: {}", senderId, receiverId);
-            throw new BusinessException("消息发送失败");
+        // 权限校验
+        PermissionResult permission = canSendDM(senderId, receiverId);
+        if (!permission.isAllowed()) {
+            log.warn("[发送私信] 权限不足 sender:{} reason:{}", senderId, permission.getReason());
+            throw new BusinessException(permission.getReason());
         }
 
-        // 3. 检查是否互相关注
-        boolean isMutualFollow = followService.isFollowed(senderId, receiverId) 
-                && followService.isFollowed(receiverId, senderId);
-
-        if (isMutualFollow) {
-            return sendMutualFollowMessage(senderId, receiverId, content);
+        // 检测是否为JSON格式的图片消息
+        PrivateMessage message;
+        String previewContent;
+        if (isJsonImageMessage(content)) {
+            // 图片消息：解析URL并创建图片消息
+            String imageUrl = extractImageUrl(content);
+            message = PrivateMessage.createImage(senderId, receiverId, imageUrl, PrivateMessage.STATUS_DELIVERED);
+            message.setContent(content); // 保存完整JSON便于前端解析
+            previewContent = "[图片]";
+            log.info("[发送私信] 识别为图片消息");
         } else {
-            return sendNonMutualFollowMessage(senderId, receiverId, content);
+            // 文本消息
+            message = PrivateMessage.createText(senderId, receiverId, content, PrivateMessage.STATUS_DELIVERED);
+            previewContent = content;
         }
-    }
-
-    /**
-     * 发送结果
-     */
-    public static class SendResult {
-        private final Long messageId;
-        private final String message;
-        private final int status;
-
-        public SendResult(Long messageId, String message, int status) {
-            this.messageId = messageId;
-            this.message = message;
-            this.status = status;
-        }
-
-        public Long getMessageId() { return messageId; }
-        public String getMessage() { return message; }
-        public int getStatus() { return status; }
-    }
-
-    /**
-     * 发送互相关注用户的消息
-     */
-    private SendResult sendMutualFollowMessage(Long senderId, Long receiverId, String content) {
-        // 互相关注，直接发送
-        PrivateMessage message = PrivateMessage.createDelivered(senderId, receiverId, content);
-        Long messageId = privateMessageRepository.save(message);
-
-        // 更新或创建会话
-        updateOrCreateConversation(senderId, receiverId, senderId, Conversation.STATUS_ESTABLISHED);
-
-        log.info("[私信服务] 互关消息发送成功 - messageId: {}", messageId);
-        return new SendResult(messageId, "", PrivateMessage.STATUS_DELIVERED);
-    }
-
-    /**
-     * 发送非互相关注用户的消息
-     */
-    private SendResult sendNonMutualFollowMessage(Long senderId, Long receiverId, String content) {
-        // 查询会话
-        Optional<Conversation> conversationOpt = getConversation(senderId, receiverId);
-
-        if (!conversationOpt.isPresent()) {
-            // 首次发送
-            return handleFirstMessage(senderId, receiverId, content);
-        }
-
-        Conversation conversation = conversationOpt.get();
         
-        if (conversation.isPending()) {
-            // 会话待确认
-            if (conversation.isInitiator(senderId)) {
-                // 发起者继续发送，进入防骚扰
-                return handleAntiSpamMessage(senderId, receiverId, content);
-            } else {
-                // 接收者回复，建立会话
-                return handleReplyMessage(senderId, receiverId, content, conversation);
+        Long messageId = messageRepository.save(message);
+
+        // 更新会话
+        updateConversations(senderId, receiverId, previewContent);
+
+        // 记录打招呼消息
+        if (permission.isGreeting()) {
+            greetingRecordRepository.markGreetingSent(senderId, receiverId);
+            log.info("[发送私信] 打招呼消息 sender:{} → receiver:{}", senderId, receiverId);
+        }
+        
+        // 清理打招呼记录：如果对方之前发过打招呼消息，现在回复了，应该删除该记录
+        // 这样双方就进入自由会话状态
+        if (greetingRecordRepository.hasSentGreeting(receiverId, senderId)) {
+            greetingRecordRepository.deleteGreeting(receiverId, senderId);
+            log.info("[发送私信] 对方打招呼消息已确认，清理记录 receiver:{} → sender:{}", receiverId, senderId);
+        }
+
+        // 异步通知
+        publishMessageEvent(senderId, receiverId, messageId, previewContent, permission.isGreeting());
+
+        log.info("[发送私信] 成功 messageId:{}", messageId);
+        return new SendResult(messageId, PrivateMessage.STATUS_DELIVERED, permission.isGreeting() ? "打招呼消息" : "");
+    }
+    
+    /** 检测是否为JSON格式的图片消息 */
+    private boolean isJsonImageMessage(String content) {
+        if (content == null || !content.trim().startsWith("{")) {
+            return false;
+        }
+        try {
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            com.fasterxml.jackson.databind.JsonNode node = mapper.readTree(content);
+            return node.has("type") && "image".equals(node.get("type").asText()) && node.has("url");
+        } catch (Exception e) {
+            return false;
+        }
+    }
+    
+    /** 从JSON中提取图片URL */
+    private String extractImageUrl(String content) {
+        try {
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            com.fasterxml.jackson.databind.JsonNode node = mapper.readTree(content);
+            return node.get("url").asText();
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    /**
+     * 发送图片私信
+     *
+     * @param senderId   发送者ID
+     * @param receiverId 接收者ID
+     * @param imageUrl   图片URL
+     * @return 发送结果
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public SendResult sendImage(Long senderId, Long receiverId, String imageUrl) {
+        log.info("[发送图片] sender:{} → receiver:{}", senderId, receiverId);
+
+        // 权限校验
+        PermissionResult permission = canSendDM(senderId, receiverId);
+        if (!permission.isAllowed()) {
+            throw new BusinessException(permission.getReason());
+        }
+
+        // 保存消息
+        PrivateMessage message = PrivateMessage.createImage(senderId, receiverId, imageUrl, PrivateMessage.STATUS_DELIVERED);
+        Long messageId = messageRepository.save(message);
+
+        // 更新会话
+        updateConversations(senderId, receiverId, "[图片]");
+
+        // 记录打招呼消息
+        if (permission.isGreeting()) {
+            greetingRecordRepository.markGreetingSent(senderId, receiverId);
+        }
+
+        return new SendResult(messageId, PrivateMessage.STATUS_DELIVERED, permission.isGreeting() ? "打招呼消息" : "");
+    }
+
+    /** 发布消息事件（事务提交后） */
+    private void publishMessageEvent(Long senderId, Long receiverId, Long messageId, String content, boolean isGreeting) {
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                eventPublisher.publishSent(senderId, receiverId, messageId, content, isGreeting);
+            }
+        });
+    }
+
+    // ==================== 会话更新 ====================
+
+    /** 更新双方会话记录 */
+    private void updateConversations(Long senderId, Long receiverId, String content) {
+        User sender = userService.getUserById(senderId);
+        User receiver = userService.getUserById(receiverId);
+        boolean isMutual = isMutualFollow(senderId, receiverId);
+        String preview = truncate(content, MAX_PREVIEW_LENGTH);
+
+        log.debug("[会话更新] senderId:{} senderNickname:{}, receiverId:{} receiverNickname:{}", 
+                senderId, sender.getNickname(), receiverId, receiver.getNickname());
+
+        // 更新发送者会话：owner=发送者，other=接收者
+        updateOrCreateConversation(senderId, receiverId, receiver, preview, true, isMutual);
+        // 更新接收者会话：owner=接收者，other=发送者
+        updateOrCreateConversation(receiverId, senderId, sender, preview, false, isMutual);
+    }
+
+    /** 更新或创建单方会话 */
+    private void updateOrCreateConversation(Long ownerId, Long otherId, User otherUser, 
+                                            String preview, boolean isSender, boolean isMutual) {
+        Optional<UserConversation> convOpt = conversationRepository.findByOwnerAndOther(ownerId, otherId);
+        
+        if (convOpt.isPresent()) {
+            UserConversation conv = convOpt.get();
+            // 同步更新对方用户信息（防止用户改名后会话显示旧名）
+            conv.setOtherNickname(otherUser.getNickname());
+            conv.setOtherAvatar(otherUser.getAvatar());
+            conv.setLastMessage(preview);
+            conv.setLastMessageTime(java.time.LocalDateTime.now());
+            conv.setLastMessageIsMine(isSender ? 1 : 0);
+            conv.setIsDeleted(0); // 恢复已删除的会话
+            if (isMutual) {
+                conv.setRelationType(UserConversation.RELATION_MUTUAL);
+            }
+            log.debug("[会话更新] 更新现有会话 ownerId:{} otherId:{} isSender:{}", 
+                    ownerId, otherId, isSender);
+            conversationRepository.update(conv);
+            
+            // 接收者：原子性增加未读数（避免并发问题）
+            if (!isSender) {
+                conversationRepository.incrementUnreadCount(ownerId, otherId);
+                log.debug("[会话更新] 接收者未读数+1 ownerId:{} otherId:{}", ownerId, otherId);
             }
         } else {
-            // 会话已建立
-            return handleEstablishedMessage(senderId, receiverId, content, conversation);
+            UserConversation conv = isSender
+                    ? UserConversation.createForSender(ownerId, otherId, otherUser.getNickname(), otherUser.getAvatar(), isMutual)
+                    : UserConversation.createForReceiver(ownerId, otherId, otherUser.getNickname(), otherUser.getAvatar(), isMutual);
+            conv.setLastMessage(preview);
+            log.debug("[会话创建] 新建会话 ownerId:{} otherId:{} isSender:{}", 
+                    ownerId, otherId, isSender);
+            conversationRepository.save(conv);
         }
     }
 
-    /**
-     * 处理首次发送消息
-     */
-    private SendResult handleFirstMessage(Long senderId, Long receiverId, String content) {
-        log.info("[私信服务] 首次消息 - 发送者: {}, 接收者: {}", senderId, receiverId);
+    // ==================== 参数校验 ====================
 
-        // 直接发送
-        PrivateMessage message = PrivateMessage.createDelivered(senderId, receiverId, content);
-        Long messageId = privateMessageRepository.save(message);
-
-        // 创建待确认会话
-        updateOrCreateConversation(senderId, receiverId, senderId, Conversation.STATUS_PENDING);
-
-        return new SendResult(messageId, "", PrivateMessage.STATUS_DELIVERED);
-    }
-
-    /**
-     * 处理防骚扰消息
-     */
-    private SendResult handleAntiSpamMessage(Long senderId, Long receiverId, String content) {
-        log.warn("[私信服务] 防骚扰消息 - 发送者: {}, 接收者: {}", senderId, receiverId);
-
-        // 消息进入待审核
-        PrivateMessage message = PrivateMessage.createPending(senderId, receiverId, content);
-        Long messageId = privateMessageRepository.save(message);
-
-        // 更新会话时间
-        updateConversationTime(senderId, receiverId);
-
-        return new SendResult(messageId, "", PrivateMessage.STATUS_PENDING);
-    }
-
-    /**
-     * 处理回复消息（建立会话）
-     */
-    private SendResult handleReplyMessage(Long senderId, Long receiverId, String content, Conversation conversation) {
-        log.info("[私信服务] 回复消息 - 发送者: {}, 接收者: {}", senderId, receiverId);
-
-        // 直接发送
-        PrivateMessage message = PrivateMessage.createDelivered(senderId, receiverId, content);
-        Long messageId = privateMessageRepository.save(message);
-
-        // 建立会话
-        conversation.establish();
-        conversationRepository.update(conversation);
-
-        return new SendResult(messageId, "", PrivateMessage.STATUS_DELIVERED);
-    }
-
-    /**
-     * 处理已建立会话的消息
-     */
-    private SendResult handleEstablishedMessage(Long senderId, Long receiverId, String content, Conversation conversation) {
-        // 直接发送
-        PrivateMessage message = PrivateMessage.createDelivered(senderId, receiverId, content);
-        Long messageId = privateMessageRepository.save(message);
-
-        // 更新会话时间
-        conversation.updateLastMessageTime();
-        conversationRepository.update(conversation);
-
-        return new SendResult(messageId, "", PrivateMessage.STATUS_DELIVERED);
-    }
-
-    // ==================== 查询消息 ====================
-
-    /**
-     * 获取两个用户之间的消息列表
-     */
-    public List<PrivateMessage> getMessagesBetweenUsers(Long currentUserId, Long otherUserId, int pageNo, int pageSize) {
-        int offset = (pageNo - 1) * pageSize;
-        return privateMessageRepository.findMessagesBetweenUsers(currentUserId, otherUserId, offset, pageSize);
-    }
-
-    /**
-     * 获取用户的会话列表
-     */
-    public List<Conversation> getConversationList(Long userId, int pageNo, int pageSize) {
-        int offset = (pageNo - 1) * pageSize;
-        return conversationRepository.findByUserId(userId, offset, pageSize);
-    }
-
-    // ==================== 已读状态 ====================
-
-    /**
-     * 标记消息为已读
-     */
-    public void markAsRead(Long receiverId, Long senderId) {
-        privateMessageRepository.markAsReadBySender(receiverId, senderId);
-        log.debug("[私信服务] 标记已读 - 接收者: {}, 发送者: {}", receiverId, senderId);
-    }
-
-    /**
-     * 获取未读消息数
-     */
-    public long getUnreadCount(Long receiverId, Long senderId) {
-        return privateMessageRepository.countUnreadMessages(receiverId, senderId);
-    }
-
-    /**
-     * 批量获取未读消息数（避免N+1查询）
-     * 
-     * @param currentUserId 当前用户ID
-     * @param otherUserIds 其他用户ID列表
-     * @return Map<用户ID, 未读数>
-     */
-    public java.util.Map<Long, Long> getUnreadCountBatch(Long currentUserId, java.util.List<Long> otherUserIds) {
-        if (otherUserIds == null || otherUserIds.isEmpty()) {
-            return java.util.Collections.emptyMap();
-        }
-        
-        java.util.List<IPrivateMessageRepository.UnreadCountResult> results = 
-                privateMessageRepository.countUnreadMessagesBatch(currentUserId, otherUserIds);
-        
-        java.util.Map<Long, Long> resultMap = new java.util.HashMap<>();
-        for (IPrivateMessageRepository.UnreadCountResult result : results) {
-            resultMap.put(result.getOtherUserId(), result.getUnreadCount());
-        }
-        
-        // 补充默认值
-        for (Long userId : otherUserIds) {
-            resultMap.putIfAbsent(userId, 0L);
-        }
-        
-        return resultMap;
-    }
-
-    // ==================== 私有方法 ====================
-
-    /**
-     * 验证发送请求参数
-     */
+    /** 校验发送请求 */
     private void validateSendRequest(Long senderId, Long receiverId, String content) {
         if (senderId == null || receiverId == null) {
             throw new BusinessException("用户ID不能为空");
         }
         if (senderId.equals(receiverId)) {
-            throw new BusinessException("不能给自己发送私信");
+            throw new BusinessException("不能给自己发私信");
         }
         if (content == null || content.trim().isEmpty()) {
             throw new BusinessException("消息内容不能为空");
         }
-        if (content.length() > 1000) {
-            throw new BusinessException("消息内容不能超过1000字");
-        }
-
-        // 验证接收者是否存在
-        User receiver = userService.getUserById(receiverId);
-        if (receiver == null) {
-            throw new BusinessException("接收用户不存在");
+        if (content.length() > MAX_CONTENT_LENGTH) {
+            throw new BusinessException("消息内容超过" + MAX_CONTENT_LENGTH + "字限制");
         }
     }
 
-    /**
-     * 
-     */
-    private Optional<Conversation> getConversation(Long userId1, Long userId2) {
-        Long smallerId = Math.min(userId1, userId2);
-        Long largerId = Math.max(userId1, userId2);
-        return conversationRepository.findByUserPair(smallerId, largerId);
+    /** 截断字符串 */
+    private String truncate(String str, int maxLength) {
+        return str != null && str.length() > maxLength ? str.substring(0, maxLength) : str;
+    }
+
+    // ==================== 会话查询 ====================
+
+    /** 获取会话列表 */
+    public List<ConversationListVO> getConversationList(Long userId, int page, int size) {
+        int offset = Math.max(0, (page - 1) * size);
+        List<UserConversation> conversations = conversationRepository.findActiveByOwnerId(userId, offset, size);
+        
+        // 打印原始数据便于调试
+        conversations.forEach(conv -> log.info("[会话列表-原始] id:{} ownerId:{} otherUserId:{} otherNickname:{}", 
+                conv.getId(), conv.getOwnerId(), conv.getOtherUserId(), conv.getOtherNickname()));
+        
+        return conversations.stream()
+                .map(this::convertToVO)
+                .collect(Collectors.toList());
+    }
+
+    /** 获取或创建会话 */
+    @Transactional(rollbackFor = Exception.class)
+    public ConversationListVO getOrCreateConversation(Long currentUserId, Long targetUserId) {
+        // 不能和自己创建会话
+        if (currentUserId.equals(targetUserId)) {
+            throw new BusinessException("不能和自己创建会话");
+        }
+        return conversationRepository.findByOwnerAndOther(currentUserId, targetUserId)
+                .map(this::convertToVO)
+                .orElseGet(() -> createNewConversation(currentUserId, targetUserId));
+    }
+
+    /** 创建新会话 */
+    private ConversationListVO createNewConversation(Long currentUserId, Long targetUserId) {
+        User targetUser = userService.getUserById(targetUserId);
+        boolean isMutual = isMutualFollow(currentUserId, targetUserId);
+        
+        log.debug("[会话创建] currentUserId:{} targetUserId:{} targetNickname:{}", 
+                currentUserId, targetUserId, targetUser.getNickname());
+        
+        UserConversation conv = UserConversation.createForSender(
+                currentUserId, targetUserId,
+                targetUser.getNickname(), targetUser.getAvatar(), isMutual);
+        conversationRepository.save(conv);
+        
+        return convertToVO(conv);
+    }
+
+    /** 删除会话（软删除） */
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteConversation(Long currentUserId, Long otherUserId) {
+        conversationRepository.softDelete(currentUserId, otherUserId);
+    }
+
+    /** 获取消息列表 */
+    public List<PrivateMessage> getMessages(Long currentUserId, Long otherUserId, int page, int size) {
+        int offset = Math.max(0, (page - 1) * size);
+        return messageRepository.findMessagesBetweenUsers(currentUserId, otherUserId, currentUserId, offset, size);
+    }
+
+    // ==================== 消息状态 ====================
+
+    /** 标记消息已读 */
+    @Transactional(rollbackFor = Exception.class)
+    public void markAsRead(Long currentUserId, Long otherUserId) {
+        messageRepository.markAsRead(currentUserId, otherUserId);
+        conversationRepository.clearUnreadCount(currentUserId, otherUserId);
+    }
+
+    /** 删除消息（仅自己不可见） */
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteMessage(Long currentUserId, Long messageId) {
+        messageRepository.softDeleteForUser(messageId, currentUserId);
+    }
+
+    /** 获取总未读数 */
+    public int getTotalUnreadCount(Long userId) {
+        return conversationRepository.getTotalUnreadCount(userId);
+    }
+
+    /** 获取与某用户的未读数 */
+    public int getUnreadCount(Long currentUserId, Long otherUserId) {
+        return conversationRepository.getUnreadCount(currentUserId, otherUserId);
+    }
+
+    // ==================== 数据转换 ====================
+
+    /** 转换会话实体为VO */
+    private ConversationListVO convertToVO(UserConversation conv) {
+        ConversationListVO vo = new ConversationListVO();
+        vo.setId(conv.getId());
+        vo.setUserId(conv.getOtherUserId());
+        vo.setUserName(conv.getOtherNickname());
+        vo.setUserAvatar(conv.getOtherAvatar());
+        vo.setLastMessage(conv.getLastMessage());
+        vo.setLastMessageTime(conv.getLastMessageTime());
+        vo.setUnreadCount(conv.getUnreadCount());
+        vo.setRelationType(conv.getRelationType());
+        return vo;
+    }
+
+    // ==================== 结果类 ====================
+
+    /** 消息发送结果 */
+    @Getter
+    @AllArgsConstructor
+    public static class SendResult {
+        private final Long messageId;
+        private final int status;
+        private final String type;
     }
 
     /**
-     * ?
+     * 权限检查结果
+     *
+     * <p>三种状态：
+     * <ul>
+     *   <li>allowed=true, greeting=false → 完全开放（互关/对方已回复）</li>
+     *   <li>allowed=true, greeting=true → 允许发送1条打招呼消息（陌生人/单向关注）</li>
+     *   <li>allowed=false → 拒绝发送（已发送打招呼/拉黑）</li>
+     * </ul>
      */
-    private void updateOrCreateConversation(Long userId1, Long userId2, Long creatorId, int status) {
-        Optional<Conversation> existing = getConversation(userId1, userId2);
-        if (existing.isPresent()) {
-            Conversation conversation = existing.get();
-            conversation.updateLastMessageTime();
-            conversationRepository.update(conversation);
-        } else {
-            Conversation conversation;
-            if (status == Conversation.STATUS_ESTABLISHED) {
-                conversation = Conversation.createEstablished(userId1, userId2, creatorId);
-            } else {
-                conversation = Conversation.createPending(userId1, userId2, creatorId);
-            }
-            conversationRepository.save(conversation);
-        }
-    }
+    @Getter
+    @AllArgsConstructor
+    public static class PermissionResult {
+        /** 是否允许发送 */
+        private final boolean allowed;
+        /** 是否为打招呼消息（仅能发送1条） */
+        private final boolean greeting;
+        /** 拒绝原因（allowed=false时有值） */
+        private final String reason;
 
-    /**
-     * 
-     */
-    private void updateConversationTime(Long userId1, Long userId2) {
-        Optional<Conversation> conversationOpt = getConversation(userId1, userId2);
-        if (conversationOpt.isPresent()) {
-            Conversation conversation = conversationOpt.get();
-            conversation.updateLastMessageTime();
-            conversationRepository.update(conversation);
+        /** 完全开放（互关/对方已回复） */
+        public static PermissionResult allowed() {
+            return new PermissionResult(true, false, "");
         }
+
+        /** 允许发送1条打招呼消息（陌生人/单向关注） */
+        public static PermissionResult allowedAsGreeting() {
+            return new PermissionResult(true, true, "");
+        }
+
+        /** 拒绝发送 */
+        public static PermissionResult denied(String reason) {
+            return new PermissionResult(false, false, reason);
+        }
+
+        public boolean isGreeting() { return greeting; }
+        public boolean isAllowed() { return allowed; }
+        public String getReason() { return reason; }
     }
 }

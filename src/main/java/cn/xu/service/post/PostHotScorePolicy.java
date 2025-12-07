@@ -7,6 +7,11 @@ import org.springframework.stereotype.Component;
 import java.time.Duration;
 import java.time.LocalDateTime;
 
+/**
+ * 帖子热度评分策略配置
+ * <p>用于计算帖子热度分数</p>
+ 
+ */
 @Data
 @Component
 @ConfigurationProperties(prefix = "post.hot-score")

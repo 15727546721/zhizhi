@@ -7,15 +7,9 @@ import java.util.Random;
 
 /**
  * 用户名生成器
- * 用于生成随机的、唯一的、符合社区风格的username
- * 
- * 生成规则：
- * 1. 前缀：zhizhi（知知） + 随机词汇
- * 2. 后缀：4位随机数字
- * 3. 总长度：8-15字符
- * 4. 符合规范：字母数字下划线
- * 
- * @author xu
+ * <p>用于生成随机的、唯一的、符合社区风格的username</p>
+ * <p>生成规则：前缀zhizhi + 随机词汇 + 4位随机数字</p>
+ 
  */
 @Slf4j
 public class UsernameGenerator {

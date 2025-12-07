@@ -9,12 +9,9 @@ import java.util.List;
 
 /**
  * 标签缓存仓储
- * 处理标签相关的缓存操作
- * 
- * <p>继承BaseCacheRepository复用通用方法，减少重复代码
- * 
- * @author zhizhi
- * @since 2025-11-23
+ * <p>处理标签相关的缓存操作</p>
+ * <p>继承BaseCacheRepository复用通用方法，减少重复代码</p>
+ 
  */
 @Slf4j
 @Repository
@@ -25,10 +22,10 @@ public class TagCacheRepository extends BaseCacheRepository {
     private static final int EMPTY_RESULT_TTL = 300;   // 5分钟（空结果）
 
     /**
-     * 获取热门标签缓存
-     * @param timeRange 时间范围：today(今日)、week(本周)、month(本月)、all(全部)
-     * @param limit 返回数量限制
-     * @return 标签列表
+     * 获取热门标签
+     * @param timeRange 时间范围，取值：today（今日）、week（本周）、month（本月）、all（全部）
+     * @param limit 获取数量
+     * @return 热门标签列表
      */
     public List<Tag> getHotTags(String timeRange, int limit) {
         String redisKey = RedisKeyManager.tagHotKey(timeRange, limit);
@@ -88,26 +85,32 @@ public class TagCacheRepository extends BaseCacheRepository {
 
     /**
      * 解析缓存的标签列表
-     * Redis使用GenericJackson2JsonRedisSerializer自动序列化，可以直接转换
+     * <p>Redis使用GenericJackson2JsonRedisSerializer自动序列化，可以直接转换</p>
      */
     @SuppressWarnings("unchecked")
     private List<Tag> parseTagList(Object cached) {
         try {
             if (cached instanceof List) {
-                List<Object> tagList = (List<Object>) cached;
-                // 如果列表为空，直接返回
-                if (tagList.isEmpty()) {
+                List<Object> list = (List<Object>) cached;
+                // 检查列表是否为空
+                if (list.isEmpty()) {
                     return Collections.emptyList();
                 }
                 
-                // 检查第一个元素是否是Tag（通过@class字段判断）
-                Object firstItem = tagList.get(0);
-                if (firstItem instanceof java.util.Map) {
-                    java.util.Map<String, Object> firstMap = (java.util.Map<String, Object>) firstItem;
+                // 检查第一个元素类型
+                Object first = list.get(0);
+                if (first instanceof Tag) {
+                    // 如果已经是Tag类型，直接转换
+                    return (List<Tag>) (List<?>) list;
+                }
+                
+                // 否则尝试逐个转换（处理Jackson序列化的Map）
+                if (first instanceof java.util.Map) {
+                    java.util.Map<String, Object> firstMap = (java.util.Map<String, Object>) first;
                     // 如果是Jackson序列化的对象，会有@class字段
                     if (firstMap.containsKey("@class") || firstMap.containsKey("id")) {
                         // 转换为Tag列表
-                        return tagList.stream()
+                        return list.stream()
                                 .map(item -> {
                                     if (item instanceof java.util.Map) {
                                         return convertMapToTag((java.util.Map<String, Object>) item);
@@ -117,12 +120,6 @@ public class TagCacheRepository extends BaseCacheRepository {
                                 .filter(java.util.Objects::nonNull)
                                 .collect(java.util.stream.Collectors.toList());
                     }
-                }
-                
-                // 如果已经是Tag类型（理论上不会发生，因为Redis序列化后是Map）
-                // 但为了兼容性，保留这个判断
-                if (firstItem instanceof Tag) {
-                    return (List<Tag>) (List<?>) tagList;
                 }
             }
         } catch (Exception e) {
@@ -202,4 +199,3 @@ public class TagCacheRepository extends BaseCacheRepository {
         }
     }
 }
-

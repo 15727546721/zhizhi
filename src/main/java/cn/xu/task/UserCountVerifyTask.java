@@ -21,8 +21,6 @@ import java.util.List;
  *   <li>发现不一致时自动修复</li>
  *   <li>记录修复日志供排查</li>
  * </ul>
- *
- * @author xu
  */
 @Slf4j
 @Component
@@ -40,8 +38,7 @@ public class UserCountVerifyTask {
      *
      * <p>每天凌晨3点执行一次
      *
-     * <p>cron表达式：秒 分 时 日 月 周（日期/星期）
-     * 示例：0 0 3 * * ? = 每天3:00:00执行
+     * <p>cron表达式：0 0 3 * * ? = 每天3:00:00执行
      */
     @Scheduled(cron = "0 0 3 * * ?")
     public void verifyAndFixUserCounts() {
@@ -52,17 +49,31 @@ public class UserCountVerifyTask {
         int totalCount = 0;
 
         try {
-            // 1. 查询所有用户
-            List<User> users = userMapper.selectAll();
-            totalCount = users.size();
+            // 1. 使用分页查询，避免一次性加载所有用户
+            int pageSize = 500;
+            int offset = 0;
 
-            log.info("[定时任务] 共需校验 {} 个用户", totalCount);
+            while (true) {
+                List<User> users = userMapper.selectByPage(offset, pageSize);
+                if (users == null || users.isEmpty()) {
+                    break;
+                }
 
-            // 2. 逐个校验并修复
-            for (User user : users) {
-                boolean fixed = verifyAndFixSingleUser(user);
-                if (fixed) {
-                    fixedCount++;
+                totalCount += users.size();
+
+                // 2. 逐个校验并修复
+                for (User user : users) {
+                    boolean fixed = verifyAndFixSingleUser(user);
+                    if (fixed) {
+                        fixedCount++;
+                    }
+                }
+
+                offset += pageSize;
+
+                // 防止一次处理太多，记录进度
+                if (offset % 2000 == 0) {
+                    log.debug("已处理{}条记录，继续下一批，offset={}", fixedCount, offset);
                 }
             }
 
@@ -108,7 +119,7 @@ public class UserCountVerifyTask {
                 actualCommentCount = 0L;
             }
 
-            // 6. 获取用户当前值，处理null值
+            // 6. 获取用户当前值，处理null情况
             Long dbFollowCount = user.getFollowCount() != null ? user.getFollowCount() : 0L;
             Long dbFansCount = user.getFansCount() != null ? user.getFansCount() : 0L;
             Long dbLikeCount = user.getLikeCount() != null ? user.getLikeCount() : 0L;

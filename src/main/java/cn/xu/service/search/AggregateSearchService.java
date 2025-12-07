@@ -1,5 +1,6 @@
 package cn.xu.service.search;
 
+import cn.xu.model.dto.post.PostTagRelation;
 import cn.xu.model.entity.Post;
 import cn.xu.model.entity.Tag;
 import cn.xu.model.entity.User;
@@ -10,7 +11,7 @@ import cn.xu.model.vo.search.AggregateSearchVO.TagSearchItem;
 import cn.xu.model.vo.search.AggregateSearchVO.UserSearchItem;
 import cn.xu.service.post.PostService;
 import cn.xu.service.post.TagService;
-import cn.xu.service.user.UserService;
+import cn.xu.service.user.IUserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -26,11 +27,8 @@ import java.util.stream.Collectors;
 
 /**
  * 聚合搜索服务
- * 
- * <p>使用Java 8 CompletableFuture异步编排，并行搜索帖子、用户、标签
- * 
- * @author xu
- * @since 2025-11-30
+ * <p>并行搜索帖子、用户、标签，返回聚合结果</p>
+ 
  */
 @Slf4j
 @Service
@@ -44,7 +42,7 @@ public class AggregateSearchService {
     private TagService tagService;
     
     @Resource(name = "userService")
-    private UserService userService;
+    private IUserService userService;
     
     /**
      * 自定义线程池，用于异步搜索
@@ -52,24 +50,24 @@ public class AggregateSearchService {
     private final ExecutorService searchExecutor = Executors.newFixedThreadPool(3);
     
     /**
-     * 日期格式化
+     * 日期格式化器
      */
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-    
+
     /**
-     * 默认每个类型的搜索数量
+     * 默认搜索数量限制
      */
     private static final int DEFAULT_LIMIT = 10;
-    
+
     /**
-     * 搜索超时时间（秒）
+     * 搜索超时时间
      */
     private static final int SEARCH_TIMEOUT_SECONDS = 5;
-    
+
     /**
      * 聚合搜索
-     * 
-     * <p>使用CompletableFuture并行搜索帖子、用户、标签，提高搜索效率
+     *
+     * <p>使用CompletableFuture并行搜索帖子、用户、标签，提高搜索效率</p>
      *
      * @param keyword 搜索关键词
      * @param postLimit 帖子数量限制
@@ -79,48 +77,48 @@ public class AggregateSearchService {
      */
     public AggregateSearchVO search(String keyword, Integer postLimit, Integer userLimit, Integer tagLimit) {
         long startTime = System.currentTimeMillis();
-        
+
         if (keyword == null || keyword.trim().isEmpty()) {
             return buildEmptyResponse(keyword, 0L);
         }
-        
+
         String normalizedKeyword = keyword.trim();
         int safePostLimit = postLimit != null && postLimit > 0 ? Math.min(postLimit, 50) : DEFAULT_LIMIT;
         int safeUserLimit = userLimit != null && userLimit > 0 ? Math.min(userLimit, 50) : DEFAULT_LIMIT;
         int safeTagLimit = tagLimit != null && tagLimit > 0 ? Math.min(tagLimit, 50) : DEFAULT_LIMIT;
-        
-        log.info("开始聚合搜索: keyword={}, postLimit={}, userLimit={}, tagLimit={}", 
+
+        log.info("开始聚合搜索: keyword={}, postLimit={}, userLimit={}, tagLimit={}",
                 normalizedKeyword, safePostLimit, safeUserLimit, safeTagLimit);
-        
+
         try {
             // 使用CompletableFuture并行搜索三种类型
-            CompletableFuture<SearchResultGroup<PostSearchItem>> postsFuture = 
+            CompletableFuture<SearchResultGroup<PostSearchItem>> postsFuture =
                     CompletableFuture.supplyAsync(() -> searchPosts(normalizedKeyword, safePostLimit), searchExecutor);
-            
-            CompletableFuture<SearchResultGroup<UserSearchItem>> usersFuture = 
+
+            CompletableFuture<SearchResultGroup<UserSearchItem>> usersFuture =
                     CompletableFuture.supplyAsync(() -> searchUsers(normalizedKeyword, safeUserLimit), searchExecutor);
-            
-            CompletableFuture<SearchResultGroup<TagSearchItem>> tagsFuture = 
+
+            CompletableFuture<SearchResultGroup<TagSearchItem>> tagsFuture =
                     CompletableFuture.supplyAsync(() -> searchTags(normalizedKeyword, safeTagLimit), searchExecutor);
-            
+
             // 等待所有搜索完成，设置超时时间
             CompletableFuture<Void> allFutures = CompletableFuture.allOf(postsFuture, usersFuture, tagsFuture);
             allFutures.get(SEARCH_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-            
+
             // 获取搜索结果
             SearchResultGroup<PostSearchItem> postsResult = postsFuture.join();
             SearchResultGroup<UserSearchItem> usersResult = usersFuture.join();
             SearchResultGroup<TagSearchItem> tagsResult = tagsFuture.join();
-            
+
             long costTime = System.currentTimeMillis() - startTime;
-            
-            log.info("聚合搜索完成: keyword={}, posts={}, users={}, tags={}, costTime={}ms", 
-                    normalizedKeyword, 
-                    postsResult.getTotal(), 
-                    usersResult.getTotal(), 
+
+            log.info("聚合搜索完成: keyword={}, posts={}, users={}, tags={}, costTime={}ms",
+                    normalizedKeyword,
+                    postsResult.getTotal(),
+                    usersResult.getTotal(),
                     tagsResult.getTotal(),
                     costTime);
-            
+
             return AggregateSearchVO.builder()
                     .keyword(normalizedKeyword)
                     .posts(postsResult)
@@ -128,14 +126,14 @@ public class AggregateSearchService {
                     .tags(tagsResult)
                     .costTime(costTime)
                     .build();
-                    
+
         } catch (Exception e) {
             log.error("聚合搜索失败: keyword={}", normalizedKeyword, e);
             long costTime = System.currentTimeMillis() - startTime;
             return buildEmptyResponse(normalizedKeyword, costTime);
         }
     }
-    
+
     /**
      * 搜索帖子
      */
@@ -144,40 +142,40 @@ public class AggregateSearchService {
             // 使用PostService搜索帖子
             List<Post> posts = postService.searchPosts(keyword, 0, limit);
             long total = postService.countSearchPosts(keyword);
-            
+
             if (posts == null || posts.isEmpty()) {
                 return buildEmptyPostResult();
             }
-            
-            // 批量获取作者信息
+
+            // 获取作者信息
             Set<Long> userIds = posts.stream()
                     .map(Post::getUserId)
                     .filter(id -> id != null)
                     .collect(Collectors.toSet());
-            
+
             Map<Long, User> userMap = userService.getBatchUserInfo(userIds);
-            
-            // 批量获取帖子标签
+
+            // 获取帖子标签
             List<Long> postIds = posts.stream().map(Post::getId).collect(Collectors.toList());
             Map<Long, List<String>> postTagsMap = getPostTagsMap(postIds);
-            
-            // 转换为搜索结果
+
+            // 转换为帖子搜索项
             List<PostSearchItem> items = posts.stream()
                     .map(post -> convertToPostSearchItem(post, userMap, postTagsMap))
                     .collect(Collectors.toList());
-            
+
             return SearchResultGroup.<PostSearchItem>builder()
                     .list(items)
                     .total(total)
                     .hasMore(total > limit)
                     .build();
-                    
+
         } catch (Exception e) {
             log.error("搜索帖子失败: keyword={}", keyword, e);
             return buildEmptyPostResult();
         }
     }
-    
+
     /**
      * 搜索用户
      */
@@ -185,31 +183,31 @@ public class AggregateSearchService {
         try {
             // 使用UserService搜索用户
             List<User> users = userService.searchUsers(keyword, limit);
-            
+
             if (users == null || users.isEmpty()) {
                 return buildEmptyUserResult();
             }
-            
-            // 转换为搜索结果
+
+            // 转换为用户搜索项
             List<UserSearchItem> items = users.stream()
                     .map(this::convertToUserSearchItem)
                     .collect(Collectors.toList());
-            
-            // 用户总数使用返回数量估算
+
+            // 获取用户总数
             long total = users.size();
-            
+
             return SearchResultGroup.<UserSearchItem>builder()
                     .list(items)
                     .total(total)
                     .hasMore(users.size() >= limit)
                     .build();
-                    
+
         } catch (Exception e) {
             log.error("搜索用户失败: keyword={}", keyword, e);
             return buildEmptyUserResult();
         }
     }
-    
+
     /**
      * 搜索标签
      */
@@ -217,46 +215,46 @@ public class AggregateSearchService {
         try {
             // 使用TagService搜索标签
             List<Tag> tags = tagService.searchTags(keyword);
-            
+
             if (tags == null || tags.isEmpty()) {
                 return buildEmptyTagResult();
             }
-            
-            // 限制返回数量
-            List<Tag> limitedTags = tags.size() > limit ? tags.subList(0, limit) : tags;
-            
-            // 转换为搜索结果
-            List<TagSearchItem> items = limitedTags.stream()
+
+            // 获取标签总数
+            long total = tags.size();
+
+            // 转换为标签搜索项
+            List<TagSearchItem> items = tags.stream()
                     .map(this::convertToTagSearchItem)
                     .collect(Collectors.toList());
-            
+
             return SearchResultGroup.<TagSearchItem>builder()
                     .list(items)
-                    .total((long) tags.size())
-                    .hasMore(tags.size() > limit)
+                    .total(total)
+                    .hasMore(total > limit)
                     .build();
-                    
+
         } catch (Exception e) {
             log.error("搜索标签失败: keyword={}", keyword, e);
             return buildEmptyTagResult();
         }
     }
-    
+
     // ==================== 转换方法 ====================
-    
+
     /**
      * 转换为帖子搜索项
      */
     private PostSearchItem convertToPostSearchItem(Post post, Map<Long, User> userMap, Map<Long, List<String>> postTagsMap) {
         User author = post.getUserId() != null ? userMap.get(post.getUserId()) : null;
-        
+
         String authorName = "匿名用户";
         String authorAvatar = null;
         if (author != null) {
             authorName = author.getNickname() != null ? author.getNickname() : author.getUsername();
             authorAvatar = author.getAvatar();
         }
-        
+
         List<String> tags = postTagsMap.getOrDefault(post.getId(), Collections.emptyList());
         
         String createTimeStr = null;
@@ -340,7 +338,7 @@ public class AggregateSearchService {
         
         try {
             // 获取帖子标签关联
-            List<cn.xu.service.post.PostTagService.PostTagRelation> relations = 
+            List<PostTagRelation> relations = 
                     tagService.batchGetTagIdsByPostIds(postIds);
             
             if (relations == null || relations.isEmpty()) {
@@ -361,7 +359,7 @@ public class AggregateSearchService {
             // 构建帖子ID到标签名称列表的映射
             return relations.stream()
                     .collect(Collectors.toMap(
-                            cn.xu.service.post.PostTagService.PostTagRelation::getPostId,
+                            PostTagRelation::getPostId,
                             r -> r.getTagIds().stream()
                                     .map(tagNameMap::get)
                                     .filter(name -> name != null)

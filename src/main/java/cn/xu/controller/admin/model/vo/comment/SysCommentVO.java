@@ -10,10 +10,8 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 /**
- * 绯荤粺绠＄悊-璇勮VO
- * 
- * @author xu
- * @since 2025-11-30
+ * 后台管理-评论VO
+
  */
 @Data
 @Builder
@@ -21,50 +19,50 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class SysCommentVO {
     
-    /** 璇勮ID */
+    /** 评论ID */
     private Long id;
     
-    /** 璇勮绫诲瀷 */
+    /** 评论类型 */
     private Integer type;
     
-    /** 鐩爣ID */
+    /** 目标ID */
     private Long targetId;
     
-    /** 鐖惰瘎璁篒D */
+    /** 父评论ID */
     private Long parentId;
     
-    /** 璇勮鐢ㄦ埛ID */
+    /** 评论用户ID */
     private Long userId;
     
-    /** 璇勮鐢ㄦ埛鏄电О */
+    /** 评论用户昵称 */
     private String nickname;
     
-    /** 璇勮鐢ㄦ埛澶村儚 */
+    /** 评论用户头像 */
     private String avatar;
     
-    /** 琚洖澶嶇敤鎴稩D */
+    /** 被回复用户ID */
     private Long replyUserId;
     
-    /** 琚洖澶嶇敤鎴锋樀绉?*/
+    /** 被回复用户昵称 */
     private String replyNickname;
     
-    /** 琚洖澶嶇敤鎴峰ご鍍?*/
+    /** 被回复用户头像 */
     private String replyAvatar;
     
-    /** 璇勮鍐呭 */
+    /** 评论内容 */
     private String content;
     
-    /** 鐐硅禐鏁?*/
+    /** 点赞数 */
     private Long likeCount;
     
-    /** 鍥炲鏁?*/
+    /** 回复数 */
     private Long replyCount;
     
-    /** 鍒涘缓鏃堕棿 */
+    /** 创建时间 */
     private LocalDateTime createTime;
     
     /**
-     * 浠?Comment PO 杞崲
+     * 从 Comment PO 转换
      */
     public static SysCommentVO fromComment(Comment comment) {
         if (comment == null) {
@@ -84,14 +82,14 @@ public class SysCommentVO {
                 .createTime(comment.getCreateTime())
                 .build();
         
-        // 濉厖璇勮鐢ㄦ埛淇℃伅
+        // 设置评论用户信息
         User user = comment.getUser();
         if (user != null) {
             vo.setNickname(user.getNickname());
             vo.setAvatar(user.getAvatar());
         }
         
-        // 濉厖琚洖澶嶇敤鎴蜂俊鎭?
+        // 设置被回复用户信息
         User replyUser = comment.getReplyUser();
         if (replyUser != null) {
             vo.setReplyNickname(replyUser.getNickname());

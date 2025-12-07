@@ -5,6 +5,11 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.data.elasticsearch.repository.config.EnableElasticsearchRepositories;
 
+/**
+ * Elasticsearch Repository配置
+ * 
+ *
+ */
 @Configuration
 @ConditionalOnProperty(name = "spring.elasticsearch.enabled", havingValue = "true", matchIfMissing = false)
 @Profile("!test") // 在测试环境中不加载此配置

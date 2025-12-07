@@ -11,9 +11,6 @@ import java.util.List;
  * 聚合搜索响应VO
  * 
  * <p>包含帖子、用户、标签三种类型的搜索结果
- * 
- * @author xu
- * @since 2025-11-30
  */
 @Data
 @Builder
@@ -114,17 +111,17 @@ public class AggregateSearchVO {
         private String authorAvatar;
         
         /**
-         * 浏览数
+         * 浏览次数
          */
         private Long viewCount;
         
         /**
-         * 点赞数
+         * 点赞次数
          */
         private Long likeCount;
         
         /**
-         * 评论数
+         * 评论次数
          */
         private Long commentCount;
         
@@ -168,17 +165,17 @@ public class AggregateSearchVO {
         private String avatar;
         
         /**
-         * 个人简介
+         * 描述
          */
         private String description;
         
         /**
-         * 粉丝数
+         * 粉丝数量
          */
         private Long fansCount;
         
         /**
-         * 帖子数
+         * 帖子数量
          */
         private Long postCount;
         
@@ -202,7 +199,7 @@ public class AggregateSearchVO {
         private Long id;
         
         /**
-         * 标签名称
+         * 标签名
          */
         private String name;
         
@@ -212,12 +209,12 @@ public class AggregateSearchVO {
         private String description;
         
         /**
-         * 使用次数/帖子数
+         * 使用次数
          */
         private Integer usageCount;
         
         /**
-         * 是否推荐标签
+         * 是否推荐
          */
         private Boolean isRecommended;
     }

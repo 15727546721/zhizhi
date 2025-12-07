@@ -7,15 +7,18 @@ import org.springframework.stereotype.Service;
 
 /**
  * 帖子参数校验服务
- * 
- * <p>提供帖子相关的参数校验功能，包括发布参数、标签、分页参数等校验
- * 
- * @author xu
- * @since 2025-11-26
+ * <p>负责帖子内容的参数验证</p>
+ 
  */
 @Service
 public class PostValidationService {
-    
+
+    // 帖子标题最小长度
+    private static final int TITLE_MIN_LENGTH = 1;
+    private static final int TITLE_MAX_LENGTH = 100;
+    private static final int CONTENT_MIN_LENGTH = 1;
+    private static final int CONTENT_MAX_LENGTH = 50000; // Post.java 中实际的最大长度
+
     /**
      * 校验帖子发布参数
      * @param title 标题
@@ -26,23 +29,25 @@ public class PostValidationService {
         if (StringUtils.isBlank(title)) {
             throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "帖子标题不能为空");
         }
-        
-        if (title.length() < 1 || title.length() > 100) {
-            throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "帖子标题长度必须在1-100个字符之间");
+
+        if (title.length() < TITLE_MIN_LENGTH || title.length() > TITLE_MAX_LENGTH) {
+            throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(),
+                    String.format("帖子标题长度必须在%d-%d字符之间", TITLE_MIN_LENGTH, TITLE_MAX_LENGTH));
         }
-        
+
         // 校验内容
         if (StringUtils.isBlank(content)) {
             throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "帖子内容不能为空");
         }
-        
-        if (content.length() < 1 || content.length() > 10000) {
-            throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "帖子内容长度必须在1-10000个字符之间");
+
+        if (content.length() < CONTENT_MIN_LENGTH || content.length() > CONTENT_MAX_LENGTH) {
+            throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(),
+                    String.format("帖子内容长度必须在%d-%d字符之间", CONTENT_MIN_LENGTH, CONTENT_MAX_LENGTH));
         }
     }
-    
+
     /**
-     * 校验标签ID列表
+     * 校验帖子标签ID列表
      * @param tagIds 标签ID列表
      */
     public void validateTagIds(java.util.List<Long> tagIds) {
@@ -50,22 +55,22 @@ public class PostValidationService {
             throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "请至少选择一个标签");
         }
         if (tagIds.size() > 5) {
-            throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "标签不能超过5个");
+            throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "标签最多只能选择5个");
         }
     }
-    
+
     /**
-     * 校验帖子分页查询参数
+     * 校验分页参数
      * @param pageNo 页码
-     * @param pageSize 页面大小
+     * @param pageSize 每页大小
      */
     public void validatePageParams(Integer pageNo, Integer pageSize) {
         if (pageNo == null || pageNo < 1) {
-            throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "页码不能小于1");
+            throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "页码必须大于等于1");
         }
-        
+
         if (pageSize == null || pageSize < 1 || pageSize > 100) {
-            throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "每页数量必须在1-100之间");
+            throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "每页大小必须在1到100之间");
         }
     }
 }

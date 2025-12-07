@@ -1,4 +1,4 @@
-  package cn.xu.support.util;
+package cn.xu.support.util;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -9,7 +9,8 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Redis分布式锁工具类
- * 使用SETNX实现简单的分布式锁
+ * <p>使用SETNX实现简单的分布式锁</p>
+
  */
 @Slf4j
 @Component
@@ -92,11 +93,15 @@ public class RedisLock {
             if (tryLock(key, expireTime, timeUnit)) {
                 return true;
             }
+            // 使用LockSupport.parkNanos替代Thread.sleep，更高效且可中断
             try {
-                Thread.sleep(waitTimeMs);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                log.warn("等待锁被中断: key={}", key);
+                java.util.concurrent.locks.LockSupport.parkNanos(waitTimeMs * 1_000_000L);
+                if (Thread.interrupted()) {
+                    log.warn("等待锁被中断: key={}", key);
+                    return false;
+                }
+            } catch (Exception e) {
+                log.warn("等待锁异常: key={}", key, e);
                 return false;
             }
         }
@@ -168,4 +173,3 @@ public class RedisLock {
         }
     }
 }
-

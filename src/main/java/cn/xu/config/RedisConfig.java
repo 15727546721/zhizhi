@@ -25,6 +25,11 @@ import java.util.TimeZone;
 /**
  * Redis配置类
  */
+/**
+ * Redis配置类
+ * 
+ * 
+ */
 @Configuration
 public class RedisConfig {
 

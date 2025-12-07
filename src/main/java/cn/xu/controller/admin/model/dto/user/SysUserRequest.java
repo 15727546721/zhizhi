@@ -3,9 +3,13 @@ package cn.xu.controller.admin.model.dto.user;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
+/**
+ * 用户请求参数
+ */
 @Data
-@Schema(description = "系统用户请求参数")
+@Schema(description = "用户请求参数")
 public class SysUserRequest {
+
     /**
      * 用户ID
      */
@@ -43,15 +47,15 @@ public class SysUserRequest {
     private String avatar;
 
     /**
-     * 性别（0-女，1-男）
+     * 性别：0-保密，1-男，2-女
      */
-    @Schema(description = "性别（0-女，1-男）")
+    @Schema(description = "性别：0-保密，1-男，2-女")
     private Integer gender;
 
     /**
-     * 手机
+     * 电话
      */
-    @Schema(description = "手机")
+    @Schema(description = "电话")
     private String phone;
 
     /**
@@ -67,20 +71,20 @@ public class SysUserRequest {
     private String birthday;
 
     /**
-     * 用户状态（0：正常，1：封禁）
+     * 用户状态：0-禁用，1-启用
      */
-    @Schema(description = "用户状态（0：正常，1：封禁）")
+    @Schema(description = "用户状态：0-禁用，1-启用")
     private Integer status;
 
     /**
-     * 个人介绍
+     * 用户描述
      */
-    @Schema(description = "个人介绍")
+    @Schema(description = "用户描述")
     private String description;
 
     /**
-     * 用户类型（1-普通用户，2-官方账号，3-管理员）
+     * 用户类型：1-普通用户，2-管理员
      */
-    @Schema(description = "用户类型（1-普通用户，2-官方账号，3-管理员）")
+    @Schema(description = "用户类型：1-普通用户，2-管理员")
     private Integer userType;
 }

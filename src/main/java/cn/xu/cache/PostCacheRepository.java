@@ -8,12 +8,9 @@ import java.util.stream.Collectors;
 
 /**
  * 帖子缓存仓储
- * 处理帖子相关的缓存操作
- * 
- * <p>继承BaseCacheRepository复用通用方法，减少重复代码
- * 
- * @author zhizhi
- * @since 2025-11-23
+ * <p>处理帖子相关的缓存操作</p>
+ * <p>继承BaseCacheRepository复用通用方法，减少重复代码</p>
+ 
  */
 @Slf4j
 @Repository

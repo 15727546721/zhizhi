@@ -1,40 +1,1 @@
-package cn.xu.model.dto.comment;
-
-import cn.xu.common.request.PageRequest;
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-
-import java.util.List;
-
-/**
- * 评论请求参数
- */
-@Data
-@EqualsAndHashCode(callSuper = true)
-@Schema(description = "评论请求参数")
-public class CommentCreateRequest extends PageRequest {
-    @Schema(description = "评论类型（1-帖子评论）")
-    private Integer type;
-
-    @Schema(description = "评论目标ID（帖子ID）")
-    private Long targetId;
-
-    @Schema(description = "父评论ID（回复评论时使用）")
-    private Long parentId;
-
-    @Schema(description = "评论用户ID")
-    private Long userId;
-
-    @Schema(description = "被回复用户ID")
-    private Long replyUserId;
-
-    @Schema(description = "评论内容")
-    private String content;
-    
-    @Schema(description = "评论图片URL列表")
-    private List<String> imageUrls;
-    
-    @Schema(description = "@提及的用户ID列表")
-    private List<Long> mentionUserIds;
-}
+package cn.xu.model.dto.comment;import cn.xu.common.request.PageRequest;import io.swagger.v3.oas.annotations.media.Schema;import lombok.Data;import lombok.EqualsAndHashCode;import java.util.List;/** * 评论创建请求参数 * * 用于表示创建评论时的请求数据，包括评论类型、目标ID、父评论ID、用户ID等信息。 */@Data@EqualsAndHashCode(callSuper = true)@Schema(description = "评论创建请求参数")public class CommentCreateRequest extends PageRequest {    /**     * 评论类型     */    @Schema(description = "评论类型", required = true)    private Integer type;    /**     * 评论对象的ID     */    @Schema(description = "评论对象ID", required = true)    private Long targetId;    /**     * 父评论ID     * 如果是回复评论，则提供父评论ID；如果是顶级评论，可以为null     */    @Schema(description = "父评论ID，如果是回复评论，则提供父评论ID，顶级评论为null", required = false)    private Long parentId;    /**     * 评论用户ID     * 提交评论的用户ID     */    @Schema(description = "评论用户ID", required = true)    private Long userId;    /**     * 被回复的用户ID     * 如果是回复评论，则提供被回复用户的ID     */    @Schema(description = "被回复的用户ID", required = false)    private Long replyUserId;    /**     * 评论内容     */    @Schema(description = "评论内容", required = true)    private String content;    /**     * 评论附带的图片URL列表     * 图片可以用来展示评论的图片内容     */    @Schema(description = "评论附带的图片URL列表", required = false)    private List<String> imageUrls;    /**     * @提及的用户ID列表     * 如果评论中@提及了其他用户，则列出所有被提及用户的ID     */    @Schema(description = "@提及的用户ID列表", required = false)    private List<Long> mentionUserIds;}

@@ -8,7 +8,9 @@ import javax.validation.constraints.Min;
 
 /**
  * 分页请求参数
- * 用于封装分页查询的请求参数
+ * 用于接收分页查询的请求参数
+ *
+ *
  */
 @Data
 @Schema(description = "分页请求参数")
@@ -17,13 +19,13 @@ public class PageRequest {
     @Min(value = 1, message = "页码不能小于1")
     private Integer pageNo = 1;
 
-    @Schema(description = "每页数量", defaultValue = "10")
-    @Min(value = 1, message = "每页数量不能小于1")
-    @Max(value = 100, message = "每页数量不能大于100")
+    @Schema(description = "每页记录数", defaultValue = "10")
+    @Min(value = 1, message = "每页记录数不能小于1")
+    @Max(value = 100, message = "每页记录数不能大于100")
     private Integer pageSize = 10;
 
     /**
-     * 静态工厂方法
+     * 构造分页请求对象
      */
     public static PageRequest of(int pageNo, int pageSize) {
         PageRequest request = new PageRequest();

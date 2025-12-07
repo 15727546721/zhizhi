@@ -22,8 +22,8 @@ import java.util.List;
 /**
  * 任务日志管理控制器
  * 
- * @author xu
- * @since 2025-12-01
+ * <p>提供定时任务执行日志的查询和删除功能
+ * <p>需要登录并拥有相应权限
  */
 @Slf4j
 @RestController
@@ -31,6 +31,19 @@ import java.util.List;
 @Tag(name = "任务日志管理", description = "任务日志管理相关接口")
 public class SysJobLogController {
 
+    /**
+     * 获取任务日志列表
+     * 
+     * <p>分页查询任务执行日志，支持按任务ID、名称、状态筛选
+     * <p>需要system:job:list权限
+     * 
+     * @param pageNo 页码
+     * @param pageSize 每页数量
+     * @param jobId 任务ID（可选）
+     * @param jobName 任务名称（可选）
+     * @param status 状态（可选）
+     * @return 分页的日志列表
+     */
     @GetMapping("/list")
     @Operation(summary = "获取任务日志列表")
     @SaCheckLogin
@@ -54,6 +67,15 @@ public class SysJobLogController {
                 .build();
     }
 
+    /**
+     * 删除任务日志
+     * 
+     * <p>批量删除任务执行日志
+     * <p>需要system:job:delete权限
+     * 
+     * @param ids 日志ID列表
+     * @return 删除结果
+     */
     @DeleteMapping("/delete")
     @Operation(summary = "删除任务日志")
     @SaCheckLogin
@@ -67,6 +89,14 @@ public class SysJobLogController {
                 .build();
     }
 
+    /**
+     * 清空任务日志
+     * 
+     * <p>清空所有任务执行日志
+     * <p>需要system:job:delete权限
+     * 
+     * @return 清空结果
+     */
     @GetMapping("/clean")
     @Operation(summary = "清空任务日志")
     @SaCheckLogin

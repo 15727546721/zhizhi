@@ -1,4 +1,4 @@
-﻿package cn.xu.controller.admin;
+package cn.xu.controller.admin;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.annotation.SaCheckPermission;
@@ -23,9 +23,10 @@ import java.util.List;
 
 /**
  * 角色管理控制器
- * 
- * @author xu
- * @since 2025-11-30
+ *
+ * <p>提供角色管理功能，包括增、删、改、查操作</p>
+ * <p>需要有相应的权限才能访问</p>
+ 
  */
 @Slf4j
 @RestController
@@ -36,14 +37,23 @@ public class SysRoleController {
 
     private PermissionService permissionService;
 
+    /**
+     * 查询角色列表
+     *
+     * <p>实现角色的分页查询功能
+     * <p>需要system:role:list权限
+     *
+     * @param roleRequest 查询参数，包括角色名称和分页信息
+     * @return 角色的分页数据
+     */
     @GetMapping("/list")
-    @Operation(summary = "角色列表")
+    @Operation(summary = "查询角色列表")
     @SaCheckLogin
     @SaCheckPermission("system:role:list")
     @ApiOperationLog(description = "获取角色列表")
     public ResponseEntity<PageResponse<List<Role>>> selectRolePage(RoleRequest roleRequest) {
 
-        // 参数校验和默认值设置
+        // 参数验证和默认值设置
         if (roleRequest.getPageNo() == null || roleRequest.getPageNo() < 1) {
             roleRequest.setPageNo(1);
         }
@@ -60,29 +70,47 @@ public class SysRoleController {
 
         return ResponseEntity.<PageResponse<List<Role>>>builder()
                 .data(pageResponse)
-                .info("获取角色列表成功")
+                .info("查询角色列表成功")
                 .code(ResponseCode.SUCCESS.getCode())
                 .build();
     }
 
+    /**
+     * 查询当前登录用户的角色IDs
+     *
+     * <p>根据当前用户获取其角色ID列表
+     * <p>需要登录权限
+     *
+     * @return 当前用户的角色ID列表
+     */
     @GetMapping("queryUserRole")
-    @Operation(summary = "获取当前登录用户所拥有的权限")
+    @Operation(summary = "查询当前登录用户的角色ID")
     @SaCheckLogin
-    @ApiOperationLog(description = "获取当前登录用户所拥有的权限")
+    @ApiOperationLog(description = "获取当前登录用户的角色ID")
     public ResponseEntity<List<Long>> getCurrentUserRole() {
         List<Long> currentUserRole = permissionService.getCurrentUserRoleMenuIds();
         return ResponseEntity.<List<Long>>builder()
                 .data(currentUserRole)
-                .info("获取当前登录用户所拥有的权限成功")
+                .info("查询当前登录用户的角色ID成功")
                 .code(ResponseCode.SUCCESS.getCode())
                 .build();
     }
 
+    /**
+     * 查询角色的菜单ID列表
+     *
+     * <p>根据角色ID查询其关联的菜单ID列表
+     * <p>需要system:role:list权限
+     *
+     * @param roleId 角色ID
+     * @return 角色的菜单ID列表
+     * @throws BusinessException 角色ID不能为空时抛出异常
+     */
     @GetMapping("getRoleMenuIds")
-    @Operation(summary = "获取角色的菜单权限")
+    @Operation(summary = "查询角色的菜单ID")
     @SaCheckLogin
     @SaCheckPermission("system:role:list")
-    @ApiOperationLog(description = "获取角色的菜单权限")
+    @ApiOperationLog(description = "获取角色的菜单ID")
     public ResponseEntity<List<Long>> selectRoleMenuById(@Parameter(description = "角色ID") @RequestParam("roleId") Long roleId) {
         if (roleId == null) {
             throw new BusinessException(ResponseCode.NULL_PARAMETER.getCode(), "角色ID不能为空");
@@ -90,24 +118,42 @@ public class SysRoleController {
         List<Long> roleMenuIds = permissionService.findRoleMenuIdsById(roleId);
         return ResponseEntity.<List<Long>>builder()
                 .data(roleMenuIds)
-                .info("获取角色菜单权限成功")
+                .info("查询角色菜单成功")
                 .code(ResponseCode.SUCCESS.getCode())
                 .build();
     }
 
+    /**
+     * 分配角色菜单
+     *
+     * <p>分配角色所对应的菜单
+     * <p>需要system:role:assign权限
+     *
+     * @param roleMenuRequest 分配请求，包括角色ID和菜单ID列表
+     * @return 操作结果
+     */
     @PostMapping("updateRoleMenus")
-    @Operation(summary = "分配角色权限")
+    @Operation(summary = "分配角色菜单")
     @SaCheckLogin
     @SaCheckPermission("system:role:assign")
-    @ApiOperationLog(description = "分配角色权限")
+    @ApiOperationLog(description = "分配角色菜单")
     public ResponseEntity assignRoleMenus(@RequestBody RoleMenuRequest roleMenuRequest) {
         permissionService.assignRoleMenus(roleMenuRequest);
         return ResponseEntity.builder()
-                .info("分配角色权限成功")
+                .info("分配角色菜单成功")
                 .code(ResponseCode.SUCCESS.getCode())
                 .build();
     }
 
+    /**
+     * 添加角色
+     *
+     * <p>创建一个新的角色
+     * <p>需要system:role:add权限
+     *
+     * @param role 角色信息，包括角色名称、描述等
+     * @return 添加结果
+     */
     @PostMapping(value = "add")
     @Operation(summary = "添加角色")
     @SaCheckLogin
@@ -121,19 +167,37 @@ public class SysRoleController {
                 .build();
     }
 
+    /**
+     * 更新角色
+     *
+     * <p>更新已有角色的信息
+     * <p>需要system:role:update权限
+     *
+     * @param role 角色信息，包括角色ID和新更新的角色数据
+     * @return 更新结果
+     */
     @PostMapping("/update")
-    @Operation(summary = "修改角色")
+    @Operation(summary = "更新角色")
     @SaCheckLogin
     @SaCheckPermission("system:role:update")
-    @ApiOperationLog(description = "修改角色")
+    @ApiOperationLog(description = "更新角色")
     public ResponseEntity updateRole(@RequestBody RoleAddOrUpdateRequest role) {
         permissionService.updateRole(role);
         return ResponseEntity.builder()
-                .info("修改角色成功")
+                .info("更新角色成功")
                 .code(ResponseCode.SUCCESS.getCode())
                 .build();
     }
 
+    /**
+     * 删除角色
+     *
+     * <p>根据角色ID删除角色
+     * <p>需要system:role:delete权限
+     *
+     * @param ids 角色ID列表
+     * @return 删除结果
+     */
     @PostMapping("/delete")
     @Operation(summary = "删除角色")
     @SaCheckLogin

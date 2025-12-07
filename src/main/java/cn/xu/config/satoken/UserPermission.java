@@ -14,8 +14,8 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * 用户权限验证接口实现
- * 
+ * 用户权限接口实现
+ *
  * 
  */
 @Component
@@ -47,11 +47,11 @@ public class UserPermission implements StpInterface {
             SaSession session = StpUtil.getSessionByLoginId(loginId);
             return session.get(PERMISSION_LIST_KEY, () -> {
                 Long userId = Long.valueOf(String.valueOf(loginId));
-                
+
                 // 获取通过角色关联的权限
                 List<String> permissions = permissionRepository.findPermissionsByUserId(userId);
-                
-                log.info("用户 [{}] 加载权限列表: {}个", loginId, permissions.size());
+
+                log.info("用户 [{}] 加载权限列表: {}, 权限数量: {}", loginId, permissions, permissions.size());
                 log.debug("用户 [{}] 权限列表: {}", loginId, permissions);
                 return permissions;
             });
@@ -91,7 +91,7 @@ public class UserPermission implements StpInterface {
             return Collections.emptyList();
         }
     }
-    
+
     /**
      * 清除用户权限缓存
      * @param userId 用户ID
@@ -110,7 +110,7 @@ public class UserPermission implements StpInterface {
             log.warn("清除用户权限缓存异常, userId: {}", userId, e);
         }
     }
-    
+
     /**
      * 记录权限检查日志
      * @param userId 用户ID
@@ -124,7 +124,7 @@ public class UserPermission implements StpInterface {
             log.warn("用户 [{}] 权限检查拒绝: {}", userId, permission);
         }
     }
-    
+
     /**
      * 记录角色检查日志
      * @param userId 用户ID

@@ -7,9 +7,9 @@ import org.apache.ibatis.annotations.Param;
 import java.util.List;
 
 /**
- * 收藏Mapper
- *
- * @author xu
+ * 收藏Mapper接口
+ * <p>处理收藏相关的数据库操作</p>
+ 
  */
 @Mapper
 public interface FavoriteMapper {
@@ -65,6 +65,13 @@ public interface FavoriteMapper {
     List<Favorite> selectByFolderId(@Param("userId") Long userId, @Param("folderId") Long folderId);
     
     /**
+     * 批量更新收藏夹ID
+     */
+    void batchUpdateFolderId(@Param("userId") Long userId, 
+                            @Param("oldFolderId") Long oldFolderId, 
+                            @Param("newFolderId") Long newFolderId);
+    
+    /**
      * 获取收藏某个目标的用户ID列表
      */
     List<Long> selectUserIdsByTarget(@Param("targetId") Long targetId, @Param("targetType") String targetType);
@@ -73,4 +80,9 @@ public interface FavoriteMapper {
      * 统计所有收藏数
      */
     Long countAll();
+    
+    /**
+     * 统计用户收藏总数
+     */
+    Long countByUserId(@Param("userId") Long userId);
 }

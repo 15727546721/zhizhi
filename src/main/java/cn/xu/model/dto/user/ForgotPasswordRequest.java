@@ -8,6 +8,7 @@ import javax.validation.constraints.NotBlank;
 
 /**
  * 忘记密码请求
+ 
  */
 @Data
 @Schema(description = "忘记密码请求")

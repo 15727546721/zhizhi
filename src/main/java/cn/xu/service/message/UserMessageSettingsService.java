@@ -11,8 +11,8 @@ import java.util.Optional;
 
 /**
  * 用户私信设置服务
- *
- * @author xu
+ * <p>管理用户私信相关设置</p>
+
  */
 @Service
 @RequiredArgsConstructor

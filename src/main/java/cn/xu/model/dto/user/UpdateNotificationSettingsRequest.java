@@ -5,6 +5,9 @@ import lombok.Data;
 
 /**
  * 更新通知设置请求
+ *
+ * @author xu
+ * @since 1.0.0
  */
 @Data
 @Schema(description = "更新通知设置请求")
@@ -19,4 +22,3 @@ public class UpdateNotificationSettingsRequest {
     @Schema(description = "消息提示音", example = "false")
     private Boolean soundNotification;
 }
-

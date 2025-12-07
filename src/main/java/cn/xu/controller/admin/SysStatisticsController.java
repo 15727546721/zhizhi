@@ -1,4 +1,4 @@
-﻿package cn.xu.controller.admin;
+package cn.xu.controller.admin;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.annotation.SaCheckPermission;
@@ -25,8 +25,9 @@ import java.util.Map;
 /**
  * 数据统计控制器
  * 
- * @author xu
- * @since 2025-11-30
+ * <p>提供后台数据统计功能，包括帖子、用户、互动等统计</p>
+ * <p>需要登录并拥有相应权限</p>
+ 
  */
 @Slf4j
 @RestController
@@ -49,6 +50,14 @@ public class SysStatisticsController {
     @Autowired(required = false)
     private FollowMapper followMapper;
 
+    /**
+     * 获取数据统计概览
+     * 
+     * <p>返回所有核心数据的统计概览
+     * <p>需要system:statistics:view权限
+     * 
+     * @return 统计概览数据
+     */
     @Operation(summary = "获取数据统计概览")
     @GetMapping("/overview")
     @SaCheckLogin
@@ -74,6 +83,14 @@ public class SysStatisticsController {
                 .build();
     }
 
+    /**
+     * 获取帖子统计
+     * 
+     * <p>返回帖子总数、已发布、草稿、加精数量
+     * <p>需要system:statistics:view权限
+     * 
+     * @return 帖子统计数据
+     */
     @Operation(summary = "获取帖子统计")
     @GetMapping("/posts")
     @SaCheckLogin
@@ -91,6 +108,14 @@ public class SysStatisticsController {
                 .build();
     }
 
+    /**
+     * 获取用户统计
+     * 
+     * <p>返回用户总数、活跃用户、禁用用户数量
+     * <p>需要system:statistics:view权限
+     * 
+     * @return 用户统计数据
+     */
     @Operation(summary = "获取用户统计")
     @GetMapping("/users")
     @SaCheckLogin
@@ -107,6 +132,14 @@ public class SysStatisticsController {
                 .build();
     }
 
+    /**
+     * 获取互动统计
+     * 
+     * <p>返回评论、点赞、收藏、关注等互动数据统计
+     * <p>需要system:statistics:view权限
+     * 
+     * @return 互动统计数据
+     */
     @Operation(summary = "获取互动统计")
     @GetMapping("/interactions")
     @SaCheckLogin

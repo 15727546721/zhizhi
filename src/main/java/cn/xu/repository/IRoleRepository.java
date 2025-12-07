@@ -6,6 +6,8 @@ import java.util.List;
 
 /**
  * 角色仓储接口
+ * <p>定义角色数据的持久化操作</p>
+
  */
 public interface IRoleRepository {
     /**

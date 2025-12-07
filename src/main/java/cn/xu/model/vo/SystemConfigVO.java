@@ -11,17 +11,17 @@ public class SystemConfigVO {
      * 配置ID
      */
     private Long id;
-    
+
     /**
      * 配置键
      */
     private String configKey;
-    
+
     /**
      * 配置值
      */
     private String configValue;
-    
+
     /**
      * 配置描述
      */

@@ -10,6 +10,10 @@ import java.util.List;
 
 /**
  * 缓存的搜索结果
+ * <p>用于Redis缓存搜索结果</p>
+ *
+ * @author xu
+ * @since 1.0.0
  */
 @Data
 @NoArgsConstructor

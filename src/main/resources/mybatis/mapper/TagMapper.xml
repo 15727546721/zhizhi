@@ -25,8 +25,11 @@
     </sql>
 
     <insert id="addTag">
-        INSERT INTO tag (name, description, is_recommended, usage_count, sort, create_time, update_time)
-        VALUES (#{name}, #{description}, #{isRecommended}, #{usageCount}, #{sort}, NOW(), NOW())
+        <selectKey keyProperty="id" resultType="java.lang.Long" order="AFTER">
+            SELECT LAST_INSERT_ID()
+        </selectKey>
+        INSERT INTO tag (name, create_time, update_time)
+        VALUES (#{name}, NOW(), NOW())
     </insert>
 
     <select id="getTagNamesByPostId" resultType="java.lang.String">
@@ -202,5 +205,15 @@
     <!-- 统计所有标签数 -->
     <select id="countAll" resultType="java.lang.Long">
         SELECT COUNT(*) FROM tag
+    </select>
+    
+    <!-- 批量根据ID获取标签 -->
+    <select id="findByIds" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM tag
+        WHERE id IN
+        <foreach collection="tagIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
     </select>
 </mapper>

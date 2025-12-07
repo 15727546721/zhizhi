@@ -9,9 +9,9 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 /**
- * 用户私信设置仓储实现类
- * 
- * 简化设计：直接使用PO，移除Entity/Converter转换
+ * 用户私信设置仓储实现
+ * <p>负责用户私信设置的持久化操作</p>
+ 
  */
 @Repository
 @RequiredArgsConstructor

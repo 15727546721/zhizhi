@@ -14,10 +14,8 @@ import javax.mail.internet.MimeMessage;
 
 /**
  * 邮件服务
- * 提供邮件发送功能，支持纯文本和HTML格式
- *
- * @author xu
- * @since 2025-11-29
+ * <p>提供邮件发送功能，支持纯文本和HTML格式</p>
+
  */
 @Slf4j
 @Service
@@ -29,7 +27,7 @@ public class EmailService {
     @Value("${spring.mail.username}")
     private String fromEmail;
 
-    @Value("${spring.application.name:知知社区}")
+    @Value("${spring.application.name:知之社区}")
     private String appName;
 
     /**
@@ -40,7 +38,7 @@ public class EmailService {
      */
     @Async
     public void sendVerifyCode(String to, String code) {
-        String subject = "【" + appName + "】邮箱验证码";
+        String subject = "[" + appName + "] 邮箱验证码";
         String content = buildVerifyCodeContent(code);
         sendHtmlEmail(to, subject, content);
     }
@@ -48,13 +46,13 @@ public class EmailService {
     /**
      * 发送密码重置邮件
      *
-     * @param to    收件人邮箱
-     * @param token 重置令牌
+     * @param to       收件人邮箱
+     * @param token    重置令牌
      * @param resetUrl 重置链接基础URL
      */
     @Async
     public void sendPasswordResetEmail(String to, String token, String resetUrl) {
-        String subject = "【" + appName + "】密码重置";
+        String subject = "[" + appName + "] 密码重置";
         String content = buildPasswordResetContent(token, resetUrl);
         sendHtmlEmail(to, subject, content);
     }
@@ -68,7 +66,7 @@ public class EmailService {
      */
     @Async
     public void sendVerificationEmail(String to, String token, java.time.LocalDateTime expiration) {
-        String subject = "【" + appName + "】邮箱验证";
+        String subject = "[" + appName + "] 邮箱验证";
         String content = buildVerificationEmailContent(token, expiration);
         sendHtmlEmail(to, subject, content);
     }
@@ -81,7 +79,7 @@ public class EmailService {
      */
     @Async
     public void sendWelcomeEmail(String to, String nickname) {
-        String subject = "欢迎加入" + appName + "！";
+        String subject = "欢迎加入" + appName + "社区";
         String content = buildWelcomeContent(nickname);
         sendHtmlEmail(to, subject, content);
     }
@@ -89,7 +87,7 @@ public class EmailService {
     /**
      * 发送HTML格式邮件
      *
-     * @param to      收件人
+     * @param to      收件人邮箱
      * @param subject 主题
      * @param content HTML内容
      */
@@ -97,12 +95,12 @@ public class EmailService {
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-            
+
             helper.setFrom(fromEmail);
             helper.setTo(to);
             helper.setSubject(subject);
             helper.setText(content, true); // true表示HTML格式
-            
+
             mailSender.send(message);
             log.info("[邮件服务] 发送成功 - to: {}, subject: {}", to, subject);
         } catch (MessagingException e) {
@@ -114,7 +112,7 @@ public class EmailService {
     /**
      * 发送纯文本邮件
      *
-     * @param to      收件人
+     * @param to      收件人邮箱
      * @param subject 主题
      * @param content 文本内容
      */
@@ -122,12 +120,12 @@ public class EmailService {
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-            
+
             helper.setFrom(fromEmail);
             helper.setTo(to);
             helper.setSubject(subject);
             helper.setText(content, false); // false表示纯文本
-            
+
             mailSender.send(message);
             log.info("[邮件服务] 发送成功 - to: {}, subject: {}", to, subject);
         } catch (MessagingException e) {
@@ -146,7 +144,7 @@ public class EmailService {
                 "<body style='font-family: Arial, sans-serif; padding: 20px;'>" +
                 "<div style='max-width: 600px; margin: 0 auto; background: #f9f9f9; padding: 30px; border-radius: 10px;'>" +
                 "<h2 style='color: #333; text-align: center;'>邮箱验证码</h2>" +
-                "<p style='color: #666; font-size: 14px;'>您好！</p>" +
+                "<p style='color: #666; font-size: 14px;'>您好，</p>" +
                 "<p style='color: #666; font-size: 14px;'>您正在进行邮箱验证，验证码为：</p>" +
                 "<div style='text-align: center; margin: 30px 0;'>" +
                 "<span style='font-size: 32px; font-weight: bold; color: #1890ff; letter-spacing: 5px; background: #e6f7ff; padding: 15px 30px; border-radius: 8px;'>" + code + "</span>" +
@@ -171,7 +169,7 @@ public class EmailService {
                 "<body style='font-family: Arial, sans-serif; padding: 20px;'>" +
                 "<div style='max-width: 600px; margin: 0 auto; background: #f9f9f9; padding: 30px; border-radius: 10px;'>" +
                 "<h2 style='color: #333; text-align: center;'>密码重置</h2>" +
-                "<p style='color: #666; font-size: 14px;'>您好！</p>" +
+                "<p style='color: #666; font-size: 14px;'>您好，</p>" +
                 "<p style='color: #666; font-size: 14px;'>您正在申请重置密码，请点击下方按钮完成操作：</p>" +
                 "<div style='text-align: center; margin: 30px 0;'>" +
                 "<a href='" + fullResetUrl + "' style='display: inline-block; padding: 12px 40px; background: #1890ff; color: #fff; text-decoration: none; border-radius: 5px; font-size: 16px;'>重置密码</a>" +
@@ -197,7 +195,7 @@ public class EmailService {
                 "<body style='font-family: Arial, sans-serif; padding: 20px;'>" +
                 "<div style='max-width: 600px; margin: 0 auto; background: #f9f9f9; padding: 30px; border-radius: 10px;'>" +
                 "<h2 style='color: #333; text-align: center;'>邮箱验证</h2>" +
-                "<p style='color: #666; font-size: 14px;'>您好！</p>" +
+                "<p style='color: #666; font-size: 14px;'>您好，</p>" +
                 "<p style='color: #666; font-size: 14px;'>请点击以下链接完成邮箱验证：</p>" +
                 "<div style='text-align: center; margin: 30px 0;'>" +
                 "<p style='color: #1890ff; font-size: 14px;'>验证令牌: " + token + "</p>" +
@@ -220,12 +218,11 @@ public class EmailService {
                 "<head><meta charset='UTF-8'></head>" +
                 "<body style='font-family: Arial, sans-serif; padding: 20px;'>" +
                 "<div style='max-width: 600px; margin: 0 auto; background: #f9f9f9; padding: 30px; border-radius: 10px;'>" +
-                "<h2 style='color: #333; text-align: center;'>欢迎加入！</h2>" +
-                "<p style='color: #666; font-size: 14px;'>亲爱的 <strong>" + nickname + "</strong>：</p>" +
-                "<p style='color: #666; font-size: 14px;'>欢迎您加入" + appName + "！</p>" +
-                "<p style='color: #666; font-size: 14px;'>在这里，您可以：</p>" +
+                "<h2 style='color: #333; text-align: center;'>欢迎加入" + appName + "社区</h2>" +
+                "<p style='color: #666; font-size: 14px;'>亲爱的 <strong>" + nickname + "</strong>，</p>" +
+                "<p style='color: #666; font-size: 14px;'>欢迎您加入" + appName + "，在这里您可以：</p>" +
                 "<ul style='color: #666; font-size: 14px;'>" +
-                "<li>发布和分享您的技术文章</li>" +
+                "<li>发布和分享您的技术帖子</li>" +
                 "<li>与其他开发者交流讨论</li>" +
                 "<li>关注感兴趣的话题和作者</li>" +
                 "</ul>" +

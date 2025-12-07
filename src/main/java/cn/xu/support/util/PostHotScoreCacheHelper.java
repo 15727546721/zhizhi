@@ -9,6 +9,8 @@ import org.springframework.stereotype.Component;
 /**
  * 帖子热度缓存工具类
  * 用于处理帖子点赞、收藏、评论等操作对热度的影响
+ * 
+ * 
  */
 @Slf4j
 @Component

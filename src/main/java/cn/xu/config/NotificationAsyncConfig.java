@@ -6,6 +6,11 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import java.util.concurrent.Executor;
 
+/**
+ * 通知异步配置
+ * 
+ *
+ */
 @Configuration
 public class NotificationAsyncConfig {
 
@@ -20,7 +25,7 @@ public class NotificationAsyncConfig {
         executor.setQueueCapacity(100);
         // 线程名前缀
         executor.setThreadNamePrefix("notification-async-");
-        // 等待所有任务完成后再关闭线程池
+        // 等待所有任务完成后关闭线程池
         executor.setWaitForTasksToCompleteOnShutdown(true);
         // 等待时间
         executor.setAwaitTerminationSeconds(60);
@@ -28,4 +33,4 @@ public class NotificationAsyncConfig {
         executor.initialize();
         return executor;
     }
-} 
+}

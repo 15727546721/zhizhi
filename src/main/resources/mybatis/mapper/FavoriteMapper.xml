@@ -109,9 +109,17 @@
         FROM favorite
         WHERE user_id = #{userId}
         AND folder_id = #{folderId}
-        AND status = 1
     </select>
     
+    <!-- 批量更新收藏夹ID -->
+    <update id="batchUpdateFolderId">
+        UPDATE favorite
+        SET folder_id = #{newFolderId},
+            update_time = NOW()
+        WHERE user_id = #{userId}
+          AND folder_id = #{oldFolderId}
+    </update>
+
     <!-- 获取收藏某个目标的用户ID列表 -->
     <select id="selectUserIdsByTarget" resultType="java.lang.Long">
         SELECT user_id
@@ -124,6 +132,11 @@
     <!-- 统计所有收藏数 -->
     <select id="countAll" resultType="java.lang.Long">
         SELECT COUNT(*) FROM favorite WHERE status = 1
+    </select>
+    
+    <!-- 统计用户收藏总数 -->
+    <select id="countByUserId" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM favorite WHERE user_id = #{userId} AND status = 1
     </select>
 
 </mapper>

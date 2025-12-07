@@ -16,7 +16,9 @@ import java.util.Set;
 
 /**
  * JSON 工具类
- **/
+ * <p>提供JSON序列化和反序列化的工具方法</p>
+ 
+ */
 @Slf4j
 public class JsonUtils {
 
@@ -38,7 +40,7 @@ public class JsonUtils {
     }
 
     /**
-     *  将对象转换为 JSON 字符串
+     * 将对象转换为 JSON 字符串
      * @param obj
      * @return
      */

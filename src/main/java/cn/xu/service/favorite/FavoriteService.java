@@ -1,10 +1,9 @@
-﻿package cn.xu.service.favorite;
+package cn.xu.service.favorite;
 
 import cn.xu.cache.FavoriteCacheRepository;
+import cn.xu.event.publisher.SocialEventPublisher;
 import cn.xu.model.entity.Favorite;
 import cn.xu.model.entity.Favorite.FavoriteType;
-import cn.xu.model.entity.FavoriteFolder;
-import cn.xu.repository.IFavoriteFolderRepository;
 import cn.xu.repository.IFavoriteRepository;
 import cn.xu.repository.mapper.PostMapper;
 import cn.xu.support.exception.BusinessException;
@@ -23,105 +22,90 @@ import java.util.List;
 /**
  * 收藏服务
  *
- * @author xu
+ * <p>提供收藏、取消收藏、查询收藏等功能
  */
 @Slf4j
 @Service("favoriteService")
 @RequiredArgsConstructor
 public class FavoriteService {
-    
+
     private final IFavoriteRepository favoriteRepository;
-    private final IFavoriteFolderRepository favoriteFolderRepository;
     private final PostMapper postMapper;
     private final FavoriteCacheRepository favoriteCacheRepository;
     private final ApplicationEventPublisher eventPublisher;
-    
+    private final SocialEventPublisher socialEventPublisher;
+
     // ==================== 核心业务方法 ====================
-    
+
     /**
      * 收藏操作
-     * 
+     *
      * @param userId 用户ID
      * @param targetId 目标ID
      * @param targetType 目标类型：post-帖子
      */
     @Transactional(rollbackFor = Exception.class)
     public void favorite(Long userId, Long targetId, String targetType) {
-        favorite(userId, targetId, targetType, null);
-    }
-    
-    /**
-     * 收藏到指定收藏夹
-     * 
-     * @param userId 用户ID
-     * @param targetId 目标ID
-     * @param targetType 目标类型
-     * @param folderId 收藏夹ID（可选）
-     */
-    @Transactional(rollbackFor = Exception.class)
-    public void favorite(Long userId, Long targetId, String targetType, Long folderId) {
         try {
             // 1. 验证参数和类型
             FavoriteType.fromCode(targetType);
-            
-            log.info("[收藏服务] 开始收藏 - userId: {}, targetId: {}, type: {}, folderId: {}", 
-                userId, targetId, targetType, folderId);
-            
-            // 2. 如果没有指定收藏夹，使用默认收藏夹
-            if (folderId == null) {
-                folderId = getOrCreateDefaultFolder(userId);
-            }
-            
-            // 3. 查询现有收藏记录
+
+            log.info("[收藏] 开始收藏 - userId: {}, targetId: {}, type: {}",
+                    userId, targetId, targetType);
+
+            // 2. 查询现有收藏记录，检查是否已收藏（幂等处理）
             Favorite existingFavorite = favoriteRepository.findByUserIdAndTargetId(userId, targetId, targetType);
-            
-            if (existingFavorite != null) {
-                // 2.1 已存在记录，执行收藏操作
-                existingFavorite.favorite(); // PO业务方法
-                if (folderId != null) {
-                    existingFavorite.setFolderId(folderId);
-                }
-                favoriteRepository.save(existingFavorite);
-                log.info("[收藏服务] 更新收藏记录成功");
-            } else {
-                // 2.2 不存在记录，创建新记录
-                Favorite newFavorite = Favorite.createFavorite(userId, targetId, targetType, folderId); // PO工厂方法
+
+            if (existingFavorite != null && existingFavorite.isFavorited()) {
+                // 已收藏，幂等返回（不报错，不重复增加计数）
+                log.info("[收藏] 用户已收藏 - userId: {}, targetId: {}", userId, targetId);
+                return;
+            }
+
+            // 3. 创建新收藏记录
+            if (existingFavorite == null) {
+                // 新增记录
+                Favorite newFavorite = Favorite.createFavorite(userId, targetId, targetType, null);
                 favoriteRepository.save(newFavorite);
                 log.info("[收藏服务] 创建收藏记录成功");
+            } else {
+                // 更新已收藏记录
+                existingFavorite.favorite();
+                favoriteRepository.save(existingFavorite);
+                log.info("[收藏服务] 更新收藏记录成功");
             }
-            
-            // 3. 更新目标表的收藏数（Post）
+
+            // 4. 更新目标项的收藏计数（如帖子）
             updateTargetFavoriteCount(targetId, targetType, true);
-            
-            // 4. 更新收藏夹内容数量
-            if (folderId != null) {
-                updateFolderCount(folderId, 1);
-            }
-            
-            // 5. 在事务提交后更新Redis缓存
+
+            // 5. 事务提交后更新缓存
             final String finalTargetType = targetType;
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override
                 public void afterCommit() {
                     try {
-                        // 删除收藏数缓存（Cache Invalidation）
+                        // 删除收藏计数缓存
                         favoriteCacheRepository.deleteFavoriteCount(targetId, finalTargetType);
-                        
-                        // 添加用户收藏关系缓存
+
+                        // 增加用户收藏缓存
                         favoriteCacheRepository.addUserFavoriteRelation(userId, targetId, finalTargetType);
-                        
-                        // 更新用户收藏数量缓存
+
+                        // 增加用户的收藏计数缓存
                         favoriteCacheRepository.incrementUserFavoriteCount(userId, finalTargetType);
-                        
+
                         log.info("[收藏服务] 事务提交后更新缓存成功");
+
+                        // 发布收藏事件
+                        socialEventPublisher.publishFavorited(userId, targetId);
+                        log.debug("[收藏服务] 发布收藏事件 - userId: {}, targetId: {}", userId, targetId);
                     } catch (Exception e) {
                         log.error("[收藏服务] 事务提交后更新缓存失败", e);
                     }
                 }
             });
-            
+
             log.info("[收藏服务] 收藏操作完成");
-            
+
         } catch (BusinessException e) {
             log.error("[收藏服务] 收藏失败 - error: {}", e.getMessage());
             throw e;
@@ -130,10 +114,10 @@ public class FavoriteService {
             throw new BusinessException("收藏失败，请稍后再试");
         }
     }
-    
+
     /**
      * 取消收藏操作
-     * 
+     *
      * @param userId 用户ID
      * @param targetId 目标ID
      * @param targetType 目标类型
@@ -143,56 +127,54 @@ public class FavoriteService {
         try {
             // 1. 验证参数和类型
             FavoriteType.fromCode(targetType);
-            
-            log.info("[收藏服务] 开始取消收藏 - userId: {}, targetId: {}, type: {}", 
-                userId, targetId, targetType);
-            
+
+            log.info("[收藏服务] 开始取消收藏 - userId: {}, targetId: {}, type: {}",
+                    userId, targetId, targetType);
+
             // 2. 查询现有收藏记录
             Favorite existingFavorite = favoriteRepository.findByUserIdAndTargetId(userId, targetId, targetType);
-            
-            if (existingFavorite == null) {
-                log.warn("[收藏服务] 取消收藏失败，记录不存在");
-                throw new BusinessException("您尚未收藏");
+
+            // 目标未收藏，直接返回
+            if (existingFavorite == null || !existingFavorite.isFavorited()) {
+                log.info("[收藏服务] 用户未收藏该目标，取消收藏操作返回 - userId: {}, targetId: {}", userId, targetId);
+                return;
             }
-            
+
             // 3. 执行取消收藏操作
-            Long folderId = existingFavorite.getFolderId();
-            existingFavorite.unfavorite(); // PO业务方法
+            existingFavorite.unfavorite(); // 更新PO状态
             favoriteRepository.save(existingFavorite);
-            log.info("[收藏服务] 取消收藏成功");
-            
-            // 4. 更新目标表的收藏数
+            log.info("[收藏服务] 取消收藏操作成功");
+
+            // 4. 更新目标项的收藏计数
             updateTargetFavoriteCount(targetId, targetType, false);
-            
-            // 5. 更新收藏夹内容数量
-            if (folderId != null) {
-                updateFolderCount(folderId, -1);
-            }
-            
-            // 6. 立即移除用户收藏关系缓存（防止False Positive）
-            favoriteCacheRepository.removeUserFavoriteRelation(userId, targetId, targetType);
-            
-            // 7. 在事务提交后删除收藏数缓存
+
+            // 5. 事务提交后更新缓存
             final String finalTargetType = targetType;
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override
                 public void afterCommit() {
                     try {
-                        // 删除收藏数缓存
+                        // 删除收藏计数缓存
                         favoriteCacheRepository.deleteFavoriteCount(targetId, finalTargetType);
-                        
-                        // 更新用户收藏数量缓存
+
+                        // 移除用户收藏关系缓存（修复：之前缺失这一步）
+                        favoriteCacheRepository.removeUserFavoriteRelation(userId, targetId, finalTargetType);
+
+                        // 减少用户收藏计数缓存
                         favoriteCacheRepository.decrementUserFavoriteCount(userId, finalTargetType);
-                        
-                        log.info("[收藏服务] 事务提交后清理缓存成功");
+
+                        log.info("[收藏服务] 取消收藏缓存更新成功 - userId: {}, targetId: {}", userId, targetId);
+
+                        // 发布取消收藏事件
+                        socialEventPublisher.publishUnfavorited(userId, targetId);
                     } catch (Exception e) {
-                        log.error("[收藏服务] 事务提交后清理缓存失败", e);
+                        log.error("[收藏服务] 取消收藏缓存更新失败", e);
                     }
                 }
             });
-            
+
             log.info("[收藏服务] 取消收藏操作完成");
-            
+
         } catch (BusinessException e) {
             log.error("[收藏服务] 取消收藏失败 - error: {}", e.getMessage());
             throw e;
@@ -201,10 +183,10 @@ public class FavoriteService {
             throw new BusinessException("取消收藏失败，请稍后再试");
         }
     }
-    
+
     /**
-     * 检查收藏状态（带缓存自愈能力）
-     * 
+     * 检查用户是否收藏了指定目标
+     *
      * @param userId 用户ID
      * @param targetId 目标ID
      * @param targetType 目标类型
@@ -214,375 +196,172 @@ public class FavoriteService {
         if (userId == null || targetId == null || targetType == null) {
             return false;
         }
-        
+
         try {
-            // 1. 优先从缓存检查（注意：返回值可能为null）
+            // 1. 查询缓存，快速返回已收藏信息
             Boolean cachedResult = favoriteCacheRepository.checkUserFavoriteRelation(userId, targetId, targetType);
             if (Boolean.TRUE.equals(cachedResult)) {
-                log.debug("[收藏服务] 从缓存命中收藏状态：已收藏");
+                log.debug("[收藏服务] 缓存检查用户收藏状态 - 用户已收藏");
                 return true;
             }
-            
-            // 2. 缓存未命中，查询数据库
+
+            // 2. 查询数据库，检查是否已收藏
             Favorite favorite = favoriteRepository.findByUserIdAndTargetId(userId, targetId, targetType);
             boolean isFavorited = (favorite != null && favorite.isFavorited());
-            
-            // 3. 自愈：如果数据库中有收藏记录，同步到缓存
+
+            // 3. 如果已收藏，更新缓存
             if (isFavorited) {
                 favoriteCacheRepository.addUserFavoriteRelation(userId, targetId, targetType);
-                log.debug("[收藏服务] 从数据库查询收藏状态并自愈缓存：已收藏");
+                log.debug("[收藏服务] 数据库检查收藏状态，更新缓存成功");
             } else {
-                log.debug("[收藏服务] 从数据库查询收藏状态：未收藏");
+                log.debug("[收藏服务] 数据库检查收藏状态，用户未收藏");
             }
-            
+
             return isFavorited;
-            
+
         } catch (Exception e) {
             log.error("[收藏服务] 检查收藏状态失败", e);
-            // 降级：直接查数据库
+            // 发生异常时，直接查询数据库
             Favorite favorite = favoriteRepository.findByUserIdAndTargetId(userId, targetId, targetType);
             return (favorite != null && favorite.isFavorited());
         }
     }
-    
+
+    // ==================== 辅助方法 ====================
+
     /**
-     * 获取用户收藏的目标ID列表
-     * 
-     * @param userId 用户ID
+     * 更新目标项的收藏计数
+     *
+     * @param targetId 目标ID
      * @param targetType 目标类型
-     * @return 目标ID列表
+     * @param isIncrease 是否增加收藏计数
      */
-    public List<Long> getFavoritedTargetIds(Long userId, String targetType) {
-        if (userId == null || targetType == null) {
-            return Collections.emptyList();
-        }
-        
-        try {
-            return favoriteRepository.findFavoritedTargetIdsByUserId(userId, targetType);
-        } catch (Exception e) {
-            log.error("[收藏服务] 获取收藏列表失败 - userId: {}", userId, e);
-            return Collections.emptyList();
+    private void updateTargetFavoriteCount(Long targetId, String targetType, boolean isIncrease) {
+        FavoriteType type = FavoriteType.fromCode(targetType);
+        if (type == FavoriteType.POST) {
+            // 更新帖子类型的收藏计数
+            if (isIncrease) {
+                postMapper.increaseFavoriteCount(targetId);
+                log.info("[收藏服务] 增加帖子收藏计数 - postId: {}", targetId);
+            } else {
+                postMapper.decreaseFavoriteCount(targetId);
+                log.info("[收藏服务] 减少帖子收藏计数 - postId: {}", targetId);
+            }
         }
     }
     
     /**
-     * 获取用户收藏的目标ID列表（分页）
-     * 
+     * 统计用户收藏数
+     *
      * @param userId 用户ID
-     * @param targetType 目标类型
-     * @param folderId 收藏夹ID（可选）
-     * @param offset 偏移量
-     * @param limit 限制数量
-     * @return 目标ID列表
+     * @return 收藏数量
      */
-    public List<Long> getFavoritedTargetIdsWithPage(Long userId, String targetType, Long folderId, 
-                                                     int offset, int limit) {
-        if (userId == null || targetType == null) {
-            return Collections.emptyList();
+    public long countByUserId(Long userId) {
+        if (userId == null) {
+            return 0;
         }
-        
-        try {
-            return favoriteRepository.findFavoritedTargetIdsByUserIdWithPage(
-                userId, targetType, folderId, offset, limit);
-        } catch (Exception e) {
-            log.error("[收藏服务] 获取分页收藏列表失败 - userId: {}", userId, e);
-            return Collections.emptyList();
-        }
+        return favoriteRepository.countByUserId(userId);
     }
     
     /**
-     * 统计用户收藏数量
-     * 
+     * 分页获取用户收藏的目标ID列表
+     *
+     * @param userId 用户ID
+     * @param targetType 目标类型
+     * @param page 页码
+     * @param size 每页数量
+     * @return 目标ID列表
+     */
+    public java.util.List<Long> getFavoritedTargetIdsWithPage(Long userId, String targetType, int page, int size) {
+        if (userId == null) {
+            return new java.util.ArrayList<>();
+        }
+        // 确保page至少为1，避免产生负数offset
+        if (page < 1) page = 1;
+        if (size < 1) size = 10;
+        int offset = (page - 1) * size;
+        return favoriteRepository.findFavoritedTargetIdsByUserIdWithPage(userId, targetType, null, offset, size);
+    }
+    
+    /**
+     * 统计用户收藏的目标数量
+     *
      * @param userId 用户ID
      * @param targetType 目标类型
      * @return 收藏数量
      */
     public int countFavoritedItems(Long userId, String targetType) {
-        if (userId == null || targetType == null) {
+        if (userId == null) {
             return 0;
         }
-        
-        try {
-            return favoriteRepository.countFavoritedItemsByUserId(userId, targetType);
-        } catch (Exception e) {
-            log.error("[收藏服务] 统计用户收藏数量失败 - userId: {}", userId, e);
-            return 0;
-        }
+        return favoriteRepository.countFavoritedItemsByUserId(userId, targetType);
     }
     
     /**
      * 统计目标被收藏的次数
+     *
+     * @param targetId 目标ID
+     * @param targetType 目标类型
+     * @return 被收藏次数
      */
     public int countFavoritedItemsByTarget(Long targetId, String targetType) {
         if (targetId == null || targetType == null) {
             return 0;
         }
-        
-        try {
-            return favoriteRepository.countFavoritedItemsByTarget(targetId, targetType);
-        } catch (Exception e) {
-            log.error("[收藏服务] 统计目标收藏数量失败 - targetId: {}", targetId, e);
-            return 0;
-        }
+        return favoriteRepository.countFavoritedItemsByTarget(targetId, targetType);
     }
     
     /**
-     * 获取收藏夹中的内容列表
-     */
-    public List<Favorite> findTargetsInFolder(Long userId, Long folderId) {
-        if (userId == null || folderId == null) {
-            return Collections.emptyList();
-        }
-        
-        try {
-            return favoriteRepository.findTargetsInFolder(userId, folderId);
-        } catch (Exception e) {
-            log.error("[收藏服务] 获取收藏夹内容失败 - userId: {}, folderId: {}", userId, folderId, e);
-            return Collections.emptyList();
-        }
-    }
-    
-    /**
-     * 移动到指定收藏夹
-     * 
-     * @param userId 用户ID
+     * 获取目标的收藏数
+     * <p>策略：缓存优先，未命中则查DB并回写缓存</p>
+     *
      * @param targetId 目标ID
      * @param targetType 目标类型
-     * @param folderId 收藏夹ID
+     * @return 收藏数
      */
-    @Transactional(rollbackFor = Exception.class)
-    public void moveToFolder(Long userId, Long targetId, String targetType, Long folderId) {
-        try {
-            Favorite favorite = favoriteRepository.findByUserIdAndTargetId(userId, targetId, targetType);
-            
-            if (favorite == null) {
-                throw new BusinessException("未找到收藏记录");
-            }
-            
-            Long oldFolderId = favorite.getFolderId();
-            favorite.moveToFolder(folderId); // PO业务方法
-            favoriteRepository.save(favorite);
-            
-            // 更新收藏夹数量
-            if (oldFolderId != null) {
-                updateFolderCount(oldFolderId, -1);
-            }
-            if (folderId != null) {
-                updateFolderCount(folderId, 1);
-            }
-            
-            log.info("[收藏服务] 移动到收藏夹成功 - targetId: {}, oldFolderId: {}, newFolderId: {}", 
-                targetId, oldFolderId, folderId);
-                
-        } catch (BusinessException e) {
-            log.error("[收藏服务] 移动到收藏夹失败 - error: {}", e.getMessage());
-            throw e;
-        } catch (Exception e) {
-            log.error("[收藏服务] 移动到收藏夹失败", e);
-            throw new BusinessException("移动失败，请稍后再试");
-        }
-    }
-    
-    // ==================== 收藏夹管理方法 ====================
-    
-    /**
-     * 创建收藏夹
-     */
-    @Transactional(rollbackFor = Exception.class)
-    public Long createFolder(Long userId, String name, String description) {
-        try {
-            FavoriteFolder folder = FavoriteFolder.builder()
-                    .userId(userId)
-                    .name(name)
-                    .description(description)
-                    .isPublic(0)
-                    .contentCount(0)
-                    .createTime(LocalDateTime.now())
-                    .updateTime(LocalDateTime.now())
-                    .build();
-
-            return favoriteFolderRepository.save(folder);
-        } catch (Exception e) {
-            log.error("[收藏服务] 创建收藏夹失败 - userId: {}, name: {}", userId, name, e);
-            throw new BusinessException("创建收藏夹失败");
-        }
-    }
-    
-    /**
-     * 获取用户的收藏夹列表
-     */
-    public List<FavoriteFolder> getFoldersByUserId(Long userId) {
-        if (userId == null) {
-            return Collections.emptyList();
+    public long getFavoriteCount(Long targetId, String targetType) {
+        if (targetId == null || targetType == null) {
+            return 0L;
         }
         
         try {
-            return favoriteFolderRepository.findByUserId(userId);
+            // 1. 尝试从缓存获取
+            Long cachedCount = favoriteCacheRepository.getFavoriteCount(targetId, targetType);
+            if (cachedCount != null && cachedCount > 0) {
+                return cachedCount;
+            }
+            
+            // 2. 缓存未命中，从目标表获取真实收藏数
+            long dbCount = getTargetFavoriteCountFromDB(targetId, targetType);
+            
+            // 3. 回写缓存
+            if (dbCount >= 0) {
+                favoriteCacheRepository.setFavoriteCount(targetId, targetType, dbCount);
+            }
+            
+            return dbCount;
         } catch (Exception e) {
-            log.error("[收藏服务] 获取收藏夹列表失败 - userId: {}", userId, e);
-            return Collections.emptyList();
+            log.error("[收藏服务] 获取收藏数失败 - targetId: {}", targetId, e);
+            // 降级：直接查DB
+            return getTargetFavoriteCountFromDB(targetId, targetType);
         }
     }
     
     /**
-     * 删除收藏夹（默认收藏夹不能删除）
+     * 从目标表获取收藏数（统一数据来源）
      */
-    @Transactional(rollbackFor = Exception.class)
-    public void deleteFolder(Long userId, Long folderId) {
+    private long getTargetFavoriteCountFromDB(Long targetId, String targetType) {
         try {
-            FavoriteFolder folder = favoriteFolderRepository.findById(folderId)
-                    .orElseThrow(() -> new BusinessException("收藏夹不存在"));
-            
-            if (!folder.getUserId().equals(userId)) {
-                throw new BusinessException("无权限删除此收藏夹");
+            FavoriteType type = FavoriteType.fromCode(targetType);
+            if (type == FavoriteType.POST) {
+                // 从post表获取favorite_count字段
+                Long postCount = postMapper.getFavoriteCount(targetId);
+                return postCount != null ? postCount : 0L;
             }
-            
-            // 默认收藏夹不能删除
-            if (folder.getIsDefault() != null && folder.getIsDefault() == 1) {
-                throw new BusinessException("默认收藏夹不能删除");
-            }
-            
-            // 移除收藏夹中的所有内容（设置folderId为null）
-            List<Favorite> targets = favoriteRepository.findTargetsInFolder(userId, folderId);
-            for (Favorite target : targets) {
-                target.setFolderId(null);
-                favoriteRepository.save(target);
-            }
-            log.info("[收藏服务] 已将收藏夹中的{}条内容移出 - folderId: {}", targets.size(), folderId);
-            
-            // 删除收藏夹
-            favoriteFolderRepository.deleteById(folderId);
-            
-            // 清理缓存
-            favoriteCacheRepository.deleteFolderContentCount(folderId);
-            
-            log.info("[收藏服务] 删除收藏夹成功 - folderId: {}", folderId);
-            
-        } catch (BusinessException e) {
-            log.error("[收藏服务] 删除收藏夹失败 - error: {}", e.getMessage());
-            throw e;
+            return 0L;
         } catch (Exception e) {
-            log.error("[收藏服务] 删除收藏夹失败 - folderId: {}", folderId, e);
-            throw new BusinessException("删除收藏夹失败");
-        }
-    }
-    
-    /**
-     * 从收藏夹中移除内容
-     */
-    @Transactional(rollbackFor = Exception.class)
-    public void removeTargetFromFolder(Long userId, Long targetId, String targetType, Long folderId) {
-        try {
-            Favorite favorite = favoriteRepository.findByUserIdAndTargetId(userId, targetId, targetType);
-            if (favorite != null && favorite.getFolderId() != null && favorite.getFolderId().equals(folderId)) {
-                favorite.setFolderId(null);
-                favoriteRepository.save(favorite);
-                
-                // 更新收藏夹数量
-                updateFolderCount(folderId, -1);
-                
-                log.info("[收藏服务] 从收藏夹移除内容成功 - targetId: {}, folderId: {}", targetId, folderId);
-            }
-        } catch (Exception e) {
-            log.error("[收藏服务] 从收藏夹移除内容失败 - targetId: {}, folderId: {}", targetId, folderId, e);
-            throw new BusinessException("移除失败，请稍后再试");
-        }
-    }
-    
-    // ==================== 私有辅助方法 ====================
-    
-    /**
-     * 获取或创建用户的默认收藏夹
-     * 
-     * @param userId 用户ID
-     * @return 默认收藏夹ID
-     */
-    private Long getOrCreateDefaultFolder(Long userId) {
-        try {
-            // 1. 查找已存在的默认收藏夹
-            return favoriteFolderRepository.findDefaultFolderByUserId(userId)
-                    .map(FavoriteFolder::getId)
-                    .orElseGet(() -> {
-                        // 2. 不存在则创建默认收藏夹
-                        FavoriteFolder defaultFolder = FavoriteFolder.builder()
-                                .userId(userId)
-                                .name("默认收藏夹")
-                                .description("系统自动创建的默认收藏夹")
-                                .isDefault(1)  // 标记为默认收藏夹
-                                .isPublic(0)
-                                .contentCount(0)
-                                .sort(0)
-                                .createTime(LocalDateTime.now())
-                                .updateTime(LocalDateTime.now())
-                                .build();
-                        Long folderId = favoriteFolderRepository.save(defaultFolder);
-                        log.info("[收藏服务] 自动创建默认收藏夹 - userId: {}, folderId: {}", userId, folderId);
-                        return folderId;
-                    });
-        } catch (Exception e) {
-            log.error("[收藏服务] 获取或创建默认收藏夹失败 - userId: {}", userId, e);
-            return null;  // 返回null，收藏仍可继续但不关联收藏夹
-        }
-    }
-    
-    /**
-     * 更新目标表的收藏数
-     * 
-     * 注意：此方法在事务内执行，更新失败会抛出异常触发事务回滚，
-     * 确保Favorite表和目标表的计数保持一致
-     */
-    private void updateTargetFavoriteCount(Long targetId, String targetType, boolean isIncrease) {
-        FavoriteType type = FavoriteType.fromCode(targetType);
-        if (type == FavoriteType.POST) {
-            // 使用postMapper更新帖子收藏数
-            if (isIncrease) {
-                postMapper.increaseFavoriteCount(targetId);
-                log.info("[收藏服务] 增加帖子收藏数成功 - postId: {}", targetId);
-            } else {
-                postMapper.decreaseFavoriteCount(targetId);
-                log.info("[收藏服务] 减少帖子收藏数成功 - postId: {}", targetId);
-            }
-        }
-        // 不捕获异常：让异常向上传播，触发事务回滚，保证数据一致性
-    }
-    
-    /**
-     * 更新收藏夹内容数量
-     */
-    private void updateFolderCount(Long folderId, int delta) {
-        try {
-            FavoriteFolder folder = favoriteFolderRepository.findById(folderId).orElse(null);
-            if (folder != null) {
-                int newCount = Math.max(0, folder.getContentCount() + delta);
-                folder.setContentCount(newCount);
-                favoriteFolderRepository.update(folder);
-                
-                // 更新缓存
-                if (delta > 0) {
-                    favoriteCacheRepository.incrementFolderContentCount(folderId);
-                } else {
-                    favoriteCacheRepository.decrementFolderContentCount(folderId);
-                }
-                
-                log.info("[收藏服务] 更新收藏夹数量成功 - folderId: {}, newCount: {}", folderId, newCount);
-            }
-        } catch (Exception e) {
-            log.error("[收藏服务] 更新收藏夹数量失败 - folderId: {}", folderId, e);
-            // 不抛出异常，避免影响主流程
-        }
-    }
-    
-    /**
-     * 统计用户收藏数量（所有类型）
-     * @param userId 用户ID
-     * @return 收藏总数
-     */
-    public long countByUserId(Long userId) {
-        if (userId == null) {
+            log.error("[收藏服务] 从目标表获取收藏数失败 - targetId: {}, type: {}", targetId, targetType, e);
             return 0L;
         }
-        // 统计帖子收藏数量
-        return favoriteRepository.countFavoritedItemsByUserId(userId, "post");
     }
-    
 }

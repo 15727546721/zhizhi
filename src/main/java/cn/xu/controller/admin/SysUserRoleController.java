@@ -1,4 +1,4 @@
-﻿package cn.xu.controller.admin;
+package cn.xu.controller.admin;
 
 import cn.xu.common.ResponseCode;
 import cn.xu.common.annotation.ApiOperationLog;
@@ -17,7 +17,8 @@ import java.util.List;
 /**
  * 用户角色管理控制器
  * 
- * 
+ * <p>提供用户角色分配和查询功能
+ * <p>用于管理用户与角色的关联关系
  */
 @Tag(name = "用户角色管理", description = "用户角色管理相关接口")
 @RestController
@@ -27,6 +28,15 @@ public class SysUserRoleController {
     @Resource
     private UserRoleService userRoleService;
 
+    /**
+     * 为用户分配角色
+     * 
+     * <p>先删除用户原角色，再分配新角色
+     * 
+     * @param userRoleRequest 分配请求，包含用户ID和角色ID列表
+     * @return 分配结果
+     * @throws BusinessException 当用户ID为空时抛出
+     */
     @PostMapping("/assign")
     @Operation(summary = "为用户分配角色")
     @ApiOperationLog(description = "为用户分配角色")
@@ -43,6 +53,15 @@ public class SysUserRoleController {
                 .build();
     }
 
+    /**
+     * 获取用户的角色ID列表
+     * 
+     * <p>查询用户已分配的所有角色ID
+     * 
+     * @param userId 用户ID
+     * @return 角色ID列表
+     * @throws BusinessException 当用户ID为空时抛出
+     */
     @GetMapping("/user-roles")
     @Operation(summary = "获取用户的角色ID列表")
     @ApiOperationLog(description = "获取用户的角色ID列表")

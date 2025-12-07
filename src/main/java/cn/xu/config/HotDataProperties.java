@@ -9,6 +9,8 @@ import java.util.List;
 
 /**
  * 热点数据配置属性
+ * 
+ *
  */
 @Data
 @Component
@@ -24,4 +26,4 @@ public class HotDataProperties {
         private boolean needWarmup;
         private boolean needRebuild;
     }
-} 
+}

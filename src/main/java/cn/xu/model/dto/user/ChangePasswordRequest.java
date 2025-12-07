@@ -6,6 +6,10 @@ import lombok.Data;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
 
+/**
+ * 修改密码请求
+
+ */
 @Data
 @Schema(description = "修改密码请求")
 public class ChangePasswordRequest {

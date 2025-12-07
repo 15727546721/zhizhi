@@ -18,11 +18,9 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * 聚合搜索控制器
  * 
- * <p>提供帖子、用户、标签的聚合搜索功能
- * <p>使用异步编排并行搜索，提高搜索效率
- * 
- * @author xu
- * @since 2025-11-30
+ * <p>提供帖子、用户、标签的聚合搜索功能</p>
+ * <p>使用异步编排并行搜索，提高搜索效率</p>
+ 
  */
 @Slf4j
 @RestController
@@ -85,6 +83,13 @@ public class AggregateSearchController {
     
     /**
      * 仅搜索帖子
+     * 
+     * <p>只返回帖子搜索结果
+     * <p>公开接口，无需登录
+     * 
+     * @param keyword 搜索关键词
+     * @param limit 数量限制，默认20
+     * @return 帖子搜索结果
      */
     @GetMapping("/posts")
     @Operation(summary = "搜索帖子", description = "仅搜索帖子")
@@ -115,6 +120,13 @@ public class AggregateSearchController {
     
     /**
      * 仅搜索用户
+     * 
+     * <p>只返回用户搜索结果
+     * <p>公开接口，无需登录
+     * 
+     * @param keyword 搜索关键词
+     * @param limit 数量限制，默认20
+     * @return 用户搜索结果
      */
     @GetMapping("/users")
     @Operation(summary = "搜索用户", description = "仅搜索用户")
@@ -145,6 +157,13 @@ public class AggregateSearchController {
     
     /**
      * 仅搜索标签
+     * 
+     * <p>只返回标签搜索结果
+     * <p>公开接口，无需登录
+     * 
+     * @param keyword 搜索关键词
+     * @param limit 数量限制，默认20
+     * @return 标签搜索结果
      */
     @GetMapping("/tags")
     @Operation(summary = "搜索标签", description = "仅搜索标签")

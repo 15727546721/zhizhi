@@ -6,8 +6,6 @@ import java.util.List;
 
 /**
  * 收藏仓储接口
- *
- * @author xu
  */
 public interface IFavoriteRepository {
     
@@ -57,12 +55,25 @@ public interface IFavoriteRepository {
     void removeTargetFromFolder(Long userId, Long targetId, String targetType, Long folderId);
 
     /**
-     * 获取收藏夹中的内容列表
+     * 查询收藏夹中的所有内容
      */
     List<Favorite> findTargetsInFolder(Long userId, Long folderId);
     
     /**
+     * 批量更新收藏夹ID
+     * @param userId 用户ID
+     * @param oldFolderId 旧收藏夹ID
+     * @param newFolderId 新收藏夹ID（null表示移除）
+     */
+    void batchUpdateFolderId(Long userId, Long oldFolderId, Long newFolderId);
+
+    /**
      * 获取收藏某个目标的用户ID列表
      */
     List<Long> findUserIdsByTarget(Long targetId, String targetType);
+    
+    /**
+     * 统计用户收藏总数
+     */
+    long countByUserId(Long userId);
 }

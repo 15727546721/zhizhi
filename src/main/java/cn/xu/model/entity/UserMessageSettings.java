@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserMessageSettings implements Serializable {
+    
     /**
      * 设置ID
      */
@@ -73,16 +74,20 @@ public class UserMessageSettings implements Serializable {
                 .updateTime(now)
                 .build();
     }
-    
+
     /**
-     * 创建默认设置（使用系统默认值：允许所有人）
+     * 创建默认设置
+     * @param userId 用户ID
      */
     public static UserMessageSettings createDefault(Long userId) {
         return createDefault(userId, true);
     }
-    
+
     /**
      * 更新设置
+     * @param allowStrangerMessage 是否允许陌生人私信
+     * @param allowNonMutualFollowMessage 是否允许非互相关注用户私信
+     * @param messageNotificationEnabled 是否开启私信通知
      */
     public void updateSettings(Boolean allowStrangerMessage, Boolean allowNonMutualFollowMessage, Boolean messageNotificationEnabled) {
         if (allowStrangerMessage != null) {
@@ -96,26 +101,25 @@ public class UserMessageSettings implements Serializable {
         }
         this.updateTime = LocalDateTime.now();
     }
-    
+
     /**
-     * 检查是否允许陌生人私信
+     * 是否允许陌生人私信
      */
     public boolean isAllowStrangerMessage() {
         return allowStrangerMessage != null && allowStrangerMessage == 1;
     }
-    
+
     /**
-     * 检查是否允许非互相关注用户私信
+     * 是否允许非互相关注用户私信
      */
     public boolean isAllowNonMutualFollowMessage() {
         return allowNonMutualFollowMessage != null && allowNonMutualFollowMessage == 1;
     }
-    
+
     /**
-     * 检查是否开启私信通知
+     * 是否开启私信通知
      */
     public boolean isMessageNotificationEnabled() {
         return messageNotificationEnabled != null && messageNotificationEnabled == 1;
     }
 }
-

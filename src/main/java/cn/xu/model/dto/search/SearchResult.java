@@ -8,7 +8,8 @@ import java.util.List;
 
 /**
  * 搜索结果值对象
- * 封装搜索结果数据
+ * <p>封装搜索结果数据</p>
+ 
  */
 @Data
 @Builder
@@ -41,4 +42,3 @@ public class SearchResult {
         return posts != null && !posts.isEmpty();
     }
 }
-

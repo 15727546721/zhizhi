@@ -7,6 +7,11 @@ import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
+/**
+ * 评论Mapper接口
+ * <p>处理评论相关的数据库操作</p>
+ 
+ */
 @Mapper
 public interface CommentMapper {
     /**
@@ -147,9 +152,6 @@ public interface CommentMapper {
 
     /**
      * 更新评论回复数
-     *
-     * @param commentId
-     * @param count
      */
     void updateCommentCount(@Param("commentId") Long commentId, @Param("count") int count);
 
@@ -169,8 +171,6 @@ public interface CommentMapper {
      * @return 评论批次
      */
     List<Comment> findCommentsBatch(int offset, int batchSize);
-
-    Long countByParentId(Long commentId);
 
     List<Comment> findRepliesByParentIdByHot(@Param("parentId") Long parentId, @Param("offset") int offset, @Param("size") int size);
 
@@ -199,6 +199,11 @@ public interface CommentMapper {
     Long countByUserId(@Param("userId") Long userId);
     
     /**
+     * 统计父评论的子评论数
+     */
+    Long countByParentId(@Param("parentId") Long parentId);
+    
+    /**
      * 根据用户ID查询评论列表（分页）
      */
     List<Comment> findByUserId(@Param("userId") Long userId, @Param("offset") int offset, @Param("limit") int limit);
@@ -217,6 +222,35 @@ public interface CommentMapper {
      * 统计所有评论数
      */
     Long countAll();
+    
+    /**
+     * 查询所有根评论（管理后台用）
+     */
+    List<Comment> findAllRootComments(@Param("targetType") Integer targetType, 
+                                       @Param("targetId") Long targetId, 
+                                       @Param("offset") int offset, 
+                                       @Param("limit") int limit);
+    
+    /**
+     * 统计根评论数量（管理后台用）
+     */
+    Long countAllRootComments(@Param("targetType") Integer targetType, @Param("targetId") Long targetId);
+    
+    /**
+     * 获取评论点赞数
+     *
+     * @param commentId 评论ID
+     * @return 点赞数
+     */
+    Integer getLikeCount(@Param("commentId") Long commentId);
+    
+    /**
+     * 获取评论作者ID
+     *
+     * @param commentId 评论ID
+     * @return 作者ID
+     */
+    Long getAuthorId(@Param("commentId") Long commentId);
     
     class CommentCountResult {
         private Long targetId;

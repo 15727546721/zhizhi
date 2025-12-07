@@ -4,6 +4,7 @@ import lombok.Data;
 
 /**
  * 更新用户私信设置DTO
+
  */
 @Data
 public class UpdateUserMessageSettingsDTO {
@@ -22,4 +23,3 @@ public class UpdateUserMessageSettingsDTO {
      */
     private Boolean messageNotificationEnabled;
 }
-

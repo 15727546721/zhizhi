@@ -6,6 +6,11 @@ import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
+/**
+ * 帖子标签Mapper接口
+ * <p>处理帖子标签关联的数据库操作</p>
+ 
+ */
 @Mapper
 public interface PostTagMapper {
     void insert(PostTag postTag);
@@ -24,7 +29,7 @@ public interface PostTagMapper {
     // 根据标签ID删除所有关联关系
     void deleteByTagId(@Param("tagId") Long tagId);
     
-    // 添加根据帖子ID查询标签ID的方法
+    // 根据帖子ID查询标签ID
     List<Long> selectTagIdsByPostId(@Param("postId") Long postId);
     
     // 根据标签ID查询帖子ID列表

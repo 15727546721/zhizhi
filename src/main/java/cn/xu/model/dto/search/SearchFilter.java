@@ -7,7 +7,8 @@ import java.time.LocalDateTime;
 
 /**
  * 搜索筛选条件值对象
- * 封装搜索时的筛选条件
+ * <p>封装搜索时的筛选条件</p>
+
  */
 @Data
 @Builder
@@ -50,4 +51,3 @@ public class SearchFilter {
         LIKE
     }
 }
-

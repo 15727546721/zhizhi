@@ -5,8 +5,6 @@ package cn.xu.support.util;
  * 
  * <p>使用Lua脚本保证Redis操作的原子性，避免竞态条件
  *
- * @author xu
- * @since 2025-11-26
  */
 public class RateLimitLuaScript {
 

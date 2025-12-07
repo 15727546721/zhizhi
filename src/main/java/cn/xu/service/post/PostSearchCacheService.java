@@ -2,7 +2,8 @@ package cn.xu.service.post;
 
 import cn.xu.cache.RedisKeyManager;
 import cn.xu.common.ResponseCode;
-import cn.xu.event.post.PostEvent;
+import cn.xu.event.core.BaseEvent.EventAction;
+import cn.xu.event.events.PostEvent;
 import cn.xu.integration.search.strategy.ElasticsearchSearchStrategy;
 import cn.xu.model.entity.Post;
 import cn.xu.support.exception.BusinessException;
@@ -15,57 +16,65 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
 import java.util.Optional;
 import java.util.Set;
 
 /**
  * 帖子搜索缓存服务
- * 
- * <p>监听帖子事件，同步更新Elasticsearch搜索索引，提供搜索功能支持
- * 
- * @author xu
- * @since 2025-11-26
+ * 监听帖子事件，异步同步ES索引或清理缓存
+ *
+ * 主要功能:
+ * - 监听帖子创建、更新、删除等事件
+ * - 同步Elasticsearch索引
+ * - 清理相关的缓存
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class PostSearchCacheService {
 
-    @Autowired(required = false)
+    // 私有成员变量 - 使用@RequiredArgsConstructor自动处理final成员变量
+    private final PostService postService;
+    private final RedisTemplate<String, Object> redisTemplate;
+
+    // 注入的组件 - setter注入
     private ElasticsearchSearchStrategy esStrategy;
-    
-    @Resource
-    private PostService postService;
-    
-    @Resource
-    private RedisTemplate<String, Object> redisTemplate;
-    
-    @org.springframework.beans.factory.annotation.Autowired(required = false)
     private RedisLock redisLock;
 
+    // ==================== Setter注入 ====================
+
+    @Autowired(required = false)
+    public void setEsStrategy(ElasticsearchSearchStrategy esStrategy) {
+        this.esStrategy = esStrategy;
+    }
+
+    @Autowired(required = false)
+    public void setRedisLock(RedisLock redisLock) {
+        this.redisLock = redisLock;
+    }
+
+    // 异步处理帖子事件
     @Async
     @EventListener
     public void handlePostEvent(PostEvent event) {
         try {
-            if (event.getEventType() == PostEvent.PostEventType.CREATED || 
-                event.getEventType() == PostEvent.PostEventType.UPDATED) {
+            if (event.getAction() == EventAction.CREATE ||
+                    event.getAction() == EventAction.UPDATE) {
                 syncElasticsearchIndexAsync(event.getPostId());
                 String title = event.getTitle();
-                String description = event.getDescription();
-                if (title != null || description != null) {
-                    clearRelatedSearchCacheWithLock(title, description);
+                if (title != null) {
+                    clearRelatedSearchCacheWithLock(title, null);
                 }
-            } else if (event.getEventType() == PostEvent.PostEventType.DELETED) {
+            } else if (event.getAction() == EventAction.DELETE) {
                 // 删除事件处理
                 try {
                     if (esStrategy != null) {
                         esStrategy.removeIndexedPost(event.getPostId());
                     }
-                    // 清除全部搜索缓存
+                    // 删除所有缓存
                     if (redisLock != null) {
-                        redisLock.executeWithLock("cache:clear:all:lock", 10, java.util.concurrent.TimeUnit.SECONDS, 
-                            () -> clearAllSearchCache());
+                        redisLock.executeWithLock("cache:clear:all:lock", 10, java.util.concurrent.TimeUnit.SECONDS,
+                                () -> clearAllSearchCache());
                     } else {
                         clearAllSearchCache();
                     }
@@ -81,17 +90,17 @@ public class PostSearchCacheService {
     private void syncElasticsearchIndexAsync(Long postId) {
         syncElasticsearchIndexWithRetry(postId);
     }
-    
+
     private void syncElasticsearchIndexWithRetry(Long postId) {
         int maxRetries = 3;
         long retryDelayMs = 1000;
-        
+
         for (int attempt = 1; attempt <= maxRetries; attempt++) {
             try {
                 if (esStrategy == null) {
                     return;
                 }
-                
+
                 Optional<Post> postOpt = postService.getPostById(postId);
                 if (postOpt.isPresent()) {
                     Post post = postOpt.get();
@@ -107,20 +116,21 @@ public class PostSearchCacheService {
                 }
             } catch (Exception e) {
                 if (attempt < maxRetries) {
-                    try {
-                        Thread.sleep(retryDelayMs * attempt);
-                    } catch (InterruptedException ie) {
+                    // 使用指数退避策略，延迟重试
+                    long delayNanos = retryDelayMs * attempt * 1_000_000L;
+                    java.util.concurrent.locks.LockSupport.parkNanos(delayNanos);
+                    if (Thread.interrupted()) {
                         Thread.currentThread().interrupt();
                         return;
                     }
                 } else {
-                    log.error("同步ES索引失败: postId={}", postId, e);
+                    log.error("ES索引失败: postId={}", postId, e);
                     recordFailedIndexTask(postId);
                 }
             }
         }
     }
-    
+
     private void recordFailedIndexTask(Long postId) {
         try {
             String failedTasksKey = "es:index:failed:tasks";
@@ -134,33 +144,33 @@ public class PostSearchCacheService {
     private void clearRelatedSearchCache(String title) {
         clearRelatedSearchCache(title, null);
     }
-    
+
     private void clearRelatedSearchCacheWithLock(String title, String description) {
         if (redisLock != null) {
-            String lockKey = "cache:clear:lock:" + (title != null ? title.hashCode() : 0) + 
-                            (description != null ? description.hashCode() : 0);
-            redisLock.executeWithLock(lockKey, 5, java.util.concurrent.TimeUnit.SECONDS, 
-                () -> clearRelatedSearchCache(title, description));
+            String lockKey = "cache:clear:lock:" + (title != null ? title.hashCode() : 0) +
+                    (description != null ? description.hashCode() : 0);
+            redisLock.executeWithLock(lockKey, 5, java.util.concurrent.TimeUnit.SECONDS,
+                    () -> clearRelatedSearchCache(title, description));
         } else {
             clearRelatedSearchCache(title, description);
         }
     }
-    
+
     private void clearRelatedSearchCache(String title, String description) {
-        if ((title == null || title.trim().isEmpty()) && 
-            (description == null || description.trim().isEmpty())) {
+        if ((title == null || title.trim().isEmpty()) &&
+                (description == null || description.trim().isEmpty())) {
             return;
         }
-        
+
         try {
             java.util.List<String> keywords = new java.util.ArrayList<>();
-            
+
             if (title != null && !title.trim().isEmpty()) {
                 String normalizedTitle = cn.xu.integration.search.util.SearchKeywordNormalizer.normalize(title);
                 if (!normalizedTitle.isEmpty()) {
                     keywords.add(normalizedTitle);
-                    java.util.List<String> extractedKeywords = 
-                        cn.xu.integration.search.util.SearchKeywordNormalizer.extractKeywords(normalizedTitle);
+                    java.util.List<String> extractedKeywords =
+                            cn.xu.integration.search.util.SearchKeywordNormalizer.extractKeywords(normalizedTitle);
                     for (String keyword : extractedKeywords) {
                         if (keyword.length() >= 2 && keyword.length() <= 20) {
                             keywords.add(keyword);
@@ -168,12 +178,12 @@ public class PostSearchCacheService {
                     }
                 }
             }
-            
+
             if (description != null && !description.trim().isEmpty()) {
                 String normalizedDesc = cn.xu.integration.search.util.SearchKeywordNormalizer.normalize(description);
                 if (!normalizedDesc.isEmpty()) {
-                    java.util.List<String> extractedKeywords = 
-                        cn.xu.integration.search.util.SearchKeywordNormalizer.extractKeywords(normalizedDesc);
+                    java.util.List<String> extractedKeywords =
+                            cn.xu.integration.search.util.SearchKeywordNormalizer.extractKeywords(normalizedDesc);
                     for (String keyword : extractedKeywords) {
                         if (keyword.length() >= 2 && keyword.length() <= 20) {
                             keywords.add(keyword);
@@ -181,13 +191,13 @@ public class PostSearchCacheService {
                     }
                 }
             }
-            
+
             java.util.Set<String> uniqueKeywords = new java.util.HashSet<>(keywords);
             for (String keyword : uniqueKeywords) {
                 invalidateSearchCache(keyword);
             }
         } catch (Exception e) {
-            log.warn("清除搜索缓存失败: title={}", title, e);
+            log.warn("清理缓存失败: title={}", title, e);
         }
     }
 
@@ -195,7 +205,7 @@ public class PostSearchCacheService {
         if (keyword == null || keyword.trim().isEmpty() || redisTemplate == null) {
             return;
         }
-        
+
         try {
             String keyPrefix = RedisKeyManager.postSearchKeyPrefix(keyword.trim());
             String pattern = keyPrefix + "*";
@@ -204,7 +214,7 @@ public class PostSearchCacheService {
                 redisTemplate.delete(keys);
             }
         } catch (Exception e) {
-            log.warn("清除搜索缓存失败: keyword={}", keyword, e);
+            log.warn("清理缓存失败: keyword={}", keyword, e);
         }
     }
 
@@ -212,17 +222,17 @@ public class PostSearchCacheService {
         if (redisTemplate == null) {
             return;
         }
-        
+
         try {
             Set<String> keys = scanKeys("post:search:*");
             if (keys != null && !keys.isEmpty()) {
                 redisTemplate.delete(keys);
             }
         } catch (Exception e) {
-            log.error("清除所有搜索缓存失败", e);
+            log.error("清理所有搜索缓存失败", e);
         }
     }
-    
+
     private Set<String> scanKeys(String pattern) {
         try {
             return redisTemplate.execute((org.springframework.data.redis.core.RedisCallback<Set<String>>) connection -> {
@@ -242,11 +252,11 @@ public class PostSearchCacheService {
                 return keys;
             });
         } catch (Exception e) {
-            log.warn("SCAN命令执行失败，回退到KEYS命令: pattern={}", pattern, e);
+            log.warn("SCAN操作失败，尝试使用KEYS操作: pattern={}", pattern, e);
             try {
                 return redisTemplate.keys(pattern);
             } catch (Exception fallbackException) {
-                log.error("KEYS命令也失败: pattern={}", pattern, fallbackException);
+                log.error("KEYS操作失败: pattern={}", pattern, fallbackException);
                 return new java.util.HashSet<>();
             }
         }
@@ -260,4 +270,3 @@ public class PostSearchCacheService {
         clearAllSearchCache();
     }
 }
-

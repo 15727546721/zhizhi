@@ -14,7 +14,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -22,9 +21,10 @@ import java.util.Map;
 
 /**
  * 系统配置管理控制器
- * 
- * @author xu
- * @since 2025-12-01
+ *
+ * <p>提供系统配置、网站配置、反馈管理等功能</p>
+ * <p>需要登录并拥有相应权限</p>
+
  */
 @Slf4j
 @RestController
@@ -37,24 +37,32 @@ public class SysConfigController {
 
     static {
         // 初始化系统配置
-        systemConfig.put("siteName", "知知社区");
+        systemConfig.put("siteName", "知识社区");
         systemConfig.put("siteDescription", "一个技术交流社区");
-        systemConfig.put("siteKeywords", "技术,编程,社区");
+        systemConfig.put("siteKeywords", "技术编程,社区");
         systemConfig.put("icp", "");
-        systemConfig.put("copyright", "© 2025 知知社区");
+        systemConfig.put("copyright", "© 2025 知识社区");
         systemConfig.put("uploadMaxSize", 10); // MB
         systemConfig.put("allowedFileTypes", "jpg,png,gif,pdf,doc,docx");
-        
+
         // 初始化网站配置
         webConfig.put("logo", "");
         webConfig.put("favicon", "");
-        webConfig.put("footer", "知知社区 - 技术交流平台");
+        webConfig.put("footer", "知识社区 - 技术交流平台");
         webConfig.put("enableComment", true);
         webConfig.put("enableRegister", true);
     }
 
     // ==================== 系统配置 ====================
 
+    /**
+     * 获取系统配置
+     *
+     * <p>返回系统基础配置，包括站点名称、描述、ICP等
+     * <p>需要登录后才能访问
+     *
+     * @return 系统配置集合
+     */
     @GetMapping("/api/system/config/getConfig")
     @Operation(summary = "获取系统配置")
     @SaCheckLogin
@@ -68,6 +76,15 @@ public class SysConfigController {
                 .build();
     }
 
+    /**
+     * 更新系统配置
+     *
+     * <p>更新系统基础配置
+     * <p>需要system:config:update权限
+     *
+     * @param config 配置集合
+     * @return 更新结果
+     */
     @PutMapping("/api/system/config/update")
     @Operation(summary = "更新系统配置")
     @SaCheckLogin
@@ -84,6 +101,14 @@ public class SysConfigController {
 
     // ==================== 网站配置 ====================
 
+    /**
+     * 获取网站配置
+     *
+     * <p>返回网站前台配置，包括logo、页脚、功能开关等
+     * <p>需要登录后才能访问
+     *
+     * @return 网站配置集合
+     */
     @GetMapping("/api/system/webConfig/")
     @Operation(summary = "获取网站配置")
     @SaCheckLogin
@@ -97,6 +122,15 @@ public class SysConfigController {
                 .build();
     }
 
+    /**
+     * 更新网站配置
+     *
+     * <p>更新网站前台配置
+     * <p>需要system:config:update权限
+     *
+     * @param config 配置集合
+     * @return 更新结果
+     */
     @PutMapping("/api/system/webConfig/update")
     @Operation(summary = "更新网站配置")
     @SaCheckLogin
@@ -113,6 +147,16 @@ public class SysConfigController {
 
     // ==================== 反馈管理 ====================
 
+    /**
+     * 获取反馈列表
+     *
+     * <p>分页查询用户反馈
+     * <p>需要登录后才能访问
+     *
+     * @param pageNo 页码
+     * @param pageSize 每页数量
+     * @return 分页的反馈列表
+     */
     @GetMapping("/api/system/feedback/list")
     @Operation(summary = "获取反馈列表")
     @SaCheckLogin
@@ -121,10 +165,10 @@ public class SysConfigController {
             @RequestParam(defaultValue = "1") Integer pageNo,
             @RequestParam(defaultValue = "10") Integer pageSize) {
         log.info("获取反馈列表");
-        
+
         List<FeedbackVO> feedbacks = new ArrayList<>();
         PageResponse<List<FeedbackVO>> pageResponse = PageResponse.ofList(pageNo, pageSize, 0L, feedbacks);
-        
+
         return ResponseEntity.<PageResponse<List<FeedbackVO>>>builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .info("获取成功")
@@ -132,6 +176,15 @@ public class SysConfigController {
                 .build();
     }
 
+    /**
+     * 更新反馈状态
+     *
+     * <p>更新反馈处理状态和回复
+     * <p>需要system:feedback:update权限
+     *
+     * @param feedback 反馈信息
+     * @return 更新结果
+     */
     @PutMapping("/api/system/feedback/update")
     @Operation(summary = "更新反馈状态")
     @SaCheckLogin
@@ -145,6 +198,15 @@ public class SysConfigController {
                 .build();
     }
 
+    /**
+     * 删除反馈
+     *
+     * <p>批量删除反馈
+     * <p>需要system:feedback:delete权限
+     *
+     * @param ids 反馈ID列表
+     * @return 删除结果
+     */
     @DeleteMapping("/api/system/feedback/delete")
     @Operation(summary = "删除反馈")
     @SaCheckLogin

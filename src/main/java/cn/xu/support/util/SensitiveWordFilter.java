@@ -17,55 +17,56 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 敏感词过滤工具类
- * 基于DFA算法实现敏感词过滤
+ * 敏感词过滤器
+ * <p>通过DFA算法辅助敏感词过滤的工具</p>
+ 
  */
 @Slf4j
 @Component
 public class SensitiveWordFilter {
 
     /**
-     * 敏感词库文件路径
+     * 敏感词文件路径
      */
     private static final String SENSITIVE_WORD_FILE = "sensitive-words.txt";
 
     /**
-     * 敏感词树的根节点
+     * 敏感词的字典
      */
     private final Map<Character, Object> sensitiveWordMap = new HashMap<>();
 
     /**
-     * 用于标记单词结尾的特殊字符
+     * 结束标记
      */
-    private static final Character END_MARK = '\0'; // 使用空字符作为单词结尾标记
+    private static final Character END_MARK = '\0'; // 用于标识敏感词的结束
 
     /**
-     * 最小匹配长度（用于优化性能）
+     * 最小匹配长度，避免匹配过短的词
      */
     private int minMatchLength = Integer.MAX_VALUE;
 
     /**
-     * 初始化敏感词库
+     * 初始化方法，加载敏感词字典
      */
     @PostConstruct
     public void init() {
         try {
             loadSensitiveWords();
-            log.info("敏感词库初始化完成，共加载 {} 个敏感词", sensitiveWordMap.size());
+            log.info("敏感词库初始化成功，共加载了 {} 个敏感词", sensitiveWordMap.size());
         } catch (Exception e) {
-            log.error("敏感词库初始化失败", e);
-            // 加载默认敏感词
+            log.error("加载敏感词库失败，错误信息: {}", e.getMessage(), e);
+            // 加载默认敏感词库
             loadDefaultSensitiveWords();
         }
     }
 
     /**
-     * 从文件加载敏感词库
+     * 加载敏感词文件
      */
     private void loadSensitiveWords() {
         ClassPathResource resource = new ClassPathResource(SENSITIVE_WORD_FILE);
         if (!resource.exists()) {
-            log.warn("未找到敏感词库文件: {}, 使用默认敏感词", SENSITIVE_WORD_FILE);
+            log.warn("未找到敏感词文件: {}，将使用默认敏感词库", SENSITIVE_WORD_FILE);
             loadDefaultSensitiveWords();
             return;
         }
@@ -82,20 +83,18 @@ public class SensitiveWordFilter {
                 }
             }
         } catch (IOException e) {
-            log.error("读取敏感词库文件失败: {}", SENSITIVE_WORD_FILE, e);
+            log.error("读取敏感词文件出错: {}", SENSITIVE_WORD_FILE, e);
             loadDefaultSensitiveWords();
         }
     }
 
     /**
-     * 加载默认敏感词
+     * 加载默认的敏感词
      */
     private void loadDefaultSensitiveWords() {
         log.info("加载默认敏感词库");
         String[] defaultWords = {
-                "广告", "色情", "赌博", "暴力", "政治敏感", "反动", "违法", "毒品", "枪支", "色情网站",
-                "赌博网站", "暴力内容", "政治话题", "违法信息", "毒品交易", "枪支弹药", "成人内容", "性交易",
-                "网络诈骗", "非法集资", "传销", "洗钱", "恐怖主义", "极端主义", "分裂国家", "颠覆国家政权"
+                "敏感词1", "敏感词2", "敏感词3", "敏感词4"
         };
 
         for (String word : defaultWords) {
@@ -105,7 +104,7 @@ public class SensitiveWordFilter {
     }
 
     /**
-     * 添加敏感词到词库
+     * 添加敏感词到字典
      *
      * @param word 敏感词
      */
@@ -135,9 +134,9 @@ public class SensitiveWordFilter {
     }
 
     /**
-     * 检查文本是否包含敏感词
+     * 检查文本中是否包含敏感词
      *
-     * @param text 待检查的文本
+     * @param text 输入文本
      * @return 是否包含敏感词
      */
     public boolean containsSensitiveWord(String text) {
@@ -155,9 +154,9 @@ public class SensitiveWordFilter {
     }
 
     /**
-     * 获取文本中的所有敏感词
+     * 获取文本中的敏感词列表
      *
-     * @param text 待检查的文本
+     * @param text 输入文本
      * @return 敏感词列表
      */
     public List<String> getSensitiveWords(String text) {
@@ -179,7 +178,7 @@ public class SensitiveWordFilter {
     /**
      * 替换文本中的敏感词
      *
-     * @param text        待处理的文本
+     * @param text        输入文本
      * @param replaceChar 替换字符
      * @return 处理后的文本
      */
@@ -202,18 +201,18 @@ public class SensitiveWordFilter {
     }
 
     /**
-     * 检查从指定位置开始是否包含敏感词
+     * 检查指定位置的文本是否包含敏感词
      *
-     * @param text 待检查的文本
-     * @param beginIndex 开始检查的位置
-     * @return 匹配到的敏感词长度，0表示未匹配到
+     * @param text       输入文本
+     * @param beginIndex 检查的起始位置
+     * @return 返回匹配的敏感词长度，0表示没有匹配
      */
     private int checkSensitiveWord(String text, int beginIndex) {
         if (beginIndex >= text.length() || beginIndex < 0) {
             return 0;
         }
 
-        // 优化：如果剩余字符数小于最小匹配长度，则直接返回
+        // 判断剩余长度是否足够匹配最小敏感词
         if (text.length() - beginIndex < minMatchLength) {
             return 0;
         }

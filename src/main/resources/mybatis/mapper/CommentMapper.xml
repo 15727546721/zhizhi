@@ -59,12 +59,14 @@
   </insert>
   <update id="updateLikeCount">
     UPDATE comment
-    SET like_count = like_count + #{count}
+    SET like_count = COALESCE(like_count, 0) + #{count},
+        update_time = NOW()
     WHERE id = #{commentId}
   </update>
   <update id="updateCommentCount">
     UPDATE comment
-    SET reply_count = reply_count + #{count}
+    SET reply_count = COALESCE(reply_count, 0) + #{count},
+        update_time = NOW()
     WHERE id = #{commentId}
   </update>
   <delete id="deleteById">
@@ -103,9 +105,11 @@
   </select>
   <!-- 预览回复查询（使用窗口函数实现分组取前N条） -->
   <select id="selectPreviewRepliesByParentIds" resultMap="BaseResultMap">
-    SELECT * FROM (
+    SELECT ranked.* FROM (
     SELECT
-    c.*,
+    c.id, c.parent_id, c.target_type, c.target_id, c.user_id,
+    c.content, c.like_count, c.reply_count, c.status,
+    c.create_time, c.update_time,
     0 AS hot_score, <!-- 兼容字段 -->
     ROW_NUMBER() OVER (
     PARTITION BY c.parent_id
@@ -307,6 +311,13 @@
     WHERE user_id = #{userId}
   </select>
   
+  <!-- 统计父评论的子评论数 -->
+  <select id="countByParentId" resultType="java.lang.Long">
+    SELECT COUNT(*)
+    FROM comment
+    WHERE parent_id = #{parentId}
+  </select>
+  
   <!-- 统计一级评论数（支持多条件过滤） -->
   <select id="countRootComments" resultType="java.lang.Long">
     SELECT COUNT(*)
@@ -398,5 +409,15 @@
   <!-- 统计所有评论数 -->
   <select id="countAll" resultType="java.lang.Long">
     SELECT COUNT(*) FROM comment
+  </select>
+  
+  <!-- 获取评论点赞数 -->
+  <select id="getLikeCount" resultType="java.lang.Integer">
+    SELECT COALESCE(like_count, 0) FROM comment WHERE id = #{commentId}
+  </select>
+  
+  <!-- 获取评论作者ID -->
+  <select id="getAuthorId" resultType="java.lang.Long">
+    SELECT user_id FROM comment WHERE id = #{commentId}
   </select>
 </mapper>

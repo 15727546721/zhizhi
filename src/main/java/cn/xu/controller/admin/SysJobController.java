@@ -14,7 +14,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -23,8 +22,9 @@ import java.util.List;
 /**
  * 定时任务管理控制器
  * 
- * @author xu
- * @since 2025-12-01
+ * <p>提供定时任务的CRUD和执行管理功能</p>
+ * <p>需要登录并拥有相应权限</p>
+ 
  */
 @Slf4j
 @RestController
@@ -66,6 +66,18 @@ public class SysJobController {
                     .build()
     );
 
+    /**
+     * 获取定时任务列表
+     * 
+     * <p>分页查询定时任务，支持按名称和状态筛选
+     * <p>需要system:job:list权限
+     * 
+     * @param pageNo 页码
+     * @param pageSize 每页数量
+     * @param jobName 任务名称（可选）
+     * @param status 状态（可选）
+     * @return 分页的任务列表
+     */
     @GetMapping("/list")
     @Operation(summary = "获取定时任务列表")
     @SaCheckLogin
@@ -87,6 +99,15 @@ public class SysJobController {
                 .build();
     }
 
+    /**
+     * 获取任务详情
+     * 
+     * <p>根据ID获取任务详细信息
+     * <p>需要system:job:list权限
+     * 
+     * @param jobId 任务ID
+     * @return 任务详情
+     */
     @GetMapping("/info")
     @Operation(summary = "获取任务详情")
     @SaCheckLogin
@@ -107,6 +128,15 @@ public class SysJobController {
                 .build();
     }
 
+    /**
+     * 添加定时任务
+     * 
+     * <p>创建新的定时任务
+     * <p>需要system:job:add权限
+     * 
+     * @param job 任务信息
+     * @return 创建结果
+     */
     @PostMapping("/add")
     @Operation(summary = "添加定时任务")
     @SaCheckLogin
@@ -121,6 +151,15 @@ public class SysJobController {
                 .build();
     }
 
+    /**
+     * 修改定时任务
+     * 
+     * <p>更新定时任务配置
+     * <p>需要system:job:update权限
+     * 
+     * @param job 任务信息
+     * @return 更新结果
+     */
     @PutMapping("/update")
     @Operation(summary = "修改定时任务")
     @SaCheckLogin
@@ -134,6 +173,15 @@ public class SysJobController {
                 .build();
     }
 
+    /**
+     * 删除定时任务
+     * 
+     * <p>批量删除定时任务
+     * <p>需要system:job:delete权限
+     * 
+     * @param ids 任务ID列表
+     * @return 删除结果
+     */
     @DeleteMapping("/delete")
     @Operation(summary = "删除定时任务")
     @SaCheckLogin
@@ -147,6 +195,15 @@ public class SysJobController {
                 .build();
     }
 
+    /**
+     * 修改任务状态
+     * 
+     * <p>启用或禁用定时任务
+     * <p>需要system:job:update权限
+     * 
+     * @param job 任务信息（包含ID和状态）
+     * @return 修改结果
+     */
     @PostMapping("/change")
     @Operation(summary = "修改任务状态")
     @SaCheckLogin
@@ -160,6 +217,15 @@ public class SysJobController {
                 .build();
     }
 
+    /**
+     * 立即执行任务
+     * 
+     * <p>手动触发任务执行
+     * <p>需要system:job:run权限
+     * 
+     * @param job 任务信息（包含ID）
+     * @return 执行结果
+     */
     @PostMapping("/run")
     @Operation(summary = "立即执行任务")
     @SaCheckLogin
@@ -175,6 +241,17 @@ public class SysJobController {
 
     // ==================== 任务日志 ====================
 
+    /**
+     * 获取任务日志列表
+     * 
+     * <p>分页查询任务执行日志
+     * <p>需要system:job:list权限
+     * 
+     * @param pageNo 页码
+     * @param pageSize 每页数量
+     * @param jobId 任务ID（可选）
+     * @return 分页的日志列表
+     */
     @GetMapping("/log/list")
     @Operation(summary = "获取任务日志列表")
     @SaCheckLogin

@@ -5,12 +5,9 @@ import org.springframework.stereotype.Repository;
 
 /**
  * 收藏缓存仓储
- * 处理收藏相关的缓存操作
- * 
- * <p>继承BaseCacheRepository复用通用方法，减少重复代码
- * 
- * @author zhizhi
- * @since 2025-11-23
+ * <p>处理收藏相关的缓存操作</p>
+ * <p>继承BaseCacheRepository复用通用方法，减少重复代码</p>
+ 
  */
 @Slf4j
 @Repository
@@ -21,14 +18,15 @@ public class FavoriteCacheRepository extends BaseCacheRepository {
     private static final String USER_FAVORITE_KEY_PREFIX = "user:favorite:";
     private static final String FOLDER_CONTENT_COUNT_PREFIX = "favorite:folder:content:";
     
-    // TTL配置
-    private static final int DEFAULT_CACHE_TTL = 3600; // 1小时（用户关系缓存）
-    private static final int COUNT_CACHE_TTL = 30 * 24 * 3600; // 30天（计数类数据）
+    /** 默认缓存TTL：1小时（用户关系缓存） */
+    private static final int DEFAULT_CACHE_TTL = 3600;
+    /** 计数缓存TTL：30天 */
+    private static final int COUNT_CACHE_TTL = 30 * 24 * 3600;
     
     /**
      * 获取目标的收藏数
      * 
-     * @param targetId 目标ID
+     * @param targetId   目标ID
      * @param targetType 目标类型
      * @return 收藏数
      */
@@ -40,9 +38,9 @@ public class FavoriteCacheRepository extends BaseCacheRepository {
     /**
      * 增加目标的收藏数
      * 
-     * @param targetId 目标ID
+     * @param targetId   目标ID
      * @param targetType 目标类型
-     * @param delta 增量
+     * @param delta      增量
      * @return 增加后的收藏数
      */
     public Long incrementFavoriteCount(Long targetId, String targetType, long delta) {
@@ -53,7 +51,7 @@ public class FavoriteCacheRepository extends BaseCacheRepository {
     /**
      * 删除目标的收藏数缓存
      * 
-     * @param targetId 目标ID
+     * @param targetId   目标ID
      * @param targetType 目标类型
      */
     public void deleteFavoriteCount(Long targetId, String targetType) {
@@ -62,11 +60,11 @@ public class FavoriteCacheRepository extends BaseCacheRepository {
     }
 
     /**
-     * 记录用户收藏关系
+     * 设置目标的收藏数
      * 
-     * @param targetId 目标ID
+     * @param targetId   目标ID
      * @param targetType 目标类型
-     * @param count 收藏数
+     * @param count      收藏数
      */
     public void setFavoriteCount(Long targetId, String targetType, Long count) {
         String key = buildFavoriteCountKey(targetId, targetType);
@@ -76,8 +74,8 @@ public class FavoriteCacheRepository extends BaseCacheRepository {
     /**
      * 记录用户收藏关系
      * 
-     * @param userId 用户ID
-     * @param targetId 目标ID
+     * @param userId     用户ID
+     * @param targetId   目标ID
      * @param targetType 目标类型
      */
     public void addUserFavoriteRelation(Long userId, Long targetId, String targetType) {
@@ -89,8 +87,8 @@ public class FavoriteCacheRepository extends BaseCacheRepository {
     /**
      * 移除用户收藏关系
      * 
-     * @param userId 用户ID
-     * @param targetId 目标ID
+     * @param userId     用户ID
+     * @param targetId   目标ID
      * @param targetType 目标类型
      */
     public void removeUserFavoriteRelation(Long userId, Long targetId, String targetType) {
@@ -102,8 +100,8 @@ public class FavoriteCacheRepository extends BaseCacheRepository {
     /**
      * 检查用户是否收藏了目标
      * 
-     * @param userId 用户ID
-     * @param targetId 目标ID
+     * @param userId     用户ID
+     * @param targetId   目标ID
      * @param targetType 目标类型
      * @return 是否收藏
      */
@@ -116,8 +114,8 @@ public class FavoriteCacheRepository extends BaseCacheRepository {
     /**
      * 更新用户收藏关系
      * 
-     * @param userId 用户ID
-     * @param targetId 目标ID
+     * @param userId     用户ID
+     * @param targetId   目标ID
      * @param targetType 目标类型
      * @param isFavorite 是否收藏
      */
@@ -127,14 +125,14 @@ public class FavoriteCacheRepository extends BaseCacheRepository {
         } else {
             removeUserFavoriteRelation(userId, targetId, targetType);
         }
-        log.debug("更新用户收藏关系缓存成功，userId={}, targetId={}, targetType={}, isFavorite={}", 
+        log.debug("[缓存] 更新用户收藏关系成功 - userId: {}, targetId: {}, targetType: {}, isFavorite: {}", 
                 userId, targetId, targetType, isFavorite);
     }
 
     /**
-     * 获取用户收藏的项目数量
+     * 获取用户收藏的目标数量
      * 
-     * @param userId 用户ID
+     * @param userId     用户ID
      * @param targetType 目标类型
      * @return 收藏数量
      */
@@ -144,9 +142,9 @@ public class FavoriteCacheRepository extends BaseCacheRepository {
     }
     
     /**
-     * 增加用户收藏的项目数量
+     * 增加用户收藏的目标数量
      * 
-     * @param userId 用户ID
+     * @param userId     用户ID
      * @param targetType 目标类型
      */
     public void incrementUserFavoriteCount(Long userId, String targetType) {
@@ -155,9 +153,9 @@ public class FavoriteCacheRepository extends BaseCacheRepository {
     }
     
     /**
-     * 减少用户收藏的项目数量
+     * 减少用户收藏的目标数量
      * 
-     * @param userId 用户ID
+     * @param userId     用户ID
      * @param targetType 目标类型
      */
     public void decrementUserFavoriteCount(Long userId, String targetType) {
@@ -170,11 +168,11 @@ public class FavoriteCacheRepository extends BaseCacheRepository {
     }
 
     /**
-     * 设置用户收藏的项目数量
+     * 设置用户收藏的目标数量
      * 
-     * @param userId 用户ID
+     * @param userId     用户ID
      * @param targetType 目标类型
-     * @param count 收藏数量
+     * @param count      收藏数量
      */
     public void setUserFavoriteCount(Long userId, String targetType, Long count) {
         String countKey = USER_FAVORITE_KEY_PREFIX + "count:" + userId + ":" + targetType;

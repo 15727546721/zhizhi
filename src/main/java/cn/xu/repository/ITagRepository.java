@@ -6,11 +6,7 @@ import cn.xu.model.entity.Tag;
 import java.util.List;
 
 /**
- * 标签仓储接口（简化版）
- * 
- * 设计改进：
- * 1. 直接返回Tag PO，移除TagEntity转换
- * 2. 简化数据访问逻辑
+ * 标签仓储接口
  */
 public interface ITagRepository {
     
@@ -18,8 +14,9 @@ public interface ITagRepository {
      * 添加标签
      *
      * @param name 标签名称
+     * @return 新创建的标签ID
      */
-    void addTag(String name);
+    Long addTag(String name);
     
     /**
      * 根据帖子ID获取标签名称列表
@@ -106,4 +103,12 @@ public interface ITagRepository {
      * @param id 标签ID
      */
     void deleteTag(Long id);
+    
+    /**
+     * 批量根据ID获取标签
+     *
+     * @param tagIds 标签ID集合
+     * @return 标签列表
+     */
+    List<Tag> findByIds(List<Long> tagIds);
 }

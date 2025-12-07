@@ -9,9 +9,8 @@ import java.util.Optional;
 
 /**
  * 权限仓储接口
- * 遵循DDD规范，定义领域层仓储接口
- * 
- * 
+ * <p>定义权限数据的持久化操作</p>
+ 
  */
 public interface IPermissionRepository {
 

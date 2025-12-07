@@ -1,38 +1,1 @@
-package cn.xu.model.enums.message;
-
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-
-/**
- * 用户关系值对象
- */
-@Getter
-@AllArgsConstructor
-public enum UserRelationship {
-    /**
-     * 互相关注
-     */
-    MUTUAL_FOLLOW("互相关注"),
-    
-    /**
-     * 非互相关注（陌生人/单方面关注）
-     */
-    NON_MUTUAL_FOLLOW("非互相关注");
-    
-    private final String description;
-    
-    /**
-     * 判断是否为互相关注
-     */
-    public boolean isMutualFollow() {
-        return this == MUTUAL_FOLLOW;
-    }
-    
-    /**
-     * 判断是否为非互相关注
-     */
-    public boolean isNonMutualFollow() {
-        return this == NON_MUTUAL_FOLLOW;
-    }
-}
-
+package cn.xu.model.enums.message;import lombok.AllArgsConstructor;import lombok.Getter;/** * 用户关系枚举 */@Getter@AllArgsConstructorpublic enum UserRelationship {    /**     * 相互关注     */    MUTUAL_FOLLOW("相互关注"),    /**     * 单向关注（对方关注我，我不关注对方）     */    NON_MUTUAL_FOLLOW("单向关注");    private final String description;    /**     * 判断是否是相互关注     */    public boolean isMutualFollow() {        return this == MUTUAL_FOLLOW;    }    /**     * 判断是否是单向关注     */    public boolean isNonMutualFollow() {        return this == NON_MUTUAL_FOLLOW;    }}

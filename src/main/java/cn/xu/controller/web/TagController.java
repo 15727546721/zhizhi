@@ -1,4 +1,4 @@
-﻿package cn.xu.controller.web;
+package cn.xu.controller.web;
 
 import cn.xu.common.ResponseCode;
 import cn.xu.common.annotation.ApiOperationLog;
@@ -12,7 +12,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
-
 import javax.annotation.Resource;
 import java.util.List;
 
@@ -21,8 +20,7 @@ import java.util.List;
  * 
  * <p>提供标签查询、搜索、热门标签、标签统计等功能接口
  * 
- * @author xu
- * @since 2025-11-25
+ *
  */
 @Slf4j
 @RestController
@@ -36,6 +34,14 @@ public class TagController {
     @Resource
     private IPostTagRepository postTagRepository;
 
+    /**
+     * 获取标签列表
+     * 
+     * <p>获取系统中所有可用的标签列表
+     * <p>公开接口，无需登录
+     * 
+     * @return 标签列表
+     */
     @GetMapping("/list")
     @Operation(summary = "获取标签列表", description = "获取所有可用的标签列表")
     @ApiOperationLog(description = "获取标签列表")
@@ -56,6 +62,15 @@ public class TagController {
         }
     }
 
+    /**
+     * 搜索标签
+     * 
+     * <p>根据关键词模糊搜索标签名称和描述
+     * <p>公开接口，无需登录
+     * 
+     * @param keyword 搜索关键词
+     * @return 匹配的标签列表
+     */
     @GetMapping("/search")
     @Operation(summary = "搜索标签", description = "根据关键词搜索标签")
     @ApiOperationLog(description = "搜索标签")
@@ -77,6 +92,16 @@ public class TagController {
         }
     }
 
+    /**
+     * 获取热门标签
+     * 
+     * <p>根据使用频率获取热门标签，支持按时间维度筛选
+     * <p>公开接口，无需登录
+     * 
+     * @param timeRange 时间范围（可选）：today(今日)、week(本周)、month(本月)、all(全部)，默认all
+     * @param limit 返回数量限制，默认为10
+     * @return 热门标签列表，按使用次数降序排列
+     */
     @GetMapping("/hot")
     @Operation(summary = "获取热门标签", description = "获取使用频率最高的标签，支持时间维度查询")
     @ApiOperationLog(description = "获取热门标签")
@@ -107,6 +132,17 @@ public class TagController {
         }
     }
 
+    /**
+     * 获取标签相关帖子
+     * 
+     * <p>分页获取使用指定标签的所有帖子
+     * <p>公开接口，无需登录
+     * 
+     * @param tagId 标签ID
+     * @param pageNo 页码，从1开始，默认为1
+     * @param pageSize 每页数量，默认为20
+     * @return 分页的帖子列表
+     */
     @GetMapping("/{tagId}/posts")
     @Operation(summary = "获取标签相关帖子", description = "获取使用指定标签的帖子列表")
     @ApiOperationLog(description = "获取标签相关帖子")
@@ -149,6 +185,15 @@ public class TagController {
         }
     }
 
+    /**
+     * 获取标签统计信息
+     * 
+     * <p>获取指定标签的使用统计信息，包括帖子数、是否推荐等
+     * <p>公开接口，无需登录
+     * 
+     * @param tagId 标签ID
+     * @return 标签统计信息，包含标签名称、描述、帖子数等
+     */
     @GetMapping("/{tagId}/stats")
     @Operation(summary = "获取标签统计信息", description = "获取标签的使用统计信息")
     @ApiOperationLog(description = "获取标签统计信息")

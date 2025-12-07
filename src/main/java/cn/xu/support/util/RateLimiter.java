@@ -8,7 +8,8 @@ import java.util.Collections;
 
 /**
  * 基于Redis的限流工具类
- * 使用滑动窗口算法实现限流
+ * <p>使用滑动窗口算法实现限流</p>
+ 
  */
 @Slf4j
 public class RateLimiter {
@@ -67,7 +68,7 @@ public class RateLimiter {
                 "local currentTime = tonumber(currentTimeStr)\n" +
                 "local windowSeconds = tonumber(windowSecondsStr)\n" +
                 "\n" +
-                "-- 检查参数是否有效\n" +
+                "-- 检查参数是否有误\n" +
                 "if not windowStart or not maxRequests or not currentTime or not windowSeconds then\n" +
                 "    return 0\n" +
                 "end\n" +
@@ -143,4 +144,3 @@ public class RateLimiter {
         }
     }
 }
-

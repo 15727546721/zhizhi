@@ -1,4 +1,4 @@
-﻿package cn.xu.controller.web;
+package cn.xu.controller.web;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.stp.StpUtil;
@@ -7,142 +7,172 @@ import cn.xu.common.annotation.ApiOperationLog;
 import cn.xu.common.response.PageResponse;
 import cn.xu.common.response.ResponseEntity;
 import cn.xu.integration.mail.EmailService;
-import cn.xu.model.converter.UserProfileVOConverter;
-import cn.xu.model.converter.UserVOConverter;
 import cn.xu.model.dto.user.*;
 import cn.xu.model.entity.User;
 import cn.xu.model.entity.UserSettings;
 import cn.xu.model.vo.user.*;
+import cn.xu.service.security.PasswordResetService;
+import cn.xu.service.security.VerificationCodeService;
+import cn.xu.service.user.IUserService;
 import cn.xu.service.user.UserProfileService;
-import cn.xu.service.user.UserService;
 import cn.xu.service.user.UserSettingsService;
+import cn.xu.service.user.UserServiceImpl;
 import cn.xu.support.exception.BusinessException;
+import cn.xu.support.util.IpUtils;
+import cn.xu.support.util.LoginUserUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
-
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
+import java.util.Collections;
 import java.util.List;
 
 /**
- * 用户相关接口
- * <p>提供用户注册、登录、退出、修改密码等功能。</p>
- * @author xu
- * @since 2025-11-25
+ * 用户控制器
+ * <p>
+ * 职责：用户认证、资料管理、账户安全
+ * <ul>
+ *   <li>认证：注册、登录、退出</li>
+ *   <li>资料：查看、编辑、头像上传</li>
+ *   <li>设置：隐私设置、通知设置</li>
+ *   <li>安全：修改密码、重置密码、注销账户</li>
+ * </ul>
+ *
+ * @author zhizhi
+ * @since 1.0
  */
 @Slf4j
 @RequestMapping("api/user")
 @RestController
-@Tag(name = "用户接口", description = "用户操作相关接口")
+@Tag(name = "用户接口", description = "用户认证、资料管理、账户安全")
 public class UserController {
 
     @Resource(name = "userService")
-    private UserService userService;
-    
+    private IUserService userService;
+
     @Resource
     private UserSettingsService userSettingsService;
-    
+
     @Resource
     private UserProfileService userProfileService;
-    
-    @Resource
-    private UserProfileVOConverter userProfileVOConverter;
-    
-    @Resource
-    private UserVOConverter userVOConverter;
-    
+
     @Resource
     private EmailService emailService;
 
+    @Resource
+    private VerificationCodeService verificationCodeService;
+
+    @Resource
+    private PasswordResetService passwordResetService;
+
+    /**
+     * 用户注册（邮箱+密码，username可选自动生成）
+     */
     @PostMapping("/register")
-    @Operation(summary = "用户注册", description = "用户注册接口")
+    @Operation(summary = "用户注册", description = "邮箱+密码注册，username可选")
     @ApiOperationLog(description = "用户注册")
     public ResponseEntity<Void> register(@RequestBody @Valid UserRegisterRequest registerRequest) {
-        // 参数校验（基本校验通过@Valid完成）
         if (StringUtils.isBlank(registerRequest.getEmail())) {
             throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "邮箱不能为空");
         }
         if (StringUtils.isBlank(registerRequest.getPassword())) {
             throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "密码不能为空");
         }
-
-        // 注册用户
         userService.register(registerRequest);
-
-        return ResponseEntity.<Void>builder()
-                .code(ResponseCode.SUCCESS.getCode())
-                .info("用户注册成功")
-                .build();
+        return ResponseEntity.<Void>builder().code(ResponseCode.SUCCESS.getCode()).info("用户注册成功").build();
     }
 
+    /**
+     * 用户登录（含IP安全检查：账户锁定、失败次数限制）
+     */
     @PostMapping("/login")
-    @Operation(summary = "用户登录", description = "用户登录接口")
+    @Operation(summary = "用户登录", description = "邮箱+密码登录，含安全检查")
     @ApiOperationLog(description = "用户登录")
-    public ResponseEntity<UserLoginResponse> login(@RequestBody @Valid UserLoginRequest loginRequest) {
-        // 参数校验（基本校验通过@Valid完成）
+    public ResponseEntity<UserLoginVO> login(@RequestBody @Valid UserLoginRequest loginRequest,
+                                             HttpServletRequest request) {
         if (StringUtils.isBlank(loginRequest.getEmail())) {
             throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "邮箱不能为空");
         }
         if (StringUtils.isBlank(loginRequest.getPassword())) {
             throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "密码不能为空");
         }
-        
-        User user = userService.login(loginRequest);
+        String clientIp = IpUtils.getClientIp(request);
+        User user = ((UserServiceImpl) userService).loginWithIp(loginRequest, clientIp);
         if (user == null) {
             throw new BusinessException("登录失败");
         }
-        // login方法内部已经调用了StpUtil.login，不需要重复调用
-        log.info("用户登录成功，用户ID：{}", user.getId());
-        return ResponseEntity.<UserLoginResponse>builder()
+        log.info("用户登录成功 - userId: {}, ip: {}", user.getId(), clientIp);
+        return ResponseEntity.<UserLoginVO>builder()
                 .code(ResponseCode.SUCCESS.getCode())
-                .data(UserLoginResponse.builder()
-                        .userInfo(userVOConverter.convertToUserResponse(user))
-                        .token(StpUtil.getTokenValue())
-                        .build())
-                .info("用户登录成功")
-                .build();
+                .data(UserLoginVO.builder().userInfo(convertToUserDetailVO(user)).token(StpUtil.getTokenValue()).build())
+                .info("用户登录成功").build();
     }
 
+    /**
+     * 验证码登录
+     */
+    @PostMapping("/login-with-code")
+    @Operation(summary = "验证码登录", description = "邮箱+验证码登录")
+    @ApiOperationLog(description = "验证码登录")
+    public ResponseEntity<UserLoginVO> loginWithCode(@RequestBody @Valid CodeLoginRequest loginRequest,
+                                                     HttpServletRequest request) {
+        if (StringUtils.isBlank(loginRequest.getEmail())) {
+            throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "邮箱不能为空");
+        }
+        if (StringUtils.isBlank(loginRequest.getVerifyCode())) {
+            throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "验证码不能为空");
+        }
+        String clientIp = IpUtils.getClientIp(request);
+        User user = ((UserServiceImpl) userService).loginWithCode(loginRequest.getEmail(), loginRequest.getVerifyCode(), clientIp);
+        if (user == null) {
+            throw new BusinessException("登录失败");
+        }
+        log.info("验证码登录成功 - userId: {}, ip: {}", user.getId(), clientIp);
+        return ResponseEntity.<UserLoginVO>builder()
+                .code(ResponseCode.SUCCESS.getCode())
+                .data(UserLoginVO.builder().userInfo(convertToUserDetailVO(user)).token(StpUtil.getTokenValue()).build())
+                .info("登录成功").build();
+    }
+
+    /**
+     * 用户退出登录
+     */
     @PostMapping("/logout")
-    @Operation(summary = "用户退出", description = "用户退出接口")
+    @Operation(summary = "用户退出")
     @ApiOperationLog(description = "用户退出")
+    @SaCheckLogin
     public ResponseEntity<Void> logout() {
-        long useId = StpUtil.getLoginIdAsLong();
+        long userId = LoginUserUtil.getLoginUserId();
         StpUtil.logout();
-        log.info("用户退出成功: {}", useId);
-        return ResponseEntity.<Void>builder()
-                .code(ResponseCode.SUCCESS.getCode())
-                .info("退出成功")
-                .build();
+        log.info("用户退出 - userId: {}", userId);
+        return ResponseEntity.<Void>builder().code(ResponseCode.SUCCESS.getCode()).info("退出成功").build();
     }
 
+    /**
+     * 修改密码（需验证旧密码）
+     */
     @PostMapping("/change-password")
-    @Operation(summary = "修改密码", description = "用户修改自己的密码")
+    @Operation(summary = "修改密码")
     @ApiOperationLog(description = "修改密码")
     @SaCheckLogin
     public ResponseEntity<Void> changePassword(@RequestBody @Valid ChangePasswordRequest request) {
-        // 验证新密码和确认密码是否一致
         if (!request.getNewPassword().equals(request.getConfirmPassword())) {
             throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "两次输入的密码不一致");
         }
-        
-        // 从token中获取当前登录用户ID
-        Long userId = StpUtil.getLoginIdAsLong();
-        log.info("用户修改密码，用户ID：{}", userId);
-        
-        // 调用服务层修改密码
+        Long userId = LoginUserUtil.getLoginUserId();
         userService.changePassword(userId, request.getOldPassword(), request.getNewPassword());
-        
-        return ResponseEntity.<Void>builder()
-                .code(ResponseCode.SUCCESS.getCode())
-                .info("密码修改成功")
-                .build();
+        log.info("密码修改成功 - userId: {}", userId);
+        return ResponseEntity.<Void>builder().code(ResponseCode.SUCCESS.getCode()).info("密码修改成功").build();
     }
 
+    /**
+     * 上传头像（支持jpg/png/gif，最大2MB）
+     */
     @PostMapping("/avatar/upload")
     @Operation(summary = "上传用户头像", description = "上传并更新当前登录用户的头像")
     @ApiOperationLog(description = "上传用户头像")
@@ -152,29 +182,31 @@ public class UserController {
             if (file == null || file.isEmpty()) {
                 throw new BusinessException(ResponseCode.PARAM_ERROR.getCode(), "文件不能为空");
             }
-            
+
             // 验证文件类型
             String contentType = file.getContentType();
             if (contentType == null || !contentType.startsWith("image/")) {
                 throw new BusinessException(ResponseCode.PARAM_ERROR.getCode(), "文件类型不支持");
             }
-            
+
             // 验证文件大小
             if (file.getSize() > 2 * 1024 * 1024) {
                 throw new BusinessException(ResponseCode.PARAM_ERROR.getCode(), "文件大小不能超过2MB");
             }
-            
+
             // 上传头像
-            String url = userService.uploadAvatar(file);
-            
+            String avatarUrl = userService.uploadAvatar(file);
+
             // 更新用户头像
-            Long userId = StpUtil.getLoginIdAsLong();
-            userService.updateUserAvatar(userId, url);
-            
-            log.info("用户头像上传成功 - userId: {}, url: {}", userId, url);
+            Long userId = LoginUserUtil.getLoginUserId();
+            UpdateUserProfileRequest updateRequest = new UpdateUserProfileRequest();
+            updateRequest.setAvatar(avatarUrl);
+            userService.updateUserProfile(userId, updateRequest);
+
+            log.info("用户头像上传成功 - userId: {}, url: {}", userId, avatarUrl);
             return ResponseEntity.<String>builder()
                     .code(ResponseCode.SUCCESS.getCode())
-                    .data(url)
+                    .data(avatarUrl)
                     .info("头像上传成功")
                     .build();
         } catch (BusinessException e) {
@@ -186,155 +218,90 @@ public class UserController {
         }
     }
 
+    /**
+     * 获取用户信息（公开接口）
+     */
     @GetMapping("/info/{id}")
-    @Operation(summary = "获取用户信息", description = "根据用户ID获取用户信息")
+    @Operation(summary = "获取用户信息")
     @ApiOperationLog(description = "获取用户信息")
-    public ResponseEntity<UserResponse> getUserInfo(@Parameter(description = "用户ID") @PathVariable Long id) {
-        log.info("获取用户信息，用户ID：{}", id);
+    public ResponseEntity<UserDetailVO> getUserInfo(@PathVariable Long id) {
         User user = userService.getUserInfo(id);
-        UserResponse userResponse = userVOConverter.convertToUserResponse(user);
-        return ResponseEntity.<UserResponse>builder()
+        return ResponseEntity.<UserDetailVO>builder()
                 .code(ResponseCode.SUCCESS.getCode())
-                .data(userResponse)
+                .data(convertToUserDetailVO(user))
                 .build();
     }
-    
+
     /**
-     * 更新用户资料
-     * 只允许用户修改自己的资料，用户ID从token中获取，防止越权
-     * 
-     * @param request 更新用户资料请求
-     * @return 响应结果
+     * 更新用户资料（仅能修改自己，ID从token获取防越权）
      */
     @PostMapping("/profile/update")
+    @Operation(summary = "更新用户资料")
     @ApiOperationLog(description = "更新用户资料")
     @SaCheckLogin
-    @Operation(summary = "更新用户资料", description = "更新当前登录用户的资料信息，用户ID从token中获取，防止越权")
-    public ResponseEntity<UserResponse> updateUserProfile(@RequestBody @Valid UpdateUserProfileRequest request) {
-        try {
-            // 从token中获取当前登录用户ID，确保安全性
-            Long userId = StpUtil.getLoginIdAsLong();
-            log.info("更新用户资料，用户ID：{}", userId);
-            
-            // 调用服务层更新用户资料
-            userService.updateUserProfile(userId, request);
-            
-            // 获取更新后的用户信息并返回
-            User updatedUser = userService.getUserInfo(userId);
-            UserResponse userResponse = userVOConverter.convertToUserResponse(updatedUser);
-            
-            return ResponseEntity.<UserResponse>builder()
-                    .code(ResponseCode.SUCCESS.getCode())
-                    .data(userResponse)
-                    .info("用户资料更新成功")
-                    .build();
-        } catch (BusinessException e) {
-            log.warn("更新用户资料失败：{}", e.getMessage());
-            throw e;
-        } catch (Exception e) {
-            log.error("更新用户资料异常", e);
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "更新用户资料失败");
-        }
-    }
-    
-    @GetMapping("/ranking")
-    @Operation(summary = "获取用户排行榜", description = "根据排序类型获取用户排行榜")
-    @ApiOperationLog(description = "获取用户排行榜")
-    public ResponseEntity<PageResponse<List<UserRankingResponse>>> getUserRanking(
-            @Parameter(description = "时间范围：week(7天)、month(30天)") @RequestParam(required = false, defaultValue = "week") String timeRange,
-            @Parameter(description = "排序类型：fans(粉丝数)、likes(获赞数)、posts(帖子数)、comprehensive(综合)") @RequestParam(required = false, defaultValue = "fans") String sortType,
-            @Parameter(description = "页码") @RequestParam(required = false, defaultValue = "1") Integer page,
-            @Parameter(description = "每页数量") @RequestParam(required = false, defaultValue = "10") Integer size) {
-        log.info("获取用户排行榜 - timeRange: {}, sortType: {}, page: {}, size: {}", timeRange, sortType, page, size);
-        
-        // 参数校验
-        if (page < 1) {
-            page = 1;
-        }
-        if (size < 1) {
-            size = 10;
-        }
-        if (size > 100) {
-            size = 100;
-        }
-        
-        // 查询用户排行榜（领域实体）
-        List<User> users = userService.findUserRanking(sortType, page, size);
-        
-        // 转换为VO（符合DDD原则，领域实体不直接暴露给前端）
-        List<UserRankingResponse> userRankingResponses = userVOConverter.convertToUserRankingResponseList(users);
-        
-        // 统计总数
-        Long total = userService.countAllUsers();
-        
-        // 构造分页信息
-        PageResponse<List<UserRankingResponse>> pageResponse = PageResponse.ofList(page, size, total, userRankingResponses);
-        
-        return ResponseEntity.<PageResponse<List<UserRankingResponse>>>builder()
+    public ResponseEntity<UserDetailVO> updateUserProfile(@RequestBody @Valid UpdateUserProfileRequest request) {
+        Long userId = LoginUserUtil.getLoginUserId();
+        userService.updateUserProfile(userId, request);
+        User updatedUser = userService.getUserInfo(userId);
+        log.info("用户资料更新成功 - userId: {}", userId);
+        return ResponseEntity.<UserDetailVO>builder()
                 .code(ResponseCode.SUCCESS.getCode())
-                .data(pageResponse)
+                .data(convertToUserDetailVO(updatedUser))
+                .info("用户资料更新成功")
                 .build();
     }
-    
-    @GetMapping("/profile/{userId}")
-    @Operation(summary = "获取个人主页", description = "获取指定用户的个人主页数据，包括个人资料和互动信息")
-    @ApiOperationLog(description = "获取个人主页")
-    public ResponseEntity<UserProfileVO> getUserProfile(
-            @Parameter(description = "用户ID") @PathVariable Long userId) {
-        log.info("获取个人主页，用户ID：{}", userId);
-        
-        try {
-            // 获取当前登录用户ID（如果有登录）
-            Long currentUserId = null;
-            try {
-                if (StpUtil.isLogin()) {
-                    currentUserId = StpUtil.getLoginIdAsLong();
-                }
-            } catch (Exception e) {
-                log.debug("用户未登录，currentUserId = null");
-            }
-            
-            // 调用服务层获取用户个人主页数据
-            UserProfileService.UserProfileData profileData = 
-                    userProfileService.getUserProfile(userId, currentUserId);
-            
-            // 转换为VO
-            UserProfileVO profileVO = userProfileVOConverter.convertToUserProfileVO(profileData);
-            
-            return ResponseEntity.<UserProfileVO>builder()
-                    .code(ResponseCode.SUCCESS.getCode())
-                    .data(profileVO)
-                    .info("获取个人主页成功")
-                    .build();
-                    
-        } catch (BusinessException e) {
-            log.warn("获取个人主页失败，用户ID：{}，失败原因：{}", userId, e.getMessage());
-            return ResponseEntity.<UserProfileVO>builder()
-                    .code(e.getCode() != null ? e.getCode() : ResponseCode.UN_ERROR.getCode())
-                    .info(e.getMessage())
-                    .build();
-        } catch (Exception e) {
-            log.error("获取个人主页异常，用户ID：{}", userId, e);
-            return ResponseEntity.<UserProfileVO>builder()
-                    .code(ResponseCode.SYSTEM_ERROR.getCode())
-                    .info("获取个人主页失败: " + e.getMessage())
-                    .build();
-        }
+
+    /**
+     * 获取用户排行榜（支持fans/likes/posts/comprehensive排序）
+     */
+    @GetMapping("/ranking")
+    @Operation(summary = "获取用户排行榜")
+    @ApiOperationLog(description = "获取用户排行榜")
+    public ResponseEntity<PageResponse<List<UserRankingVO>>> getUserRanking(
+            @RequestParam(defaultValue = "week") String timeRange,
+            @RequestParam(defaultValue = "fans") String sortType,
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "10") Integer size) {
+        page = Math.max(1, page);
+        size = Math.min(100, Math.max(1, size));
+        List<User> users = userService.findUserRanking(sortType, page, size);
+        Long total = userService.countAllUsers();
+        return ResponseEntity.<PageResponse<List<UserRankingVO>>>builder()
+                .code(ResponseCode.SUCCESS.getCode())
+                .data(PageResponse.ofList(page, size, total, convertToUserRankingVOList(users)))
+                .build();
     }
-    
+
+    /**
+     * 获取个人主页（含基本信息、统计、关注关系）
+     */
+    @GetMapping("/profile/{userId}")
+    @Operation(summary = "获取个人主页")
+    @ApiOperationLog(description = "获取个人主页")
+    public ResponseEntity<UserProfileVO> getUserProfile(@PathVariable Long userId) {
+        Long currentUserId = LoginUserUtil.getLoginUserIdOptional().orElse(null);
+        UserProfileService.UserProfileData profileData = userProfileService.getUserProfile(userId, currentUserId);
+        return ResponseEntity.<UserProfileVO>builder()
+                .code(ResponseCode.SUCCESS.getCode())
+                .data(convertToUserProfileVO(profileData))
+                .build();
+    }
+
     // ==================== 用户设置相关接口 ====================
-    
+
+    /**
+     * 获取用户设置（隐私、通知、邮箱验证状态）
+     */
     @GetMapping("/settings")
-    @Operation(summary = "获取用户设置", description = "获取当前登录用户的设置信息")
+    @Operation(summary = "获取用户设置")
     @ApiOperationLog(description = "获取用户设置")
     @SaCheckLogin
     public ResponseEntity<UserSettingsVO> getUserSettings() {
         try {
-            Long userId = StpUtil.getLoginIdAsLong();
-            log.info("获取用户设置，用户ID：{}", userId);
-            
+            Long userId = LoginUserUtil.getLoginUserId();
+
             UserSettings settings = userSettingsService.getSettings(userId);
-            
+
             UserSettingsVO vo = UserSettingsVO.builder()
                     .privacySettings(UserSettingsVO.PrivacySettingsVO.builder()
                             .profileVisibility(settings.getProfileVisibility())
@@ -347,7 +314,7 @@ public class UserController {
                             .build())
                     .emailVerified(settings.getEmailVerifiedBool())
                     .build();
-            
+
             return ResponseEntity.<UserSettingsVO>builder()
                     .code(ResponseCode.SUCCESS.getCode())
                     .data(vo)
@@ -361,21 +328,24 @@ public class UserController {
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "获取设置失败");
         }
     }
-    
+
+    /**
+     * 更新隐私设置
+     */
     @PutMapping("/settings/privacy")
-    @Operation(summary = "更新隐私设置", description = "更新当前登录用户的隐私设置")
+    @Operation(summary = "更新隐私设置")
     @ApiOperationLog(description = "更新隐私设置")
     @SaCheckLogin
     public ResponseEntity<Void> updatePrivacySettings(@RequestBody @Valid UpdatePrivacySettingsRequest request) {
         try {
-            Long userId = StpUtil.getLoginIdAsLong();
+            Long userId = LoginUserUtil.getLoginUserId();
             log.info("更新隐私设置，用户ID：{}", userId);
-            
+
             userSettingsService.updatePrivacySettings(
-                    userId, 
-                    request.getProfileVisibility(), 
+                    userId,
+                    request.getProfileVisibility(),
                     request.getShowOnlineStatus());
-            
+
             return ResponseEntity.<Void>builder()
                     .code(ResponseCode.SUCCESS.getCode())
                     .info("隐私设置更新成功")
@@ -388,22 +358,25 @@ public class UserController {
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "更新隐私设置失败");
         }
     }
-    
+
+    /**
+     * 更新通知设置
+     */
     @PutMapping("/settings/notification")
-    @Operation(summary = "更新通知设置", description = "更新当前登录用户的通知设置")
+    @Operation(summary = "更新通知设置")
     @ApiOperationLog(description = "更新通知设置")
     @SaCheckLogin
     public ResponseEntity<Void> updateNotificationSettings(@RequestBody @Valid UpdateNotificationSettingsRequest request) {
         try {
-            Long userId = StpUtil.getLoginIdAsLong();
+            Long userId = LoginUserUtil.getLoginUserId();
             log.info("更新通知设置，用户ID：{}", userId);
-            
+
             userSettingsService.updateNotificationSettings(
                     userId,
                     request.getEmailNotification(),
                     request.getBrowserNotification(),
                     request.getSoundNotification());
-            
+
             return ResponseEntity.<Void>builder()
                     .code(ResponseCode.SUCCESS.getCode())
                     .info("通知设置更新成功")
@@ -416,35 +389,38 @@ public class UserController {
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "更新通知设置失败");
         }
     }
-    
+
+    /**
+     * 发送邮箱验证邮件
+     */
     @PostMapping("/settings/email/send-verify")
-    @Operation(summary = "发送邮箱验证邮件", description = "向指定邮箱发送验证邮件")
+    @Operation(summary = "发送邮箱验证邮件")
     @ApiOperationLog(description = "发送邮箱验证邮件")
     @SaCheckLogin
     public ResponseEntity<Void> sendEmailVerify(@RequestBody @Valid SendEmailVerifyRequest request) {
         try {
-            Long userId = StpUtil.getLoginIdAsLong();
+            Long userId = LoginUserUtil.getLoginUserId();
             log.info("发送邮箱验证邮件，用户ID：{}，邮箱：{}", userId, request.getEmail());
-            
-            // 验证邮箱是否属于当前用户
+
+            // 验证邮箱地址是否属于当前用户
             User user = userService.getUserInfo(userId);
             if (user == null) {
                 throw new BusinessException(ResponseCode.USER_NOT_FOUND.getCode(), "用户不存在");
             }
             if (!user.getEmail().equals(request.getEmail())) {
-                throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "邮箱不属于当前用户");
+                throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "邮箱地址无效");
             }
-            
-            // 生成验证令牌（24小时有效）
+
+            // 生成验证令牌，有效期24小时
             String token = java.util.UUID.randomUUID().toString().replace("-", "");
             java.time.LocalDateTime expiration = java.time.LocalDateTime.now().plusHours(24);
-            
-            // 发送邮箱验证邮件
+
+            // 发送验证邮件
             emailService.sendVerificationEmail(request.getEmail(), token, expiration);
-            
+
             return ResponseEntity.<Void>builder()
                     .code(ResponseCode.SUCCESS.getCode())
-                    .info("邮箱验证邮件已发送")
+                    .info("邮箱验证邮件已发送，请查收邮件")
                     .build();
         } catch (BusinessException e) {
             log.warn("发送邮箱验证邮件失败：{}", e.getMessage());
@@ -453,5 +429,367 @@ public class UserController {
             log.error("发送邮箱验证邮件异常", e);
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "发送邮箱验证邮件失败");
         }
+    }
+
+    // ==================== 账户安全相关接口 ====================
+
+    /**
+     * 发送验证码
+     */
+    @PostMapping("/send-verify-code")
+    @Operation(summary = "发送验证码")
+    @ApiOperationLog(description = "发送验证码")
+    public ResponseEntity<Void> sendVerifyCode(@RequestBody @Valid SendVerifyCodeRequest request) {
+        try {
+            // 解析场景
+            VerificationCodeService.CodeScene scene = VerificationCodeService.CodeScene.GENERAL;
+            if ("register".equalsIgnoreCase(request.getScene())) {
+                scene = VerificationCodeService.CodeScene.REGISTER;
+            } else if ("forgot".equalsIgnoreCase(request.getScene())) {
+                scene = VerificationCodeService.CodeScene.FORGOT_PASSWORD;
+            } else if ("bind".equalsIgnoreCase(request.getScene())) {
+                scene = VerificationCodeService.CodeScene.BIND_EMAIL;
+            }
+
+            verificationCodeService.sendVerifyCode(request.getEmail(), scene);
+
+            return ResponseEntity.<Void>builder()
+                    .code(ResponseCode.SUCCESS.getCode())
+                    .info("验证码已发送，请查收邮件")
+                    .build();
+        } catch (BusinessException e) {
+            log.warn("发送验证码失败：{}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("发送验证码异常", e);
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "发送验证码失败");
+        }
+    }
+
+    /**
+     * 忘记密码 - 发送重置验证码
+     *
+     * <p>向注册邮箱发送密码重置验证码
+     * <p>每天最多申请10次密码重置
+     *
+     * @param request 忘记密码请求，包含注册邮箱
+     * @return 发送结果
+     * @throws BusinessException 当邮箱不存在或发送失败时抛出
+     */
+    @PostMapping("/forgot-password")
+    @Operation(summary = "忘记密码", description = "发送密码重置验证码到注册邮箱")
+    @ApiOperationLog(description = "忘记密码")
+    public ResponseEntity<Void> forgotPassword(@RequestBody @Valid ForgotPasswordRequest request) {
+        try {
+            passwordResetService.sendResetCode(request.getEmail());
+
+            return ResponseEntity.<Void>builder()
+                    .code(ResponseCode.SUCCESS.getCode())
+                    .info("密码重置验证码已发送，请查收邮件")
+                    .build();
+        } catch (BusinessException e) {
+            log.warn("忘记密码失败：{}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("忘记密码异常", e);
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "发送重置邮件失败");
+        }
+    }
+
+    /**
+     * 重置密码
+     *
+     * <p>通过邮箱验证码重置密码
+     * <p>验证码有效期5分钟
+     *
+     * @param request 重置密码请求，包含邮箱、验证码、新密码
+     * @return 重置结果
+     * @throws BusinessException 当验证码错误或已过期时抛出
+     */
+    @PostMapping("/reset-password")
+    @Operation(summary = "重置密码", description = "通过验证码重置密码")
+    @ApiOperationLog(description = "重置密码")
+    public ResponseEntity<Void> resetPassword(@RequestBody @Valid ResetPasswordRequest request) {
+        try {
+            // 验证两次密码是否一致
+            if (!request.getPassword().equals(request.getConfirmPassword())) {
+                throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "两次输入的密码不一致");
+            }
+
+            // 判断使用token还是验证码方式
+            if (request.getToken() != null && !request.getToken().isEmpty()) {
+                // 使用令牌方式重置
+                passwordResetService.resetPasswordByToken(request.getToken(), request.getPassword());
+            } else {
+                // 需要传入邮箱和验证码
+                throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "重置令牌不能为空");
+            }
+
+            return ResponseEntity.<Void>builder()
+                    .code(ResponseCode.SUCCESS.getCode())
+                    .info("密码重置成功，请使用新密码登录")
+                    .build();
+        } catch (BusinessException e) {
+            log.warn("重置密码失败：{}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("重置密码异常", e);
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "密码重置失败");
+        }
+    }
+
+    /**
+     * 通过验证码重置密码
+     *
+     * <p>使用邮箱+验证码方式重置密码
+     *
+     * @param email 邮箱
+     * @param code 验证码
+     * @param newPassword 新密码
+     * @param confirmPassword 确认密码
+     * @return 重置结果
+     */
+    @PostMapping("/reset-password-by-code")
+    @Operation(summary = "通过验证码重置密码", description = "使用邮箱验证码重置密码")
+    @ApiOperationLog(description = "通过验证码重置密码")
+    public ResponseEntity<Void> resetPasswordByCode(
+            @Parameter(description = "邮箱") @RequestParam String email,
+            @Parameter(description = "验证码") @RequestParam String code,
+            @Parameter(description = "新密码") @RequestParam String newPassword,
+            @Parameter(description = "确认密码") @RequestParam String confirmPassword) {
+        try {
+            // 验证两次密码是否一致
+            if (!newPassword.equals(confirmPassword)) {
+                throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "两次输入的密码不一致");
+            }
+
+            passwordResetService.resetPasswordByCode(email, code, newPassword);
+
+            return ResponseEntity.<Void>builder()
+                    .code(ResponseCode.SUCCESS.getCode())
+                    .info("密码重置成功，请使用新密码登录")
+                    .build();
+        } catch (BusinessException e) {
+            log.warn("重置密码失败：{}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("重置密码异常", e);
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "密码重置失败");
+        }
+    }
+
+    // ==================== 用户搜索相关接口 ====================
+
+    /**
+     * 搜索用户
+     *
+     * <p>根据关键词搜索用户，用于@提及自动补全等场景
+     * <p>搜索范围：用户名、昵称
+     * <p>公开接口，无需登录
+     *
+     * @param keyword 搜索关键词
+     * @param limit 返回数量限制，默认10，最大50
+     * @return 匹配的用户列表
+     */
+    @GetMapping("/search")
+    @Operation(summary = "搜索用户", description = "根据关键词搜索用户，用于@提及等场景")
+    @ApiOperationLog(description = "搜索用户")
+    public ResponseEntity<List<UserDetailVO>> searchUsers(
+            @Parameter(description = "搜索关键词") @RequestParam String keyword,
+            @Parameter(description = "返回数量限制") @RequestParam(defaultValue = "10") Integer limit) {
+        try {
+            if (keyword == null || keyword.trim().isEmpty()) {
+                return ResponseEntity.<List<UserDetailVO>>builder()
+                        .code(ResponseCode.SUCCESS.getCode())
+                        .data(Collections.emptyList())
+                        .build();
+            }
+
+            // 限制最大返回数量
+            if (limit > 50) {
+                limit = 50;
+            }
+
+            List<User> users = userService.searchUsers(keyword.trim(), limit);
+            List<UserDetailVO> voList = users.stream()
+                    .map(this::convertToUserDetailVO)
+                    .collect(java.util.stream.Collectors.toList());
+
+            return ResponseEntity.<List<UserDetailVO>>builder()
+                    .code(ResponseCode.SUCCESS.getCode())
+                    .data(voList)
+                    .build();
+        } catch (Exception e) {
+            log.error("搜索用户异常", e);
+            return ResponseEntity.<List<UserDetailVO>>builder()
+                    .code(ResponseCode.SUCCESS.getCode())
+                    .data(Collections.emptyList())
+                    .build();
+        }
+    }
+
+    /**
+     * 验证邮箱
+     *
+     * <p>通过验证令牌验证邮箱
+     * <p>需要登录后才能访问
+     *
+     * @param request 验证请求，包含验证令牌
+     * @return 验证结果
+     */
+    @PostMapping("/settings/email/verify")
+    @Operation(summary = "验证邮箱", description = "通过令牌验证邮箱")
+    @ApiOperationLog(description = "验证邮箱")
+    @SaCheckLogin
+    public ResponseEntity<Void> verifyEmail(@RequestBody @Valid VerifyEmailRequest request) {
+        try {
+            Long userId = LoginUserUtil.getLoginUserId();
+            log.info("验证邮箱，用户ID：{}，Token: {}", userId, request.getToken());
+
+            // 验证token并更新用户邮箱验证状态
+            userSettingsService.verifyEmail(request.getToken());
+
+            return ResponseEntity.<Void>builder()
+                    .code(ResponseCode.SUCCESS.getCode())
+                    .info("邮箱验证成功")
+                    .build();
+        } catch (BusinessException e) {
+            log.warn("验证邮箱失败：{}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("验证邮箱异常", e);
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "邮箱验证失败");
+        }
+    }
+
+    /**
+     * 注销账户
+     *
+     * <p>永久删除用户账户，需要验证密码
+     * <p>此操作不可逆，会删除用户所有数据
+     * <p>需要登录后才能访问
+     *
+     * @param request 注销请求，包含用户密码
+     * @return 注销结果
+     * @throws BusinessException 当密码错误时抛出
+     */
+    @PostMapping("/delete-account")
+    @Operation(summary = "注销账户", description = "永久删除用户账户")
+    @ApiOperationLog(description = "注销账户")
+    @SaCheckLogin
+    public ResponseEntity<Void> deleteAccount(@RequestBody @Valid DeleteAccountRequest request) {
+        try {
+            Long userId = LoginUserUtil.getLoginUserId();
+            log.warn("用户申请注销账户，用户ID：{}", userId);
+
+            // 验证密码并删除用户账号
+            userService.deleteAccount(userId, request.getPassword());
+
+            // 退出登录
+            StpUtil.logout();
+
+            return ResponseEntity.<Void>builder()
+                    .code(ResponseCode.SUCCESS.getCode())
+                    .info("账户已注销")
+                    .build();
+        } catch (BusinessException e) {
+            log.warn("注销账户失败：{}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("注销账户异常", e);
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "账户注销失败");
+        }
+    }
+
+    // ==================== 私有转换方法 ====================
+
+    /**
+     * User转换为UserDetailVO
+     */
+    private UserDetailVO convertToUserDetailVO(User user) {
+        if (user == null) {
+            return null;
+        }
+        return UserDetailVO.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .nickname(user.getNickname())
+                .avatar(user.getAvatar())
+                .email(user.getEmail())
+                .gender(user.getGender())
+                .phone(user.getPhone())
+                .region(user.getRegion())
+                .birthday(user.getBirthday())
+                .description(user.getDescription())
+                .status(user.getStatus())
+                .followCount(user.getFollowCount())
+                .fansCount(user.getFansCount())
+                .likeCount(user.getLikeCount())
+                .createTime(user.getCreateTime())
+                .updateTime(user.getUpdateTime())
+                .build();
+    }
+
+    /**
+     * 批量转换User为UserRankingVO
+     */
+    private List<UserRankingVO> convertToUserRankingVOList(List<User> users) {
+        if (users == null) {
+            return null;
+        }
+        return users.stream()
+                .map(user -> UserRankingVO.builder()
+                        .id(user.getId())
+                        .username(user.getUsername())
+                        .nickname(user.getNickname())
+                        .avatar(user.getAvatar())
+                        .followCount(user.getFollowCount() != null ? user.getFollowCount() : 0L)
+                        .fansCount(user.getFansCount() != null ? user.getFansCount() : 0L)
+                        .likeCount(user.getLikeCount() != null ? user.getLikeCount() : 0L)
+                        .postCount(user.getPostCount() != null ? user.getPostCount() : 0L)
+                        .build())
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    /**
+     * UserProfileData转换为UserProfileVO
+     */
+    private UserProfileVO convertToUserProfileVO(UserProfileService.UserProfileData profileData) {
+        if (profileData == null || profileData.getUser() == null) {
+            return null;
+        }
+        User user = profileData.getUser();
+        UserProfileService.UserProfileStats stats = profileData.getStats();
+
+        UserProfileVO.UserBasicInfoVO basicInfo = UserProfileVO.UserBasicInfoVO.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .nickname(user.getNickname())
+                .avatar(user.getAvatar())
+                .gender(user.getGender())
+                .description(user.getDescription())
+                .phone(user.getPhone())
+                .email(user.getEmail())
+                .region(user.getRegion())
+                .birthday(user.getBirthday())
+                .createTime(user.getCreateTime())
+                .build();
+
+        UserProfileVO.UserProfileStatsVO statsVO = UserProfileVO.UserProfileStatsVO.builder()
+                .postCount(stats != null ? stats.getPostCount() : 0L)
+                .followCount(stats != null ? stats.getFollowCount() : 0L)
+                .fansCount(stats != null ? stats.getFansCount() : 0L)
+                .likeCount(stats != null ? stats.getLikeCount() : 0L)
+                .commentCount(stats != null ? stats.getCommentCount() : 0L)
+                .collectionCount(stats != null ? stats.getCollectionCount() : 0L)
+                .build();
+
+        return UserProfileVO.builder()
+                .basicInfo(basicInfo)
+                .stats(statsVO)
+                .isOwnProfile(profileData.getIsOwnProfile())
+                .isFollowing(profileData.getIsFollowing())
+                .isFollowedBy(profileData.getIsFollowedBy())
+                .build();
     }
 }

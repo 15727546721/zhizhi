@@ -9,29 +9,28 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
-
 /**
  * 系统配置服务
- *
- * @author xu
+ * <p>管理系统配置项的读取和更新</p>
+
  */
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class SystemConfigService {
-    
+
     private final ISystemConfigRepository configRepository;
-    
+
     /**
      * 允许通过API修改的配置键白名单
      */
     private static final Set<String> ALLOWED_CONFIG_KEYS = new HashSet<>(Arrays.asList(
-        "private_message.enabled",
-        "private_message.allow_stranger",
-        "private_message.max_message_length",
-        "private_message.rate_limit"
+            "private_message.enabled",
+            "private_message.allow_stranger",
+            "private_message.max_message_length",
+            "private_message.rate_limit"
     ));
-    
+
     /**
      * 获取配置值（字符串）
      */
@@ -43,7 +42,7 @@ public class SystemConfigService {
         log.warn("配置不存在 - 配置键: {}", configKey);
         return null;
     }
-    
+
     /**
      * 获取配置值（整数）
      */
@@ -55,7 +54,7 @@ public class SystemConfigService {
         log.warn("配置不存在 - 配置键: {}", configKey);
         return null;
     }
-    
+
     /**
      * 获取配置值（布尔值）
      */
@@ -67,7 +66,7 @@ public class SystemConfigService {
         log.warn("配置不存在 - 配置键: {}", configKey);
         return null;
     }
-    
+
     /**
      * 获取配置值（长整数）
      */
@@ -79,7 +78,7 @@ public class SystemConfigService {
         log.warn("配置不存在 - 配置键: {}", configKey);
         return null;
     }
-    
+
     /**
      * 获取配置值（带默认值）
      */
@@ -87,7 +86,7 @@ public class SystemConfigService {
         String value = getConfigValue(configKey);
         return value != null ? value : defaultValue;
     }
-    
+
     /**
      * 获取配置值（整数，带默认值）
      */
@@ -95,7 +94,7 @@ public class SystemConfigService {
         Integer value = getConfigIntValue(configKey);
         return value != null ? value : defaultValue;
     }
-    
+
     /**
      * 获取配置值（布尔值，带默认值）
      */
@@ -103,7 +102,7 @@ public class SystemConfigService {
         Boolean value = getConfigBooleanValue(configKey);
         return value != null ? value : defaultValue;
     }
-    
+
     /**
      * 更新配置
      */
@@ -114,10 +113,10 @@ public class SystemConfigService {
             log.error("配置键不在允许修改的白名单中 - 配置键: {}", configKey);
             throw new BusinessException("不允许修改该配置: " + configKey);
         }
-        
+
         // 2. 验证配置值格式
         validateConfigValue(configKey, configValue);
-        
+
         // 3. 查询配置是否存在
         Optional<SystemConfig> configOpt = configRepository.findByKey(configKey);
         if (configOpt.isPresent()) {
@@ -129,7 +128,7 @@ public class SystemConfigService {
             throw new BusinessException("配置不存在: " + configKey);
         }
     }
-    
+
     /**
      * 验证配置值格式
      */
@@ -137,7 +136,7 @@ public class SystemConfigService {
         if (configValue == null || configValue.trim().isEmpty()) {
             throw new BusinessException("配置值不能为空");
         }
-        
+
         switch (configKey) {
             case "private_message.enabled":
             case "private_message.allow_stranger":
@@ -156,7 +155,7 @@ public class SystemConfigService {
                         throw new BusinessException("私信最大长度不能超过10000字符");
                     }
                     if ("private_message.rate_limit".equals(configKey) && intValue > 1000) {
-                        throw new BusinessException("频率限制不能超过1000条/分钟");
+                        throw new BusinessException("频率限制不能超过1000次/分钟");
                     }
                 } catch (NumberFormatException e) {
                     throw new BusinessException("数值类型配置必须为有效整数");
@@ -166,7 +165,7 @@ public class SystemConfigService {
                 throw new BusinessException("未知的配置键: " + configKey);
         }
     }
-    
+
     /**
      * 创建配置
      */
@@ -180,14 +179,14 @@ public class SystemConfigService {
         configRepository.save(config);
         log.info("创建配置 - 配置键: {}, 配置值: {}", configKey, configValue);
     }
-    
+
     /**
      * 获取所有配置
      */
     public List<SystemConfig> getAllConfigs() {
         return configRepository.findAll();
     }
-    
+
     /**
      * 根据键前缀获取配置
      */

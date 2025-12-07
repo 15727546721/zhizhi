@@ -10,9 +10,6 @@ import java.util.List;
 /**
  * 路由VO
  * 用于返回给前端的路由结构
- *
- * @author xu
- * @since 2025-11-29
  */
 @Data
 @Builder
@@ -28,7 +25,7 @@ public class RouterVO {
     private Integer sort;
     private MetaVO meta;
     private List<RouterVO> children;
-
+    
     /**
      * 路由元信息
      */

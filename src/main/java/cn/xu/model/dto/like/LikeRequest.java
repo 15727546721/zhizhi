@@ -8,6 +8,7 @@ import javax.validation.constraints.Positive;
 
 /**
  * 点赞请求
+ 
  */
 @Data
 public class LikeRequest {
@@ -26,10 +27,9 @@ public class LikeRequest {
 
     /**
      * 点赞类型
-     * ARTICLE(1, "文章"),
-     * ESSAY(2, "话题"),
+     * POST(1, "帖子"),
      * COMMENT(3, "评论");
      */
     @NotBlank(message = "点赞类型不能为空")
     private String type;
-} 
+}

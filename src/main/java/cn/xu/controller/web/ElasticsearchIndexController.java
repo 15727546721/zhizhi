@@ -1,17 +1,17 @@
-﻿package cn.xu.controller.web;
+package cn.xu.controller.web;
 
 import cn.xu.common.ResponseCode;
 import cn.xu.common.response.ResponseEntity;
-import cn.xu.integration.search.strategy.ElasticsearchSearchStrategy;
 import cn.xu.model.entity.Post;
-import cn.xu.repository.read.elastic.repository.PostElasticRepository;
 import cn.xu.service.post.PostService;
+import cn.xu.service.search.IElasticsearchIndexManager;
+import cn.xu.service.search.ISearchStrategy;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.Data;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
@@ -22,28 +22,46 @@ import java.util.Set;
 /**
  * Elasticsearch索引管理控制器
  * 
- * <p>提供索引重新构建、状态查询、数据同步等功能接口
- * 
- * @author xu
- * @since 2025-11-25
+ * <p>提供索引重新构建、状态查询、数据同步等功能接口</p>
+ 
  */
 @Slf4j
 @RestController
 @RequestMapping("/api/admin/elasticsearch")
 @Tag(name = "Elasticsearch索引管理", description = "Elasticsearch索引管理接口")
-@RequiredArgsConstructor
 @ConditionalOnProperty(name = "spring.elasticsearch.enabled", havingValue = "true", matchIfMissing = false)
 public class ElasticsearchIndexController {
 
-    private final ElasticsearchSearchStrategy esStrategy;
+    // 依赖接口而非具体实现，符合依赖倒置原则（DIP）
+    private final IElasticsearchIndexManager indexManager;
+    private final ISearchStrategy searchStrategy;
     private final PostService postService;
-    private final PostElasticRepository postElasticRepository;
     
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     private RedisTemplate<String, Object> redisTemplate;
+    
+    /**
+     * 构造器注入
+     * 使用@Qualifier指定注入elasticsearchSearchStrategy而非mysqlSearchStrategy
+     */
+    public ElasticsearchIndexController(
+            IElasticsearchIndexManager indexManager,
+            @Qualifier("elasticsearchSearchStrategy") ISearchStrategy searchStrategy,
+            PostService postService) {
+        this.indexManager = indexManager;
+        this.searchStrategy = searchStrategy;
+        this.postService = postService;
+    }
 
     /**
      * 重新索引所有帖子
+     * 
+     * <p>将MySQL中的所有已发布帖子重新索引到Elasticsearch
+     * <p>支持分批处理，适合大数据量场景
+     * 
+     * @param batchSize 批次大小，默认100
+     * @param offset 起始偏移量，默认0
+     * @return 索引结果统计
      */
     @PostMapping("/reindex")
     @Operation(summary = "重新索引所有帖子", description = "将MySQL中的所有已发布帖子重新索引到Elasticsearch")
@@ -71,7 +89,7 @@ public class ElasticsearchIndexController {
                     try {
                         // 只索引已发布的帖子
                         if (Integer.valueOf(Post.STATUS_PUBLISHED).equals(post.getStatus())) {
-                            esStrategy.indexPost(post);
+                            indexManager.indexPost(post);
                             totalIndexed++;
                         } else {
                             totalSkipped++;
@@ -119,6 +137,11 @@ public class ElasticsearchIndexController {
 
     /**
      * 重新索引单个帖子
+     * 
+     * <p>将指定ID的帖子重新索引到Elasticsearch
+     * 
+     * @param postId 帖子ID
+     * @return 索引结果
      */
     @PostMapping("/reindex/{postId}")
     @Operation(summary = "重新索引单个帖子", description = "将指定ID的帖子重新索引到Elasticsearch")
@@ -137,7 +160,7 @@ public class ElasticsearchIndexController {
             }
             
             Post post = postOpt.get();
-            esStrategy.indexPost(post);
+            indexManager.indexPost(post);
             
             ReindexResponse response = new ReindexResponse();
             response.setTotalIndexed(1);
@@ -162,13 +185,17 @@ public class ElasticsearchIndexController {
 
     /**
      * 获取索引状态
+     * 
+     * <p>获取Elasticsearch索引的状态信息，包括ES和MySQL的数据量对比
+     * 
+     * @return 索引状态信息
      */
     @GetMapping("/status")
     @Operation(summary = "获取索引状态", description = "获取Elasticsearch索引的状态信息")
     public ResponseEntity<IndexStatusResponse> getIndexStatus() {
         try {
             // 获取ES索引中的帖子数量
-            long esCount = postElasticRepository.count();
+            long esCount = indexManager.count();
             
             // 获取MySQL中已发布的帖子数量
             long mysqlCount = 0;
@@ -209,6 +236,13 @@ public class ElasticsearchIndexController {
         private String message;
     }
 
+    /**
+     * 重试失败的索引任务
+     * 
+     * <p>从Redis获取失败任务列表并重试索引
+     * 
+     * @return 重试结果统计
+     */
     @PostMapping("/reindex/failed")
     @Operation(summary = "重试失败的索引任务", description = "重试之前失败的ES索引任务")
     public ResponseEntity<ReindexResponse> reindexFailedTasks() {
@@ -239,7 +273,7 @@ public class ElasticsearchIndexController {
                     if (postOpt.isPresent()) {
                         Post post = postOpt.get();
                         if (post != null && "PUBLISHED".equals(post.getStatus())) {
-                            boolean success = esStrategy.indexPostWithRetry(post);
+                            boolean success = indexManager.indexPostWithRetry(post);
                             if (success) {
                                 totalIndexed++;
                                 // 从失败列表中移除
@@ -286,6 +320,15 @@ public class ElasticsearchIndexController {
         }
     }
 
+    /**
+     * 测试ES搜索
+     * 
+     * <p>测试ES搜索功能，返回查询详情和示例结果
+     * 
+     * @param keyword 搜索关键词
+     * @param size 返回数量，默认10
+     * @return 搜索测试结果
+     */
     @GetMapping("/test-search")
     @Operation(summary = "测试ES搜索", description = "测试ES搜索功能，返回查询详情")
     public ResponseEntity<TestSearchResponse> testSearch(
@@ -296,15 +339,15 @@ public class ElasticsearchIndexController {
             response.setKeyword(keyword);
             
             // 1. 检查索引总数
-            long totalCount = postElasticRepository.count();
+            long totalCount = indexManager.count();
             response.setTotalCount(totalCount);
             
             // 2. 尝试简单查询
             try {
                 org.springframework.data.domain.Pageable pageable = 
                     org.springframework.data.domain.PageRequest.of(0, size);
-                org.springframework.data.domain.Page<cn.xu.repository.read.elastic.model.PostIndex> page =
-                    postElasticRepository.searchByTitleAndDescription(keyword, pageable);
+                org.springframework.data.domain.Page<Post> page =
+                    searchStrategy.search(keyword, pageable);
                 response.setSearchResultCount(page.getTotalElements());
                 response.setSearchSuccess(true);
                 response.setSearchMessage("搜索成功");
@@ -312,7 +355,7 @@ public class ElasticsearchIndexController {
                 // 获取前几条结果的标题
                 List<String> sampleTitles = page.getContent().stream()
                     .limit(5)
-                    .map(cn.xu.repository.read.elastic.model.PostIndex::getTitle)
+                    .map(Post::getTitle)
                     .collect(java.util.stream.Collectors.toList());
                 response.setSampleTitles(sampleTitles);
             } catch (Exception e) {
@@ -325,10 +368,10 @@ public class ElasticsearchIndexController {
             try {
                 org.springframework.data.domain.Pageable pageable = 
                     org.springframework.data.domain.PageRequest.of(0, Math.min(10, (int)totalCount));
-                org.springframework.data.domain.Page<cn.xu.repository.read.elastic.model.PostIndex> allPage =
-                    postElasticRepository.findAll(pageable);
+                org.springframework.data.domain.Page<Post> allPage =
+                    searchStrategy.search("", pageable);
                 List<String> allTitles = allPage.getContent().stream()
-                    .map(cn.xu.repository.read.elastic.model.PostIndex::getTitle)
+                    .map(Post::getTitle)
                     .collect(java.util.stream.Collectors.toList());
                 response.setAllSampleTitles(allTitles);
             } catch (Exception e) {
@@ -375,5 +418,3 @@ public class ElasticsearchIndexController {
         private String allQueryError;
     }
 }
-
-

@@ -11,6 +11,11 @@ import javax.annotation.PostConstruct;
  * 用于初始化值对象中的静态依赖
  * 注：CommentContent已移除，敏感词过滤改为Service层实现
  */
+/**
+ * 值对象配置类
+ * 
+ * 
+ */
 @Configuration
 public class ValueObjectConfig {
 

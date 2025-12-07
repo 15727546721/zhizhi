@@ -11,6 +11,11 @@ import org.springframework.stereotype.Component;
 
 import java.util.Properties;
 
+/**
+ * Redis健康检查指示器
+ * <p>用于 Spring Boot Actuator 健康检查</p>
+
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor

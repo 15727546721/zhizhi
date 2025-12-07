@@ -18,10 +18,8 @@ import java.util.Optional;
 
 /**
  * 权限仓储实现类
- * 直接使用PO，简化架构，移除过度的Entity转换层
- * 
- * @author xu
- * @since 2025-11-29
+ * <p>负责角色、菜单权限的持久化操作</p>
+
  */
 @Slf4j
 @Repository
@@ -110,9 +108,8 @@ public class PermissionRepository implements IPermissionRepository {
                 roleDao.deleteRoleMenuByRoleIds(ids);
                 return true;
             } catch (Exception e) {
-                // 如果出现异常，可以设置事务回滚
+                // 如果出现异常，设置事务回滚
                 status.setRollbackOnly();
-                // 处理异常
                 log.error("删除角色失败", e);
                 throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "删除角色失败");
             }

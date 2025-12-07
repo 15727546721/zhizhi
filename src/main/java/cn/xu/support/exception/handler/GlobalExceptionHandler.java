@@ -2,7 +2,6 @@ package cn.xu.support.exception.handler;
 
 import cn.dev33.satoken.exception.NotLoginException;
 import cn.xu.common.ResponseCode;
-import cn.xu.common.constant.UserErrorCode;
 import cn.xu.common.response.ResponseEntity;
 import cn.xu.support.exception.BusinessException;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +19,10 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * 全局异常处理器
+ * <p>统一处理系统中的各类异常并返回标准化响应</p>
+ */
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -46,7 +49,7 @@ public class GlobalExceptionHandler {
         // 判断场景值，定制化异常信息
         String message = "";
         if (nle.getType().equals(NotLoginException.NOT_TOKEN)) {
-            message = "未能读取到有效 token";
+            message = "未能读取到有效token";
         } else if (nle.getType().equals(NotLoginException.INVALID_TOKEN)) {
             message = "token 无效";
         } else if (nle.getType().equals(NotLoginException.TOKEN_TIMEOUT)) {
@@ -61,7 +64,7 @@ public class GlobalExceptionHandler {
 
         // 返回给前端
         return ResponseEntity.<String>builder()
-                .code(UserErrorCode.TOKEN_EXPIRED.getCode())
+                .code(ResponseCode.TOKEN_EXPIRED.getCode())
                 .info(message)
                 .build();
     }
@@ -81,7 +84,7 @@ public class GlobalExceptionHandler {
         String className = stackTrace[0].getClassName();
 
         // 构建错误消息
-        String errorMessage = String.format("缺少必需的请求参数 [%s]，参数类型 [%s]", parameterName, parameterType);
+        String errorMessage = String.format("缺少必要的请求参数 [%s]，参数类型 [%s]", parameterName, parameterType);
 
         // 记录详细日志
         log.error("缺少请求参数异常: {} - 请求路径: {} - 请求方法: {} - 异常位置: {}.{} - 参数信息: 名称 = {}, 类型 = {}", 
@@ -210,7 +213,7 @@ public class GlobalExceptionHandler {
         
         // 检查是否是CORS相关错误
         if (errorMessage.contains("allowCredentials") && errorMessage.contains("allowedOrigins")) {
-            log.error("CORS配置错误: {} - 请求路径: {} - 建议使用allowedOriginPatterns替代allowedOrigins", 
+            log.error("CORS配置错误: {} - 请求路径: {} - 建议使用allowedOriginPatterns替换allowedOrigins", 
                     errorMessage, request.getRequestURI());
             return ResponseEntity.<String>builder()
                     .code(ResponseCode.SYSTEM_ERROR.getCode())

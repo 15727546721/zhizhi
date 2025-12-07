@@ -22,4 +22,3 @@ public class PrivateMessageVO {
     private Boolean isRead;
     private LocalDateTime createTime;
 }
-

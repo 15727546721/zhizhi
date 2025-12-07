@@ -13,12 +13,6 @@ import java.util.List;
 
 /**
  * 用户屏蔽服务
- * 
- * <p>管理用户之间的屏蔽关系，独立于私信服务
- * <p>简化设计：直接使用PO，移除Entity转换
- *
- * @author xu
- * @since 2025-11-26
  */
 @Service
 @RequiredArgsConstructor

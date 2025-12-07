@@ -1,14 +1,13 @@
 package cn.xu.repository;
 
 import cn.xu.model.entity.User;
-import cn.xu.model.vo.user.UserFormResponse;
+import cn.xu.model.vo.user.UserFormVO;
 
 import java.util.List;
 import java.util.Optional;
 
 /**
  * 用户仓储接口
- * 遵循DDD原则，只处理用户实体的基本CRUD操作
  */
 public interface IUserRepository {
     /**
@@ -32,7 +31,7 @@ public interface IUserRepository {
     Optional<User> findByEmail(String email);
 
     /**
-     * 根据邮箱查找用户（包括密码）
+     * 根据邮箱查找用户（包含密码）
      */
     Optional<User> findByEmailWithPassword(String email);
 
@@ -42,7 +41,7 @@ public interface IUserRepository {
     List<User> findByPage(Integer page, Integer size);
 
     /**
-     * 带条件分页查询用户
+     * 按条件分页查询用户
      *
      * @param username 用户名（模糊匹配）
      * @param status 状态
@@ -54,7 +53,7 @@ public interface IUserRepository {
     List<User> findByConditions(String username, Integer status, Integer userType, Integer page, Integer size);
 
     /**
-     * 统计带条件的用户数量
+     * 统计按条件的用户数量
      */
     Long countByConditions(String username, Integer status, Integer userType);
 
@@ -89,10 +88,10 @@ public interface IUserRepository {
      * @param username 用户名
      * @return 用户表单值对象
      */
-    UserFormResponse findUsernameAndPasswordByUsername(String username);
+    UserFormVO findUsernameAndPasswordByUsername(String username);
 
     /**
-     * 根据用户ID查找角色列表
+     * 根据用户ID查找角色名称列表
      *
      * @param userId 用户ID
      * @return 角色名称列表
@@ -118,7 +117,7 @@ public interface IUserRepository {
     /**
      * 更新用户的关注数（设置绝对值）
      *
-     * @param userId    用户ID
+     * @param userId     用户ID
      * @param followCount 关注数
      */
     void updateFollowCount(Long userId, Long followCount);
@@ -126,7 +125,7 @@ public interface IUserRepository {
     /**
      * 更新用户的粉丝数（设置绝对值）
      *
-     * @param userId  用户ID
+     * @param userId   用户ID
      * @param fansCount 粉丝数
      */
     void updateFansCount(Long userId, Long fansCount);
@@ -163,14 +162,14 @@ public interface IUserRepository {
     void decreaseFansCount(Long userId);
 
     /**
-     * 原子增加获赞数（+1）
+     * 原子增加点赞数（+1）
      *
      * @param userId 用户ID
      */
     void increaseLikeCount(Long userId);
 
     /**
-     * 原子减少获赞数（-1）
+     * 原子减少点赞数（-1）
      *
      * @param userId 用户ID
      */
@@ -217,7 +216,7 @@ public interface IUserRepository {
     /**
      * 查询用户排名
      *
-     * @param sortType 排序类型：fans(粉丝数)、likes(获赞数)、posts(帖子数)、comprehensive(综合)
+     * @param sortType 排序类型：fans(粉丝数)、likes(点赞数)、posts(帖子数)、comprehensive(综合)
      * @param offset 偏移量
      * @param limit 数量限制
      * @return 用户列表（包含帖子数统计）
@@ -225,18 +224,27 @@ public interface IUserRepository {
     List<User> findUserRanking(String sortType, int offset, int limit);
 
     /**
-     * 统计用户总数（用于排行榜）
+     * 统计用户总数（用于排名缓存）
      *
      * @return 用户总数
      */
     Long countAllUsers();
 
     /**
-     * 搜索用户（支持@提及自动补全）
+     * 搜索用户（支持模糊匹配和自动补全）
      *
-     * @param keyword 关键词（用户名或昵称）
+     * @param keyword 关键字（用户名或昵称）
      * @param limit 限制数量
      * @return 用户列表
      */
     List<User> searchUsers(String keyword, Integer limit);
+
+    /**
+     * 根据用户ID查找用户（包含密码字段）
+     * 用于需要验证密码的场景（如登录账号）
+     *
+     * @param userId 用户ID
+     * @return 用户信息（包含密码）
+     */
+    Optional<User> findByIdWithPassword(Long userId);
 }

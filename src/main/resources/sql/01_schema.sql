@@ -9,7 +9,7 @@
 -- 
 -- ⚠️ 警告：此脚本会删除并重建所有表，请先备份数据！
 -- 
--- 表结构概览（共19个表）：
+-- 表结构概览（共22个表）：
 -- ┌─────────────────────────────────────────────────────────────┐
 -- │ 用户模块（4个）                                              │
 -- │   user, user_settings, user_interested_tag, user_block     │
@@ -20,12 +20,15 @@
 -- │ 互动模块（3个）                                              │
 -- │   `like`, favorite, follow                                 │
 -- ├─────────────────────────────────────────────────────────────┤
--- │ 消息模块（4个）                                              │
--- │   notification, private_message_session, private_message,  │
--- │   user_message_settings                                    │
+-- │ 消息模块（5个）                                              │
+-- │   notification, user_conversation, private_message,        │
+-- │   greeting_record, user_message_settings                   │
 -- ├─────────────────────────────────────────────────────────────┤
 -- │ 权限模块（4个）                                              │
 -- │   role, menu, user_role, role_menu                         │
+-- ├─────────────────────────────────────────────────────────────┤
+-- │ 文件模块（1个）                                              │
+-- │   file_record                                              │
 -- └─────────────────────────────────────────────────────────────┘
 -- ============================================================================
 
@@ -41,9 +44,10 @@ DROP TABLE IF EXISTS `role_menu`;
 DROP TABLE IF EXISTS `user_role`;
 DROP TABLE IF EXISTS `menu`;
 DROP TABLE IF EXISTS `role`;
+DROP TABLE IF EXISTS `greeting_record`;
+DROP TABLE IF EXISTS `user_conversation`;
 DROP TABLE IF EXISTS `user_message_settings`;
 DROP TABLE IF EXISTS `private_message`;
-DROP TABLE IF EXISTS `private_message_session`;
 DROP TABLE IF EXISTS `notification`;
 DROP TABLE IF EXISTS `follow`;
 DROP TABLE IF EXISTS `favorite`;
@@ -303,68 +307,88 @@ CREATE TABLE `follow` (
 CREATE TABLE `notification` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '通知ID',
   `type` TINYINT NOT NULL COMMENT '类型: 0-系统 1-点赞 2-收藏 3-评论 4-回复 5-关注 6-@提及',
-  `sender_id` BIGINT UNSIGNED DEFAULT NULL COMMENT '发送者ID(系统通知为NULL)',
   `receiver_id` BIGINT UNSIGNED NOT NULL COMMENT '接收者ID',
+  `sender_id` BIGINT UNSIGNED DEFAULT NULL COMMENT '发送者ID(系统通知为NULL)',
+  `sender_type` TINYINT NOT NULL DEFAULT 1 COMMENT '发送者类型: 0-系统 1-用户',
   `title` VARCHAR(200) DEFAULT NULL COMMENT '标题(系统通知用)',
   `content` VARCHAR(500) NOT NULL COMMENT '通知内容',
   `business_type` TINYINT NOT NULL DEFAULT 0 COMMENT '业务类型: 0-系统 1-帖子 2-评论 3-用户',
   `business_id` BIGINT UNSIGNED DEFAULT NULL COMMENT '业务ID',
-  `is_read` TINYINT NOT NULL DEFAULT 0 COMMENT '是否已读: 0-未读 1-已读',
   `status` TINYINT NOT NULL DEFAULT 1 COMMENT '状态: 0-删除 1-有效',
+  `is_read` TINYINT NOT NULL DEFAULT 0 COMMENT '是否已读: 0-未读 1-已读',
   `read_time` DATETIME DEFAULT NULL COMMENT '阅读时间',
   `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  KEY `idx_receiver_read` (`receiver_id`, `is_read`),
+  KEY `idx_receiver_id` (`receiver_id`),
   KEY `idx_receiver_type` (`receiver_id`, `type`),
+  KEY `idx_receiver_read` (`receiver_id`, `is_read`),
   KEY `idx_sender_id` (`sender_id`),
   KEY `idx_create_time` (`create_time` DESC)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='互动通知表';
 
--- 4.2 私信会话表
-CREATE TABLE `private_message_session` (
-  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '会话ID',
-  `user_id_1` BIGINT UNSIGNED NOT NULL COMMENT '用户1(较小ID)',
-  `user_id_2` BIGINT UNSIGNED NOT NULL COMMENT '用户2(较大ID)',
-  `created_by` BIGINT UNSIGNED NOT NULL COMMENT '发起者ID',
-  `last_message_id` BIGINT UNSIGNED DEFAULT NULL COMMENT '最后消息ID',
-  `last_message_content` VARCHAR(200) DEFAULT NULL COMMENT '最后消息预览',
-  `last_message_time` DATETIME DEFAULT NULL COMMENT '最后消息时间',
-  `unread_count_1` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '用户1未读数',
-  `unread_count_2` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '用户2未读数',
-  `relation_type` TINYINT NOT NULL DEFAULT 0 COMMENT '关系类型: 0-陌生人 1-互关好友',
-  `status` TINYINT NOT NULL DEFAULT 1 COMMENT '状态: 0-待回复 1-已建立 2-已关闭',
-  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_user_pair` (`user_id_1`, `user_id_2`),
-  KEY `idx_user_id_1` (`user_id_1`, `last_message_time` DESC),
-  KEY `idx_user_id_2` (`user_id_2`, `last_message_time` DESC)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='私信会话表';
+-- 4.2 用户会话表（用户视角设计）
+-- 设计理念：每个用户独立视角的会话记录，直接按owner_id查询
+CREATE TABLE `user_conversation` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '会话ID',
+    `owner_id` BIGINT UNSIGNED NOT NULL COMMENT '会话所有者ID',
+    `other_user_id` BIGINT UNSIGNED NOT NULL COMMENT '对方用户ID',
+    `other_nickname` VARCHAR(50) DEFAULT NULL COMMENT '对方昵称（冗余，Java层维护）',
+    `other_avatar` VARCHAR(500) DEFAULT NULL COMMENT '对方头像（冗余，Java层维护）',
+    `relation_type` TINYINT NOT NULL DEFAULT 0 COMMENT '关系: 0-陌生人 1-我关注 2-互关',
+    `conversation_status` TINYINT NOT NULL DEFAULT 0 COMMENT '状态: 0-待回复 1-已建立',
+    `is_initiator` TINYINT NOT NULL DEFAULT 0 COMMENT '是否发起者',
+    `is_blocked` TINYINT NOT NULL DEFAULT 0 COMMENT '我屏蔽了对方',
+    `is_blocked_by` TINYINT NOT NULL DEFAULT 0 COMMENT '被对方屏蔽',
+    `unread_count` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '未读数',
+    `last_message` VARCHAR(200) DEFAULT NULL COMMENT '最后消息预览',
+    `last_message_time` DATETIME DEFAULT NULL COMMENT '最后消息时间',
+    `last_message_is_mine` TINYINT DEFAULT 0 COMMENT '最后消息是否我发',
+    `is_pinned` TINYINT NOT NULL DEFAULT 0 COMMENT '是否置顶',
+    `is_muted` TINYINT NOT NULL DEFAULT 0 COMMENT '是否免打扰',
+    `is_deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '是否删除',
+    `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_owner_other` (`owner_id`, `other_user_id`),
+    KEY `idx_owner_time` (`owner_id`, `is_deleted`, `last_message_time` DESC),
+    KEY `idx_other_user` (`other_user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户会话表';
 
 -- 4.3 私信消息表
 CREATE TABLE `private_message` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '消息ID',
-  `conversation_id` BIGINT UNSIGNED NOT NULL COMMENT '会话ID',
   `sender_id` BIGINT UNSIGNED NOT NULL COMMENT '发送者ID',
   `receiver_id` BIGINT UNSIGNED NOT NULL COMMENT '接收者ID',
   `content` TEXT NOT NULL COMMENT '消息内容',
-  `message_type` TINYINT NOT NULL DEFAULT 1 COMMENT '消息类型: 1-文本 2-图片 3-链接',
+  `message_type` TINYINT NOT NULL DEFAULT 1 COMMENT '消息类型: 1-文本 2-图片 3-链接 4-系统消息',
   `media_url` VARCHAR(500) DEFAULT NULL COMMENT '媒体URL',
+  `status` TINYINT NOT NULL DEFAULT 1 COMMENT '消息状态: 1-已送达 2-待回复 3-被屏蔽 4-已撤回',
   `is_read` TINYINT NOT NULL DEFAULT 0 COMMENT '是否已读: 0-未读 1-已读',
-  `status` TINYINT NOT NULL DEFAULT 1 COMMENT '状态: 0-已撤回 1-正常',
   `read_time` DATETIME DEFAULT NULL COMMENT '阅读时间',
+  `sender_deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '发送方已删除',
+  `receiver_deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '接收方已删除',
   `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  KEY `idx_conversation_id` (`conversation_id`, `create_time` DESC),
-  KEY `idx_sender_id` (`sender_id`),
-  KEY `idx_receiver_id` (`receiver_id`),
-  KEY `idx_receiver_read` (`receiver_id`, `is_read`),
-  CONSTRAINT `fk_pm_conversation` FOREIGN KEY (`conversation_id`) REFERENCES `private_message_session` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+  KEY `idx_sender_receiver` (`sender_id`, `receiver_id`, `create_time` DESC),
+  KEY `idx_receiver_sender` (`receiver_id`, `sender_id`, `create_time` DESC),
+  KEY `idx_receiver_unread` (`receiver_id`, `is_read`, `status`, `create_time` DESC)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='私信消息表';
 
--- 4.4 用户消息设置表
+-- 4.4 打招呼消息记录表（防骚扰机制）
+-- 用于记录单向关注场景下的"敲门消息"，A关注B后只能发1条打招呼消息
+CREATE TABLE `greeting_record` (
+    `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '记录ID',
+    `user_id` BIGINT UNSIGNED NOT NULL COMMENT '发送者ID（关注方）',
+    `target_id` BIGINT UNSIGNED NOT NULL COMMENT '接收者ID（被关注方）',
+    `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_user_target` (`user_id`, `target_id`),
+    KEY `idx_target_id` (`target_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='打招呼消息记录表';
+
+-- 4.5 用户消息设置表
 CREATE TABLE `user_message_settings` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   `user_id` BIGINT UNSIGNED NOT NULL COMMENT '用户ID',
@@ -444,6 +468,32 @@ CREATE TABLE `role_menu` (
 -- 如需直接授权功能，可后续添加
 
 -- ============================================================================
+-- 第六部分：文件模块（1个表）
+-- ============================================================================
+
+-- 6.1 文件记录表
+DROP TABLE IF EXISTS `file_record`;
+CREATE TABLE `file_record` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `storage_name` VARCHAR(255) NOT NULL COMMENT '存储名称（如：uploads/202512/abc123.jpg）',
+  `original_name` VARCHAR(255) NOT NULL COMMENT '原始名称（用户上传时的文件名）',
+  `storage_path` VARCHAR(500) NOT NULL COMMENT '存储路径（如：zhizhi/uploads/202512/abc123.jpg）',
+  `bucket_name` VARCHAR(100) NOT NULL DEFAULT 'zhizhi' COMMENT '存储桶名称',
+  `size_bytes` BIGINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '文件大小（字节）',
+  `mime_type` VARCHAR(100) DEFAULT NULL COMMENT 'MIME类型（如：image/jpeg）',
+  `extension` VARCHAR(20) DEFAULT NULL COMMENT '扩展名（如：jpg）',
+  `upload_user_id` BIGINT UNSIGNED NOT NULL COMMENT '上传用户ID',
+  `status` TINYINT NOT NULL DEFAULT 0 COMMENT '状态: 0-临时文件 1-正式文件 2-已删除',
+  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_storage_name` (`storage_name`),
+  KEY `idx_upload_user_id` (`upload_user_id`),
+  KEY `idx_status` (`status`),
+  KEY `idx_create_time` (`create_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='文件记录表';
+
+-- ============================================================================
 -- 完成
 -- ============================================================================
 SELECT '
@@ -451,14 +501,14 @@ SELECT '
 ✅ 表结构创建完成！
 ============================================
 
-📊 表结构统计：
+📊 表结构统计（共22个表）：
    - 用户模块：4个表 (user, user_settings, user_interested_tag, user_block)
    - 内容模块：4个表 (post, tag, post_tag, comment)
    - 互动模块：3个表 (like, favorite, follow)
-   - 消息模块：4个表 (notification, private_message_session, private_message, user_message_settings)
+   - 消息模块：5个表 (notification, user_conversation, private_message, greeting_record, user_message_settings)
    - 权限模块：4个表 (role, menu, user_role, role_menu)
-   - 共计：19个表
-
+   - 文件模块：1个表 (file_record)
+   
 ⚠️ 请执行 02_data.sql 插入初始数据！
 
 ============================================

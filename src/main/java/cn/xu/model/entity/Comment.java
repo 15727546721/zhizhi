@@ -17,8 +17,8 @@ import java.util.List;
 
 /**
  * 评论实体
- *
- * @author xu
+ * <p>帖子评论和回复</p>
+ 
  */
 @Slf4j
 @Data
@@ -29,18 +29,43 @@ public class Comment implements Serializable {
     
     // ========== 数据库字段 ==========
     
+    /** 评论ID */
     private Long id;
+    
+    /** 目标类型 */
     private Integer targetType;
+    
+    /** 目标ID */
     private Long targetId;
+    
+    /** 父评论ID */
     private Long parentId;
+    
+    /** 用户ID */
     private Long userId;
+    
+    /** 被回复用户ID */
     private Long replyUserId;
+    
+    /** 评论内容 */
     private String content;
-    private String imageUrl;  // 数据库存储，逗号分隔
+    
+    /** 图片URL（数据库存储，逗号分隔） */
+    private String imageUrl;
+    
+    /** 点赞数 */
     private Long likeCount;
+    
+    /** 回复数 */
     private Long replyCount;
+    
+    /** 热度分数 */
     private BigDecimal hotScore;
+    
+    /** 创建时间 */
     private LocalDateTime createTime;
+    
+    /** 更新时间 */
     private LocalDateTime updateTime;
     
     // ========== 运行时字段（不存数据库） ==========
@@ -82,7 +107,7 @@ public class Comment implements Serializable {
     }
     
     /**
-     * 获取预览内容（截取前50个字符）
+     * 获取评论内容预览（50字以内）
      */
     public String getPreviewContent() {
         if (content == null) return "";
@@ -90,7 +115,7 @@ public class Comment implements Serializable {
     }
     
     /**
-     * 判断评论是否包含图片
+     * 是否包含图片
      */
     public boolean hasImages() {
         return imageUrl != null && !imageUrl.isEmpty();
@@ -104,7 +129,7 @@ public class Comment implements Serializable {
     }
     
     /**
-     * 判断是否为顶级评论
+     * 是否顶级评论
      */
     public boolean isTopLevel() {
         return parentId == null || parentId == 0;
@@ -136,7 +161,7 @@ public class Comment implements Serializable {
             throw new BusinessException(ResponseCode.NULL_PARAMETER.getCode(), "评论内容不能为空");
         }
         if (content.length() > 2000) {
-            throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "评论内容不能超过2000字");
+            throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "评论内容长度不能超过2000字");
         }
     }
 }

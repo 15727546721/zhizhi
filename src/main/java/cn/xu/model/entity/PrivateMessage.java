@@ -11,10 +11,8 @@ import java.time.LocalDateTime;
 /**
  * 私信消息实体
  * 
+ * <p>设计理念：简化设计，移除外键依赖
  * <p>对应数据库表：private_message
- * 
- * @author xu
- * @since 2025-11-28
  */
 @Data
 @Builder
@@ -28,12 +26,23 @@ public class PrivateMessage implements Serializable {
     
     /** 已送达（对方可见） */
     public static final int STATUS_DELIVERED = 1;
-    
-    /** 待回复（仅发送方可见，防骚扰） */
+    /** 待回复（防骚扰，仅发送方可见） */
     public static final int STATUS_PENDING = 2;
-    
     /** 被屏蔽（仅发送方可见） */
     public static final int STATUS_BLOCKED = 3;
+    /** 已撤回 */
+    public static final int STATUS_WITHDRAWN = 4;
+    
+    // ========== 消息类型常量 ==========
+    
+    /** 文本消息 */
+    public static final int TYPE_TEXT = 1;
+    /** 图片消息 */
+    public static final int TYPE_IMAGE = 2;
+    /** 链接消息 */
+    public static final int TYPE_LINK = 3;
+    /** 系统消息 */
+    public static final int TYPE_SYSTEM = 4;
     
     // ========== 数据库字段 ==========
     
@@ -49,141 +58,162 @@ public class PrivateMessage implements Serializable {
     /** 消息内容 */
     private String content;
     
-    /** 是否已读：0-未读 1-已读 */
-    private Integer isRead;
+    /** 消息类型: 1-文本 2-图片 3-链接 4-系统消息 */
+    private Integer messageType;
     
-    /** 消息状态：1-已送达 2-待回复 3-被屏蔽 */
+    /** 媒体URL（图片/文件等） */
+    private String mediaUrl;
+    
+    /** 消息状态: 1-已送达 2-待回复 3-被屏蔽 4-已撤回 */
     private Integer status;
+    
+    /** 是否已读: 0-未读 1-已读 */
+    private Integer isRead;
     
     /** 阅读时间 */
     private LocalDateTime readTime;
     
+    /** 发送者是否删除 */
+    private Integer senderDeleted;
+    
+    /** 接收者是否删除 */
+    private Integer receiverDeleted;
+    
     /** 创建时间 */
     private LocalDateTime createTime;
     
-    // ========== 运行时字段（不存数据库） ==========
+    /** 更新时间 */
+    private LocalDateTime updateTime;
     
-    /** 发送者信息 */
-    private transient User sender;
+    // ========== 运行时字段（用于前端显示，非数据库字段） ==========
     
-    /** 接收者信息 */
-    private transient User receiver;
+    /** 发送者头像 */
+    private String senderAvatar;
+    
+    /** 发送者昵称 */
+    private String senderNickname;
+    
+    /** 接收者头像 */
+    private String receiverAvatar;
+    
+    /** 接收者昵称 */
+    private String receiverNickname;
     
     // ========== 工厂方法 ==========
     
-    /**
-     * 创建私信消息
+    /** 
+     * 创建文本消息
      */
-    public static PrivateMessage create(Long senderId, Long receiverId, String content, int status) {
+    public static PrivateMessage createText(Long senderId, Long receiverId, String content, int status) {
         return PrivateMessage.builder()
                 .senderId(senderId)
                 .receiverId(receiverId)
                 .content(content)
-                .isRead(0)
+                .messageType(TYPE_TEXT)
                 .status(status)
+                .isRead(0)
+                .senderDeleted(0)
+                .receiverDeleted(0)
                 .createTime(LocalDateTime.now())
+                .updateTime(LocalDateTime.now())
                 .build();
     }
     
-    /**
-     * 创建已送达的私信
+    /** 
+     * 创建图片消息
      */
-    public static PrivateMessage createDelivered(Long senderId, Long receiverId, String content) {
-        return create(senderId, receiverId, content, STATUS_DELIVERED);
+    public static PrivateMessage createImage(Long senderId, Long receiverId, String mediaUrl, int status) {
+        return PrivateMessage.builder()
+                .senderId(senderId)
+                .receiverId(receiverId)
+                .content("[图片]")
+                .messageType(TYPE_IMAGE)
+                .mediaUrl(mediaUrl)
+                .status(status)
+                .isRead(0)
+                .senderDeleted(0)
+                .receiverDeleted(0)
+                .createTime(LocalDateTime.now())
+                .updateTime(LocalDateTime.now())
+                .build();
     }
     
-    /**
-     * 创建待回复的私信（防骚扰）
+    /** 
+     * 创建已送达消息
+     */
+    public static PrivateMessage createDelivered(Long senderId, Long receiverId, String content) {
+        return createText(senderId, receiverId, content, STATUS_DELIVERED);
+    }
+    
+    /** 
+     * 创建待回复消息
      */
     public static PrivateMessage createPending(Long senderId, Long receiverId, String content) {
-        return create(senderId, receiverId, content, STATUS_PENDING);
+        return createText(senderId, receiverId, content, STATUS_PENDING);
+    }
+    
+    /** 
+     * 创建被屏蔽消息
+     */
+    public static PrivateMessage createBlocked(Long senderId, Long receiverId, String content) {
+        return createText(senderId, receiverId, content, STATUS_BLOCKED);
     }
     
     // ========== 业务方法 ==========
     
-    /**
+    /** 
      * 标记为已读
      */
     public void markAsRead() {
         this.isRead = 1;
         this.readTime = LocalDateTime.now();
+        this.updateTime = LocalDateTime.now();
     }
     
-    /**
-     * 判断是否未读
+    /** 
+     * 撤回消息
      */
-    public boolean isUnread() {
-        return isRead == null || isRead == 0;
+    public void withdraw() {
+        this.status = STATUS_WITHDRAWN;
+        this.content = "[消息已撤回]";
+        this.updateTime = LocalDateTime.now();
     }
     
-    /**
-     * 判断是否已读
+    /** 
+     * 发送者删除消息
      */
-    public boolean hasRead() {
-        return isRead != null && isRead == 1;
+    public void deleteBySender() {
+        this.senderDeleted = 1;
+        this.updateTime = LocalDateTime.now();
     }
     
-    /**
-     * 判断用户是否是消息的参与者
+    /** 
+     * 接收者删除消息
      */
-    public boolean isParticipant(Long userId) {
-        return userId.equals(senderId) || userId.equals(receiverId);
+    public void deleteByReceiver() {
+        this.receiverDeleted = 1;
+        this.updateTime = LocalDateTime.now();
     }
     
-    /**
-     * 获取对话的另一方用户ID
-     */
-    public Long getOtherParticipant(Long userId) {
-        return userId.equals(senderId) ? receiverId : senderId;
-    }
-    
-    /**
-     * 判断是否为已送达状态
+    /** 
+     * 是否已送达
      */
     public boolean isDelivered() {
         return status != null && status == STATUS_DELIVERED;
     }
     
-    /**
-     * 判断是否为待回复状态
+    /** 
+     * 是否未读
      */
-    public boolean isPending() {
-        return status != null && status == STATUS_PENDING;
+    public boolean isUnread() {
+        return isRead == null || isRead == 0;
     }
     
-    /**
-     * 判断是否为被屏蔽状态
+    /** 
+     * 获取消息预览
      */
-    public boolean isBlocked() {
-        return status != null && status == STATUS_BLOCKED;
-    }
-    
-    /**
-     * 更新状态为已送达
-     */
-    public void deliver() {
-        this.status = STATUS_DELIVERED;
-    }
-    
-    /**
-     * 更新状态
-     */
-    public void updateStatus(int newStatus) {
-        this.status = newStatus;
-    }
-    
-    /**
-     * 验证消息
-     */
-    public void validate() {
-        if (this.senderId == null) {
-            throw new IllegalArgumentException("发送者不能为空");
-        }
-        if (this.receiverId == null) {
-            throw new IllegalArgumentException("接收者不能为空");
-        }
-        if (this.content == null || this.content.trim().isEmpty()) {
-            throw new IllegalArgumentException("消息内容不能为空");
-        }
+    public String getPreview() {
+        if (content == null) return "";
+        return content.length() > 100 ? content.substring(0, 100) + "..." : content;
     }
 }

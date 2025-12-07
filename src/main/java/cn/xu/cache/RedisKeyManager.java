@@ -7,21 +7,20 @@ import java.util.Arrays;
 import java.util.Objects;
 
 /**
- * Redis Key 管理工具类（统一管理所有业务 Redis Key）
- * 
- * <p>命名规范：模块:资源:操作:ID（如有）
- * <p>例如：like:count:post:123 表示帖子123的点赞数
- * 
- * <p><strong>Key命名最佳实践</strong>：
+ * Redis Key 管理工具类
+ * <p>统一管理所有业务Redis Key</p>
+ *
+ * <p>命名规范：模块:资源:操作:ID（如有）</p>
+ * <p>例如：like:count:post:123 表示帖子123的点赞数</p>
+ *
+ * <p><strong>Key命名最佳实践</strong>：</p>
  * <ul>
  *   <li>使用冒号分隔各部分</li>
  *   <li>使用小写字母和下划线</li>
  *   <li>避免使用特殊字符</li>
  *   <li>控制Key长度（建议<100字符）</li>
  * </ul>
- * 
- * @author zhizhi
- * @since 2025-11-23
+ 
  */
 public class RedisKeyManager {
 
@@ -124,8 +123,7 @@ public class RedisKeyManager {
             if (sb.length() > 0) sb.append("|");
             sb.append("sort:").append(sortOption);
         }
-        // 使用MD5或其他哈希算法确保哈希值唯一性和长度固定
-        // 这里使用hashCode，对于缓存key来说已经足够
+        // 使用hashCode，对于缓存key来说已经足够
         return sb.length() > 0 ? String.valueOf(sb.toString().hashCode()) : "";
     }
 
@@ -221,12 +219,12 @@ public class RedisKeyManager {
         return key("comment", "rank", "hot", type.name().toLowerCase(), targetId, commentId);
     }
 
-    // 评论数量 Key: comment:count:{targetType}:{targetId}:{commentId}
+    // 评论数量 Key: comment:count:{targetType}:{targetId}
     public static String commentCountKey(int targetType, Long targetId) {
         return key("comment", "count", targetType, targetId);
     }
 
-    // 评论热度衰减key
+    // 评论热度衰减Key
     public static String commentHotDecayKey() {
         return key("comment", "hot", "zset");
     }
@@ -274,7 +272,7 @@ public class RedisKeyManager {
     }
 
     /**
-     * 用户所有私信未读数Key（Hash结构，存储所有对话的未读数）
+     * 用户所有私信未读数Key（Hash结构，存储所有会话的未读数）
      * @param userId 用户ID
      * @return Redis Key
      */
@@ -283,7 +281,7 @@ public class RedisKeyManager {
     }
 
     /**
-     * 对话列表Key
+     * 会话列表Key
      * @param userId 用户ID
      * @param pageNo 页码
      * @param pageSize 每页数量
@@ -294,7 +292,7 @@ public class RedisKeyManager {
     }
 
     /**
-     * 对话列表缓存过期时间（秒）
+     * 会话列表缓存过期时间（秒）
      */
     public static final int CONVERSATION_LIST_CACHE_TTL = 300; // 5分钟
 

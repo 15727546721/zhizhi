@@ -11,6 +11,8 @@ import java.util.concurrent.Executor;
 /**
  * 事件配置类
  * 配置异步事件处理
+ * 
+ *
  */
 @Configuration
 public class ApplicationEventConfig {

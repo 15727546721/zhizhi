@@ -6,7 +6,7 @@ import cn.xu.common.ResponseCode;
 import cn.xu.common.annotation.ApiOperationLog;
 import cn.xu.common.response.PageResponse;
 import cn.xu.common.response.ResponseEntity;
-import cn.xu.event.comment.CommentEvent;
+import cn.xu.model.dto.comment.SaveCommentRequest;
 import cn.xu.model.dto.comment.CommentCreateRequest;
 import cn.xu.model.dto.comment.FindCommentRequest;
 import cn.xu.model.dto.comment.FindReplyRequest;
@@ -14,7 +14,6 @@ import cn.xu.model.entity.Comment;
 import cn.xu.model.entity.Like;
 import cn.xu.model.entity.Post;
 import cn.xu.model.vo.comment.CommentVO;
-import cn.xu.repository.ICommentRepository;
 import cn.xu.service.comment.CommentService;
 import cn.xu.service.like.LikeService;
 import cn.xu.service.post.PostService;
@@ -22,16 +21,13 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
-
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.util.*;
 
 /**
- * 评论控制器
- *
- * @author xu
- * @since 2025-11-25
+ * 帖子评论控制器
+ * <p>提供评论发表、回复、删除、点赞等功能</p>
  */
 @Slf4j
 @RestController
@@ -47,13 +43,12 @@ public class CommentController {
     
     @Resource(name = "postService")
     private PostService postService;
-    
-    @Resource
-    private ICommentRepository commentRepository;
 
+    /**
+     * 获取评论列表
+     */
     @PostMapping("/list")
     @Operation(summary = "getCommentList")
-    @ApiOperationLog(description = "getCommentList")
     public ResponseEntity<List<CommentVO>> getCommentList(@RequestBody FindCommentRequest req) {
         commentService.validatePageParams(req.getPageNo(), req.getPageSize());
         List<Comment> comments = commentService.findCommentListWithPreview(req);
@@ -64,6 +59,9 @@ public class CommentController {
                 .build();
     }
 
+    /**
+     * 获取回复列表
+     */
     @PostMapping("/reply/list")
     @Operation(summary = "getReplyList")
     public ResponseEntity<List<CommentVO>> getReplyList(@RequestBody FindReplyRequest req) {
@@ -76,6 +74,9 @@ public class CommentController {
                 .build();
     }
 
+    /**
+     * 获取用户评论列表
+     */
     @GetMapping("/user/{userId}")
     @Operation(summary = "getUserComments")
     public ResponseEntity<PageResponse<List<CommentVO>>> getUserComments(
@@ -84,8 +85,8 @@ public class CommentController {
             @RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize) {
         commentService.validatePageParams(pageNo, pageSize);
         int offset = (pageNo - 1) * pageSize;
-        List<Comment> comments = commentRepository.findByUserId(userId, offset, pageSize);
-        Long total = commentRepository.countByUserId(userId);
+        List<Comment> comments = commentService.findByUserId(userId, offset, pageSize);
+        Long total = commentService.countByUserId(userId);
         List<CommentVO> result = convertToResponseList(comments, null);
         PageResponse<List<CommentVO>> page = PageResponse.ofList(pageNo, pageSize, total != null ? total : 0L, result);
         return ResponseEntity.<PageResponse<List<CommentVO>>>builder()
@@ -94,24 +95,26 @@ public class CommentController {
                 .build();
     }
 
+    /**
+     * 发表评论
+     */
     @PostMapping("/add")
     @SaCheckLogin
     @Operation(summary = "addComment")
     public ResponseEntity<Long> addComment(@RequestBody CommentCreateRequest req) {
         commentService.validateCommentCreateParams(req.getType(), req.getTargetId(), req.getContent());
         Long userId = StpUtil.getLoginIdAsLong();
-        CommentEvent event = CommentEvent.builder()
-                .action(CommentEvent.CommentAction.CREATED)
+        SaveCommentRequest saveRequest = SaveCommentRequest.builder()
                 .targetType(req.getType())
                 .targetId(req.getTargetId())
                 .parentId(req.getParentId())
                 .userId(userId)
                 .replyUserId(req.getReplyUserId())
                 .content(req.getContent())
-                .occurredTime(LocalDateTime.now())
                 .imageUrls(req.getImageUrls() != null ? req.getImageUrls() : Collections.emptyList())
+                .mentionedUserIds(req.getMentionUserIds())
                 .build();
-        Long commentId = commentService.saveComment(event);
+        Long commentId = commentService.saveComment(saveRequest);
         return ResponseEntity.<Long>builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .data(commentId)
@@ -119,24 +122,26 @@ public class CommentController {
                 .build();
     }
 
+    /**
+     * 回复评论
+     */
     @PostMapping("/reply")
     @SaCheckLogin
     @Operation(summary = "replyComment")
     public ResponseEntity<Long> replyComment(@RequestBody CommentCreateRequest req) {
         commentService.validateCommentReplyParams(req.getType(), req.getTargetId(), req.getParentId(), req.getReplyUserId(), req.getContent());
         Long userId = StpUtil.getLoginIdAsLong();
-        CommentEvent event = CommentEvent.builder()
-                .action(CommentEvent.CommentAction.CREATED)
+        SaveCommentRequest saveRequest = SaveCommentRequest.builder()
                 .targetType(req.getType())
                 .targetId(req.getTargetId())
                 .parentId(req.getParentId())
                 .userId(userId)
                 .replyUserId(req.getReplyUserId())
                 .content(req.getContent())
-                .occurredTime(LocalDateTime.now())
                 .imageUrls(req.getImageUrls() != null ? req.getImageUrls() : Collections.emptyList())
+                .mentionedUserIds(req.getMentionUserIds())
                 .build();
-        Long commentId = commentService.saveComment(event);
+        Long commentId = commentService.saveComment(saveRequest);
         return ResponseEntity.<Long>builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .data(commentId)
@@ -144,18 +149,25 @@ public class CommentController {
                 .build();
     }
 
+    /**
+     * 删除评论
+     */
     @DeleteMapping("/delete/{id}")
     @SaCheckLogin
     @Operation(summary = "deleteComment")
     public ResponseEntity<String> deleteComment(@PathVariable("id") Long id) {
-        commentService.deleteComment(id);
+        Long currentUserId = StpUtil.getLoginIdAsLong();
+        commentService.deleteCommentWithPermission(id, currentUserId);
         return ResponseEntity.<String>builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .info("success")
                 .build();
     }
 
-    @GetMapping("/like/{id}")
+    /**
+     * 点赞评论
+     */
+    @PostMapping("/like/{id}")
     @SaCheckLogin
     @Operation(summary = "likeComment")
     public ResponseEntity<String> likeComment(@PathVariable("id") Long id) {
@@ -167,7 +179,10 @@ public class CommentController {
                 .build();
     }
 
-    @GetMapping("/unlike/{id}")
+    /**
+     * 取消点赞评论
+     */
+    @PostMapping("/unlike/{id}")
     @SaCheckLogin
     @Operation(summary = "unlikeComment")
     public ResponseEntity<String> unlikeComment(@PathVariable("id") Long id) {
@@ -176,6 +191,22 @@ public class CommentController {
         return ResponseEntity.<String>builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .info("success")
+                .build();
+    }
+
+    /**
+     * 获取对话链
+     */
+    @GetMapping("/conversation/{replyId}")
+    @Operation(summary = "getConversationChain")
+    public ResponseEntity<List<CommentVO>> getConversationChain(@PathVariable("replyId") Long replyId) {
+        List<Comment> chain = commentService.getConversationChain(replyId);
+        List<CommentVO> result = chain.stream()
+                .map(c -> convertOne(c, new HashMap<>(), new HashMap<>(), null))
+                .collect(java.util.stream.Collectors.toList());
+        return ResponseEntity.<List<CommentVO>>builder()
+                .code(ResponseCode.SUCCESS.getCode())
+                .data(result)
                 .build();
     }
 
@@ -191,12 +222,12 @@ public class CommentController {
         List<Long> allIds = collectIds(comments);
         Map<Long, Boolean> userLikeMap = new HashMap<>();
         if (currentUserId != null && !allIds.isEmpty()) {
-            List<Long> liked = likeService.batchCheckStatus(currentUserId, Like.LikeType.COMMENT.getCode(), allIds);
+            Set<Long> liked = likeService.batchCheckStatus(currentUserId, Like.LikeType.COMMENT.getCode(), allIds);
             for (Long id : liked) userLikeMap.put(id, true);
         }
         Map<Long, Boolean> authorLikeMap = new HashMap<>();
         if (authorId != null && !allIds.isEmpty() && !authorId.equals(currentUserId)) {
-            List<Long> liked = likeService.batchCheckStatus(authorId, Like.LikeType.COMMENT.getCode(), allIds);
+            Set<Long> liked = likeService.batchCheckStatus(authorId, Like.LikeType.COMMENT.getCode(), allIds);
             for (Long id : liked) authorLikeMap.put(id, true);
         } else if (authorId != null && authorId.equals(currentUserId)) {
             authorLikeMap = userLikeMap;
@@ -229,6 +260,7 @@ public class CommentController {
                 .id(c.getId())
                 .postId(c.getTargetId())
                 .content(c.getContent())
+                .imageUrls(c.getImageUrls())
                 .parentId(c.getParentId())
                 .replyToUserId(c.getReplyUserId())
                 .replyToNickname(c.getReplyUser() != null ? c.getReplyUser().getNickname() : null)
@@ -250,9 +282,9 @@ public class CommentController {
                 .hasMoreReplies(c.getReplyCount() != null && c.getReplyCount() > children.size())
                 .build();
     }
-    
+
     private Integer calculateLevel(Comment c) {
         if (c.getParentId() == null || c.getParentId() == 0) return 1;
-        return 2; // 简化处理，只区分顶级和非顶级
+        return 2;
     }
 }

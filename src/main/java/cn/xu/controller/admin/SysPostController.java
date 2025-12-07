@@ -2,7 +2,6 @@ package cn.xu.controller.admin;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.annotation.SaCheckPermission;
-import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.common.ResponseCode;
 import cn.xu.common.annotation.ApiOperationLog;
 import cn.xu.common.response.PageResponse;
@@ -12,14 +11,14 @@ import cn.xu.controller.admin.model.dto.post.PublishPostRequest;
 import cn.xu.controller.admin.model.dto.post.SysPostQueryRequest;
 import cn.xu.controller.admin.model.vo.SysPostDetailResponse;
 import cn.xu.controller.admin.model.vo.SysPostListVO;
-import cn.xu.event.post.PostEvent;
-import cn.xu.event.post.PostEventPublisher;
+import cn.xu.event.publisher.ContentEventPublisher;
 import cn.xu.model.entity.Post;
 import cn.xu.repository.mapper.PostMapper;
 import cn.xu.service.post.PostService;
 import cn.xu.service.post.TagService;
 import cn.xu.service.search.PostSearchService;
 import cn.xu.support.exception.BusinessException;
+import cn.xu.support.util.LoginUserUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -37,8 +36,9 @@ import java.util.List;
 /**
  * 帖子管理控制器
  * 
- * @author xu
- * @since 2025-11-30
+ * <p>提供后台帖子管理功能，包括创建、编辑、删除、置顶、加精等</p>
+ * <p>需要登录并拥有相应权限</p>
+ 
  */
 @Slf4j
 @RestController
@@ -57,8 +57,17 @@ public class SysPostController {
     @Autowired(required = false) // 设置为非必需，允许Elasticsearch不可用
     private PostSearchService postSearchService;
     @Autowired
-    private PostEventPublisher postEventPublisher;
+    private ContentEventPublisher contentEventPublisher;
 
+    /**
+     * 上传帖子封面
+     * 
+     * <p>上传帖子封面图片，返回图片URL
+     * <p>需要登录后才能访问
+     * 
+     * @param file 封面图片文件
+     * @return 上传成功的图片URL
+     */
     @PostMapping("/uploadCover")
     @Operation(summary = "上传帖子封面")
     @SaCheckLogin
@@ -72,6 +81,16 @@ public class SysPostController {
                 .build();
     }
 
+    /**
+     * 创建帖子
+     * 
+     * <p>后台创建新帖子，支持保存为草稿或直接发布
+     * <p>需要system:post:add权限
+     * 
+     * @param createPostRequest 帖子创建请求，包含标题、内容、封面、标签等
+     * @return 创建结果
+     * @throws BusinessException 当标签超过5个或创建失败时抛出
+     */
     @PostMapping("/add")
     @Operation(summary = "创建帖子")
     @SaCheckLogin
@@ -88,7 +107,7 @@ public class SysPostController {
                 }
 
                 //1. 保存帖子
-                Long userId = StpUtil.getLoginIdAsLong();
+                Long userId = LoginUserUtil.getLoginUserId();
                 Long postId;
                 if ("DRAFT".equals(postStatus)) {
                     postId = postService.createDraft(
@@ -117,14 +136,7 @@ public class SysPostController {
                 }
 
                 //4. 发布帖子创建事件
-                PostEvent event = PostEvent.builder()
-                        .eventType(PostEvent.PostEventType.CREATED)
-                        .postId(postId)
-                        .userId(userId)
-                        .title(createPostRequest.getTitle())
-                        .description(createPostRequest.getDescription())
-                        .build();
-                postEventPublisher.publishEvent(event);
+                contentEventPublisher.publishPostCreated(userId, postId, createPostRequest.getTitle());
 
                 return 1;
             } catch (Exception e) {
@@ -139,6 +151,16 @@ public class SysPostController {
                 .build();
     }
 
+    /**
+     * 更新帖子
+     * 
+     * <p>后台更新帖子内容，支持修改标题、内容、封面、标签等
+     * <p>需要system:post:update权限
+     * 
+     * @param updatePostRequest 帖子更新请求，必须包含帖子ID
+     * @return 更新结果
+     * @throws BusinessException 当标签超过5个或更新失败时抛出
+     */
     @PostMapping("/update")
     @Operation(summary = "更新帖子")
     @SaCheckLogin
@@ -149,7 +171,7 @@ public class SysPostController {
         transactionTemplate.execute(status -> {
             try {
                 //1. 更新帖子
-                Long userId = StpUtil.getLoginIdAsLong();
+                Long userId = LoginUserUtil.getLoginUserId();
                 String postStatus = "DRAFT".equals(updatePostRequest.getStatus()) ? "DRAFT" : "PUBLISHED";
 
                 if ("DRAFT".equals(postStatus)) {
@@ -180,14 +202,7 @@ public class SysPostController {
                 }
 
                 //4. 发布帖子更新事件
-                PostEvent event = PostEvent.builder()
-                        .eventType(PostEvent.PostEventType.UPDATED)
-                        .postId(updatePostRequest.getId())
-                        .userId(userId)
-                        .title(updatePostRequest.getTitle())
-                        .description(updatePostRequest.getDescription())
-                        .build();
-                postEventPublisher.publishEvent(event);
+                contentEventPublisher.publishPostUpdated(userId, updatePostRequest.getId(), updatePostRequest.getTitle());
 
                 return 1;
             } catch (Exception e) {
@@ -202,6 +217,15 @@ public class SysPostController {
                 .build();
     }
 
+    /**
+     * 批量删除帖子
+     * 
+     * <p>后台批量删除帖子，软删除（修改状态）
+     * <p>需要system:post:delete权限
+     * 
+     * @param postIds 帖子ID列表
+     * @return 删除结果
+     */
     @PostMapping("/delete")
     @Operation(summary = "删除帖子")
     @SaCheckLogin
@@ -212,13 +236,10 @@ public class SysPostController {
             // 批量删除帖子
             postService.batchDeletePosts(postIds);
 
-            // 为每个删除的帖子发布事件
+            // 为每一个删除的帖子发布事件
+            Long currentUserId = LoginUserUtil.getLoginUserId();
             for (Long postId : postIds) {
-                PostEvent event = PostEvent.builder()
-                        .eventType(PostEvent.PostEventType.DELETED)
-                        .postId(postId)
-                        .build();
-                postEventPublisher.publishEvent(event);
+                contentEventPublisher.publishPostDeleted(currentUserId, postId);
             }
             return ResponseEntity.builder()
                     .code(ResponseCode.SUCCESS.getCode())
@@ -233,6 +254,15 @@ public class SysPostController {
         }
     }
 
+    /**
+     * 获取帖子列表
+     * 
+     * <p>分页获取帖子列表，支持按标题、状态、用户、标签筛选
+     * <p>需要system:post:list权限
+     * 
+     * @param postRequest 查询请求，包含页码、筛选条件
+     * @return 分页的帖子列表
+     */
     @GetMapping("/list")
     @Operation(summary = "帖子列表")
     @SaCheckLogin
@@ -286,9 +316,13 @@ public class SysPostController {
 
     /**
      * 获取帖子详情
+     * 
+     * <p>获取帖子完整信息，包括内容和标签
+     * <p>需要system:post:list权限
      *
-     * @param id
-     * @return
+     * @param id 帖子ID
+     * @return 帖子详情，包含标签列表
+     * @throws BusinessException 当帖子不存在时抛出
      */
     @GetMapping("info/{id}")
     @Operation(summary = "获取帖子详情")
@@ -325,6 +359,15 @@ public class SysPostController {
                 .build();
     }
 
+    /**
+     * 搜索帖子
+     * 
+     * <p>根据标题关键词搜索帖子，使用Elasticsearch
+     * <p>公开接口，无需登录
+     * 
+     * @param title 搜索关键词
+     * @return 搜索结果列表，最多返回20条
+     */
     @PostMapping("/search")
     @Operation(summary = "搜索帖子")
     @ApiOperationLog(description = "搜索帖子")
@@ -363,6 +406,16 @@ public class SysPostController {
         }
     }
 
+    /**
+     * 发布帖子
+     * 
+     * <p>后台发布新帖子，支持草稿或直接发布
+     * <p>需要system:post:publish权限
+     * 
+     * @param publishPostRequest 发布请求，包含标题、内容、标签等
+     * @return 发布结果
+     * @throws BusinessException 当标签为空或超过5个时抛出
+     */
     @PostMapping("/publish")
     @Operation(summary = "发布帖子")
     @SaCheckLogin
@@ -370,7 +423,7 @@ public class SysPostController {
     @ApiOperationLog(description = "发布帖子")
     public ResponseEntity pushPost(@RequestBody PublishPostRequest publishPostRequest) {
         log.info("发布帖子，帖子内容：{}", publishPostRequest);
-        Long userId = StpUtil.getLoginIdAsLong();
+        Long userId = LoginUserUtil.getLoginUserId();
 
         final Long[] postId = new Long[1];
 
@@ -413,14 +466,7 @@ public class SysPostController {
                 }
 
                 // 4. 发布帖子创建事件
-                PostEvent event = PostEvent.builder()
-                        .eventType(PostEvent.PostEventType.CREATED)
-                        .postId(postId[0])
-                        .userId(userId)
-                        .title(publishPostRequest.getTitle())
-                        .description(publishPostRequest.getDescription())
-                        .build();
-                postEventPublisher.publishEvent(event);
+                contentEventPublisher.publishPostCreated(userId, postId[0], publishPostRequest.getTitle());
 
                 return 1;
             } catch (Exception e) {
@@ -437,6 +483,15 @@ public class SysPostController {
                 .build();
     }
 
+    /**
+     * 置顶/取消置顶帖子
+     * 
+     * <p>切换帖子的置顶状态
+     * <p>需要system:post:top权限
+     * 
+     * @param request 包含帖子ID的请求体
+     * @return 操作结果
+     */
     @PostMapping("/top")
     @Operation(summary = "置顶/取消置顶帖子")
     @SaCheckLogin
@@ -457,6 +512,15 @@ public class SysPostController {
                 .build();
     }
 
+    /**
+     * 发布/下架帖子
+     * 
+     * <p>切换帖子的发布状态（发布→下架）
+     * <p>需要system:post:publish权限
+     * 
+     * @param request 包含帖子ID的请求体
+     * @return 操作结果
+     */
     @PostMapping("/toggleArticlePublication")
     @Operation(summary = "发布/下架帖子")
     @SaCheckLogin
@@ -477,6 +541,15 @@ public class SysPostController {
                 .build();
     }
 
+    /**
+     * 加精/取消加精帖子
+     * 
+     * <p>切换帖子的加精状态
+     * <p>需要system:post:update权限
+     * 
+     * @param request 包含帖子ID的请求体
+     * @return 操作结果
+     */
     @PostMapping("/featured")
     @Operation(summary = "加精/取消加精帖子")
     @SaCheckLogin
@@ -497,6 +570,15 @@ public class SysPostController {
                 .build();
     }
 
+    /**
+     * 发布/下架帖子
+     * 
+     * <p>切换帖子的发布状态
+     * <p>需要system:post:update权限
+     * 
+     * @param request 包含帖子ID的请求体
+     * @return 操作结果
+     */
     @PostMapping("/status")
     @Operation(summary = "发布/下架帖子")
     @SaCheckLogin
@@ -517,6 +599,14 @@ public class SysPostController {
                 .build();
     }
 
+    /**
+     * 获取随机封面图
+     * 
+     * <p>返回一个随机的默认封面图URL
+     * <p>公开接口，无需登录
+     * 
+     * @return 随机封面图URL
+     */
     @GetMapping("/randomImg")
     @Operation(summary = "获取随机封面图")
     @ApiOperationLog(description = "获取随机封面图")

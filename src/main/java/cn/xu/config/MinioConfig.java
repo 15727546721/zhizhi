@@ -7,80 +7,84 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-@Configuration
-@ConfigurationProperties(prefix = "minio")
+/**
+ * MinIO文件存储配置
+ *
+ * 
+ */
 @Data
 @Slf4j
+@Configuration
+@ConfigurationProperties(prefix = "minio")
 public class MinioConfig {
 
     private String url;
     private String accessKey;
     private String secretKey;
     private String bucketName;
-    private boolean enabled = true; // 添加一个开关，允许禁用MinIO
+    private boolean enabled = true; // 默认启用MinIO服务，设置为false可以禁用
 
     @Bean
     public MinioClient minioClient() {
-        // 如果MinIO被禁用，不创建bean
+        // 如果MinIO服务禁用，则不创建MinioClient bean
         if (!enabled) {
-            log.info("MinIO功能已禁用，不会创建MinioClient bean");
+            log.info("MinIO服务已禁用，不创建MinioClient bean");
             return null;
         }
-        
-        // 配置验证
+
+        // 配置校验
         if (url == null || url.trim().isEmpty()) {
-            log.error("MinIO配置错误：minio.url未配置或为空");
-            log.error("请在application.yml中配置：minio.url=http://localhost:9000");
+            log.error("MinIO配置错误：minio.url不能为空");
+            log.error("请在application.yml中配置minio.url=http://localhost:9000");
             return null;
         }
-        
+
         if (bucketName == null || bucketName.trim().isEmpty()) {
-            log.error("MinIO配置错误：minio.bucketName未配置或为空");
-            log.error("请在application.yml中配置：minio.bucketName=zhizhi");
+            log.error("MinIO配置错误：minio.bucketName不能为空");
+            log.error("请在application.yml中配置minio.bucketName=zhizhi");
             return null;
         }
-        
+
         try {
             log.info("正在初始化MinIO客户端...");
             log.info("MinIO URL: {}", url);
             log.info("MinIO Bucket: {}", bucketName);
-            
+
             MinioClient client = MinioClient.builder()
                     .endpoint(url)
                     .credentials(accessKey, secretKey)
                     .build();
-            
-            // 检查并初始化bucket
+
+            // 确保Bucket存在
             initializeBucket(client);
-            
-            log.info("✅ 成功初始化MinIO客户端，连接到: {}", url);
+
+            log.info("MinIO客户端初始化成功，连接地址: {}", url);
             return client;
         } catch (Exception e) {
-            log.error("❌ 初始化MinIO客户端失败，将禁用文件上传功能", e);
-            log.error("请检查：1) MinIO服务是否启动  2) URL配置是否正确  3) 认证信息是否正确");
+            log.error("初始化MinIO客户端失败，可能原因：1) MinIO服务未启动  2) URL配置错误  3) 认证信息错误", e);
             return null;
         }
     }
 
     private void initializeBucket(MinioClient client) {
         try {
-            log.info("开始检查MinIO bucket是否存在: {}", bucketName);
+            log.info("检查MinIO bucket是否存在: {}", bucketName);
             boolean exists = client.bucketExists(io.minio.BucketExistsArgs.builder()
                     .bucket(bucketName)
                     .build());
 
             if (!exists) {
-                log.info("MinIO bucket不存在，开始创建: {}", bucketName);
+                log.info("MinIO bucket不存在，创建新的bucket: {}", bucketName);
                 // 创建bucket
                 client.makeBucket(io.minio.MakeBucketArgs.builder()
                         .bucket(bucketName)
                         .build());
 
-                // 设置bucket为公共读
+                // 设置bucket的访问策略
                 String policy = String.format(
                         "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"AWS\":[\"*\"]},\"Action\":[\"s3:GetObject\"],\"Resource\":[\"arn:aws:s3:::%s/*\"]}]}",
                         bucketName);
-                
+
                 client.setBucketPolicy(io.minio.SetBucketPolicyArgs.builder()
                         .bucket(bucketName)
                         .config(policy)
@@ -92,13 +96,7 @@ public class MinioConfig {
             }
         } catch (Exception e) {
             log.error("初始化MinIO bucket失败: {}", bucketName, e);
-            // 不抛出异常，而是简单地记录错误
-            // 这样即使bucket初始化失败，应用仍然可以启动
+            // 发生错误时记录异常，方便排查问题
         }
-    }
-    
-    // 添加getter方法
-    public boolean isEnabled() {
-        return enabled;
     }
 }

@@ -9,9 +9,6 @@ import java.time.LocalDateTime;
 
 /**
  * 后台帖子列表VO（不包含content字段，优化列表查询性能）
- * 
- * @author xu
- * @since 2025-11-30
  */
 @Data
 @Builder

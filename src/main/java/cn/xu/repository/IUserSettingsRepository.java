@@ -6,6 +6,8 @@ import java.util.Optional;
 
 /**
  * 用户设置仓储接口
+ * <p>定义用户设置的持久化操作</p>
+ 
  */
 public interface IUserSettingsRepository {
     

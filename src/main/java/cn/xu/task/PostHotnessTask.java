@@ -2,72 +2,104 @@ package cn.xu.task;
 
 import cn.xu.cache.RedisKeyManager;
 import cn.xu.model.entity.Post;
+import cn.xu.repository.mapper.PostMapper;
 import cn.xu.service.post.PostHotScorePolicy;
-import cn.xu.service.post.PostService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+/**
+ * 帖子热度定时更新任务
+ * 
+ *
+ */
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class PostHotnessTask {
 
-    @Autowired
-    private RedisTemplate<String, Object> redisTemplate; // RedisTemplate，用于操作 Redis 数据库
-
-    @Autowired
-    private PostService postService; // 帖子服务，用于从数据库获取帖子信息
+    private final RedisTemplate<String, Object> redisTemplate;
+    private final PostMapper postMapper;
 
     /**
-     * 定时任务：每小时更新一次帖子的热度分数。
-     * 使用 cron 表达式 "0 0 * * * ?" 每小时整点执行。
+     * 定时任务：每小时更新一次帖子的热度分数
+     * 使用批量查询优化性能，避免 N+1 查询问题
      */
-    @Scheduled(cron = "0 0 * * * ?") // 每小时整点执行任务
+    @Scheduled(cron = "0 0 * * * ?")
     public void updatePostHotScores() {
-        // 获取 Redis 中所有帖子的热度数据
-        Set<ZSetOperations.TypedTuple<Object>> allPosts
-                = redisTemplate.opsForZSet()
-                .rangeWithScores(RedisKeyManager.postHotRankKey(), 0, -1);
+        try {
+            // 获取 Redis 中所有帖子的热度数据
+            Set<ZSetOperations.TypedTuple<Object>> allPosts = redisTemplate.opsForZSet()
+                    .rangeWithScores(RedisKeyManager.postHotRankKey(), 0, -1);
 
-        // 如果 Redis 中存在帖子数据，则继续处理
-        if (allPosts != null) {
+            if (allPosts == null || allPosts.isEmpty()) {
+                log.debug("Redis 中没有帖子热度数据，跳过更新");
+                return;
+            }
 
-            // 遍历所有 Redis 中的帖子数据，更新每篇帖子的热度分数
-            for (ZSetOperations.TypedTuple<Object> tuple : allPosts) {
-                // 获取当前帖子的 ID，并转为 Long 类型
-                Long postId = Long.parseLong((String) Objects.requireNonNull(tuple.getValue()));
+            // 1. 收集所有帖子ID
+            List<Long> postIds = allPosts.stream()
+                    .map(tuple -> {
+                        try {
+                            return Long.parseLong((String) Objects.requireNonNull(tuple.getValue()));
+                        } catch (Exception e) {
+                            log.warn("解析帖子ID失败: {}", tuple.getValue());
+                            return null;
+                        }
+                    })
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
 
-                // 从数据库中获取帖子实体
-                Optional<Post> postOpt = postService.getPostById(postId);
-                Post postEntity = postOpt.orElse(null);
+            if (postIds.isEmpty()) {
+                log.warn("没有有效的帖子ID");
+                return;
+            }
 
-                // 如果帖子存在，重新计算热度分数
-                if (postEntity != null) {
+            // 2. 批量查询帖子（解决 N+1 问题）
+            List<Post> posts = postMapper.findByIds(postIds);
+            if (posts == null || posts.isEmpty()) {
+                log.warn("批量查询帖子结果为空");
+                return;
+            }
+
+            // 3. 构建 ID -> Post 的映射，便于快速查找
+            Map<Long, Post> postMap = posts.stream()
+                    .collect(Collectors.toMap(Post::getId, post -> post));
+
+            // 4. 批量更新热度分数
+            int updateCount = 0;
+            for (Long postId : postIds) {
+                Post post = postMap.get(postId);
+                if (post != null) {
                     // 计算帖子的热度分数，带时间衰减
                     double hotScore = PostHotScorePolicy.calculate(
-                            postEntity.getLikeCount() != null ? postEntity.getLikeCount() : 0L,     // 点赞数
-                            postEntity.getCommentCount() != null ? postEntity.getCommentCount() : 0L,  // 评论数
-                            postEntity.getFavoriteCount() != null ? postEntity.getFavoriteCount() : 0L,  // 收藏数
-                            postEntity.getCreateTime()     // 创建时间
+                            post.getLikeCount() != null ? post.getLikeCount() : 0L,
+                            post.getCommentCount() != null ? post.getCommentCount() : 0L,
+                            post.getFavoriteCount() != null ? post.getFavoriteCount() : 0L,
+                            post.getCreateTime()
                     );
 
                     // 更新 Redis 中该帖子的热度分数
                     redisTemplate.opsForZSet().add(RedisKeyManager.postHotRankKey(), postId.toString(), hotScore);
+                    updateCount++;
                 }
             }
 
-            // 保证 Redis 中只保存前 1000 名帖子的热度数据
+            // 5. 保证 Redis 中只保存前1000名帖子的热度数据
             redisTemplate.opsForZSet().removeRange(RedisKeyManager.postHotRankKey(), 1000, -1);
 
-            // 输出日志，表示任务执行成功
-            log.info("帖子热度更新成功，保持前1000篇帖子热度。");
+            log.info("帖子热度更新成功，更新数量 {}/{}，保留前1000篇帖子热度", updateCount, postIds.size());
+        } catch (Exception e) {
+            log.error("帖子热度更新失败", e);
         }
     }
 }

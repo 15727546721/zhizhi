@@ -1,4 +1,4 @@
-﻿package cn.xu.controller.admin;
+package cn.xu.controller.admin;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.annotation.SaCheckPermission;
@@ -14,15 +14,15 @@ import io.swagger.v3.oas.annotations.Parameter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.bind.annotation.*;
-
 import javax.annotation.Resource;
 import java.util.List;
 
 /**
  * 标签管理控制器
  * 
- * @author xu
- * @since 2025-11-30
+ * <p>提供后台标签管理功能，包括添加、编辑、删除、置顶等</p>
+ * <p>需要登录并拥有相应权限</p>
+ 
  */
 @Slf4j
 @RestController
@@ -33,6 +33,15 @@ public class SysTagController {
     @Resource(name = "tagService")
     private TagService tagService;
 
+    /**
+     * 添加标签
+     * 
+     * <p>创建新标签，支持设置描述和排序
+     * <p>需要system:tag:add权限
+     * 
+     * @param tagRequest 标签创建请求，包含名称、描述、排序
+     * @return 创建结果
+     */
     @PostMapping("/add")
     @Operation(summary = "添加标签")
     @SaCheckLogin
@@ -60,6 +69,15 @@ public class SysTagController {
                 .build();
     }
 
+    /**
+     * 获取标签列表
+     * 
+     * <p>获取所有标签列表，用于后台管理
+     * <p>需要登录后才能访问
+     * 
+     * @param pageRequest 分页参数（当前未实际使用分页）
+     * @return 标签列表
+     */
     @GetMapping("/list")
     @Operation(summary = "获取标签列表")
     @SaCheckLogin
@@ -77,6 +95,14 @@ public class SysTagController {
                 .build();
     }
 
+    /**
+     * 获取标签下拉列表
+     * 
+     * <p>获取所有标签用于下拉选择框
+     * <p>需要登录后才能访问
+     * 
+     * @return 标签列表
+     */
     @GetMapping("/getTagSelectList")
     @Operation(summary = "获取标签下拉列表")
     @SaCheckLogin
@@ -91,6 +117,15 @@ public class SysTagController {
                 .build();
     }
 
+    /**
+     * 更新标签
+     * 
+     * <p>更新标签信息，包括名称、描述、排序
+     * <p>需要system:tag:update权限
+     * 
+     * @param tagRequest 标签更新请求，必须包含标签ID
+     * @return 更新结果
+     */
     @PostMapping("/update")
     @Operation(summary = "更新标签")
     @SaCheckLogin
@@ -117,6 +152,15 @@ public class SysTagController {
                 .build();
     }
 
+    /**
+     * 删除标签
+     * 
+     * <p>删除指定标签
+     * <p>需要system:tag:delete权限
+     * 
+     * @param idList 标签ID列表（当前只删除第一个）
+     * @return 删除结果
+     */
     @PostMapping("/delete")
     @Operation(summary = "删除标签")
     @SaCheckLogin
@@ -136,6 +180,15 @@ public class SysTagController {
                 .build();
     }
 
+    /**
+     * 置顶/取消置顶标签
+     * 
+     * <p>切换标签的推荐状态
+     * <p>需要system:tag:update权限
+     * 
+     * @param tagId 标签ID
+     * @return 操作结果
+     */
     @GetMapping("/top")
     @Operation(summary = "置顶/取消置顶标签")
     @SaCheckLogin
@@ -155,4 +208,3 @@ public class SysTagController {
                 .build();
     }
 }
-

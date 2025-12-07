@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.xu.repository.mapper.UserConversationMapper">
+    
+    <resultMap id="BaseResultMap" type="cn.xu.model.entity.UserConversation">
+        <id column="id" property="id"/>
+        <result column="owner_id" property="ownerId"/>
+        <result column="other_user_id" property="otherUserId"/>
+        <result column="other_nickname" property="otherNickname"/>
+        <result column="other_avatar" property="otherAvatar"/>
+        <result column="relation_type" property="relationType"/>
+        <result column="conversation_status" property="conversationStatus"/>
+        <result column="is_initiator" property="isInitiator"/>
+        <result column="is_blocked" property="isBlocked"/>
+        <result column="is_blocked_by" property="isBlockedBy"/>
+        <result column="unread_count" property="unreadCount"/>
+        <result column="last_message" property="lastMessage"/>
+        <result column="last_message_time" property="lastMessageTime"/>
+        <result column="last_message_is_mine" property="lastMessageIsMine"/>
+        <result column="is_pinned" property="isPinned"/>
+        <result column="is_muted" property="isMuted"/>
+        <result column="is_deleted" property="isDeleted"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+    
+    <sql id="Base_Column_List">
+        id, owner_id, other_user_id, other_nickname, other_avatar,
+        relation_type, conversation_status, is_initiator,
+        is_blocked, is_blocked_by, unread_count,
+        last_message, last_message_time, last_message_is_mine,
+        is_pinned, is_muted, is_deleted, create_time, update_time
+    </sql>
+    
+    <insert id="insert" parameterType="cn.xu.model.entity.UserConversation" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO user_conversation (
+            owner_id, other_user_id, other_nickname, other_avatar,
+            relation_type, conversation_status, is_initiator,
+            is_blocked, is_blocked_by, unread_count,
+            last_message, last_message_time, last_message_is_mine,
+            is_pinned, is_muted, is_deleted, create_time, update_time
+        ) VALUES (
+            #{ownerId}, #{otherUserId}, #{otherNickname}, #{otherAvatar},
+            #{relationType}, #{conversationStatus}, #{isInitiator},
+            #{isBlocked}, #{isBlockedBy}, #{unreadCount},
+            #{lastMessage}, #{lastMessageTime}, #{lastMessageIsMine},
+            #{isPinned}, #{isMuted}, #{isDeleted}, #{createTime}, #{updateTime}
+        )
+    </insert>
+    
+    <update id="update" parameterType="cn.xu.model.entity.UserConversation">
+        UPDATE user_conversation SET
+            other_nickname = #{otherNickname},
+            other_avatar = #{otherAvatar},
+            relation_type = #{relationType},
+            conversation_status = #{conversationStatus},
+            is_blocked = #{isBlocked},
+            is_blocked_by = #{isBlockedBy},
+            unread_count = #{unreadCount},
+            last_message = #{lastMessage},
+            last_message_time = #{lastMessageTime},
+            last_message_is_mine = #{lastMessageIsMine},
+            is_pinned = #{isPinned},
+            is_muted = #{isMuted},
+            is_deleted = #{isDeleted},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+    
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM user_conversation
+        WHERE id = #{id}
+    </select>
+    
+    <select id="selectByOwnerAndOther" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM user_conversation
+        WHERE owner_id = #{ownerId} AND other_user_id = #{otherUserId}
+    </select>
+    
+    <select id="selectActiveByOwnerId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM user_conversation
+        WHERE owner_id = #{ownerId} AND is_deleted = 0
+          AND owner_id != other_user_id
+        ORDER BY is_pinned DESC, last_message_time DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+    
+    <select id="countTotalUnread" resultType="int">
+        SELECT IFNULL(SUM(unread_count), 0)
+        FROM user_conversation
+        WHERE owner_id = #{ownerId} AND is_deleted = 0 AND is_muted = 0
+    </select>
+    
+    <update id="clearUnreadCount">
+        UPDATE user_conversation
+        SET unread_count = 0, update_time = NOW()
+        WHERE owner_id = #{ownerId} AND other_user_id = #{otherUserId}
+    </update>
+    
+    <update id="incrementUnreadCount">
+        UPDATE user_conversation
+        SET unread_count = unread_count + 1, update_time = NOW()
+        WHERE owner_id = #{ownerId} AND other_user_id = #{otherUserId}
+    </update>
+    
+    <update id="updateLastMessage">
+        UPDATE user_conversation SET
+            last_message = #{message},
+            last_message_time = NOW(),
+            last_message_is_mine = #{isMine},
+            is_deleted = 0,
+            update_time = NOW()
+        WHERE owner_id = #{ownerId} AND other_user_id = #{otherUserId}
+    </update>
+    
+    <update id="softDelete">
+        UPDATE user_conversation
+        SET is_deleted = 1, update_time = NOW()
+        WHERE owner_id = #{ownerId} AND other_user_id = #{otherUserId}
+    </update>
+    
+    <update id="syncUserInfo">
+        UPDATE user_conversation
+        SET other_nickname = #{nickname}, other_avatar = #{avatar}, update_time = NOW()
+        WHERE other_user_id = #{userId}
+    </update>
+    
+    <update id="updateBlockStatus">
+        UPDATE user_conversation
+        SET is_blocked = #{isBlocked}, update_time = NOW()
+        WHERE owner_id = #{ownerId} AND other_user_id = #{otherUserId}
+    </update>
+    
+    <update id="updateBlockedByStatus">
+        UPDATE user_conversation
+        SET is_blocked_by = #{isBlockedBy}, update_time = NOW()
+        WHERE owner_id = #{ownerId} AND other_user_id = #{otherUserId}
+    </update>
+    
+    <update id="updateRelationType">
+        UPDATE user_conversation
+        SET relation_type = #{relationType}, update_time = NOW()
+        WHERE owner_id = #{ownerId} AND other_user_id = #{otherUserId}
+    </update>
+    
+</mapper>

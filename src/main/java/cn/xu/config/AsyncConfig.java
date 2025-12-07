@@ -10,6 +10,8 @@ import java.util.concurrent.Executor;
 /**
  * 异步配置类
  * 配置异步任务执行器
+ * 
+ * 
  */
 @Configuration
 @EnableAsync

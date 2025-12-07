@@ -18,7 +18,9 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * 定时任务同步热度到 Elasticsearch
+ * 定时任务同步热度分到Elasticsearch
+ * 
+ *
  */
 @Slf4j
 @Component
@@ -39,7 +41,9 @@ public class HotScoreSyncTask {
             return;
         }
 
-        Set<String> keys = redisTemplate.keys(RedisKeyManager.postHotCacheKey(0L).replace("0", "*"));
+        // 使用 SCAN 替代 KEYS，避免阻塞Redis
+        String pattern = RedisKeyManager.postHotCacheKey(0L).replace("0", "*");
+        Set<String> keys = scanKeys(pattern);
         if (keys.isEmpty()) {
             return;
         }
@@ -94,11 +98,13 @@ public class HotScoreSyncTask {
     }
 
     /**
-     * 衰减热度 & 清理冷评论
+     * 衰减热度 & 清理低评评论
      */
     @Scheduled(cron = "0 0 * * * ?")
     public void decayHotComments() {
-        Set<String> keys = redisTemplate.keys(RedisKeyManager.commentHotDecayKey() + ":*");
+        // 使用 SCAN 替代 KEYS，避免阻塞Redis
+        String pattern = RedisKeyManager.commentHotDecayKey() + ":*";
+        Set<String> keys = scanKeys(pattern);
         for (String zsetKey : keys) {
             Set<ZSetOperations.TypedTuple<Object>> hotComments = redisTemplate.opsForZSet()
                     .rangeWithScores(zsetKey, 0, -1);
@@ -128,8 +134,29 @@ public class HotScoreSyncTask {
         try {
             return Integer.parseInt(String.valueOf(obj));
         } catch (NumberFormatException e) {
-            log.warn("热度字段转换失败，值={}，默认返回0", obj);
+            log.warn("热度字段转换失败，值:{}，默认返回0", obj);
             return 0;
         }
+    }
+    
+    /**
+     * 使用 SCAN 命令扫描 Redis 键，避免 KEYS 命令阻塞
+     */
+    private Set<String> scanKeys(String pattern) {
+        Set<String> keys = new java.util.HashSet<>();
+        redisTemplate.execute((org.springframework.data.redis.core.RedisCallback<Object>) connection -> {
+            org.springframework.data.redis.core.Cursor<byte[]> cursor = connection.scan(
+                org.springframework.data.redis.core.ScanOptions.scanOptions()
+                    .match(pattern)
+                    .count(100)
+                    .build()
+            );
+            while (cursor.hasNext()) {
+                keys.add(new String(cursor.next()));
+            }
+            cursor.close();
+            return null;
+        });
+        return keys;
     }
 }

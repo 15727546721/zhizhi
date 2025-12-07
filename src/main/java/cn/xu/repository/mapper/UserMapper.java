@@ -1,7 +1,7 @@
 package cn.xu.repository.mapper;
 
 import cn.xu.model.entity.User;
-import cn.xu.model.vo.user.UserFormResponse;
+import cn.xu.model.vo.user.UserFormVO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -11,7 +11,8 @@ import java.util.Set;
 /**
  * 用户数据访问接口
  * 
- * <p>处理用户相关的数据库操作
+ * <p>处理用户相关的数据库操作</p>
+
  */
 @Mapper
 public interface UserMapper {
@@ -186,17 +187,17 @@ public interface UserMapper {
      * @param username 用户名
      * @return 用户表单值对象
      */
-    UserFormResponse selectUsernameAndPasswordByUsername(@Param("username") String username);
+    UserFormVO selectUsernameAndPasswordByUsername(@Param("username") String username);
     
     /**
      * 查询用户排名
      *
-     * <p>支持按粉丝数、获赞数、帖子数和综合排名
+     * <p>支持按粉丝数、获赞数、帖子数和综合排名</p>
      *
      * @param sortType 排序类型：fans(粉丝数)、likes(获赞数)、posts(帖子数)、comprehensive(综合)
      * @param offset 偏移量
      * @param limit 数量限制
-     * @return 用户列表（包含贴子数统计）
+     * @return 用户列表（包含帖子数统计）
      */
     List<User> findUserRanking(@Param("sortType") String sortType, @Param("offset") int offset, @Param("limit") int limit);
     
@@ -207,12 +208,12 @@ public interface UserMapper {
      */
     Long countAllUsers();
     
-    // ==================== 方案A：原子更新方法（避免并发问题） ====================
+    // ==================== 原子更新方法（避免并发问题） ====================
     
     /**
      * 原子增加关注数（+1）
      * 
-     * <p>使用SQL的自增操作，避免并发问题
+     * <p>使用SQL的自增操作，避免并发问题</p>
      * 
      * @param userId 用户ID
      */
@@ -286,7 +287,7 @@ public interface UserMapper {
     /**
      * 批量更新用户统计字段
      * 
-     * <p>用于定时校验任务，确保统计数据准确
+     * <p>用于定时校验任务，确保统计数据准确</p>
      * 
      * @param userId 用户ID
      * @param followCount 关注数
@@ -307,7 +308,7 @@ public interface UserMapper {
     /**
      * 搜索用户（支持username和nickname模糊查询）
      * 
-     * <p>用于@自动补全功能
+     * <p>用于@自动补全功能</p>
      * 
      * @param keyword 关键词
      * @param limit 限制数量
@@ -329,4 +330,13 @@ public interface UserMapper {
      * @return 用户数
      */
     Long countByStatus(@Param("status") Integer status);
+    
+    /**
+     * 根据关键词搜索用户
+     *
+     * @param keyword 关键词
+     * @param limit 限制数量
+     * @return 用户列表
+     */
+    List<User> searchByKeyword(@Param("keyword") String keyword, @Param("limit") int limit);
 }

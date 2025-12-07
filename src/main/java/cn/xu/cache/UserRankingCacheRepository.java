@@ -8,12 +8,9 @@ import java.util.stream.Collectors;
 
 /**
  * 用户排行榜缓存仓储
- * 使用Redis ZSet实现用户排行榜，支持多种排序维度
- * 
- * <p>继承BaseCacheRepository复用通用方法，减少重复代码
- * 
- * @author zhizhi
- * @since 2025-11-23
+ * <p>使用Redis ZSet实现用户排行榜，支持多种排序维度</p>
+ * <p>继承BaseCacheRepository复用通用方法，减少重复代码</p>
+ 
  */
 @Slf4j
 @Repository
@@ -246,4 +243,3 @@ public class UserRankingCacheRepository extends BaseCacheRepository {
     }
 
 }
-

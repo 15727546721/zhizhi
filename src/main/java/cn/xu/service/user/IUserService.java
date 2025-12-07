@@ -14,11 +14,8 @@ import java.util.Set;
 
 /**
  * 用户服务接口
- * 
- * <p>定义用户认证、资料管理、管理员操作等核心功能
- * 
- * @author xu
- * @since 2025-11-25
+ * <p>定义用户认证、资料管理、管理员操作等功能</p>
+ 
  */
 public interface IUserService {
     
@@ -71,7 +68,7 @@ public interface IUserService {
     void changePassword(Long userId, String oldPassword, String newPassword);
 
     /**
-     * 封禁用户
+     * 禁止用户
      *
      * @param userId 用户ID
      */
@@ -190,15 +187,23 @@ public interface IUserService {
     /**
      * 批量获取用户信息
      *
-     * @param userIds 用户ID集合
-     * @return 用户信息集合
+     * @param userIds 用户ID列表
+     * @return 用户列表
      */
-    List<User> batchGetUserInfo(List<Long> userIds);
+    List<User> batchGetUsersByIds(Set<Long> userIds);
     
     /**
-     * 查询用户排名
+     * 批量获取用户信息（支持List参数）
      *
-     * @param sortType 排序类型：fans(粉丝数)、likes(获赞数)、posts(帖子数)、comprehensive(综合)
+     * @param userIds 用户ID列表
+     * @return 用户信息Map
+     */
+    Map<Long, User> batchGetUserInfo(List<Long> userIds);
+    
+    /**
+     * 查询用户排行榜
+     *
+     * @param sortType 排序类型
      * @param page 页码
      * @param size 每页数量
      * @return 用户列表
@@ -213,11 +218,39 @@ public interface IUserService {
     Long countAllUsers();
     
     /**
+     * 搜索用户（用于@提及、综合搜索等）
+     *
+     * @param keyword 关键词
+     * @param limit 限制数量
+     * @return 用户列表
+     */
+    List<User> searchUsers(String keyword, Integer limit);
+    
+    /**
      * 初始化/重置管理员账号
      * 
-     * <p>创建或重置admin管理员账号，默认密码：AdminPassword123!
+     * <p>创建或重置Admin管理员账号，默认密码：AdminPassword123!
      * 
      * @return 管理员用户信息
      */
     User initAdminUser();
+    
+    /**
+     * 注销账户
+     * 
+     * <p>永久删除用户账户，需要验证密码
+     * <p>此操作不可逆
+     * 
+     * @param userId 用户ID
+     * @param password 用户密码（用于验证身份）
+     */
+    void deleteAccount(Long userId, String password);
+    
+    /**
+     * 批量获取用户信息
+     * 
+     * @param userIds 用户ID集合
+     * @return 用户ID到用户对象的映射
+     */
+    java.util.Map<Long, User> findUserInfo(java.util.Set<Long> userIds);
 }

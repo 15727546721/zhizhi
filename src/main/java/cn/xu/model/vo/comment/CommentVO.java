@@ -11,17 +11,14 @@ import java.util.List;
 
 /**
  * 评论VO
- * 统一的评论响应对象，覆盖所有评论场景
- * 
- * 使用场景：
+ * 表示单个评论的数据结构，包含评论的基本信息
+ *
+ * 使用场景:
  * - 评论列表
  * - 评论详情
- * - 热门评论
- * - 置顶评论
- * - 子评论（楼中楼）
- * 
- * @author zhizhi
- * @since 2025-11-24
+ * - 评论回复
+ * - 垂直评论
+ * - 热门评论（例如，在评论区进行的点赞、回复等）
  */
 @Data
 @Builder
@@ -29,107 +26,110 @@ import java.util.List;
 @AllArgsConstructor
 @Schema(description = "评论VO")
 public class CommentVO {
-    
-    // ========== 基础信息 ==========
-    
+
+    // ========== 基本信息 ==========
+
     @Schema(description = "评论ID", example = "1")
     private Long id;
-    
+
     @Schema(description = "帖子ID", example = "100")
     private Long postId;
-    
-    @Schema(description = "评论内容", example = "写得很好，学到了！")
+
+    @Schema(description = "评论内容", example = "评论内容示例，包含文本等")
     private String content;
-    
-    // ========== 评论层级关系 ==========
-    
-    @Schema(description = "父评论ID（0表示顶级评论）", example = "0")
+
+    @Schema(description = "图片URL列表")
+    private List<String> imageUrls;
+
+    // ========== 评论的父子层级 ==========
+
+    @Schema(description = "父评论ID，如果是顶级评论，则为0", example = "0")
     private Long parentId;
-    
-    @Schema(description = "回复的用户ID（顶级评论时为null）", example = "5")
+
+    @Schema(description = "回复的用户ID，如果没有回复，则为null", example = "5")
     private Long replyToUserId;
-    
-    @Schema(description = "回复的用户昵称（顶级评论时为null）", example = "李四")
+
+    @Schema(description = "回复的用户昵称，如果没有回复，则为null", example = "李四")
     private String replyToNickname;
-    
-    @Schema(description = "评论层级（1-顶级，2-二级，3-三级...）", example = "1")
+
+    @Schema(description = "评论级别：0-顶级评论，1-一级回复，2-二级回复...", example = "1")
     private Integer level;
-    
-    // ========== 评论作者信息 ==========
-    
-    @Schema(description = "评论作者ID", example = "1")
+
+    // ========== 评论用户信息 ==========
+
+    @Schema(description = "评论用户ID", example = "1")
     private Long userId;
-    
-    @Schema(description = "评论作者昵称", example = "张三")
+
+    @Schema(description = "评论用户昵称", example = "张三")
     private String nickname;
-    
-    @Schema(description = "评论作者头像", example = "https://example.com/avatar.jpg")
+
+    @Schema(description = "评论用户头像", example = "https://example.com/avatar.jpg")
     private String avatar;
-    
-    @Schema(description = "用户类型：1-普通用户 2-官方账号 3-管理员", example = "1")
+
+    @Schema(description = "用户类型：1-普通用户，2-认证账号，3-管理员", example = "1")
     private Integer userType;
-    
-    // ========== 统计信息 ==========
-    
+
+    // ========== 互动信息 ==========
+
     @Schema(description = "点赞数", example = "10")
     private Long likeCount;
-    
-    @Schema(description = "子评论数量", example = "5")
+
+    @Schema(description = "回复数", example = "5")
     private Long replyCount;
-    
+
     // ========== 用户交互状态 ==========
-    
-    @Schema(description = "当前用户是否已点赞", example = "false")
+
+    @Schema(description = "当前用户是否点赞", example = "false")
     private Boolean isLiked;
-    
-    // ========== 特殊标识 ==========
-    
+
+    // ========== 评论状态 ==========
+
     @Schema(description = "是否置顶", example = "false")
     private Boolean isTop;
-    
+
     @Schema(description = "是否热门评论", example = "false")
     private Boolean isHot;
-    
-    @Schema(description = "是否作者本人评论", example = "false")
+
+    @Schema(description = "是否作者评论", example = "false")
     private Boolean isAuthor;
-    
-    @Schema(description = "评论状态：0-待审核 1-正常 2-已删除", example = "1")
+
+    @Schema(description = "评论状态：0-正常，1-删除，2-审核中", example = "1")
     private Integer status;
-    
+
     // ========== 时间信息 ==========
-    
+
     @Schema(description = "创建时间", example = "2025-11-24T10:00:00")
     private LocalDateTime createTime;
-    
+
     @Schema(description = "更新时间", example = "2025-11-24T12:00:00")
     private LocalDateTime updateTime;
-    
-    // ========== 子评论列表（楼中楼） ==========
-    
-    @Schema(description = "子评论列表（最多显示3条）")
+
+    // ========== 热门评论（回复等） ==========
+
+    @Schema(description = "回复列表：一个评论下的所有回复")
     private List<CommentVO> replies;
-    
-    @Schema(description = "是否还有更多子评论", example = "true")
+
+    @Schema(description = "是否还有更多回复", example = "true")
     private Boolean hasMoreReplies;
-    
+
     // ========== 辅助方法 ==========
-    
+
     /**
-     * 判断是否为顶级评论
+     * 判断是否是顶级评论
      */
     public boolean isTopLevel() {
         return parentId == null || parentId == 0;
     }
-    
+
     /**
-     * 判断是否为官方账号
+     * 判断是否是官方账号评论
      */
     public boolean isOfficialAccount() {
         return userType != null && userType == 2;
     }
-    
+
     /**
-     * 判断是否为管理员
+     * 判断是否是管理员评论
      */
     public boolean isAdmin() {
         return userType != null && userType == 3;

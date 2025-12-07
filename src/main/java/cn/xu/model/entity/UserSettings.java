@@ -74,7 +74,7 @@ public class UserSettings implements Serializable {
                 .updateTime(now)
                 .build();
     }
-    
+
     /**
      * 更新隐私设置
      */
@@ -87,7 +87,7 @@ public class UserSettings implements Serializable {
         }
         this.updateTime = LocalDateTime.now();
     }
-    
+
     /**
      * 更新通知设置
      */
@@ -103,7 +103,7 @@ public class UserSettings implements Serializable {
         }
         this.updateTime = LocalDateTime.now();
     }
-    
+
     /**
      * 检查邮箱验证令牌是否有效
      */
@@ -113,7 +113,7 @@ public class UserSettings implements Serializable {
         }
         return LocalDateTime.now().isBefore(emailVerifyExpireTime);
     }
-    
+
     /**
      * 检查密码重置令牌是否有效
      */
@@ -123,27 +123,26 @@ public class UserSettings implements Serializable {
         }
         return LocalDateTime.now().isBefore(passwordResetExpireTime);
     }
-    
-    // ========== 便捷的 Boolean 访问方法 ==========
+
+    // ========== Getter方法 ==========
     
     public Boolean getShowOnlineStatusBool() {
         return showOnlineStatus != null && showOnlineStatus == 1;
     }
-    
+
     public Boolean getEmailNotificationBool() {
         return emailNotification != null && emailNotification == 1;
     }
-    
+
     public Boolean getBrowserNotificationBool() {
         return browserNotification != null && browserNotification == 1;
     }
-    
+
     public Boolean getSoundNotificationBool() {
         return soundNotification != null && soundNotification == 1;
     }
-    
+
     public Boolean getEmailVerifiedBool() {
         return emailVerified != null && emailVerified == 1;
     }
 }
-

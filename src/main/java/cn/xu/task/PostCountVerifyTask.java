@@ -21,7 +21,7 @@ import java.util.List;
  * 3. 发现不一致时自动修复
  * 4. 记录修复日志供排查
  * 
- * @author xu
+ * 
  */
 @Slf4j
 @Component
@@ -71,9 +71,9 @@ public class PostCountVerifyTask {
                 
                 offset += pageSize;
                 
-                // 防止一次处理太多，适当休息
+                // 防止一次处理太多，使用分批处理避免阻塞
                 if (offset % 2000 == 0) {
-                    Thread.sleep(1000);
+                    log.debug("已处理 {} 条记录，继续下一批", offset);
                 }
             }
             
@@ -90,7 +90,7 @@ public class PostCountVerifyTask {
      * 校验并修复单个帖子的统计字段
      * 
      * @param post 帖子对象
-     * @return true-需要修复, false-数据一致
+     * @return true-需要修复 false-数据一致
      */
     private boolean verifyAndFixSinglePost(Post post) {
         try {

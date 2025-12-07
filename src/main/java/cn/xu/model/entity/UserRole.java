@@ -1,14 +1,33 @@
 package cn.xu.model.entity;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 
+/**
+ * 用户角色关联表
+ */
 @Builder
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class UserRole implements Serializable {
-    private Long id;                // 关系唯一标识符
-    private Long userId;            // 用户 ID
-    private Long roleId;            // 角色 ID
+    
+    /**
+     * 主键ID
+     */
+    private Long id;
+    
+    /**
+     * 用户ID
+     */
+    private Long userId;
+    
+    /**
+     * 角色ID
+     */
+    private Long roleId;
 }

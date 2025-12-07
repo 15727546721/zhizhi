@@ -8,7 +8,8 @@ import java.util.List;
 
 /**
  * 菜单Mapper接口
- * 负责菜单相关的数据库操作
+ * <p>负责菜单相关的数据库操作</p>
+ 
  */
 @Mapper
 public interface MenuMapper {

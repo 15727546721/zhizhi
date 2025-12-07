@@ -9,8 +9,8 @@ import java.time.LocalDateTime;
 
 /**
  * 文件记录实体
- *
- * @author xu
+ * <p>存储文件上传记录</p>
+
  */
 @Data
 @Builder
@@ -67,7 +67,7 @@ public class FileRecord {
     
     /**
      * 标记为已删除
-     * 软删除，实际文件仍在MinIO中
+     * 软删除，保留记录但标记为删除状态
      */
     public void markAsDeleted() {
         this.status = 2;
@@ -75,37 +75,40 @@ public class FileRecord {
     }
     
     /**
-     * 检查是否为临时文件
-     * @return true-临时文件，false-正式或已删除
+     * 判断是否为临时文件
      */
     public boolean isTemporary() {
         return this.status != null && this.status == 0;
     }
     
     /**
-     * 检查是否为正式文件
+     * 判断是否为正式文件
      */
     public boolean isPermanent() {
         return this.status != null && this.status == 1;
     }
     
     /**
-     * 检查是否已删除
+     * 判断是否已删除
      */
     public boolean isDeleted() {
         return this.status != null && this.status == 2;
     }
     
     /**
-     * 获取可读的文件大小
+     * 获取文件大小的可读格式
      */
     public String getReadableSize() {
         if (fileSize == null) return "0 B";
         
         long bytes = fileSize;
+        
         if (bytes < 1024) return bytes + " B";
+        
         if (bytes < 1024 * 1024) return String.format("%.2f KB", bytes / 1024.0);
+        
         if (bytes < 1024 * 1024 * 1024) return String.format("%.2f MB", bytes / (1024.0 * 1024));
+        
         return String.format("%.2f GB", bytes / (1024.0 * 1024 * 1024));
     }
 }

@@ -7,12 +7,10 @@ import java.util.Map;
 
 /**
  * 评论仓储接口
- *
- * @author xu
  */
 public interface ICommentRepository {
     
-    // ========== 基础CRUD ==========
+    // ==================== 基础CRUD ====================
     
     Long save(Comment comment);
     
@@ -28,7 +26,7 @@ public interface ICommentRepository {
     
     List<Comment> findByIds(List<Long> ids);
     
-    // ========== 根评论查询 ==========
+    // ==================== 根评论查询 ====================
     
     List<Comment> findRootCommentsByHot(int targetType, long targetId, int pageNo, int pageSize);
     
@@ -38,7 +36,7 @@ public interface ICommentRepository {
     
     Long countRootComments(Integer type, Long targetId, Long userId);
     
-    // ========== 子评论查询 ==========
+    // ==================== 子评论查询 ====================
     
     List<Comment> findByParentId(Long parentId);
     
@@ -54,7 +52,7 @@ public interface ICommentRepository {
     
     List<Comment> findRepliesByParentIdByTime(Long parentId, int page, int size);
     
-    // ========== 统计查询 ==========
+    // ==================== 统计查询 ====================
     
     Long countByTargetTypeAndTargetId(Integer targetType, Long targetId);
     
@@ -62,21 +60,23 @@ public interface ICommentRepository {
     
     Long countByUserId(Long userId);
     
-    // ========== 用户评论查询 ==========
+    Long countByParentId(Long parentId);
+    
+    // ==================== 用户评论查询 ====================
     
     List<Comment> findByUserId(Long userId, int offset, int limit);
     
-    // ========== 批量查询（ES初始化用） ==========
+    // ==================== 批量查询（ES初始化用） ====================
     
     List<Comment> findCommentBatch(int offset, int batchSize);
     
-    // ========== 回复数更新（原子操作） ==========
+    // ==================== 回复数更新（原子操作） ====================
     
     void incrementReplyCount(Long commentId);
     
     void decrementReplyCount(Long commentId);
     
-    // ========== 评论图片 ==========
+    // ==================== 评论图片 ====================
     
     /**
      * 保存评论图片
@@ -84,4 +84,26 @@ public interface ICommentRepository {
      * @param imageUrls 图片URL列表
      */
     void saveImages(Long commentId, List<String> imageUrls);
+    
+    // ==================== 管理后台方法 ====================
+    
+    /**
+     * 查询所有根评论（管理后台用）
+     */
+    List<Comment> findAllRootComments(Integer targetType, Long targetId, int offset, int limit);
+    
+    /**
+     * 统计根评论数量（管理后台用）
+     */
+    long countAllRootComments(Integer targetType, Long targetId);
+    
+    /**
+     * 按热度获取子评论（无分页）
+     */
+    List<Comment> findRepliesByParentIdByHot(Long parentId);
+    
+    /**
+     * 按时间获取子评论（无分页）
+     */
+    List<Comment> findRepliesByParentIdByTime(Long parentId);
 }

@@ -8,18 +8,16 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * 缓存Repository基类
- * 提供通用的Redis操作方法，减少重复代码
- * 
- * <p>所有CacheRepository应继承此类，复用通用方法：
+ * <p>提供通用的Redis操作方法，减少重复代码</p>
+ *
+ * <p>所有CacheRepository应继承此类，复用通用方法：</p>
  * <ul>
  *   <li>计数操作：getCount、setCount、incrementCount</li>
  *   <li>Set操作：addToSet、removeFromSet、isMemberOfSet</li>
  *   <li>通用操作：deleteCache、hasKey、setValue</li>
  *   <li>类型转换：convertToLong、convertToString</li>
  * </ul>
- * 
- * @author zhizhi
- * @since 2025-11-23
+ 
  */
 @Slf4j
 public abstract class BaseCacheRepository {
@@ -47,10 +45,13 @@ public abstract class BaseCacheRepository {
     
     /**
      * 设置计数值
+     * <p>
+     * 使用原子操作，set和expire合并为一个操作
+     * </p>
      * 
-     * @param key Redis key
+     * @param key   Redis key
      * @param count 计数值
-     * @param ttl 过期时间（秒）
+     * @param ttl   过期时间（秒）
      */
     protected void setCount(String key, Long count, int ttl) {
         try {
@@ -63,16 +64,22 @@ public abstract class BaseCacheRepository {
     
     /**
      * 增加计数值
+     * <p>
+     * 只在首次创建时设置过期时间，避免每次都调用expire
+     * </p>
      * 
-     * @param key Redis key
+     * @param key   Redis key
      * @param delta 增量（可为负数）
-     * @param ttl 过期时间（秒）
+     * @param ttl   过期时间（秒）
      * @return 增加后的值
      */
     protected Long incrementCount(String key, long delta, int ttl) {
         try {
             Long newValue = redisTemplate.opsForValue().increment(key, delta);
-            redisTemplate.expire(key, ttl, TimeUnit.SECONDS);
+            // 只在刚创建时设置过期时间
+            if (newValue != null && newValue == delta) {
+                redisTemplate.expire(key, ttl, TimeUnit.SECONDS);
+            }
             log.debug("[缓存] 增加计数成功 - key: {}, delta: {}, newValue: {}", key, delta, newValue);
             return newValue != null ? newValue : 0L;
         } catch (Exception e) {
@@ -85,6 +92,7 @@ public abstract class BaseCacheRepository {
     
     /**
      * 添加元素到Set
+     * 优化：只在首次添加时设置过期时间
      * 
      * @param key Redis key
      * @param values 要添加的值
@@ -92,8 +100,14 @@ public abstract class BaseCacheRepository {
      */
     protected void addToSet(String key, Object[] values, int ttl) {
         try {
-            redisTemplate.opsForSet().add(key, values);
-            redisTemplate.expire(key, ttl, TimeUnit.SECONDS);
+            Long addedCount = redisTemplate.opsForSet().add(key, values);
+            // 只在首次添加时设置过期时间
+            if (addedCount != null && addedCount > 0) {
+                Long currentSize = redisTemplate.opsForSet().size(key);
+                if (currentSize != null && currentSize.equals(addedCount)) {
+                    redisTemplate.expire(key, ttl, TimeUnit.SECONDS);
+                }
+            }
             log.debug("[缓存] 添加到Set成功 - key: {}, count: {}", key, values.length);
         } catch (Exception e) {
             log.error("[缓存] 添加到Set失败 - key: {}", key, e);
@@ -197,9 +211,9 @@ public abstract class BaseCacheRepository {
     /**
      * 设置简单值
      * 
-     * @param key Redis key
+     * @param key   Redis key
      * @param value 值
-     * @param ttl 过期时间（秒）
+     * @param ttl   过期时间（秒）
      */
     protected void setValue(String key, Object value, int ttl) {
         try {

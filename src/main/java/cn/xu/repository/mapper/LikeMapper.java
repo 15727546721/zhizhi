@@ -7,7 +7,9 @@ import org.apache.ibatis.annotations.Param;
 import java.util.List;
 
 /**
- * 点赞数据访问接口
+ * 点赞Mapper接口
+ * <p>处理点赞相关的数据库操作</p>
+
  */
 @Mapper
 public interface LikeMapper {
@@ -18,7 +20,7 @@ public interface LikeMapper {
     
     /**
      * 原子性保存或更新点赞记录（解决并发竞态条件）
-     * 使用 INSERT ON DUPLICATE KEY UPDATE 确保高并发下不会创建重复记录
+     * <p>使用 INSERT ON DUPLICATE KEY UPDATE 确保高并发下不会创建重复记录</p>
      * 
      * @param po 点赞记录
      */
@@ -48,10 +50,6 @@ public interface LikeMapper {
 
     /**
      * 更新点赞状态
-     * @param userId
-     * @param type
-     * @param targetId
-     * @param status
      */
     void updateStatus(@Param("userId") Long userId,
                       @Param("type") Integer type,
@@ -67,10 +65,6 @@ public interface LikeMapper {
 
     /**
      * 根据用户ID、目标ID和类型查询点赞状态
-     * @param userId
-     * @param type
-     * @param targetId
-     * @return
      */
     Integer checkStatus(@Param("userId") Long userId,
                        @Param("type") Integer type,
@@ -150,4 +144,23 @@ public interface LikeMapper {
      * 按类型统计点赞数
      */
     Long countByType(@Param("type") Integer type);
+    
+    /**
+     * 批量检查点赞状态
+     * @param userId 用户ID
+     * @param type 点赞类型
+     * @param targetIds 目标ID列表
+     * @return 已点赞的目标ID集合
+     */
+    java.util.Set<Long> batchCheckStatus(@Param("userId") Long userId, 
+                                          @Param("type") Integer type, 
+                                          @Param("targetIds") java.util.List<Long> targetIds);
+    
+    /**
+     * 获取目标的点赞数
+     * @param targetId 目标ID
+     * @param type 点赞类型
+     * @return 点赞数
+     */
+    Long getLikeCount(@Param("targetId") Long targetId, @Param("type") Integer type);
 }

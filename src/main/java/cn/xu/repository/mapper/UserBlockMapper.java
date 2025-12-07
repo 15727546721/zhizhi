@@ -6,6 +6,11 @@ import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
+/**
+ * 用户屏蔽Mapper接口
+ * <p>处理用户屏蔽关系的数据库操作</p>
+ 
+ */
 @Mapper
 public interface UserBlockMapper {
     /**
@@ -48,4 +53,3 @@ public interface UserBlockMapper {
      */
     int deleteByUserAndBlockedUser(@Param("userId") Long userId, @Param("blockedUserId") Long blockedUserId);
 }
-

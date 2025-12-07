@@ -35,4 +35,3 @@ public class UserBlockVO {
      */
     private LocalDateTime createTime;
 }
-

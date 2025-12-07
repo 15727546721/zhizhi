@@ -21,7 +21,9 @@ import java.util.TimeZone;
 
 /**
  * SpringMVC的响应结果序列化配置：json
- **/
+ * 
+ * 
+ */
 @Configuration
 @Slf4j
 public class JacksonConfig {

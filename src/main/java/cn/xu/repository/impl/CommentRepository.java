@@ -14,8 +14,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 评论仓储实现（简化版）
- * 直接操作Comment PO，无Entity转换
+ * 评论仓储实现
+ * <p>负责评论的持久化操作</p>
+ 
  */
 @Slf4j
 @Repository
@@ -24,8 +25,8 @@ public class CommentRepository implements ICommentRepository {
 
     private final CommentMapper commentMapper;
 
-    // ========== 基础CRUD ==========
-    
+    // ==================== 基础CRUD ====================
+
     @Override
     public Long save(Comment comment) {
         if (comment == null) {
@@ -85,7 +86,7 @@ public class CommentRepository implements ICommentRepository {
         return commentMapper.selectCommentsByIds(ids);
     }
 
-    // ========== 根评论查询 ==========
+    // ==================== 根评论查询 ====================
 
     @Override
     public List<Comment> findRootCommentsByHot(int targetType, long targetId, int pageNo, int pageSize) {
@@ -103,14 +104,14 @@ public class CommentRepository implements ICommentRepository {
     public List<Comment> findRootComments(Integer type, Long targetId, Long userId, int offset, int limit) {
         return commentMapper.findRootCommentsByPage(type, targetId, userId, offset, limit);
     }
-    
+
     @Override
     public Long countRootComments(Integer type, Long targetId, Long userId) {
         Long count = commentMapper.countRootComments(type, targetId, userId);
         return count != null ? count : 0L;
     }
 
-    // ========== 子评论查询 ==========
+    // ==================== 子评论查询 ====================
 
     @Override
     public List<Comment> findByParentId(Long parentId) {
@@ -153,7 +154,7 @@ public class CommentRepository implements ICommentRepository {
         return commentMapper.findRepliesByParentIdByTime(parentId, (page - 1) * size, size);
     }
 
-    // ========== 统计查询 ==========
+    // ==================== 统计查询 ====================
 
     @Override
     public Long countByTargetTypeAndTargetId(Integer targetType, Long targetId) {
@@ -186,7 +187,16 @@ public class CommentRepository implements ICommentRepository {
         return count != null ? count : 0L;
     }
 
-    // ========== 用户评论查询 ==========
+    @Override
+    public Long countByParentId(Long parentId) {
+        if (parentId == null) {
+            return 0L;
+        }
+        Long count = commentMapper.countByParentId(parentId);
+        return count != null ? count : 0L;
+    }
+
+    // ==================== 用户评论查询 ====================
 
     @Override
     public List<Comment> findByUserId(Long userId, int offset, int limit) {
@@ -196,7 +206,7 @@ public class CommentRepository implements ICommentRepository {
         return commentMapper.findByUserId(userId, offset, limit);
     }
 
-    // ========== 批量查询（ES初始化用） ==========
+    // ==================== 批量查询（ES初始化用） ====================
 
     @Override
     public List<Comment> findCommentBatch(int offset, int batchSize) {
@@ -237,5 +247,28 @@ public class CommentRepository implements ICommentRepository {
                 commentMapper.saveImages(commentId, imageUrl, i);
             }
         }
+    }
+    
+    // ==================== 管理后台方法 ====================
+    
+    @Override
+    public List<Comment> findAllRootComments(Integer targetType, Long targetId, int offset, int limit) {
+        return commentMapper.findAllRootComments(targetType, targetId, offset, limit);
+    }
+    
+    @Override
+    public long countAllRootComments(Integer targetType, Long targetId) {
+        Long count = commentMapper.countAllRootComments(targetType, targetId);
+        return count != null ? count : 0L;
+    }
+    
+    @Override
+    public List<Comment> findRepliesByParentIdByHot(Long parentId) {
+        return commentMapper.findRepliesByParentIdByHot(parentId, 0, 100);
+    }
+    
+    @Override
+    public List<Comment> findRepliesByParentIdByTime(Long parentId) {
+        return commentMapper.findRepliesByParentIdByTime(parentId, 0, 100);
     }
 }

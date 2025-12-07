@@ -13,10 +13,8 @@ import java.util.List;
 
 /**
  * 角色仓储实现类
- * 直接使用PO，简化架构
- * 
- * @author xu
- * @since 2025-11-29
+ * <p>负责角色数据的持久化操作</p>
+
  */
 @Slf4j
 @Repository
@@ -64,7 +62,7 @@ public class RoleRepository implements IRoleRepository {
                 roleDao.deleteRoleMenuByRoleIds(ids);
                 return null;
             } catch (Exception e) {
-                log.error("删除角色失败, 角色ID: {}", ids, e);
+                log.error("删除角色失败 - 角色ID: {}", ids, e);
                 status.setRollbackOnly();
                 throw e;
             }

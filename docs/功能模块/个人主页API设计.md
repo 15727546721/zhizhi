@@ -284,7 +284,7 @@ GET /api/likes/user/123?pageNo=1&pageSize=10&type=1
     "likeCount": 100,        // 获赞数（收到的点赞总数）
     "followCount": 50,       // 关注数（关注的人数）
     "fansCount": 200,        // 粉丝数（被关注的人数）
-    "postCount": 30,         // 文章数（发布的帖子数）
+    "postCount": 30,         // 帖子数（发布的帖子数）
     "commentCount": 150,     // 评论数（发表的评论数）
     "collectionCount": 80,   // 收藏数（收藏的内容数）
     "topicCount": 10,        // 话题数（参与的话题数）
@@ -309,7 +309,7 @@ GET /api/likes/user/123?pageNo=1&pageSize=10&type=1
    -- 粉丝数：从 follow 表统计
    SELECT COUNT(*) FROM follow WHERE followed_id = #{userId} AND status = 1
    
-   -- 文章数：从 post 表统计
+   -- 帖子数：从 post 表统计
    SELECT COUNT(*) FROM post WHERE user_id = #{userId} AND status = 'PUBLISHED'
    
    -- 评论数：从 comment 表统计
@@ -440,7 +440,7 @@ public class UserStatisticsResponse {
     private Long likeCount;        // 获赞数
     private Long followCount;      // 关注数
     private Long fansCount;        // 粉丝数
-    private Long postCount;        // 文章数
+    private Long postCount;        // 帖子数
     private Long commentCount;     // 评论数
     private Long collectionCount;  // 收藏数
     private Long topicCount;       // 话题数

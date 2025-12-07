@@ -7,8 +7,8 @@ import java.util.Optional;
 
 /**
  * 系统配置仓储接口
- * 
- * 简化设计：直接使用PO，移除Entity转换
+ * <p>定义系统配置数据的持久化操作</p>
+
  */
 public interface ISystemConfigRepository {
     /**
@@ -41,4 +41,3 @@ public interface ISystemConfigRepository {
      */
     void deleteByKey(String configKey);
 }
-

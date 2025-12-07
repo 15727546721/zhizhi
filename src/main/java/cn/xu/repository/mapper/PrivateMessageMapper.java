@@ -1,111 +1,57 @@
 package cn.xu.repository.mapper;
 
 import cn.xu.model.entity.PrivateMessage;
-import cn.xu.repository.impl.PrivateMessageRepository.UnreadCountDto;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
 /**
- * 私信消息 Mapper
- * 
- * @author xu
- * @since 2025-11-28
+ * 私信消息Mapper接口
+ * <p>处理私信消息的数据库操作</p>
+ 
  */
 @Mapper
 public interface PrivateMessageMapper {
     
-    /**
-     * 插入私信
-     */
     int insert(PrivateMessage message);
     
-    /**
-     * 更新私信
-     */
     int update(PrivateMessage message);
     
-    /**
-     * 根据ID查询
-     */
-    PrivateMessage selectById(@Param("id") Long id);
+    PrivateMessage selectById(Long id);
     
     /**
-     * 查询两个用户之间的私信列表
+     * 查询两个用户之间的消息
+     * <p>根据查看者过滤已删除的消息</p>
      */
-    List<PrivateMessage> selectPrivateMessagesBetweenUsers(
-            @Param("userId1") Long userId1,
-            @Param("userId2") Long userId2,
-            @Param("offset") int offset,
-            @Param("limit") int limit);
+    List<PrivateMessage> selectMessagesBetweenUsers(@Param("userId1") Long userId1,
+                                                       @Param("userId2") Long userId2,
+                                                       @Param("viewerId") Long viewerId,
+                                                       @Param("offset") int offset,
+                                                       @Param("limit") int limit);
+    
+    int countUnread(@Param("receiverId") Long receiverId, @Param("senderId") Long senderId);
+    
+    int markAsRead(@Param("receiverId") Long receiverId, @Param("senderId") Long senderId);
+    
+    int withdraw(@Param("messageId") Long messageId, @Param("senderId") Long senderId);
+    
+    boolean hasMessageFrom(@Param("senderId") Long senderId, @Param("receiverId") Long receiverId);
+    
+    boolean hasReplyFrom(@Param("senderId") Long senderId, @Param("receiverId") Long receiverId);
+    
+    int deleteBySender(@Param("messageId") Long messageId, @Param("senderId") Long senderId);
+    
+    int deleteByReceiver(@Param("messageId") Long messageId, @Param("receiverId") Long receiverId);
     
     /**
-     * 查询接收者收到的私信（只显示已送达的）
+     * 物理删除双方都已删除的消息
+     * @return 删除的记录数
      */
-    List<PrivateMessage> selectPrivateMessagesByReceiver(
-            @Param("receiverId") Long receiverId,
-            @Param("senderId") Long senderId,
-            @Param("status") int status,
-            @Param("offset") int offset,
-            @Param("limit") int limit);
+    int deleteBothDeletedMessages();
     
     /**
-     * 查询发送者发送的私信
+     * 物理删除某会话的所有消息
      */
-    List<PrivateMessage> selectPrivateMessagesBySender(
-            @Param("senderId") Long senderId,
-            @Param("receiverId") Long receiverId,
-            @Param("offset") int offset,
-            @Param("limit") int limit);
-    
-    /**
-     * 查询用户的最近私信列表（用于对话列表）
-     */
-    List<PrivateMessage> selectLastPrivateMessagesByUser(
-            @Param("userId") Long userId,
-            @Param("offset") int offset,
-            @Param("limit") int limit);
-    
-    /**
-     * 统计未读私信数量
-     */
-    Long countUnreadPrivateMessages(
-            @Param("receiverId") Long receiverId,
-            @Param("senderId") Long senderId);
-    
-    /**
-     * 标记单条消息为已读
-     */
-    int markAsRead(@Param("messageId") Long messageId);
-    
-    /**
-     * 批量标记私信为已读
-     */
-    int markPrivateMessagesAsRead(
-            @Param("receiverId") Long receiverId,
-            @Param("senderId") Long senderId);
-    
-    /**
-     * 更新消息状态
-     */
-    int updateMessageStatus(
-            @Param("senderId") Long senderId,
-            @Param("receiverId") Long receiverId,
-            @Param("oldStatus") int oldStatus,
-            @Param("newStatus") int newStatus);
-    
-    /**
-     * 批量查询对话的最后一条消息
-     */
-    List<PrivateMessage> selectLastMessagesForConversations(
-            @Param("currentUserId") Long currentUserId,
-            @Param("otherUserIds") List<Long> otherUserIds);
-    
-    /**
-     * 批量统计未读消息数
-     */
-    List<UnreadCountDto> countUnreadMessagesForConversations(
-            @Param("currentUserId") Long currentUserId,
-            @Param("otherUserIds") List<Long> otherUserIds);
+    int deleteMessagesByConversation(@Param("userId1") Long userId1, @Param("userId2") Long userId2);
 }

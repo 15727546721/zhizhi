@@ -25,7 +25,7 @@ public class PostListVO {
     public Long getId() {
         return postItem != null ? postItem.getId() : null;
     }
-    
+
     public String getTitle() {
         return postItem != null ? postItem.getTitle() : null;
     }

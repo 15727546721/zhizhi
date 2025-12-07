@@ -11,9 +11,8 @@ import java.util.List;
 
 /**
  * 空的文件存储服务实现
- * 当MinIO禁用时使用，所有操作都会抛出异常提示功能未启用
- * 
- * @author zhizhi
+ * <p>当MinIO禁用时使用，所有操作都会抛出异常提示功能未启用</p>
+ 
  */
 @Slf4j
 @Service
@@ -23,7 +22,7 @@ public class NoOpFileStorageService implements FileStorageService {
     private static final String DISABLED_MESSAGE = "文件存储服务未启用，请配置minio.enabled=true";
     
     public NoOpFileStorageService() {
-        log.warn("⚠️ 文件存储服务未启用（MinIO disabled），文件上传/下载功能不可用");
+        log.warn("[文件] ⚠️ 文件存储服务未启用（MinIO disabled），文件上传/下载功能不可用");
     }
     
     @Override
@@ -48,12 +47,12 @@ public class NoOpFileStorageService implements FileStorageService {
     
     @Override
     public void deleteFile(String fileUrl) throws Exception {
-        log.warn("文件存储服务未启用，跳过删除文件: {}", fileUrl);
+        log.warn("[文件] 文件存储服务未启用，跳过删除文件: {}", fileUrl);
     }
     
     @Override
     public void deleteFiles(List<String> fileUrls) throws Exception {
-        log.warn("文件存储服务未启用，跳过删除文件: {}", fileUrls);
+        log.warn("[文件] 文件存储服务未启用，跳过删除文件: {}", fileUrls);
     }
     
     @Override

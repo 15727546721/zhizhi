@@ -6,14 +6,14 @@ import org.springframework.stereotype.Service;
 
 /**
  * 文件URL生成服务
- * 
- * 设计目标：
- * 1. 解耦存储路径和访问URL
- * 2. 支持多环境配置
- * 3. 支持MinIO迁移
- * 4. 支持CDN切换
- * 
- * @author zhizhi
+ * <p>设计目标：</p>
+ * <ul>
+ *   <li>解耦存储路径和访问URL</li>
+ *   <li>支持多环境配置</li>
+ *   <li>支持MinIO迁移</li>
+ *   <li>支持CDN切换</li>
+ * </ul>
+
  */
 @Service
 @Slf4j
@@ -28,21 +28,15 @@ public class FileUrlService {
     @Value("${file.access.mode:direct}")
     private String accessMode;
     
-    /**
-     * MinIO 基础URL
-     */
+    /** MinIO 基础URL */
     @Value("${minio.url}")
     private String minioBaseUrl;
     
-    /**
-     * 文件代理服务URL（可选）
-     */
+    /** 文件代理服务URL（可选） */
     @Value("${file.proxy.base-url:}")
     private String proxyBaseUrl;
     
-    /**
-     * CDN URL（可选）
-     */
+    /** CDN URL（可选） */
     @Value("${file.cdn.base-url:}")
     private String cdnBaseUrl;
     
@@ -65,7 +59,7 @@ public class FileUrlService {
         String baseUrl = getBaseUrl();
         String url = baseUrl + "/" + storagePath;
         
-        log.debug("生成访问URL - 模式: {}, 存储路径: {}, 访问URL: {}", 
+        log.debug("[文件] 生成访问URL - 模式: {}, 存储路径: {}, 访问URL: {}", 
                 accessMode, storagePath, url);
         
         return url;
@@ -99,7 +93,7 @@ public class FileUrlService {
         }
         
         String path = fullUrl.substring(thirdSlash + 1);
-        log.debug("提取存储路径 - 完整URL: {}, 存储路径: {}", fullUrl, path);
+        log.debug("[文件] 提取存储路径 - 完整URL: {}, 存储路径: {}", fullUrl, path);
         
         return path;
     }
@@ -108,7 +102,7 @@ public class FileUrlService {
      * 构建存储路径
      * 
      * @param bucketName 存储桶名称
-     * @param fileName 文件名
+     * @param fileName   文件名
      * @return 存储路径（如：zhizhi/abc123.jpg）
      */
     public String buildStoragePath(String bucketName, String fileName) {
@@ -127,14 +121,14 @@ public class FileUrlService {
                 if (cdnBaseUrl != null && !cdnBaseUrl.isEmpty()) {
                     return trimTrailingSlash(cdnBaseUrl);
                 }
-                log.warn("CDN模式已启用，但未配置CDN URL，fallback到direct模式");
+                log.warn("[文件] CDN模式已启用，但未配置CDN URL，fallback到direct模式");
                 return trimTrailingSlash(minioBaseUrl);
                 
             case "proxy":
                 if (proxyBaseUrl != null && !proxyBaseUrl.isEmpty()) {
                     return trimTrailingSlash(proxyBaseUrl);
                 }
-                log.warn("Proxy模式已启用，但未配置Proxy URL，fallback到direct模式");
+                log.warn("[文件] Proxy模式已启用，但未配置Proxy URL，fallback到direct模式");
                 return trimTrailingSlash(minioBaseUrl);
                 
             case "direct":
@@ -155,6 +149,9 @@ public class FileUrlService {
     
     /**
      * 验证存储路径格式
+     * 
+     * @param storagePath 存储路径
+     * @return 是否有效
      */
     public boolean isValidStoragePath(String storagePath) {
         if (storagePath == null || storagePath.isEmpty()) {

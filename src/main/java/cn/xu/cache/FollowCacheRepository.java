@@ -11,20 +11,18 @@ import java.util.stream.Collectors;
 
 /**
  * 关注缓存仓储
- * 处理关注相关的缓存操作
- * 
- * <p>继承BaseCacheRepository复用通用方法，减少重复代码
- * 
- * @author zhizhi
- * @since 2025-11-23
+ * <p>处理关注相关的缓存操作</p>
+ * <p>继承BaseCacheRepository复用通用方法，减少重复代码</p>
+ 
  */
 @Slf4j
 @Repository
 public class FollowCacheRepository extends BaseCacheRepository {
     
-    // TTL配置
-    private static final int DEFAULT_CACHE_TTL = 1800; // 30分钟
-    private static final int EMPTY_RESULT_TTL = 60;    // 1分钟（空结果）
+    /** 默认缓存TTL：30分钟 */
+    private static final int DEFAULT_CACHE_TTL = 1800;
+    /** 空结果缓存TTL：1分钟 */
+    private static final int EMPTY_RESULT_TTL = 60;
     
     // Redis Key 前缀
     private static final String FOLLOWING_KEY_PREFIX = "follow:following:";
@@ -37,7 +35,7 @@ public class FollowCacheRepository extends BaseCacheRepository {
     /**
      * 缓存用户的关注列表
      * 
-     * @param followerId 关注者ID
+     * @param followerId   关注者ID
      * @param followingIds 关注的用户ID列表
      */
     public void cacheFollowingList(Long followerId, List<Long> followingIds) {
@@ -47,7 +45,7 @@ public class FollowCacheRepository extends BaseCacheRepository {
         
         if (followingIds != null && !followingIds.isEmpty()) {
             addToSet(redisKey, followingIds.toArray(), DEFAULT_CACHE_TTL);
-            log.debug("缓存关注列表成功: key={}, size={}", redisKey, followingIds.size());
+            log.debug("[缓存] 缓存关注列表成功 - key: {}, size: {}", redisKey, followingIds.size());
         } else {
             // 缓存空结果，防止缓存穿透
             setValue(redisKey + ":empty", "1", EMPTY_RESULT_TTL);
@@ -84,7 +82,7 @@ public class FollowCacheRepository extends BaseCacheRepository {
     /**
      * 缓存用户的粉丝列表
      * 
-     * @param followedId 被关注者ID
+     * @param followedId  被关注者ID
      * @param followerIds 粉丝用户ID列表
      */
     public void cacheFollowersList(Long followedId, List<Long> followerIds) {
@@ -94,7 +92,7 @@ public class FollowCacheRepository extends BaseCacheRepository {
         
         if (followerIds != null && !followerIds.isEmpty()) {
             addToSet(redisKey, followerIds.toArray(), DEFAULT_CACHE_TTL);
-            log.debug("缓存粉丝列表成功: key={}, size={}", redisKey, followerIds.size());
+            log.debug("[缓存] 缓存粉丝列表成功 - key: {}, size: {}", redisKey, followerIds.size());
         } else {
             // 缓存空结果，防止缓存穿透
             setValue(redisKey + ":empty", "1", EMPTY_RESULT_TTL);
@@ -132,7 +130,7 @@ public class FollowCacheRepository extends BaseCacheRepository {
      * 缓存用户关注数
      * 
      * @param userId 用户ID
-     * @param count 关注数
+     * @param count  关注数
      */
     public void cacheFollowingCount(Long userId, int count) {
         String redisKey = FOLLOWING_COUNT_KEY_PREFIX + userId;
@@ -155,7 +153,7 @@ public class FollowCacheRepository extends BaseCacheRepository {
      * 缓存用户粉丝数
      * 
      * @param userId 用户ID
-     * @param count 粉丝数
+     * @param count  粉丝数
      */
     public void cacheFollowersCount(Long userId, int count) {
         String redisKey = FOLLOWERS_COUNT_KEY_PREFIX + userId;
@@ -177,7 +175,7 @@ public class FollowCacheRepository extends BaseCacheRepository {
     /**
      * 缓存互相关注列表
      * 
-     * @param userId 用户ID
+     * @param userId          用户ID
      * @param mutualFollowIds 互相关注的用户ID列表
      */
     public void cacheMutualFollows(Long userId, List<Long> mutualFollowIds) {
@@ -187,7 +185,7 @@ public class FollowCacheRepository extends BaseCacheRepository {
         
         if (mutualFollowIds != null && !mutualFollowIds.isEmpty()) {
             addToSet(redisKey, mutualFollowIds.toArray(), DEFAULT_CACHE_TTL);
-            log.debug("缓存互相关注列表成功: key={}, size={}", redisKey, mutualFollowIds.size());
+            log.debug("[缓存] 缓存互相关注列表成功 - key: {}, size: {}", redisKey, mutualFollowIds.size());
         } else {
             // 缓存空结果，防止缓存穿透
             setValue(redisKey + ":empty", "1", EMPTY_RESULT_TTL);
@@ -224,8 +222,8 @@ public class FollowCacheRepository extends BaseCacheRepository {
     /**
      * 缓存关注状态
      * 
-     * @param followerId 关注者ID
-     * @param followedId 被关注者ID
+     * @param followerId  关注者ID
+     * @param followedId  被关注者ID
      * @param isFollowing 是否已关注
      */
     public void cacheFollowStatus(Long followerId, Long followedId, boolean isFollowing) {
@@ -264,7 +262,7 @@ public class FollowCacheRepository extends BaseCacheRepository {
             MUTUAL_FOLLOW_KEY_PREFIX + userId + ":empty"
         );
         deleteCacheBatch(keys);
-        log.debug("删除用户关注相关缓存成功: userId={}", userId);
+        log.debug("[缓存] 删除用户关注相关缓存成功 - userId: {}", userId);
     }
 
     /**
@@ -282,6 +280,6 @@ public class FollowCacheRepository extends BaseCacheRepository {
         removeUserFollowCache(followerId);
         removeUserFollowCache(followedId);
         
-        log.debug("删除关注关系相关缓存成功: followerId={}, followedId={}", followerId, followedId);
+        log.debug("[缓存] 删除关注关系相关缓存成功 - followerId: {}, followedId: {}", followerId, followedId);
     }
 }

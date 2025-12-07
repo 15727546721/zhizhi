@@ -1,53 +1,1 @@
-package cn.xu.model.dto.post;
-
-import lombok.Data;
-
-import java.util.List;
-
-/**
- * 帖子搜索请求DTO
- * 包含搜索关键词和筛选条件
- */
-@Data
-public class PostSearchRequest {
-    
-    /**
-     * 搜索关键词
-     */
-    private String keyword;
-    
-    /**
-     * 帖子类型筛选（多个类型，如：ARTICLE, POST, DISCUSSION, QUESTION）
-     */
-    private List<String> types;
-    
-    /**
-     * 发布时间范围筛选
-     * all: 全部时间
-     * day: 24小时内
-     * week: 一周内
-     * month: 一个月内
-     * year: 一年内
-     */
-    private String timeRange;
-    
-    /**
-     * 排序方式
-     * time: 最新发布（按创建时间倒序）
-     * hot: 最热（按热度分数倒序）
-     * comment: 评论最多（按评论数倒序）
-     * like: 点赞最多（按点赞数倒序）
-     */
-    private String sortOption;
-    
-    /**
-     * 页码，默认为1
-     */
-    private Integer pageNo = 1;
-    
-    /**
-     * 页面大小，默认为10
-     */
-    private Integer pageSize = 10;
-}
-
+package cn.xu.model.dto.post;import lombok.Data;import java.util.List;/** * 帖子搜索请求DTO * 用于接收客户端发起的帖子搜索请求，包含搜索关键词、类型、时间范围和排序方式等参数。 */@Datapublic class PostSearchRequest {    /**     * 搜索关键词     * 用于匹配帖子的标题或内容。     */    private String keyword;    /**     * 帖子类型列表     * 支持多个类型筛选。可选择类型包括：     * ARTICLE, POST, DISCUSSION, QUESTION 等。     */    private List<String> types;    /**     * 时间范围筛选     * all: 全部时间     * day: 最近24小时     * week: 最近1周     * month: 最近1个月     * year: 最近1年     */    private String timeRange;    /**     * 排序选项     * time: 按时间排序（最新发布）     * hot: 按热度排序（最受关注）     * comment: 按评论数排序     * like: 按点赞数排序     */    private String sortOption;    /**     * 当前页码     * 默认为1，用于分页查询。     */    private Integer pageNo = 1;    /**     * 每页显示数量     * 默认为10，用于分页查询。     */    private Integer pageSize = 10;}

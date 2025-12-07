@@ -18,6 +18,8 @@ import java.time.Duration;
 /**
  * Elasticsearch配置类
  * 配置ES客户端连接信息
+ * 
+ *
  */
 @Slf4j
 @Configuration
@@ -66,7 +68,7 @@ public class ElasticsearchConfig extends AbstractElasticsearchConfiguration {
     }
     
     /**
-     * 解析Duration字符串（如 "5s", "30s"）
+     * 解析Duration字符串（如"5s", "30s"）
      */
     private Duration parseDuration(String durationStr) {
         if (durationStr == null || durationStr.isEmpty()) {

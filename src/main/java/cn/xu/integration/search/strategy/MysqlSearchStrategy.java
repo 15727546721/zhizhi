@@ -17,11 +17,13 @@ import java.util.List;
 
 /**
  * MySQL搜索策略实现（ES降级兜底）
- * 
- * 使用场景：
- * 1. Elasticsearch服务不可用时自动降级
- * 2. ES查询失败时的兜底方案
- * 3. 开发环境未启动ES时的备用方案
+ * <p>使用场景：</p>
+ * <ul>
+ *   <li>Elasticsearch服务不可用时自动降级</li>
+ *   <li>ES查询失败时的兜底方案</li>
+ *   <li>开发环境未启动ES时的备用方案</li>
+ * </ul>
+
  */
 @Slf4j
 @Component
@@ -50,7 +52,7 @@ public class MysqlSearchStrategy implements ISearchStrategy {
             if (filter == null || !hasFilters(filter)) {
                 List<Post> posts = postMapper.searchPosts(escapedKeyword, offset, size);
                 Long total = postMapper.countSearchResults(escapedKeyword);
-                log.debug("MySQL搜索完成: keyword={}, total={}", escapedKeyword, total);
+                log.debug("[搜索] MySQL搜索完成 - keyword: {}, total: {}", escapedKeyword, total);
                 return new PageImpl<>(posts, pageable, total != null ? total : 0);
             }
             
@@ -59,7 +61,6 @@ public class MysqlSearchStrategy implements ISearchStrategy {
             
             List<Post> posts = postMapper.searchPostsWithFilters(
                 escapedKeyword, 
-                null, // typeCodes已废弃，使用Tag系统替代
                 filter.getStartTime(), 
                 filter.getEndTime(), 
                 sortBy, 
@@ -69,18 +70,17 @@ public class MysqlSearchStrategy implements ISearchStrategy {
             
             Long total = postMapper.countSearchResultsWithFilters(
                 escapedKeyword, 
-                null, // typeCodes已废弃
                 filter.getStartTime(), 
                 filter.getEndTime()
             );
             
-            log.debug("MySQL高级搜索完成: keyword={}, sortBy={}, total={}", 
+            log.debug("[搜索] MySQL高级搜索完成 - keyword: {}, sortBy: {}, total: {}", 
                 escapedKeyword, sortBy, total);
             
             return new PageImpl<>(posts, pageable, total != null ? total : 0);
             
         } catch (Exception e) {
-            log.error("MySQL搜索失败: keyword={}", keyword, e);
+            log.error("[搜索] MySQL搜索失败 - keyword: {}", keyword, e);
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "MySQL搜索失败: " + e.getMessage());
         }
     }

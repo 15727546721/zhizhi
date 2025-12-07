@@ -14,17 +14,16 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * 日志管理控制器
- * 提供操作日志、异常日志、用户日志的管理接口
  * 
- * @author xu
- * @since 2025-12-01
+ * <p>提供操作日志、异常日志、用户日志的查询和删除功能</p>
+ * <p>需要登录并拥有相应权限</p>
+
  */
 @Slf4j
 @RestController
@@ -33,6 +32,18 @@ public class SysLogController {
 
     // ==================== 操作日志 ====================
 
+    /**
+     * 获取操作日志列表
+     * 
+     * <p>分页查询管理员操作日志，支持按用户名和描述筛选
+     * <p>需要system:log:list权限
+     * 
+     * @param pageNo 页码，默认1
+     * @param pageSize 每页数量，默认10
+     * @param username 用户名筛选（可选）
+     * @param description 描述筛选（可选）
+     * @return 分页的操作日志列表
+     */
     @GetMapping("/api/system/adminLog/list")
     @Operation(summary = "获取操作日志列表")
     @SaCheckLogin
@@ -56,6 +67,15 @@ public class SysLogController {
                 .build();
     }
 
+    /**
+     * 删除操作日志
+     * 
+     * <p>批量删除操作日志
+     * <p>需要system:log:delete权限
+     * 
+     * @param ids 日志ID列表
+     * @return 删除结果
+     */
     @DeleteMapping("/api/system/adminLog/delete")
     @Operation(summary = "删除操作日志")
     @SaCheckLogin
@@ -72,6 +92,16 @@ public class SysLogController {
 
     // ==================== 异常日志 ====================
 
+    /**
+     * 获取异常日志列表
+     * 
+     * <p>分页查询系统异常日志
+     * <p>需要system:log:list权限
+     * 
+     * @param pageNo 页码，默认1
+     * @param pageSize 每页数量，默认10
+     * @return 分页的异常日志列表
+     */
     @GetMapping("/api/system/exceptionLog/list")
     @Operation(summary = "获取异常日志列表")
     @SaCheckLogin
@@ -92,6 +122,15 @@ public class SysLogController {
                 .build();
     }
 
+    /**
+     * 删除异常日志
+     * 
+     * <p>批量删除异常日志
+     * <p>需要system:log:delete权限
+     * 
+     * @param ids 日志ID列表
+     * @return 删除结果
+     */
     @DeleteMapping("/api/system/exceptionLog/delete")
     @Operation(summary = "删除异常日志")
     @SaCheckLogin
@@ -107,6 +146,17 @@ public class SysLogController {
 
     // ==================== 用户日志 ====================
 
+    /**
+     * 获取用户日志列表
+     * 
+     * <p>分页查询用户操作日志，支持按用户名筛选
+     * <p>需要system:log:list权限
+     * 
+     * @param pageNo 页码，默认1
+     * @param pageSize 每页数量，默认10
+     * @param username 用户名筛选（可选）
+     * @return 分页的用户日志列表
+     */
     @GetMapping("/api/system/userLog/list")
     @Operation(summary = "获取用户日志列表")
     @SaCheckLogin
@@ -128,6 +178,15 @@ public class SysLogController {
                 .build();
     }
 
+    /**
+     * 删除用户日志
+     * 
+     * <p>批量删除用户日志
+     * <p>需要system:log:delete权限
+     * 
+     * @param ids 日志ID列表
+     * @return 删除结果
+     */
     @DeleteMapping("/api/system/userLog/delete")
     @Operation(summary = "删除用户日志")
     @SaCheckLogin

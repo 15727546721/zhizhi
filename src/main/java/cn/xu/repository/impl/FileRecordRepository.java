@@ -10,12 +10,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * 文件记录Repository
- * 
- * DDD实用主义：
- * - 简单的Repository封装Mapper操作
- * - 不创建复杂的领域对象，直接使用PO
- * - 提供清晰的数据访问接口
+ * 文件记录仓储实现
+ * <p>负责文件记录的持久化操作</p>
+
  */
 @Slf4j
 @Repository

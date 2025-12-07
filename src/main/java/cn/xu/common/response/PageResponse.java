@@ -11,8 +11,8 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * 标准分页响应体
- * 用于封装分页查询的统一响应格式
+ * 分页响应封装
+ * 用于返回分页查询的结果数据结构
  *
  * @param <T> 分页数据类型
  */
@@ -20,9 +20,10 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "标准分页响应体")
+@Schema(description = "分页响应封装")
 public class PageResponse<T> {
-    @Schema(description = "当前页码（从1开始）", example = "1")
+
+    @Schema(description = "当前页码，从1开始", example = "1")
     private Integer pageNo;
 
     @Schema(description = "每页记录数", example = "10")
@@ -34,10 +35,10 @@ public class PageResponse<T> {
     @Schema(description = "分页数据内容")
     private T data;
 
-    // ========== 静态构造方法 ==========
+    // ========== 辅助方法 ==========
 
     /**
-     * 通用分页构造方法
+     * 用于构建分页响应对象
      */
     public static <T> PageResponse<T> of(Integer pageNo, Integer pageSize, Long total, T data) {
         return PageResponse.<T>builder()
@@ -49,7 +50,7 @@ public class PageResponse<T> {
     }
 
     /**
-     * 专门处理列表分页的构造方法
+     * 处理列表数据的分页响应
      */
     public static <T> PageResponse<List<T>> ofList(Integer pageNo, Integer pageSize, Long total, List<T> list) {
         return PageResponse.<List<T>>builder()
@@ -61,18 +62,18 @@ public class PageResponse<T> {
     }
 
     /**
-     * 空列表分页响应
+     * 返回一个空的分页列表
      */
     public static <T> PageResponse<List<T>> emptyList(int pageNo, int pageSize) {
         return ofList(pageNo, pageSize, 0L, Collections.emptyList());
     }
 
     /**
-     * 从Spring Page转换
+     * 将Spring Page转换为分页响应对象
      */
     public static <T> PageResponse<List<T>> fromSpringPage(Page<T> page) {
         return ofList(
-                page.getNumber() + 1,
+                page.getNumber() + 1,  // Page索引从0开始，所以加1
                 page.getSize(),
                 page.getTotalElements(),
                 page.getContent()

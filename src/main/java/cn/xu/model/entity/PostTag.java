@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 
 /**
  * 帖子标签表
- *
+ * 
  * @TableName post_tag
  */
 @AllArgsConstructor
@@ -18,30 +18,31 @@ import java.time.LocalDateTime;
 @Builder
 @Data
 public class PostTag implements Serializable {
+    
+    private static final long serialVersionUID = 1L;
+    
     /**
      * ID
      */
     private Long id;
-
+    
     /**
      * 帖子ID
      */
     private Long postId;
-
+    
     /**
      * 标签ID
      */
     private Long tagId;
-
+    
     /**
      * 创建时间
      */
     private LocalDateTime createTime;
-
+    
     /**
      * 更新时间
      */
     private LocalDateTime updateTime;
-    
-    private static final long serialVersionUID = 1L;
 }

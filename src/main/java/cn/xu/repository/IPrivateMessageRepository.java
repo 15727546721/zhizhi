@@ -3,75 +3,77 @@ package cn.xu.repository;
 import cn.xu.model.entity.PrivateMessage;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
- * 私信仓储接口
- * 
- * @author xu
- * @since 2025-11-28
+ * 私信消息仓储接口
  */
 public interface IPrivateMessageRepository {
     
-    // ========== 基础CRUD ==========
-    
+    /**
+     * 保存消息
+     */
     Long save(PrivateMessage message);
     
+    /**
+     * 更新消息
+     */
     void update(PrivateMessage message);
     
-    PrivateMessage findById(Long id);
-    
-    // ========== 消息查询 ==========
-    
-    /** 查询两个用户之间的所有消息（合并发送和接收） */
-    List<PrivateMessage> findMessagesBetweenUsers(Long userId1, Long userId2, int offset, int limit);
-    
-    /** 查询两个用户之间的消息（接收者视角，只查询status=1的消息） */
-    List<PrivateMessage> findMessagesByReceiver(Long receiverId, Long senderId, int offset, int limit);
-    
-    /** 查询两个用户之间的消息（发送者视角，查询所有消息） */
-    List<PrivateMessage> findMessagesBySender(Long senderId, Long receiverId, int offset, int limit);
-    
-    /** 查询用户的所有对话的最后一条消息 */
-    List<PrivateMessage> findLastMessagesByUser(Long userId, int offset, int limit);
-    
-    // ========== 已读状态 ==========
-    
-    /** 统计未读消息数（只统计status=1的未读消息） */
-    long countUnreadMessages(Long receiverId, Long senderId);
-    
-    /** 标记消息为已读 */
-    void markAsRead(Long messageId, Long receiverId);
-    
-    /** 批量标记消息为已读 */
-    void markAsReadBySender(Long receiverId, Long senderId);
-    
-    // ========== 状态更新 ==========
-    
-    /** 更新消息状态（将oldStatus的消息更新为newStatus） */
-    void updateStatusBySenderAndReceiver(Long senderId, Long receiverId, int oldStatus, int newStatus);
-    
-    // ========== 批量查询优化（解决N+1问题） ==========
-    
-    /** 批量获取用户与多个对话伙伴的最后一条消息 */
-    List<PrivateMessage> findLastMessagesBatch(Long currentUserId, List<Long> otherUserIds);
-    
-    /** 批量获取用户与多个对话伙伴的未读消息数 */
-    List<UnreadCountResult> countUnreadMessagesBatch(Long currentUserId, List<Long> otherUserIds);
+    /**
+     * 根据ID查询
+     */
+    Optional<PrivateMessage> findById(Long id);
     
     /**
-     * 未读消息统计结果
+     * 查询两个用户之间的消息列表
+     * 
+     * @param userId1 用户1
+     * @param userId2 用户2
+     * @param viewerId 查看者ID（用于过滤删除的消息）
+     * @param offset 偏移
+     * @param limit 限制
+     * @return 消息列表（按时间倒序）
      */
-    class UnreadCountResult {
-        private Long otherUserId;
-        private Long unreadCount;
-        
-        public UnreadCountResult(Long otherUserId, Long unreadCount) {
-            this.otherUserId = otherUserId;
-            this.unreadCount = unreadCount;
-        }
-        
-        public Long getOtherUserId() { return otherUserId; }
-        public Long getUnreadCount() { return unreadCount; }
-    }
+    List<PrivateMessage> findMessagesBetweenUsers(Long userId1, Long userId2, Long viewerId, int offset, int limit);
+    
+    /**
+     * 统计两个用户之间的未读消息数
+     */
+    int countUnread(Long receiverId, Long senderId);
+    
+    /**
+     * 标记消息为已读
+     */
+    void markAsRead(Long receiverId, Long senderId);
+    
+    /**
+     * 撤回消息
+     */
+    void withdraw(Long messageId, Long senderId);
+    
+    /**
+     * 检查是否有发送过消息
+     */
+    boolean hasMessageFrom(Long senderId, Long receiverId);
+    
+    /**
+     * 检查对方是否回复过
+     */
+    boolean hasReplyFrom(Long senderId, Long receiverId);
+    
+    /**
+     * 删除消息（发送方软删除）
+     */
+    void deleteBySender(Long messageId, Long senderId);
+    
+    /**
+     * 删除消息（接收方软删除）
+     */
+    void deleteByReceiver(Long messageId, Long receiverId);
+    
+    /**
+     * 删除消息（根据用户角色自动判断）
+     */
+    void softDeleteForUser(Long messageId, Long userId);
 }
-

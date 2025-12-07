@@ -1,4 +1,4 @@
-﻿package cn.xu.service.like;
+package cn.xu.service.like;
 
 import cn.xu.model.entity.Like;
 import cn.xu.repository.mapper.LikeMapper;
@@ -8,11 +8,8 @@ import org.springframework.stereotype.Service;
 
 /**
  * 点赞统计服务
- * 
- * <p>提供点赞相关的统计功能，包括点赞数统计、用户点赞统计等
- * 
- * @author xu
- * @since 2025-11-26
+ * <p>提供点赞数统计、用户点赞统计功能</p>
+ 
  */
 @Slf4j
 @Service
@@ -35,10 +32,10 @@ public class LikeStatisticsService {
     }
     
     /**
-     * 获取用户点赞数统计
+     * 获取用户的点赞统计
      * 
      * @param userId 用户ID
-     * @return 用户点赞数统计
+     * @return 用户点赞统计
      */
     public UserLikeStatistics getUserLikeStatistics(Long userId) {
         if (userId == null) {

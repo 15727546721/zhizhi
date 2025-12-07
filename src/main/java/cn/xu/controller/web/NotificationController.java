@@ -1,4 +1,4 @@
-﻿package cn.xu.controller.web;
+package cn.xu.controller.web;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.common.annotation.ApiOperationLog;
@@ -6,7 +6,7 @@ import cn.xu.common.response.PageResponse;
 import cn.xu.common.response.ResponseEntity;
 import cn.xu.model.dto.notification.NotificationRequest;
 import cn.xu.model.entity.Notification;
-import cn.xu.model.vo.notification.NotificationResponse;
+import cn.xu.model.vo.notification.NotificationVO;
 import cn.xu.service.notification.NotificationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -21,12 +21,16 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * 通知控制器
+ * 通知管理控制器
  * 
- * <p>提供通知列表查询、标记已读、删除通知等功能接口
- * 
+ * <p>提供通知相关API：
+ * <ul>
+ *   <li>通知类型：0-系统 1-点赞 2-收藏 3-评论 4-回复 5-关注 6-@提及</li>
+ *   <li>支持按类型查询、标记已读、删除等操作</li>
+ * </ul>
+ *
  * @author xu
- * @since 2025-11-25
+ * @since 1.0
  */
 @Slf4j
 @Validated
@@ -38,187 +42,124 @@ public class NotificationController {
 
     private final NotificationService notificationService;
 
+    // ==================== 查询接口 ====================
+
+    /**
+     * 获取用户通知列表
+     * 
+     * @param request 查询参数（type支持逗号分隔多类型，如"3,4"表示评论+回复）
+     */
     @GetMapping
-    @Operation(summary = "获取通知列表")
-    @ApiOperationLog(description = "获取通知列表")
-    public ResponseEntity<PageResponse<List<NotificationResponse>>> getUserNotifications(
-            @Validated @Parameter(description = "查询参数") NotificationRequest request) {
-        try {
-            Long currentUserId = StpUtil.getLoginIdAsLong();
-            List<Notification> notifications = notificationService.getUserNotifications(
-                    currentUserId, request.getType(), request.getPageNo(), request.getPageSize());
-            
-            List<NotificationResponse> voList = notifications.stream()
-                    .map(NotificationResponse::from)
-                    .collect(Collectors.toList());
-
-            long total = notificationService.getUnreadCount(currentUserId);
-            return ResponseEntity.<PageResponse<List<NotificationResponse>>>builder()
-                    .code(20000)
-                    .info("获取通知列表成功")
-                    .data(PageResponse.of(request.getPageNo(), request.getPageSize(), total, voList))
-                    .build();
-        } catch (Exception e) {
-            log.error("获取用户通知列表失败", e);
-            return ResponseEntity.<PageResponse<List<NotificationResponse>>>builder()
-                    .code(20001)
-                    .info("获取通知列表失败：" + e.getMessage())
-                    .build();
-        }
+    @Operation(summary = "获取用户通知列表")
+    @ApiOperationLog(description = "获取用户通知列表")
+    public ResponseEntity<PageResponse<List<NotificationVO>>> list(
+            @Validated NotificationRequest request) {
+        Long userId = currentUserId();
+        
+        // 查询通知列表
+        List<Notification> notifications = notificationService.getUserNotifications(
+                userId, request.getType(), request.getPageNo(), request.getPageSize());
+        
+        // 转换为VO
+        List<NotificationVO> voList = notifications.stream()
+                .map(NotificationVO::from)
+                .collect(Collectors.toList());
+        
+        // 查询总数（用于分页）
+        long total = notificationService.countByUserIdAndType(userId, request.getType());
+        
+        return ResponseEntity.success(
+                PageResponse.of(request.getPageNo(), request.getPageSize(), total, voList));
     }
 
+    /**
+     * 获取未读通知总数
+     */
     @GetMapping("/unread/count")
-    @Operation(summary = "获取未读通知数量")
-    @ApiOperationLog(description = "获取未读通知数量")
-    public ResponseEntity<Long> getUnreadCount() {
-        try {
-            Long currentUserId = StpUtil.getLoginIdAsLong();
-            long count = notificationService.getUnreadCount(currentUserId);
-            return ResponseEntity.<Long>builder()
-                    .code(20000)
-                    .info("获取未读通知数量成功")
-                    .data(count)
-                    .build();
-        } catch (Exception e) {
-            log.error("获取未读通知数量失败", e);
-            return ResponseEntity.<Long>builder()
-                    .code(20001)
-                    .info("获取未读通知数量失败：" + e.getMessage())
-                    .build();
-        }
+    @Operation(summary = "获取未读通知总数")
+    @ApiOperationLog(description = "获取未读通知总数")
+    public ResponseEntity<Long> unreadCount() {
+        long count = notificationService.getUnreadCount(currentUserId());
+        return ResponseEntity.success(count);
     }
 
-//    @GetMapping("/unread/list/count")
-//    @Operation(summary = "获取未读各个通知数量")
-//    @ApiOperationLog(description = "获取未读各个通知数量")
-//    public ResponseEntity<List<Long>> getUnreadListCount() {
-//        try {
-//            Long currentUserId = StpUtil.getLoginIdAsLong();
-//            List<NotificationType> types = NotificationType.values();
-//            List<Long> counts = types.stream()
-//                    .map(type -> notificationService.getUnreadCount(currentUserId, type))
-//                    .collect(Collectors.toList());
-//            return ResponseEntity.<List<Long>>builder()
-//                    .code(20000)
-//                    .info("获取未读各个通知数量成功")
-//                    .data(counts)
-//                    .build();
-//        } catch (Exception e) {
-//            log.error("获取未读各个通知数量失败", e);
-//            return ResponseEntity.<List<Long>>builder()
-//                    .code(20001)
-//                    .info("获取未读各个通知数量失败：" + e.getMessage())
-//                    .build();
-//        }
-//    }
-
-    @PutMapping("/{notificationId}/read")
-    @Operation(summary = "标记通知为已读")
-    @ApiOperationLog(description = "标记通知为已读")
-    public ResponseEntity<Void> markAsRead(
-            @Parameter(description = "通知ID") @PathVariable Long notificationId) {
-        try {
-            notificationService.markAsRead(notificationId);
-            return ResponseEntity.<Void>builder()
-                    .code(20000)
-                    .info("标记通知已读成功")
-                    .build();
-        } catch (Exception e) {
-            log.error("标记通知已读失败: id={}", notificationId, e);
-            return ResponseEntity.<Void>builder()
-                    .code(20001)
-                    .info("标记通知已读失败：" + e.getMessage())
-                    .build();
-        }
-    }
-
-    @PutMapping("/read/all")
-    @Operation(summary = "标记所有通知为已读")
-    @ApiOperationLog(description = "标记所有通知为已读")
-    public ResponseEntity<Void> markAllAsRead() {
-        try {
-            Long currentUserId = StpUtil.getLoginIdAsLong();
-            notificationService.markAllAsRead(currentUserId);
-            return ResponseEntity.<Void>builder()
-                    .code(20000)
-                    .info("标记所有通知已读成功")
-                    .build();
-        } catch (Exception e) {
-            log.error("标记所有通知已读失败", e);
-            return ResponseEntity.<Void>builder()
-                    .code(20001)
-                    .info("标记所有通知已读失败：" + e.getMessage())
-                    .build();
-        }
-    }
-
-    @DeleteMapping("/{notificationId}")
-    @Operation(summary = "删除通知")
-    @ApiOperationLog(description = "删除通知")
-    public ResponseEntity<Void> deleteNotification(
-            @Parameter(description = "通知ID") @PathVariable Long notificationId) {
-        try {
-            Long currentUserId = StpUtil.getLoginIdAsLong();
-            notificationService.deleteNotification(notificationId);
-            return ResponseEntity.<Void>builder()
-                    .code(20000)
-                    .info("删除通知成功")
-                    .build();
-        } catch (Exception e) {
-            log.error("删除通知失败: id={}", notificationId, e);
-            return ResponseEntity.<Void>builder()
-                    .code(20001)
-                    .info("删除通知失败：" + e.getMessage())
-                    .build();
-        }
-    }
-
+    /**
+     * 获取各类型未读通知数量
+     * 
+     * @return Map<类型, 数量>，如 {1: 5, 3: 2} 表示点赞5条、评论2条
+     */
     @GetMapping("/unread/count-by-type")
     @Operation(summary = "获取各类型未读通知数量")
     @ApiOperationLog(description = "获取各类型未读通知数量")
-    public ResponseEntity<Map<Integer, Long>> getUnreadCountByType() {
-        try {
-            Long currentUserId = StpUtil.getLoginIdAsLong();
-            Map<Integer, Long> countMap = notificationService.getUnreadCountByType(currentUserId);
-            return ResponseEntity.<Map<Integer, Long>>builder()
-                    .code(20000)
-                    .info("获取各类型未读通知数量成功")
-                    .data(countMap)
-                    .build();
-        } catch (Exception e) {
-            log.error("获取各类型未读通知数量失败", e);
-            return ResponseEntity.<Map<Integer, Long>>builder()
-                    .code(20001)
-                    .info("获取各类型未读通知数量失败：" + e.getMessage())
-                    .build();
-        }
+    public ResponseEntity<Map<Integer, Long>> unreadCountByType() {
+        Map<Integer, Long> counts = notificationService.getUnreadCountByType(currentUserId());
+        return ResponseEntity.success(counts);
     }
 
+    // ==================== 已读操作 ====================
+
+    /**
+     * 标记单个通知为已读
+     */
+    @PutMapping("/{id}/read")
+    @Operation(summary = "标记通知为已读")
+    @ApiOperationLog(description = "标记通知为已读")
+    public ResponseEntity<Void> markAsRead(
+            @Parameter(description = "通知ID") @PathVariable Long id) {
+        notificationService.markAsRead(currentUserId(), id);
+        return ResponseEntity.success();
+    }
+
+    /**
+     * 标记全部通知为已读（可按类型）
+     * 
+     * @param type 通知类型（可选，不传则标记全部）
+     */
+    @PutMapping("/read-all")
+    @Operation(summary = "标记全部通知为已读")
+    @ApiOperationLog(description = "标记全部通知为已读")
+    public ResponseEntity<Void> markAllAsRead(
+            @Parameter(description = "通知类型，不传则标记全部") @RequestParam(required = false) Integer type) {
+        notificationService.markAllAsRead(currentUserId(), type);
+        return ResponseEntity.success();
+    }
+
+    // ==================== 删除操作 ====================
+
+    /**
+     * 删除单个通知
+     */
+    @DeleteMapping("/{id}")
+    @Operation(summary = "删除通知")
+    @ApiOperationLog(description = "删除通知")
+    public ResponseEntity<Void> delete(
+            @Parameter(description = "通知ID") @PathVariable Long id) {
+        notificationService.delete(currentUserId(), id);
+        return ResponseEntity.success();
+    }
+
+    /**
+     * 批量删除通知
+     */
     @DeleteMapping("/batch")
     @Operation(summary = "批量删除通知")
     @ApiOperationLog(description = "批量删除通知")
-    public ResponseEntity<Void> batchDeleteNotifications(
-            @RequestBody @Parameter(description = "通知ID列表") Map<String, List<Long>> request) {
-        try {
-            Long currentUserId = StpUtil.getLoginIdAsLong();
-            List<Long> notificationIds = request.get("notificationIds");
-            if (notificationIds == null || notificationIds.isEmpty()) {
-                return ResponseEntity.<Void>builder()
-                        .code(20001)
-                        .info("通知ID列表不能为空")
-                        .build();
-            }
-            notificationService.batchDeleteNotifications(notificationIds);
-            return ResponseEntity.<Void>builder()
-                    .code(20000)
-                    .info("批量删除通知成功")
-                    .build();
-        } catch (Exception e) {
-            log.error("批量删除通知失败", e);
-            return ResponseEntity.<Void>builder()
-                    .code(20001)
-                    .info("批量删除通知失败：" + e.getMessage())
-                    .build();
+    public ResponseEntity<Void> batchDelete(
+            @RequestBody Map<String, List<Long>> request) {
+        List<Long> ids = request.get("ids");
+        if (ids == null || ids.isEmpty()) {
+            return ResponseEntity.error("通知ID列表不能为空");
         }
+        notificationService.batchDelete(currentUserId(), ids);
+        return ResponseEntity.success();
+    }
+
+    // ==================== 私有方法 ====================
+
+    /**
+     * 获取当前登录用户ID
+     */
+    private Long currentUserId() {
+        return StpUtil.getLoginIdAsLong();
     }
 }

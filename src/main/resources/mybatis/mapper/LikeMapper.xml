@@ -170,5 +170,18 @@
     <select id="countByType" resultType="java.lang.Long">
         SELECT COUNT(*) FROM `like` WHERE status = 1 AND type = #{type}
     </select>
+    
+    <!-- 批量检查点赞状态，返回已点赞的目标ID集合 -->
+    <select id="batchCheckStatus" resultType="java.lang.Long">
+        SELECT target_id
+        FROM `like`
+        WHERE user_id = #{userId}
+        AND type = #{type}
+        AND status = 1
+        AND target_id IN
+        <foreach collection="targetIds" item="targetId" open="(" separator="," close=")">
+            #{targetId}
+        </foreach>
+    </select>
 
 </mapper>

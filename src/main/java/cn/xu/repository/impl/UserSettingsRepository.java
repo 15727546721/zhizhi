@@ -9,7 +9,9 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 /**
- * 用户设置仓储实现（直接使用PO，无转换）
+ * 用户设置仓储实现
+ * <p>负责用户设置数据的持久化操作</p>
+ 
  */
 @Repository
 @RequiredArgsConstructor

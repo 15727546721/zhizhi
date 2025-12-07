@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserBlock implements Serializable {
+    
     /**
      * 屏蔽关系ID
      */
@@ -65,4 +66,3 @@ public class UserBlock implements Serializable {
                 .build();
     }
 }
-

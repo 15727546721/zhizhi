@@ -1,4 +1,4 @@
-﻿package cn.xu.controller.admin;
+package cn.xu.controller.admin;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.annotation.SaCheckPermission;
@@ -11,21 +11,20 @@ import cn.xu.controller.admin.model.dto.user.SysUserRequest;
 import cn.xu.model.entity.User;
 import cn.xu.service.user.IUserService;
 import cn.xu.support.exception.BusinessException;
+import cn.xu.support.util.LoginUserUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
-
 import javax.annotation.Resource;
 import javax.validation.Valid;
 import java.util.List;
 
 /**
  * 系统用户管理控制器
- * 提供后台用户管理相关接口
- *
- * @author xu
+ * <p>提供后台用户管理相关接口</p>
+
  */
 @Slf4j
 @RestController
@@ -36,6 +35,19 @@ public class SysUserController {
     @Resource
     private IUserService userService;
 
+    /**
+     * 获取用户列表
+     * 
+     * <p>分页查询用户列表，支持按用户名、状态、用户类型过滤
+     * <p>需要system:user:list权限
+     * 
+     * @param pageNo 页码，从1开始，默认为1
+     * @param pageSize 每页数量，默认为10
+     * @param username 用户名（可选），支持模糊查询
+     * @param status 状态（可选），0-禁用、1-正常
+     * @param userType 用户类型（可选），0-普通、1-官方、2-管理员
+     * @return 分页的用户列表
+     */
     @GetMapping("/list")
     @SaCheckLogin
     @SaCheckPermission("system:user:list")
@@ -63,6 +75,16 @@ public class SysUserController {
         }
     }
 
+    /**
+     * 获取用户详情
+     * 
+     * <p>根据用户ID查询用户详细信息
+     * <p>需要system:user:query权限
+     * 
+     * @param userId 用户ID
+     * @return 用户详细信息
+     * @throws BusinessException 当用户不存在时抛出
+     */
     @GetMapping("/{userId}")
     @SaCheckLogin
     @SaCheckPermission("system:user:query")
@@ -137,7 +159,7 @@ public class SysUserController {
     public ResponseEntity<Void> deleteUser(@PathVariable Long userId) {
         try {
             // 不能删除自己
-            Long currentUserId = StpUtil.getLoginIdAsLong();
+            Long currentUserId = LoginUserUtil.getLoginUserId();
             if (currentUserId.equals(userId)) {
                 throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "不能删除自己");
             }
@@ -162,7 +184,7 @@ public class SysUserController {
     @ApiOperationLog(description = "批量删除用户")
     public ResponseEntity<Void> batchDeleteUsers(@RequestBody List<Long> userIds) {
         try {
-            Long currentUserId = StpUtil.getLoginIdAsLong();
+            Long currentUserId = LoginUserUtil.getLoginUserId();
             // 过滤掉自己
             List<Long> filteredIds = userIds.stream()
                     .filter(id -> !currentUserId.equals(id))
@@ -192,7 +214,7 @@ public class SysUserController {
     @ApiOperationLog(description = "修改用户状态")
     public ResponseEntity<Void> updateUserStatus(
             @PathVariable Long userId,
-            @Parameter(description = "状态(0:正常 1:禁用)") @RequestParam Integer status) {
+            @Parameter(description = "状态 0:正常 1:禁用)") @RequestParam Integer status) {
         try {
             if (status == 1) {
                 userService.banUser(userId);
@@ -217,7 +239,7 @@ public class SysUserController {
     @ApiOperationLog(description = "获取当前登录用户信息")
     public ResponseEntity<User> getCurrentUser() {
         try {
-            Long userId = StpUtil.getLoginIdAsLong();
+            Long userId = LoginUserUtil.getLoginUserId();
             User user = userService.getUserInfo(userId);
             return ResponseEntity.<User>builder()
                     .code(ResponseCode.SUCCESS.getCode())
@@ -235,7 +257,7 @@ public class SysUserController {
     @ApiOperationLog(description = "获取当前登录用户信息（含角色权限）")
     public ResponseEntity<java.util.Map<String, Object>> getCurrentUserWithRoles() {
         try {
-            Long userId = StpUtil.getLoginIdAsLong();
+            Long userId = LoginUserUtil.getLoginUserId();
             User user = userService.getUserInfo(userId);
             
             // 构建响应数据

@@ -6,7 +6,9 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 
 /**
- * Lua脚本加载
+ * Lua脚本加载管理器
+ * <p>统一管理Redis Lua脚本的加载和执行</p>
+
  */
 @Data
 public class LuaScriptManager {

@@ -1,4 +1,4 @@
-﻿package cn.xu.controller.admin;
+package cn.xu.controller.admin;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.common.ResponseCode;
@@ -17,10 +17,11 @@ import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 
 /**
- * 后台管理系统登录Controller
+ * 后台管理系统登录控制器
  *
- * @author xu
- * @since 2025-11-30
+ * <p>提供后台管理系统的登录、退出功能</p>
+ * <p>仅允许管理员用户登录</p>
+ 
  */
 @Slf4j
 @RestController
@@ -28,15 +29,25 @@ import javax.annotation.Resource;
 @Tag(name = "后台登录", description = "后台管理系统登录接口")
 public class SysLoginController {
 
-    @Resource
+    @Resource(name = "userService")
     private IUserService userService;
 
+    /**
+     * 后台管理登录
+     *
+     * <p>验证用户名密码并检查管理员权限</p>
+     * <p>公开接口，无需登录</p>
+     *
+     * @param loginRequest 登录请求，包含用户名和密码
+     * @return 登录成功返回Token
+     * @throws BusinessException 当用户名/密码错误或无管理权限时抛出
+     */
     @PostMapping("/login")
     @Operation(summary = "后台管理登录")
     @ApiOperationLog(description = "后台管理登录")
     public ResponseEntity<String> login(@RequestBody LoginFormRequest loginRequest) {
         log.info("后台管理登录，用户名：{}", loginRequest.getUsername());
-        
+
         // 参数校验
         if (StringUtils.isBlank(loginRequest.getUsername())) {
             throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "用户名不能为空");
@@ -44,37 +55,37 @@ public class SysLoginController {
         if (StringUtils.isBlank(loginRequest.getPassword())) {
             throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "密码不能为空");
         }
-        
+
         try {
             // 调用用户服务进行登录验证
             User user = userService.loginByUsername(loginRequest.getUsername(), loginRequest.getPassword());
-            
+
             if (user == null) {
                 throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "用户名或密码错误");
             }
-            
+
             // 检查用户是否有管理员权限（userType >= 2 表示管理员或官方账号）
             if (user.getUserType() == null || user.getUserType() < 2) {
                 throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "您没有后台管理权限");
             }
-            
+
             // 检查用户状态
             if (user.getStatus() != null && user.getStatus() == 0) {
                 throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "账户已被禁用");
             }
-            
+
             // Sa-Token登录
             StpUtil.login(user.getId());
             String token = StpUtil.getTokenValue();
-            
+
             log.info("后台管理登录成功，用户ID：{}，用户名：{}", user.getId(), user.getUsername());
-            
+
             return ResponseEntity.<String>builder()
                     .code(ResponseCode.SUCCESS.getCode())
                     .data(token)
                     .info("登录成功")
                     .build();
-                    
+
         } catch (BusinessException e) {
             log.warn("后台管理登录失败：{}", e.getMessage());
             throw e;
@@ -84,6 +95,14 @@ public class SysLoginController {
         }
     }
 
+    /**
+     * 后台管理退出
+     *
+     * <p>清除当前用户的登录状态</p>
+     * <p>公开接口</p>
+     *
+     * @return 退出结果
+     */
     @GetMapping("/logout")
     @Operation(summary = "后台管理退出")
     @ApiOperationLog(description = "后台管理退出")
@@ -108,8 +127,12 @@ public class SysLoginController {
     }
 
     /**
-     * 初始化/重置管理员账号
-     * 注意：生产环境应删除此接口或添加额外安全验证
+     * 初始化管理员账号
+     *
+     * <p>创建或重置默认管理员账号</p>
+     * <p><strong>注意：生产环境应删除此接口或添加额外安全验证</strong></p>
+     *
+     * @return 初始化结果，包含默认用户名和密码
      */
     @PostMapping("/init-admin")
     @Operation(summary = "初始化管理员账号")

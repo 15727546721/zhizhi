@@ -6,6 +6,11 @@ import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
+/**
+ * 关注Mapper接口
+ * <p>处理关注相关的数据库操作</p>
+ 
+ */
 @Mapper
 public interface FollowMapper {
     /**
@@ -50,10 +55,6 @@ public interface FollowMapper {
 
     /**
      * 根据followerId和followedId获取关注状态
-     *
-     * @param followerId
-     * @param followedId
-     * @return
      */
     Integer findStatus(@Param("followerId") long followerId, @Param("followedId") long followedId);
     

@@ -1,4 +1,4 @@
-﻿package cn.xu.controller.web;
+package cn.xu.controller.web;
 
 import cn.xu.cache.UserRankingCacheRepository;
 import cn.xu.common.ResponseCode;
@@ -7,7 +7,9 @@ import cn.xu.common.response.ResponseEntity;
 import cn.xu.model.entity.Post;
 import cn.xu.model.entity.User;
 import cn.xu.repository.mapper.PostMapper;
-import cn.xu.service.user.UserService;
+import cn.xu.repository.mapper.TagMapper;
+import cn.xu.repository.mapper.UserMapper;
+import cn.xu.service.user.IUserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -28,10 +30,7 @@ import java.util.stream.Collectors;
 /**
  * 排行榜控制器
  *
- * <p>支持用户排行榜、帖子排行榜等
- *
- * @author xu
- * @since 2025-11-27
+ * <p>提供用户排行榜、帖子排行榜、标签排行榜等功能
  */
 @Slf4j
 @RestController
@@ -41,14 +40,26 @@ import java.util.stream.Collectors;
 public class RankingController {
 
     private final UserRankingCacheRepository userRankingCacheRepository;
-    private final UserService userService;
+    private final IUserService userService;
     private final PostMapper postMapper;
+    private final TagMapper tagMapper;
+    private final UserMapper userMapper;
 
     private static final int MAX_LIMIT = 100;
     private static final int DEFAULT_LIMIT = 20;
 
     // ==================== 用户排行榜 ====================
 
+    /**
+     * 获取用户排行榜
+     * 
+     * <p>支持按粉丝数、获赞数、帖子数、综合分数排序
+     * <p>公开接口，无需登录
+     * 
+     * @param type 排序类型：fans(粉丝数)、likes(获赞数)、posts(帖子数)、comprehensive(综合)
+     * @param limit 返回数量，默认20，最大100
+     * @return 用户排行榜列表
+     */
     @GetMapping("/users")
     @Operation(summary = "获取用户排行榜", description = "支持按粉丝数、获赞数、帖子数、综合分数排序")
     @ApiOperationLog(description = "获取用户排行榜")
@@ -63,31 +74,38 @@ public class RankingController {
             int safeLimit = Math.max(1, Math.min(limit, MAX_LIMIT));
             String safeType = validateType(type);
 
-            // 从缓存获取用户ID列表
+            // 先尝试从缓存获取用户ID列表
             List<Long> userIds = userRankingCacheRepository.getUserRankingIds(safeType, 0, safeLimit - 1);
+            List<User> users;
 
             if (userIds.isEmpty()) {
-                log.debug("用户排行榜为空: type={}", safeType);
-                return ResponseEntity.<List<UserRankingVO>>builder()
-                        .code(ResponseCode.SUCCESS.getCode())
-                        .data(new ArrayList<>())
-                        .build();
+                // 缓存为空，直接从数据库查询
+                log.debug("缓存为空，从数据库查询用户排行榜 type={}", safeType);
+                users = userMapper.findUserRanking(safeType, 0, safeLimit);
+                if (users == null || users.isEmpty()) {
+                    return ResponseEntity.<List<UserRankingVO>>builder()
+                            .code(ResponseCode.SUCCESS.getCode())
+                            .data(new ArrayList<>())
+                            .build();
+                }
+                userIds = users.stream().map(User::getId).collect(Collectors.toList());
+            } else {
+                // 批量获取用户信息
+                Map<Long, User> userMap = userService.batchGetUserInfo(userIds);
+                users = new ArrayList<>(userMap.values());
             }
-
-            // 批量获取用户信息
-            List<User> users = userService.batchGetUserInfo(userIds);
 
             // 转换为VO并保持排序
             List<UserRankingVO> rankings = buildUserRankingVOs(userIds, users, safeType);
 
-            log.debug("获取用户排行榜成功: type={}, count={}", safeType, rankings.size());
+            log.debug("获取用户排行榜成功 type={}, count={}", safeType, rankings.size());
             return ResponseEntity.<List<UserRankingVO>>builder()
                     .code(ResponseCode.SUCCESS.getCode())
                     .data(rankings)
                     .build();
 
         } catch (Exception e) {
-            log.error("获取用户排行榜失败: type={}", type, e);
+            log.error("获取用户排行榜失败 type={}", type, e);
             return ResponseEntity.<List<UserRankingVO>>builder()
                     .code(ResponseCode.UN_ERROR.getCode())
                     .info("获取用户排行榜失败")
@@ -95,6 +113,14 @@ public class RankingController {
         }
     }
 
+    /**
+     * 获取粉丝排行榜
+     * 
+     * <p>按粉丝数排序的用户排行榜快捷接口
+     * 
+     * @param limit 返回数量，默认20
+     * @return 粉丝排行榜
+     */
     @GetMapping("/users/fans")
     @Operation(summary = "获取粉丝排行榜", description = "按粉丝数排序的用户排行榜")
     @ApiOperationLog(description = "获取粉丝排行榜")
@@ -104,6 +130,14 @@ public class RankingController {
         return getUserRanking("fans", limit);
     }
 
+    /**
+     * 获取获赞排行榜
+     * 
+     * <p>按获赞数排序的用户排行榜快捷接口
+     * 
+     * @param limit 返回数量，默认20
+     * @return 获赞排行榜
+     */
     @GetMapping("/users/likes")
     @Operation(summary = "获取获赞排行榜", description = "按获赞数排序的用户排行榜")
     @ApiOperationLog(description = "获取获赞排行榜")
@@ -113,6 +147,14 @@ public class RankingController {
         return getUserRanking("likes", limit);
     }
 
+    /**
+     * 获取活跃用户排行榜
+     * 
+     * <p>按帖子数排序的用户排行榜快捷接口
+     * 
+     * @param limit 返回数量，默认20
+     * @return 活跃用户排行榜
+     */
     @GetMapping("/users/active")
     @Operation(summary = "获取活跃用户排行榜", description = "按帖子数排序的用户排行榜")
     @ApiOperationLog(description = "获取活跃用户排行榜")
@@ -124,6 +166,17 @@ public class RankingController {
 
     // ==================== 帖子排行榜 ====================
 
+    /**
+     * 获取帖子排行榜
+     * 
+     * <p>支持多种排序维度和时间范围
+     * <p>公开接口，无需登录
+     * 
+     * @param period 时间范围：week(周榜)、month(月榜)、all(总榜)
+     * @param sort 排序方式：hot(热度)、likes(点赞)、favorites(收藏)、comments(评论)、latest(最新)
+     * @param limit 返回数量，默认20，最大100
+     * @return 帖子排行榜列表
+     */
     @GetMapping("/posts")
     @Operation(summary = "获取帖子排行榜", description = "支持多种排序维度和时间范围")
     @ApiOperationLog(description = "获取帖子排行榜")
@@ -158,9 +211,7 @@ public class RankingController {
 
             Map<Long, User> userMap = new HashMap<>();
             if (!userIds.isEmpty()) {
-                List<User> users = userService.batchGetUserInfo(userIds);
-                userMap = users.stream()
-                        .collect(Collectors.toMap(User::getId, u -> u, (u1, u2) -> u1));
+                userMap = userService.batchGetUserInfo(userIds);
             }
 
             // 转换为VO
@@ -186,14 +237,14 @@ public class RankingController {
                 rankings.add(vo);
             }
 
-            log.debug("获取帖子排行榜成功: period={}, count={}", period, rankings.size());
+            log.debug("获取帖子排行榜成功 period={}, count={}", period, rankings.size());
             return ResponseEntity.<List<PostRankingVO>>builder()
                     .code(ResponseCode.SUCCESS.getCode())
                     .data(rankings)
                     .build();
 
         } catch (Exception e) {
-            log.error("获取帖子排行榜失败: period={}", period, e);
+            log.error("获取帖子排行榜失败 period={}", period, e);
             return ResponseEntity.<List<PostRankingVO>>builder()
                     .code(ResponseCode.UN_ERROR.getCode())
                     .info("获取帖子排行榜失败")
@@ -201,6 +252,15 @@ public class RankingController {
         }
     }
 
+    /**
+     * 获取帖子周榜
+     * 
+     * <p>获取最近一周的帖子排行榜
+     * 
+     * @param sort 排序方式
+     * @param limit 返回数量
+     * @return 周榜列表
+     */
     @GetMapping("/posts/week")
     @Operation(summary = "获取帖子周榜")
     @ApiOperationLog(description = "获取帖子周榜")
@@ -210,6 +270,15 @@ public class RankingController {
         return getPostRanking("week", sort, limit);
     }
 
+    /**
+     * 获取帖子月榜
+     * 
+     * <p>获取最近一月的帖子排行榜
+     * 
+     * @param sort 排序方式
+     * @param limit 返回数量
+     * @return 月榜列表
+     */
     @GetMapping("/posts/month")
     @Operation(summary = "获取帖子月榜")
     @ApiOperationLog(description = "获取帖子月榜")
@@ -221,6 +290,17 @@ public class RankingController {
 
     // ==================== 标签排行榜 ====================
 
+    /**
+     * 获取标签排行榜
+     * 
+     * <p>支持按使用数量、热度排序
+     * <p>公开接口，无需登录
+     * 
+     * @param sort 排序方式：count(使用数量)、hot(热度)
+     * @param period 时间范围：week(周)、month(月)、all(全部)
+     * @param limit 返回数量，默认20，最大100
+     * @return 标签排行榜列表
+     */
     @GetMapping("/tags")
     @Operation(summary = "获取标签排行榜", description = "支持按使用数量、热度排序")
     @ApiOperationLog(description = "获取标签排行榜")
@@ -234,11 +314,10 @@ public class RankingController {
 
         try {
             int safeLimit = Math.max(1, Math.min(limit, MAX_LIMIT));
+            String safePeriod = validatePeriod(period);
 
-            // 查询热门标签
-            // 使用 TagController 已有的热门标签接口逻辑
-            // 这里简化处理，直接返回按使用数量排序的标签
-            List<cn.xu.model.entity.Tag> tags = postMapper.findHotTags(safeLimit);
+            // 使用TagMapper查询热门标签（支持时间范围）
+            List<cn.xu.model.entity.Tag> tags = tagMapper.getHotTagsByTimeRange(safePeriod, safeLimit);
 
             List<TagRankingVO> rankings = new ArrayList<>();
             int rank = 1;
@@ -253,13 +332,14 @@ public class RankingController {
                 rankings.add(vo);
             }
 
+            log.debug("获取标签排行榜成功 period={}, count={}", safePeriod, rankings.size());
             return ResponseEntity.<List<TagRankingVO>>builder()
                     .code(ResponseCode.SUCCESS.getCode())
                     .data(rankings)
                     .build();
 
         } catch (Exception e) {
-            log.error("获取标签排行榜失败", e);
+            log.error("获取标签排行榜失败 period={}", period, e);
             return ResponseEntity.<List<TagRankingVO>>builder()
                     .code(ResponseCode.UN_ERROR.getCode())
                     .info("获取标签排行榜失败")
@@ -268,6 +348,23 @@ public class RankingController {
     }
 
     // ==================== 私有方法 ====================
+
+    /**
+     * 校验时间范围
+     */
+    private String validatePeriod(String period) {
+        if (period == null || period.isEmpty()) {
+            return "all";
+        }
+        switch (period.toLowerCase()) {
+            case "week":
+            case "month":
+            case "all":
+                return period.toLowerCase();
+            default:
+                return "all";
+        }
+    }
 
     /**
      * 校验用户排序类型

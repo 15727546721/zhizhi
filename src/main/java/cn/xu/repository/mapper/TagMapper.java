@@ -7,16 +7,19 @@ import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
+/**
+ * 标签Mapper接口
+ * <p>处理标签相关的数据库操作</p>
+ 
+ */
 @Mapper
 public interface TagMapper {
-    void addTag(@Param("name") String name);
+    Long addTag(@Param("name") String name);
 
     List<String> getTagNamesByPostId(Long postId);
 
     /**
-     *
-     * @param postIds
-     * @return
+     * 根据帖子ID列表查询帖子标签聚合
      */
     List<PostAndTagAgg> selectByPostIds(@Param("postIds") List<Long> postIds);
     
@@ -100,4 +103,12 @@ public interface TagMapper {
      * 统计所有标签数
      */
     Long countAll();
+    
+    /**
+     * 批量根据ID获取标签
+     *
+     * @param tagIds 标签ID集合
+     * @return 标签列表
+     */
+    List<Tag> findByIds(@Param("tagIds") List<Long> tagIds);
 }

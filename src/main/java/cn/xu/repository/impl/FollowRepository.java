@@ -10,11 +10,9 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * 关注关系仓储 (V3.0 - 简化架构)
- * 直接返回Follow PO，移除Entity层转换
- * 
- * @author zhizhi
- * @since 2025-11-24
+ * 关注关系仓储
+ * <p>负责关注关系的持久化操作</p>
+ 
  */
 @Slf4j
 @Repository

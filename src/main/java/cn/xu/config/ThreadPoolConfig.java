@@ -11,6 +11,11 @@ import java.util.concurrent.TimeUnit;
 /**
  * 线程池配置
  */
+/**
+ * 线程池配置类
+ * 
+ * 
+ */
 @Configuration
 public class ThreadPoolConfig {
 
@@ -41,8 +46,8 @@ public class ThreadPoolConfig {
                 60L,                    // 空闲线程存活时间
                 TimeUnit.SECONDS,       // 时间单位
                 new LinkedBlockingQueue<>(1000),  // 工作队列
-                r -> new Thread(r, "domain-like-thread-" + r.hashCode()),  // 线程工厂
+                r -> new Thread(r, "domain-notify-thread-" + r.hashCode()),  // 线程工厂
                 new ThreadPoolExecutor.CallerRunsPolicy()  // 拒绝策略
         );
     }
-} 
+}

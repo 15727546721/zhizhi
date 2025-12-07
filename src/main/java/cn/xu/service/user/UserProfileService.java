@@ -13,8 +13,6 @@ import org.springframework.stereotype.Service;
 
 /**
  * 用户资料服务
- *
- * @author xu
  */
 @Slf4j
 @Service

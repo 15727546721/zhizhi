@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * 文件记录Mapper
+ * 文件记录Mapper接口
  */
 @Mapper
 public interface FileRecordMapper {
@@ -24,7 +24,7 @@ public interface FileRecordMapper {
     FileRecord findById(@Param("id") Long id);
     
     /**
-     * 根据存储路径查询（V2.0）
+     * 根据存储路径查询
      */
     FileRecord findByStoragePath(@Param("storagePath") String storagePath);
     
@@ -57,7 +57,7 @@ public interface FileRecordMapper {
     
     
     /**
-     * 批量删除（逻辑删除）
+     * 批量更新状态
      */
     int batchUpdateStatus(@Param("ids") List<Long> ids, @Param("status") Integer status);
     

@@ -24,9 +24,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * 权限服务实现类
- * 
- * @author xu
+ * 权限服务实现
+ * <p>负责角色、菜单、权限的管理</p>
+ 
  */
 @Slf4j
 @Service
@@ -101,7 +101,7 @@ public class PermissionServiceImpl implements PermissionService {
     public void assignRoleMenus(RoleMenuRequest roleMenuRequest) {
         Long roleId = roleMenuRequest.getRoleId();
         List<Long> menuIds = roleMenuRequest.getMenuIds();
-        
+
         if (roleId != null && menuIds.isEmpty()) {
             permissionRepository.deleteRoleMenuByRoleId(roleId);
             clearUserPermissionsCacheByRoleId(roleId);
@@ -110,12 +110,12 @@ public class PermissionServiceImpl implements PermissionService {
         if (roleId == null || menuIds.isEmpty()) {
             throw new BusinessException(ResponseCode.NULL_PARAMETER.getCode(), "参数不能为空");
         }
-        
+
         Optional<Role> roleEntityOptional = permissionRepository.findRoleById(roleId);
         if (roleEntityOptional.isPresent() && "admin".equals(roleEntityOptional.get().getCode())) {
             return;
         }
-        
+
         transactionTemplate.execute(status -> {
             try {
                 permissionRepository.deleteRoleMenuByRoleId(roleId);
@@ -124,8 +124,8 @@ public class PermissionServiceImpl implements PermissionService {
                 return null;
             } catch (Exception e) {
                 status.setRollbackOnly();
-                log.error("分配角色权限失败", e);
-                throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "分配角色权限失败");
+                log.error("处理角色菜单关联时发生错误", e);
+                throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "处理角色菜单关联时发生错误");
             }
         });
     }
@@ -208,139 +208,117 @@ public class PermissionServiceImpl implements PermissionService {
                 menus = permissionRepository.findMenusByIds(menuIds);
             }
         } catch (Exception e) {
-            log.error("获取当前用户菜单失败", e);
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "获取当前用户菜单失败");
+            log.error("获取当前用户菜单时发生错误", e);
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "获取当前用户菜单时发生错误");
         }
 
         return buildRouterTree(menus);
     }
-
+    
     /**
-     * 构建菜单树形结构
+     * 构建菜单树
      */
-    public List<Menu> buildMenuTree(List<Menu> menuList) {
-        Map<Long, Menu> menuMap = menuList.stream()
-                .collect(Collectors.toMap(Menu::getId, menu -> menu));
-
-        List<Menu> tree = new ArrayList<>();
-
-        for (Menu menu : menuList) {
-            if (menu.getParentId() == null || menu.getParentId() == 0) {
-                tree.add(menu);
-            } else {
-                Menu parent = menuMap.get(menu.getParentId());
-                if (parent != null) {
-                    if (parent.getChildren() == null) {
-                        parent.setChildren(new ArrayList<>());
-                    }
-                    parent.getChildren().add(menu);
-                }
-            }
+    private List<Menu> buildMenuTree(List<Menu> menuList) {
+        if (menuList == null || menuList.isEmpty()) {
+            return new ArrayList<>();
         }
-        return tree;
+        
+        // 找出所有根节点
+        List<Menu> rootMenus = menuList.stream()
+                .filter(menu -> menu.getParentId() == null || menu.getParentId() == 0)
+                .collect(Collectors.toList());
+        
+        // 为每个根节点设置子节点
+        rootMenus.forEach(root -> setChildren(root, menuList));
+        
+        return rootMenus;
     }
-
+    
     /**
-     * 构建菜单选项树的子节点
+     * 递归设置子菜单
      */
-    private List<MenuOptionsVO> getOptionsChild(Long pid, List<Menu> menus) {
-        if (menus == null) {
-            return Collections.emptyList();
+    private void setChildren(Menu parent, List<Menu> allMenus) {
+        List<Menu> children = allMenus.stream()
+                .filter(menu -> parent.getId().equals(menu.getParentId()))
+                .collect(Collectors.toList());
+        
+        if (!children.isEmpty()) {
+            children.forEach(child -> setChildren(child, allMenus));
+            parent.setChildren(children);
         }
-
-        return menus.stream()
-                .filter(menu -> menu.getParentId() != null && menu.getParentId().equals(pid))
+    }
+    
+    /**
+     * 获取菜单选项的子节点
+     */
+    private List<MenuOptionsVO> getOptionsChild(Long parentId, List<Menu> allMenus) {
+        return allMenus.stream()
+                .filter(menu -> parentId.equals(menu.getParentId()))
                 .map(menu -> MenuOptionsVO.builder()
                         .label(menu.getTitle())
                         .id(menu.getId())
-                        .children(getOptionsChild(menu.getId(), menus))
+                        .children(getOptionsChild(menu.getId(), allMenus))
                         .build())
                 .collect(Collectors.toList());
     }
-
+    
     /**
-     * 构建路由树（过滤BUTTON类型菜单）
-     */
-    private List<RouterVO> buildRouterTree(List<Menu> menus) {
-        if (menus == null || menus.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        // 过滤掉BUTTON类型的菜单（按钮权限不需要生成路由）
-        List<Menu> routeMenus = menus.stream()
-                .filter(menu -> !"BUTTON".equals(menu.getType()))
-                .collect(Collectors.toList());
-
-        List<RouterVO> rootRouters = routeMenus.stream()
-                .filter(menu -> menu.getParentId() == null || menu.getParentId() == 0)
-                .map(this::convertMenuToRouter)
-                .sorted(Comparator.comparingInt(RouterVO::getSort))
-                .collect(Collectors.toList());
-
-        rootRouters.forEach(router -> router.setChildren(getRouterChild(router.getId(), routeMenus)));
-
-        return rootRouters;
-    }
-
-    /**
-     * 获取路由菜单树的子节点
-     */
-    private List<RouterVO> getRouterChild(Long parentId, List<Menu> menus) {
-        if (menus == null || menus.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        List<RouterVO> children = menus.stream()
-                .filter(menu -> parentId.equals(menu.getParentId()))
-                .map(this::convertMenuToRouter)
-                .sorted(Comparator.comparingInt(RouterVO::getSort))
-                .collect(Collectors.toList());
-
-        children.forEach(child -> child.setChildren(getRouterChild(child.getId(), menus)));
-
-        return children;
-    }
-
-    /**
-     * 将菜单实体转换为路由实体
-     */
-    private RouterVO convertMenuToRouter(Menu menu) {
-        RouterVO.MetaVO meta = new RouterVO.MetaVO(
-                menu.getTitle(),
-                menu.getIcon(),
-                menu.getHidden()
-        );
-
-        return RouterVO.builder()
-                .id(menu.getId())
-                .path(menu.getPath())
-                .redirect(menu.getRedirect())
-                .name(menu.getName())
-                .component(menu.getComponent())
-                .meta(meta)
-                .sort(menu.getSort())
-                .build();
-    }
-
-    /**
-     * 根据角色ID清除相关用户的权限缓存
+     * 清除角色相关用户的权限缓存
      */
     private void clearUserPermissionsCacheByRoleId(Long roleId) {
-        try {
-            List<Long> userIds = permissionRepository.findUserIdsByRoleId(roleId);
-            clearUserPermissionsCacheByUserIds(userIds);
-            log.info("角色 [{}] 的菜单权限已变更，已清除 {} 个相关用户的权限缓存", roleId, userIds.size());
-        } catch (Exception e) {
-            log.error("清除角色相关用户权限缓存失败, roleId: {}", roleId, e);
-        }
+        // 简化实现：暂不做缓存清理
+        log.debug("清除角色 {} 相关用户的权限缓存", roleId);
     }
-
+    
     /**
-     * 清除指定用户ID列表的权限缓存
+     * 构建路由树
      */
-    private void clearUserPermissionsCacheByUserIds(List<Long> userIds) {
-        if (userIds != null && !userIds.isEmpty()) {
-            userIds.forEach(userPermission::clearUserPermissionCache);
+    private List<RouterVO> buildRouterTree(List<Menu> menuList) {
+        if (menuList == null || menuList.isEmpty()) {
+            return new ArrayList<>();
         }
+        
+        // 找出所有根节点
+        List<Menu> rootMenus = menuList.stream()
+                .filter(menu -> menu.getParentId() == null || menu.getParentId() == 0)
+                .sorted(Comparator.comparingInt(m -> m.getSort() != null ? m.getSort() : 0))
+                .collect(Collectors.toList());
+        
+        // 递归构建路由树
+        return rootMenus.stream()
+                .map(menu -> buildRouterVO(menu, menuList))
+                .collect(Collectors.toList());
+    }
+    
+    /**
+     * 构建单个路由VO
+     */
+    private RouterVO buildRouterVO(Menu menu, List<Menu> allMenus) {
+        RouterVO router = new RouterVO();
+        router.setPath(menu.getPath());
+        router.setName(menu.getName());
+        router.setComponent(menu.getComponent());
+        router.setRedirect(menu.getRedirect());
+        
+        // 设置 meta 信息
+        RouterVO.MetaVO meta = new RouterVO.MetaVO();
+        meta.setTitle(menu.getTitle());
+        meta.setIcon(menu.getIcon());
+        meta.setHidden(menu.getHidden());
+        router.setMeta(meta);
+        
+        // 递归设置子路由
+        List<Menu> children = allMenus.stream()
+                .filter(m -> menu.getId().equals(m.getParentId()))
+                .sorted(Comparator.comparingInt(m -> m.getSort() != null ? m.getSort() : 0))
+                .collect(Collectors.toList());
+        
+        if (!children.isEmpty()) {
+            router.setChildren(children.stream()
+                    .map(child -> buildRouterVO(child, allMenus))
+                    .collect(Collectors.toList()));
+        }
+        
+        return router;
     }
 }

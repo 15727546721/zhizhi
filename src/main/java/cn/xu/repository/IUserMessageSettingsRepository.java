@@ -6,8 +6,8 @@ import java.util.Optional;
 
 /**
  * 用户私信设置仓储接口
- * 
- * 简化设计：直接使用PO，移除Entity转换
+ * <p>定义用户私信设置的持久化操作</p>
+
  */
 public interface IUserMessageSettingsRepository {
     /**
@@ -30,4 +30,3 @@ public interface IUserMessageSettingsRepository {
      */
     void deleteByUserId(Long userId);
 }
-

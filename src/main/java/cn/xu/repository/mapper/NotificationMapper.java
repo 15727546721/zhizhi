@@ -7,7 +7,9 @@ import org.apache.ibatis.annotations.Param;
 import java.util.List;
 
 /**
- * 通知DAO接口
+ * 通知Mapper接口
+ * <p>处理通知相关的数据库操作</p>
+
  */
 @Mapper
 public interface NotificationMapper {
@@ -78,4 +80,33 @@ public interface NotificationMapper {
      * 批量删除通知
      */
     void batchDeleteByIds(@Param("ids") List<Long> ids);
+
+    /**
+     * 将用户的通知标记为已读（可按类型）
+     */
+    void markAllAsReadByType(@Param("receiverId") Long receiverId, @Param("type") Integer type);
+
+    /**
+     * 统计用户通知数量（按类型）
+     */
+    long countByReceiverIdAndType(@Param("receiverId") Long receiverId, @Param("type") Integer type);
+
+    /**
+     * 根据用户ID和多类型分页查询通知
+     */
+    List<Notification> findByReceiverIdAndTypes(
+            @Param("receiverId") Long receiverId,
+            @Param("types") List<Integer> types,
+            @Param("offset") int offset,
+            @Param("limit") int limit);
+
+    /**
+     * 统计用户通知数量（按多类型）
+     */
+    long countByReceiverIdAndTypes(@Param("receiverId") Long receiverId, @Param("types") List<Integer> types);
+
+    /**
+     * 批量删除通知（带用户ID校验）
+     */
+    void batchDeleteByReceiverIdAndIds(@Param("receiverId") Long receiverId, @Param("ids") List<Long> ids);
 }

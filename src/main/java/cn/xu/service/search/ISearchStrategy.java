@@ -7,6 +7,8 @@ import org.springframework.data.domain.Pageable;
 
 /**
  * 搜索策略接口
+ * <p>定义搜索策略的通用方法</p>
+ 
  */
 public interface ISearchStrategy {
     

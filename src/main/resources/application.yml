@@ -8,10 +8,10 @@ spring:
     active: dev
   # 邮件服务配置（请替换为您的真实配置）
   mail:
-    host: smtp.qq.com                          # SMTP服务器地址（QQ邮箱示例）
-    port: 587                                   # SMTP端口（587-TLS, 465-SSL）
-    username: your_email@qq.com                 # 发件人邮箱（请替换）
-    password: your_authorization_code           # 邮箱授权码（请替换，不是密码）
+    host: ${MAIL_HOST:smtp.qq.com}                    # SMTP服务器地址
+    port: ${MAIL_PORT:587}                            # SMTP端口（587-TLS, 465-SSL）
+    username: ${MAIL_USERNAME:your_email@qq.com}      # 发件人邮箱
+    password: ${MAIL_PASSWORD:your_authorization_code} # 邮箱授权码（从环境变量读取）
     default-encoding: UTF-8
     properties:
       mail:
@@ -60,11 +60,11 @@ post:
 
 # MinIO配置
 minio:
-  url: http://localhost:5000
-  accessKey: admin
-  secretKey: superadmin
-  bucketName: zhizhi
-  enabled: true  # 启用MinIO
+  url: ${MINIO_URL:http://localhost:5000}
+  accessKey: ${MINIO_ACCESS_KEY:admin}
+  secretKey: ${MINIO_SECRET_KEY:superadmin}  # 生产环境必须使用环境变量
+  bucketName: ${MINIO_BUCKET:zhizhi}
+  enabled: ${MINIO_ENABLED:true}  # 启用MinIO
 
 # 文件访问配置
 file:
@@ -115,3 +115,21 @@ app:
     monitoring-enabled: true
     retry-count: 3
     timeout-ms: 5000
+  # 账户安全配置
+  security:
+    # 验证码配置
+    verify-code:
+      enabled: true  # 是否启用验证码验证（开发环境可设为false）
+    # 登录安全配置
+    login:
+      max-fail-count: 5        # 最大登录失败次数
+      lock-duration: 1800      # 账户锁定时长（秒），默认30分钟
+      fail-count-expire: 3600  # 失败计数过期时间（秒），默认1小时
+    # IP封禁配置
+    ip:
+      suspicious-threshold: 10     # 可疑行为阈值
+      auto-block-duration: 3600    # 自动封禁时长（秒），默认1小时
+      suspicious-expire: 3600      # 可疑行为计数过期时间（秒）
+  # 前端URL配置
+  frontend:
+    reset-password-url: ${FRONTEND_RESET_PASSWORD_URL:http://localhost:3000/reset-password}

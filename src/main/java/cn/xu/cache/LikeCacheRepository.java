@@ -6,12 +6,9 @@ import org.springframework.stereotype.Repository;
 
 /**
  * 点赞缓存仓储
- * 处理点赞相关的缓存操作
- * 
- * <p>继承BaseCacheRepository复用通用方法，减少重复代码
- * 
- * @author zhizhi
- * @since 2025-11-23
+ * <p>处理点赞相关的缓存操作</p>
+ * <p>继承BaseCacheRepository复用通用方法，减少重复代码</p>
+
  */
 @Slf4j
 @Repository
@@ -111,7 +108,7 @@ public class LikeCacheRepository extends BaseCacheRepository {
             // 批量查询用户的所有点赞关系
             // 注意：由于Redis缓存可能是部分加载（Partial Cache），即只缓存了用户点赞的部分记录
             // 所以这里不能因为Redis中没有找到就认为用户没有点赞（返回false）
-            // 只能确认"Redis中存在的肯定是已点赞的"（返回true）
+            // 只能确认Redis中存在的肯定是已点赞的（返回true）
             // 对于Redis中不存在的，需要交给上层去查数据库确认
             java.util.Set<Object> userLikedValues = getSetMembers(key);
             

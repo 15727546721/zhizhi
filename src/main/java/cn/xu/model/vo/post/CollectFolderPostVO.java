@@ -1,29 +1,1 @@
-package cn.xu.model.vo.post;
-
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Data;
-
-import java.time.LocalDateTime;
-
-/**
- * 收藏夹帖子VO对象
- */
-@Data
-@Schema(description = "收藏夹帖子信息")
-public class CollectFolderPostVO {
-
-    @Schema(description = "主键ID")
-    private Long id;
-
-    @Schema(description = "收藏夹ID")
-    private Long folderId;
-
-    @Schema(description = "帖子ID")
-    private Long postId;
-
-    @Schema(description = "用户ID")
-    private Long userId;
-
-    @Schema(description = "收藏时间")
-    private LocalDateTime createTime;
-}
+package cn.xu.model.vo.post;import io.swagger.v3.oas.annotations.media.Schema;import lombok.Data;import java.time.LocalDateTime;/** * 收藏夹帖子VO对象 */@Data@Schema(description = "收藏夹帖子VO对象")public class CollectFolderPostVO {    @Schema(description = "主键ID")    private Long id;    @Schema(description = "收藏夹ID")    private Long folderId;    @Schema(description = "帖子ID")    private Long postId;    @Schema(description = "用户ID")    private Long userId;    @Schema(description = "收藏时间")    private LocalDateTime createTime;}

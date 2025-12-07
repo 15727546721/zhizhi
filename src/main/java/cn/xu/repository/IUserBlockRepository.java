@@ -7,8 +7,6 @@ import java.util.Optional;
 
 /**
  * 用户屏蔽仓储接口
- * 
- * 简化设计：直接使用PO，移除Entity转换
  */
 public interface IUserBlockRepository {
     
@@ -52,4 +50,3 @@ public interface IUserBlockRepository {
      */
     void deleteByUserIdAndBlockedUserId(Long userId, Long blockedUserId);
 }
-

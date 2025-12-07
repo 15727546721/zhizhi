@@ -11,9 +11,9 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * 用户屏蔽仓储实现类
- * 
- * 简化设计：直接使用PO，移除Entity/Converter转换
+ * 用户屏蔽仓储实现
+ * <p>负责用户屏蔽关系的持久化操作</p>
+
  */
 @Repository
 @RequiredArgsConstructor

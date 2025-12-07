@@ -8,9 +8,8 @@ import java.util.List;
 
 /**
  * 角色Mapper接口
- * 负责角色相关的数据库操作
- * 
- * 
+ * <p>负责角色相关的数据库操作</p>
+ 
  */
 @Mapper
 public interface RoleMapper {

@@ -7,7 +7,7 @@ import lombok.ToString;
 
 /**
  * 业务异常类
- * 用于封装业务逻辑中的异常情况
+ * <p>用于封装业务逻辑中的异常情况</p>
  */
 @EqualsAndHashCode(callSuper = true)
 @Data

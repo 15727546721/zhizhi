@@ -1,83 +1,1 @@
-package cn.xu.model.vo.notification;
-
-import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
-
-/**
- * 通知VO
- * 用于通知信息展示
- * 
- * 使用场景：
- * - 通知列表
- * - 未读通知
- * - 系统通知
- * 
- * @author zhizhi
- * @since 2025-11-24
- */
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-@Schema(description = "通知VO")
-public class NotificationVO {
-    
-    // ========== 基础信息 ==========
-    
-    @Schema(description = "通知ID", example = "1")
-    private Long id;
-    
-    @Schema(description = "接收者用户ID", example = "1")
-    private Long receiverId;
-    
-    @Schema(description = "发送者用户ID", example = "2")
-    private Long senderId;
-    
-    @Schema(description = "发送者昵称", example = "张三")
-    private String senderNickname;
-    
-    @Schema(description = "发送者头像", example = "https://example.com/avatar.jpg")
-    private String senderAvatar;
-    
-    // ========== 通知内容 ==========
-    
-    @Schema(description = "通知类型", example = "LIKE",
-            allowableValues = {"LIKE", "COMMENT", "FOLLOW", "SYSTEM", "REPLY", "MENTION"})
-    private String type;
-    
-    @Schema(description = "通知标题", example = "张三点赞了你的帖子")
-    private String title;
-    
-    @Schema(description = "通知内容", example = "张三点赞了你的帖子《如何学习Java》")
-    private String content;
-    
-    // ========== 关联信息 ==========
-    
-    @Schema(description = "关联目标类型", example = "POST",
-            allowableValues = {"POST", "COMMENT", "USER"})
-    private String targetType;
-    
-    @Schema(description = "关联目标ID", example = "100")
-    private Long targetId;
-    
-    @Schema(description = "关联目标标题/名称", example = "如何学习Java")
-    private String targetTitle;
-    
-    // ========== 状态信息 ==========
-    
-    @Schema(description = "是否已读", example = "false")
-    private Boolean isRead;
-    
-    @Schema(description = "阅读时间", example = "2025-11-24T12:00:00")
-    private LocalDateTime readTime;
-    
-    // ========== 时间信息 ==========
-    
-    @Schema(description = "创建时间", example = "2025-11-24T10:00:00")
-    private LocalDateTime createTime;
-}
+package cn.xu.model.vo.notification;import cn.xu.model.entity.Notification;import io.swagger.v3.oas.annotations.media.Schema;import lombok.Data;import java.time.LocalDateTime;/** * 通知VO * * 该类用于封装通知的详细信息，返回给前端展示。 */@Data@Schema(description = "通知VO对象")public class NotificationVO {    @Schema(description = "通知ID")    private Long id;    @Schema(description = "通知类型：0-普通消息 1-点赞 2-收藏 3-评论 4-系统通知 5-关注")    private Integer type;    @Schema(description = "发送者ID")    private Long senderId;    @Schema(description = "发送者名称")    private String senderName;    @Schema(description = "发送者头像")    private String senderAvatar;    @Schema(description = "通知标题")    private String title;    @Schema(description = "通知内容")    private String content;    @Schema(description = "业务类型：0-普通消息 1-帖子 2-评论 3-用户")    private Integer businessType;    @Schema(description = "业务ID")    private Long businessId;    @Schema(description = "是否已读")    private Boolean read;    @Schema(description = "创建时间")    private LocalDateTime createdTime;    @Schema(description = "更新时间")    private LocalDateTime updatedTime;    /**     * 将 Notification PO 转换为 NotificationVO     */    public static NotificationVO from(Notification notification) {        if (notification == null) {            return null;        }        NotificationVO response = new NotificationVO();        response.setId(notification.getId());        response.setType(notification.getType());        response.setSenderId(notification.getSenderId());        response.setTitle(notification.getTitle());        response.setContent(notification.getContent());        response.setBusinessType(notification.getBusinessType());        response.setBusinessId(notification.getBusinessId());        response.setRead(notification.getIsRead() != null && notification.getIsRead() == 1);        response.setCreatedTime(notification.getCreateTime());        response.setUpdatedTime(notification.getUpdateTime());        return response;    }}

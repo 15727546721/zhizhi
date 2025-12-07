@@ -10,16 +10,8 @@ import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * 安全的频控服务
- * 
- * <p>特性：
- * <ul>
- * <li>基于Redis的原子性频控</li>
- * <li>Redis不可用时自动降级到内存频控</li>
- * <li>防止频控绕过和恶意攻击</li>
- * </ul>
- *
- * @author xu
- * @since 2025-11-26
+ * <p>特性：基于Redis的原子性频控，Redis不可用时自动降级到内存频控</p>
+ 
  */
 @Service
 @RequiredArgsConstructor
@@ -68,7 +60,7 @@ public class SecureRateLimitService {
     }
 
     /**
-     * 滑动窗口频控检查（简化版，使用固定窗口代替）
+     * 滑动窗口频控检查（简化版，使用固定窗口替代）
      */
     public RateLimitResult checkSlidingWindow(String key, int limit, long windowMillis) {
         return checkFixedWindow(key, limit, (int) (windowMillis / 1000));

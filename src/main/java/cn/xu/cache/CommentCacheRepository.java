@@ -9,20 +9,18 @@ import java.util.stream.Collectors;
 
 /**
  * 评论缓存仓储
- * 处理评论相关的缓存操作
- * 
- * <p>继承BaseCacheRepository复用通用方法，减少重复代码
- * 
- * @author zhizhi
- * @since 2025-11-23
+ * <p>处理评论相关的缓存操作</p>
+ * <p>继承BaseCacheRepository复用通用方法，减少重复代码</p>
+ 
  */
 @Slf4j
 @Repository
 public class CommentCacheRepository extends BaseCacheRepository {
     
-    // TTL配置
-    private static final int DEFAULT_CACHE_TTL = 600; // 10分钟
-    private static final int EMPTY_RESULT_TTL = 30;   // 30秒（空结果）
+    /** 默认缓存TTL：10分钟 */
+    private static final int DEFAULT_CACHE_TTL = 600;
+    /** 空结果缓存TTL：30秒 */
+    private static final int EMPTY_RESULT_TTL = 30;
 
     /**
      * 获取热门评论ID列表

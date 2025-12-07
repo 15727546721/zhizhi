@@ -5,7 +5,9 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 /**
- * 用户设置Mapper
+ * 用户设置Mapper接口
+ * <p>处理用户设置的数据库操作</p>
+ 
  */
 @Mapper
 public interface UserSettingsMapper {
@@ -64,4 +66,3 @@ public interface UserSettingsMapper {
      */
     void deleteByUserId(@Param("userId") Long userId);
 }
-

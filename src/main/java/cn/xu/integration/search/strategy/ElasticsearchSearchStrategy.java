@@ -5,6 +5,7 @@ import cn.xu.model.dto.search.SearchFilter;
 import cn.xu.model.entity.Post;
 import cn.xu.repository.read.elastic.model.PostIndex;
 import cn.xu.repository.read.elastic.repository.PostElasticRepository;
+import cn.xu.service.search.IElasticsearchIndexManager;
 import cn.xu.service.search.ISearchStrategy;
 import cn.xu.support.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
@@ -31,17 +32,19 @@ import java.util.stream.Collectors;
 
 /**
  * Elasticsearch搜索策略实现
- * 
- * 职责：
- * 1. ES全文检索（搜索）
- * 2. 帖子索引管理（增删改）
- * 3. 热度排行查询
+ * <p>职责:</p>
+ * <ul>
+ *   <li>ES全文检索（搜索）</li>
+ *   <li>帖子索引管理（增删改）</li>
+ *   <li>热度排行查询</li>
+ * </ul>
+ 
  */
 @Slf4j
 @Component
 @RequiredArgsConstructor
 @ConditionalOnProperty(name = "spring.elasticsearch.enabled", havingValue = "true", matchIfMissing = false)
-public class ElasticsearchSearchStrategy implements ISearchStrategy {
+public class ElasticsearchSearchStrategy implements ISearchStrategy, IElasticsearchIndexManager {
 
     private final PostElasticRepository postElasticRepository;
     private final ElasticsearchOperations elasticsearchOperations;
@@ -52,10 +55,10 @@ public class ElasticsearchSearchStrategy implements ISearchStrategy {
         try {
             postElasticRepository.count();
             available = true;
-            log.info("Elasticsearch搜索策略初始化成功");
+            log.info("[ES] Elasticsearch搜索策略初始化成功");
         } catch (Exception e) {
             available = false;
-            log.warn("Elasticsearch搜索策略初始化失败: {}", e.getMessage());
+            log.warn("[ES] Elasticsearch搜索策略初始化失败: {}", e.getMessage());
         }
     }
 
@@ -67,7 +70,7 @@ public class ElasticsearchSearchStrategy implements ISearchStrategy {
     @Override
     public Page<Post> search(String keyword, SearchFilter filter, Pageable pageable) {
         if (!available) {
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "Elasticsearch服务不可用");
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "Elasticsearch搜索服务不可用");
         }
 
         try {
@@ -99,8 +102,6 @@ public class ElasticsearchSearchStrategy implements ISearchStrategy {
             boolQuery.must(shouldQuery);
             
             if (filter != null) {
-                // type筛选已废弃，使用Tag系统替代
-                
                 if (filter.getStartTime() != null || filter.getEndTime() != null) {
                     RangeQueryBuilder rangeQuery = QueryBuilders.rangeQuery("publishTime");
                     if (filter.getStartTime() != null) {
@@ -152,7 +153,7 @@ public class ElasticsearchSearchStrategy implements ISearchStrategy {
             return new PageImpl<>(postEntities, pageable, searchHits.getTotalHits());
             
         } catch (Exception e) {
-            log.error("Elasticsearch搜索失败: keyword={}", keyword, e);
+            log.error("[ES] Elasticsearch搜索失败 - keyword: {}", keyword, e);
             try {
                 Page<PostIndex> indexPage = postElasticRepository.searchByTitleAndDescription(keyword, pageable);
                 List<Post> postEntities = indexPage.getContent().stream()
@@ -160,7 +161,7 @@ public class ElasticsearchSearchStrategy implements ISearchStrategy {
                         .collect(Collectors.toList());
                 return new PageImpl<>(postEntities, pageable, indexPage.getTotalElements());
             } catch (Exception fallbackException) {
-                log.error("Elasticsearch简单搜索也失败: keyword={}", keyword, fallbackException);
+                log.error("[ES] Elasticsearch简单搜索也失败 - keyword: {}", keyword, fallbackException);
                 available = false;
                 throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "Elasticsearch搜索失败: " + e.getMessage());
             }
@@ -209,9 +210,9 @@ public class ElasticsearchSearchStrategy implements ISearchStrategy {
         try {
             PostIndex index = cn.xu.repository.read.elastic.service.PostIndexConverter.from(post);
             postElasticRepository.save(index);
-            log.debug("索引帖子成功: postId={}", post.getId());
+            log.debug("[ES] 索引帖子成功 - postId: {}", post.getId());
         } catch (Exception e) {
-            log.warn("索引帖子失败: postId={}", post.getId(), e);
+            log.warn("[ES] 索引帖子失败 - postId: {}", post.getId(), e);
         }
     }
     
@@ -233,18 +234,19 @@ public class ElasticsearchSearchStrategy implements ISearchStrategy {
             try {
                 PostIndex index = cn.xu.repository.read.elastic.service.PostIndexConverter.from(post);
                 postElasticRepository.save(index);
-                log.debug("索引帖子成功: postId={}, 尝试次数={}", post.getId(), attempt);
+                log.debug("[ES] 索引帖子成功 - postId: {}, 尝试次数: {}", post.getId(), attempt);
                 return true;
             } catch (Exception e) {
                 if (attempt < maxRetries) {
-                    try {
-                        Thread.sleep(retryDelayMs * attempt);
-                    } catch (InterruptedException ie) {
+                    // 指数退避重试策略
+                    long delayNanos = retryDelayMs * attempt * 1_000_000L;
+                    java.util.concurrent.locks.LockSupport.parkNanos(delayNanos);
+                    if (Thread.interrupted()) {
                         Thread.currentThread().interrupt();
                         return false;
                     }
                 } else {
-                    log.error("索引帖子失败（重试{}次）: postId={}", maxRetries, post.getId(), e);
+                    log.error("[ES] 索引帖子失败（重试{}次）- postId: {}", maxRetries, post.getId(), e);
                     return false;
                 }
             }
@@ -264,16 +266,16 @@ public class ElasticsearchSearchStrategy implements ISearchStrategy {
             // 如果帖子未发布，从索引中删除
             if (!Integer.valueOf(Post.STATUS_PUBLISHED).equals(post.getStatus())) {
                 removeIndexedPost(post.getId());
-                log.debug("帖子未发布，从索引中删除: postId={}", post.getId());
+                log.debug("[ES] 帖子未发布，从索引中删除 - postId: {}", post.getId());
                 return;
             }
             
             // 更新索引
             PostIndex index = cn.xu.repository.read.elastic.service.PostIndexConverter.from(post);
             postElasticRepository.save(index);
-            log.debug("更新帖子索引成功: postId={}", post.getId());
+            log.debug("[ES] 更新帖子索引成功 - postId: {}", post.getId());
         } catch (Exception e) {
-            log.warn("更新帖子索引失败: postId={}", post != null ? post.getId() : null, e);
+            log.warn("[ES] 更新帖子索引失败 - postId: {}", post != null ? post.getId() : null, e);
         }
     }
 
@@ -283,9 +285,9 @@ public class ElasticsearchSearchStrategy implements ISearchStrategy {
     public void removeIndexedPost(Long postId) {
         try {
             postElasticRepository.deleteById(postId);
-            log.debug("删除索引成功: postId={}", postId);
+            log.debug("[ES] 删除索引成功 - postId: {}", postId);
         } catch (Exception e) {
-            log.warn("删除索引失败: postId={}", postId, e);
+            log.warn("[ES] 删除索引失败 - postId: {}", postId, e);
         }
     }
 
@@ -318,9 +320,20 @@ public class ElasticsearchSearchStrategy implements ISearchStrategy {
             
             return new PageImpl<>(posts, pageable, indexPage.getTotalElements());
         } catch (Exception e) {
-            log.error("获取热度排行失败: rankType={}", rankType, e);
+            log.error("[ES] 获取热度排行失败 - rankType: {}", rankType, e);
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "Elasticsearch服务不可用");
         }
     }
+    
+    /**
+     * 获取索引总数
+     */
+    public long count() {
+        try {
+            return postElasticRepository.count();
+        } catch (Exception e) {
+            log.error("[ES] 获取索引总数失败", e);
+            return 0L;
+        }
+    }
 }
-

@@ -1,7 +1,7 @@
 package cn.xu.integration.search.service;
 
 import cn.xu.cache.RedisKeyManager;
-import cn.xu.service.search.ISearchStatisticsService;
+import cn.xu.service.search.SearchStatisticsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -15,15 +15,17 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * 搜索统计服务实现
+ * <p>记录搜索行为、统计热门关键词、提供搜索建议</p>
+ 
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class SearchStatisticsServiceImpl implements ISearchStatisticsService {
+public class SearchStatisticsServiceImpl implements SearchStatisticsService {
 
     private final RedisTemplate<String, Object> redisTemplate;
     private static final int ANTI_SPAM_WINDOW_SECONDS = 60;
-    
+
     @Override
     public void recordSearch(String keyword, long resultCount, boolean hasResults) {
         if (keyword == null || keyword.trim().isEmpty()) {
@@ -32,35 +34,35 @@ public class SearchStatisticsServiceImpl implements ISearchStatisticsService {
 
         try {
             String normalizedKeyword = keyword.trim().toLowerCase();
-            
+
             String antiSpamKey = "post:search:antispam:" + normalizedKeyword;
-            Boolean setSuccess = redisTemplate.opsForValue().setIfAbsent(antiSpamKey, "1", 
+            Boolean setSuccess = redisTemplate.opsForValue().setIfAbsent(antiSpamKey, "1",
                     ANTI_SPAM_WINDOW_SECONDS, TimeUnit.SECONDS);
-            
+
             if (Boolean.FALSE.equals(setSuccess)) {
-                log.debug("搜索统计已记录（防刷）: keyword={}", normalizedKeyword);
+                log.debug("[搜索] 搜索统计已记录（防刷）- keyword: {}", normalizedKeyword);
                 return;
             }
-            
+
             String hotKeywordsKey = RedisKeyManager.postSearchHotKeywordsKey();
             redisTemplate.opsForZSet().incrementScore(hotKeywordsKey, normalizedKeyword, 1);
             redisTemplate.expire(hotKeywordsKey, 7, TimeUnit.DAYS);
-            
+
             String today = LocalDateTime.now().toLocalDate().toString();
             String searchStatsKey = "post:search:stats:" + today;
-            
+
             redisTemplate.opsForValue().increment(searchStatsKey + ":total");
             if (hasResults) {
                 redisTemplate.opsForValue().increment(searchStatsKey + ":success");
             } else {
                 redisTemplate.opsForValue().increment(searchStatsKey + ":empty");
             }
-            
+
             redisTemplate.expire(searchStatsKey + ":total", 30, TimeUnit.DAYS);
             redisTemplate.expire(searchStatsKey + ":success", 30, TimeUnit.DAYS);
             redisTemplate.expire(searchStatsKey + ":empty", 30, TimeUnit.DAYS);
         } catch (Exception e) {
-            log.warn("记录搜索统计失败: keyword={}", keyword, e);
+            log.warn("[搜索] 记录搜索统计失败 - keyword: {}", keyword, e);
         }
     }
 
@@ -72,18 +74,18 @@ public class SearchStatisticsServiceImpl implements ISearchStatisticsService {
 
         try {
             String searchStatsKey = "post:search:stats:" + date;
-            
+
             Object totalObj = redisTemplate.opsForValue().get(searchStatsKey + ":total");
             Object successObj = redisTemplate.opsForValue().get(searchStatsKey + ":success");
             Object emptyObj = redisTemplate.opsForValue().get(searchStatsKey + ":empty");
-            
+
             long total = totalObj != null ? Long.parseLong(totalObj.toString()) : 0;
             long success = successObj != null ? Long.parseLong(successObj.toString()) : 0;
             long empty = emptyObj != null ? Long.parseLong(emptyObj.toString()) : 0;
-            
+
             return new SearchStatisticsImpl(date, total, success, empty, total > 0 ? (double) success / total : 0.0);
         } catch (Exception e) {
-            log.error("获取搜索统计失败: date={}", date, e);
+            log.error("[搜索] 获取搜索统计失败 - date: {}", date, e);
             return new SearchStatisticsImpl(date, 0, 0, 0, 0.0);
         }
     }
@@ -92,9 +94,9 @@ public class SearchStatisticsServiceImpl implements ISearchStatisticsService {
     public List<HotKeyword> getHotKeywordsWithCount(int limit) {
         try {
             String hotKeywordsKey = RedisKeyManager.postSearchHotKeywordsKey();
-            Set<org.springframework.data.redis.core.ZSetOperations.TypedTuple<Object>> hotKeywords = 
+            Set<org.springframework.data.redis.core.ZSetOperations.TypedTuple<Object>> hotKeywords =
                     redisTemplate.opsForZSet().reverseRangeWithScores(hotKeywordsKey, 0, limit - 1);
-            
+
             List<HotKeyword> result = new ArrayList<>();
             if (hotKeywords != null && !hotKeywords.isEmpty()) {
                 for (org.springframework.data.redis.core.ZSetOperations.TypedTuple<Object> tuple : hotKeywords) {
@@ -107,10 +109,10 @@ public class SearchStatisticsServiceImpl implements ISearchStatisticsService {
                     }
                 }
             }
-            
+
             return result;
         } catch (Exception e) {
-            log.error("获取热门搜索词失败", e);
+            log.error("[搜索] 获取热门搜索词失败", e);
             return new ArrayList<>();
         }
     }
@@ -124,15 +126,15 @@ public class SearchStatisticsServiceImpl implements ISearchStatisticsService {
             if (limit > 100) {
                 limit = 100;
             }
-            
+
             if (redisTemplate == null) {
-                log.warn("RedisTemplate不可用，返回空列表");
+                log.warn("[搜索] RedisTemplate不可用，返回空列表");
                 return new ArrayList<>();
             }
-            
+
             String hotKeywordsKey = RedisKeyManager.postSearchHotKeywordsKey();
             Set<Object> hotKeywords = redisTemplate.opsForZSet().reverseRange(hotKeywordsKey, 0, limit - 1);
-            
+
             List<String> result = new ArrayList<>();
             if (hotKeywords != null && !hotKeywords.isEmpty()) {
                 for (Object keywordObj : hotKeywords) {
@@ -144,17 +146,17 @@ public class SearchStatisticsServiceImpl implements ISearchStatisticsService {
                             }
                         }
                     } catch (Exception e) {
-                        log.debug("处理热门搜索词失败: keywordObj={}", keywordObj, e);
+                        log.debug("[搜索] 处理热门搜索词失败 - keywordObj: {}", keywordObj, e);
                     }
                 }
             }
-            
+
             return result;
         } catch (org.springframework.data.redis.RedisConnectionFailureException e) {
-            log.error("Redis连接失败，返回空列表", e);
+            log.error("[搜索] Redis连接失败，返回空列表", e);
             return new ArrayList<>();
         } catch (Exception e) {
-            log.error("获取热门搜索词失败: limit={}", limit, e);
+            log.error("[搜索] 获取热门搜索词失败 - limit: {}", limit, e);
             return new ArrayList<>();
         }
     }
@@ -163,12 +165,12 @@ public class SearchStatisticsServiceImpl implements ISearchStatisticsService {
     public List<String> getSearchSuggestions(String keyword, int limit) {
         try {
             List<String> suggestions = new ArrayList<>();
-            
+
             if (keyword != null && !keyword.trim().isEmpty()) {
                 String keywordTrimmed = keyword.trim().toLowerCase();
                 String hotKeywordsKey = RedisKeyManager.postSearchHotKeywordsKey();
                 Set<Object> hotKeywords = redisTemplate.opsForZSet().reverseRange(hotKeywordsKey, 0, 100);
-                
+
                 if (hotKeywords != null && !hotKeywords.isEmpty()) {
                     for (Object hotKeywordObj : hotKeywords) {
                         if (suggestions.size() >= limit) {
@@ -188,74 +190,73 @@ public class SearchStatisticsServiceImpl implements ISearchStatisticsService {
             } else {
                 return getHotKeywords(limit);
             }
-            
+
             return suggestions;
         } catch (Exception e) {
-            log.error("获取搜索建议失败: keyword={}", keyword, e);
+            log.error("[搜索] 获取搜索建议失败 - keyword: {}", keyword, e);
             return new ArrayList<>();
         }
     }
-    
+
     private static class SearchStatisticsImpl implements SearchStatistics {
         private final String date;
         private final long totalSearches;
         private final long successfulSearches;
         private final long emptySearches;
         private final double successRate;
-        
-        public SearchStatisticsImpl(String date, long totalSearches, long successfulSearches, 
-                                   long emptySearches, double successRate) {
+
+        public SearchStatisticsImpl(String date, long totalSearches, long successfulSearches,
+                                    long emptySearches, double successRate) {
             this.date = date;
             this.totalSearches = totalSearches;
             this.successfulSearches = successfulSearches;
             this.emptySearches = emptySearches;
             this.successRate = successRate;
         }
-        
+
         @Override
         public String getDate() {
             return date;
         }
-        
+
         @Override
         public long getTotalSearches() {
             return totalSearches;
         }
-        
+
         @Override
         public long getSuccessfulSearches() {
             return successfulSearches;
         }
-        
+
         @Override
         public long getEmptySearches() {
             return emptySearches;
         }
-        
+
         @Override
         public double getSuccessRate() {
             return successRate;
         }
     }
-    
+
     private static class HotKeywordImpl implements HotKeyword {
         private final String keyword;
         private final long count;
-        
+
         public HotKeywordImpl(String keyword, long count) {
             this.keyword = keyword;
             this.count = count;
         }
-        
+
         @Override
         public String getKeyword() {
             return keyword;
         }
-        
+
         @Override
         public long getCount() {
             return count;
         }
     }
 }
-

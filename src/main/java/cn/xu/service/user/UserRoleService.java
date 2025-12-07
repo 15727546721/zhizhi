@@ -11,12 +11,8 @@ import javax.annotation.Resource;
 import java.util.List;
 
 /**
- * 用户角色服务实现类
- * 
- * <p>负责管理用户与角色的关联关系，包括角色分配、查询等功能
- * 
- * @author xu
- * @since 2025-11-26
+ * 用户角色服务
+ * 负责用户与角色的关联管理
  */
 @Slf4j
 @Service
@@ -34,7 +30,7 @@ public class UserRoleService {
         userRepository.assignRolesToUser(userId, roleIds);
         // 清除用户的权限缓存
         userPermission.clearUserPermissionCache(userId);
-        log.info("为用户分配角色成功, userId: {}, roleIds: {}", userId, roleIds);
+        log.info("为用户分配角色成功: userId: {}, roleIds: {}", userId, roleIds);
     }
     
     public List<Long> getUserRoleIds(Long userId) {
