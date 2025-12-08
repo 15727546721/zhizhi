@@ -1,5 +1,6 @@
 package cn.xu.model.entity;
 
+import cn.xu.support.exception.BusinessException;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -44,13 +45,13 @@ public class UserBlock implements Serializable {
      */
     public static void validateBlockRelation(Long userId, Long blockedUserId) {
         if (userId == null || userId <= 0) {
-            throw new IllegalArgumentException("用户ID不能为空或零");
+            throw new BusinessException("用户ID不能为空或零");
         }
         if (blockedUserId == null || blockedUserId <= 0) {
-            throw new IllegalArgumentException("被屏蔽用户ID不能为空或零");
+            throw new BusinessException("被屏蔽用户ID不能为空或零");
         }
         if (userId.equals(blockedUserId)) {
-            throw new IllegalArgumentException("用户不能屏蔽自己");
+            throw new BusinessException("用户不能屏蔽自己");
         }
     }
     

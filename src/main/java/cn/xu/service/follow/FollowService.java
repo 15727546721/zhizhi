@@ -7,7 +7,6 @@ import cn.xu.model.entity.User;
 import cn.xu.model.vo.FollowUserVO;
 import cn.xu.repository.impl.FollowRepository;
 import cn.xu.repository.impl.UserRepository;
-import cn.xu.support.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

@@ -10,11 +10,7 @@ import cn.xu.model.entity.Notification;
 import cn.xu.service.notification.NotificationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
+import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
@@ -26,9 +22,6 @@ import java.util.List;
  * 
  * <p>提供系统通知和消息的查询、发送、删除功能</p>
  * <p>需要登录并拥有相应权限：system:message:send</p>
- *
- * @author xu
- * @since 1.0
  */
 @Slf4j
 @RestController

@@ -1,5 +1,6 @@
 package cn.xu.model.entity;
 
+import cn.xu.support.exception.BusinessException;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -61,7 +62,7 @@ public class UserMessageSettings implements Serializable {
      */
     public static UserMessageSettings createDefault(Long userId, Boolean allowStrangerMessage) {
         if (userId == null || userId <= 0) {
-            throw new IllegalArgumentException("用户ID不能为空或零");
+            throw new BusinessException("用户ID不能为空或零");
         }
         LocalDateTime now = LocalDateTime.now();
         boolean allowStranger = allowStrangerMessage != null && allowStrangerMessage;

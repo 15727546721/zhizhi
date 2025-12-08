@@ -15,9 +15,6 @@ import java.util.UUID;
  * 
  * 示例: 202512/a1b2c3d4e5f6.jpg
  * </pre>
- *
- * @author xu
- * @since 2025-12-07
  */
 public final class FilePathConstants {
     

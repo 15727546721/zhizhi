@@ -1,16 +1,16 @@
 package cn.xu.support.util;
 
 import cn.xu.model.entity.Like;
+import cn.xu.support.exception.BusinessException;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.Objects;
 
 /**
  * Redis Key 工具类
  * <p>统一管理业务相关 Redis Key</p>
- *
- * @author xu
- * @since 1.0.0
  */
+@Slf4j
 public class RedisKeys {
 
     /**
@@ -29,7 +29,8 @@ public class RedisKeys {
             case ESSAY:
                 return "like:essay:" + targetId;
             default:
-                throw new IllegalArgumentException("不支持的点赞类型: " + type);
+                log.error("不支持的点赞类型: {}", type);
+                throw new BusinessException("不支持的点赞类型: " + type);
         }
     }
 
@@ -49,7 +50,8 @@ public class RedisKeys {
             case ESSAY:
                 return "like:count:essay:";
             default:
-                throw new IllegalArgumentException("不支持的点赞类型: " + type);
+                log.error("不支持的点赞类型: {}", type);
+                throw new BusinessException("不支持的点赞类型: " + type);
         }
     }
 
@@ -68,7 +70,8 @@ public class RedisKeys {
             case ESSAY:
                 return "like:rank:essay:";
             default:
-                throw new IllegalArgumentException("不支持的点赞类型: " + type);
+                log.error("不支持的点赞类型: {}", type);
+                throw new BusinessException("不支持的点赞类型: " + type);
         }
     }
 

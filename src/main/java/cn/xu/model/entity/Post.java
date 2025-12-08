@@ -1,1 +1,288 @@
-package cn.xu.model.entity;import cn.xu.common.ResponseCode;import cn.xu.support.exception.BusinessException;import lombok.*;import java.io.Serializable;import java.time.LocalDateTime;/** * 帖子po * * @TableName post */@Builder@Data@NoArgsConstructor@AllArgsConstructor@ToStringpublic class Post implements Serializable {    private static final long serialVersionUID = 1L;    // ==================== 状态常量 ====================    public static final int STATUS_DRAFT = 0;       // 草稿    public static final int STATUS_PUBLISHED = 1;   // 已发布    public static final int STATUS_DELETED = 2;     // 已删除    public static final int STATUS_ARCHIVED = 3;    // 已归档    // ==================== 类型定义 ====================    // 文章的各种状态    // ==================== 属性定义 ====================    /**     * 文章ID     */    private Long id;    /**     * 文章标题     */    private String title;    /**     * 文章描述     */    private String description;    /**     * 文章内容     */    private String content;    /**     * 封面URL     */    private String coverUrl;    /**     * 用户ID     */    private Long userId;    /**     * 是否置顶: 0 - 否, 1 - 是     */    private Integer isFeatured;    /**     * 查看次数     */    private Long viewCount;    /**     * 收藏次数     */    private Long favoriteCount;    /**     * 评论次数     */    private Long commentCount;    /**     * 点赞次数     */    private Long likeCount;    /**     * 分享次数     */    private Long shareCount;    /**     * 状态     */    private Integer status;    /**     * 创建时间     */    private LocalDateTime createTime;    /**     * 更新时间     */    private LocalDateTime updateTime;    // ==================== 方法 ====================    /**     * 创建草稿     */    public static Post createDraft(Long userId, String title, String content, String description) {        if (userId == null) throw new IllegalArgumentException("用户ID不能为空");        if (title == null || title.trim().isEmpty()) throw new IllegalArgumentException("文章标题不能为空");        if (content == null || content.trim().isEmpty()) throw new IllegalArgumentException("文章内容不能为空");        return Post.builder()                .userId(userId)                .title(title)                .content(content)                .description(description)                .status(STATUS_DRAFT)                .isFeatured(0)                .viewCount(0L)                .favoriteCount(0L)                .commentCount(0L)                .likeCount(0L)                .shareCount(0L)                .createTime(LocalDateTime.now())                .updateTime(LocalDateTime.now())                .build();    }    /**     * 发布文章     */    public void publish() {        if (this.status != null && this.status == STATUS_PUBLISHED) {            throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "文章已经发布");        }        if (this.status != null && this.status == STATUS_DELETED) {            throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "已删除的文章不能发布");        }        this.status = STATUS_PUBLISHED;        this.updateTime = LocalDateTime.now();    }    /**     * 撤回文章     */    public void withdraw() {        if (this.status == null || this.status != STATUS_PUBLISHED) {            throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "只有已发布的文章才能撤回");        }        this.status = STATUS_DRAFT;        this.updateTime = LocalDateTime.now();    }    /**     * 删除文章     */    public void delete() {        if (this.status != null && this.status == STATUS_DELETED) {            throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "文章已删除");        }        this.status = STATUS_DELETED;        this.updateTime = LocalDateTime.now();    }    /**     * 更新文章内容     * 更新时判断是否是删除状态     */    public void updateContent(String title, String content, String description) {        if (this.status != null && this.status == STATUS_DELETED) {            throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "已删除的文章不能编辑");        }        if (title != null) this.title = title;        if (content != null) this.content = content;        if (description != null) this.description = description;        this.updateTime = LocalDateTime.now();    }    // ==================== 数据统计方法 ====================    public void increaseViewCount() {        this.viewCount = (this.viewCount == null ? 0 : this.viewCount) + 1;    }    public void increaseLikeCount() {        this.likeCount = (this.likeCount == null ? 0 : this.likeCount) + 1;    }    public void decreaseLikeCount() {        this.likeCount = Math.max(0, (this.likeCount == null ? 0 : this.likeCount) - 1);    }    public void increaseFavoriteCount() {        this.favoriteCount = (this.favoriteCount == null ? 0 : this.favoriteCount) + 1;    }    public void decreaseFavoriteCount() {        this.favoriteCount = Math.max(0, (this.favoriteCount == null ? 0 : this.favoriteCount) - 1);    }    public void increaseCommentCount() {        this.commentCount = (this.commentCount == null ? 0 : this.commentCount) + 1;    }    public void decreaseCommentCount() {        this.commentCount = Math.max(0, (this.commentCount == null ? 0 : this.commentCount) - 1);    }    public void increaseShareCount() {        this.shareCount = (this.shareCount == null ? 0 : this.shareCount) + 1;    }    // ==================== 状态判断 ====================    public boolean isPublished() {        return this.status != null && this.status == STATUS_PUBLISHED;    }    public boolean isDraft() {        return this.status != null && this.status == STATUS_DRAFT;    }    public boolean isDeleted() {        return this.status != null && this.status == STATUS_DELETED;    }    // ==================== 置顶操作 ====================    public boolean isFeaturedPost() {        return this.isFeatured != null && this.isFeatured == 1;    }    public void setFeaturedPost(boolean featured) {        this.isFeatured = featured ? 1 : 0;        this.updateTime = LocalDateTime.now();    }    // ==================== 权限验证 ====================    /**     * 验证用户是否是文章的拥有者     */    public void validateOwnership(Long userId, boolean isAdmin) {        if (isAdmin) return; // 管理员不进行验证        if (!this.userId.equals(userId)) {            throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "用户没有权限操作该文章");        }    }    /**     * 验证文章创建的有效性     */    public void validateForCreation() {        if (this.title == null || this.title.trim().isEmpty()) {            throw new IllegalArgumentException("文章标题不能为空");        }        if (this.title.length() > 100) {            throw new IllegalArgumentException("文章标题长度不能超过100字符");        }        if (this.content == null || this.content.trim().isEmpty()) {            throw new IllegalArgumentException("文章内容不能为空");        }        if (this.content.length() > 50000) {            throw new IllegalArgumentException("文章内容长度不能超过50000字符");        }        if (this.userId == null) {            throw new IllegalArgumentException("文章用户ID不能为空");        }    }}
+package cn.xu.model.entity;
+
+import cn.xu.common.ResponseCode;
+import cn.xu.support.exception.BusinessException;
+import lombok.*;
+
+import java.io.Serializable;
+import java.time.LocalDateTime;
+
+/**
+ * 帖子po
+ *
+ * @TableName post
+ */
+@Builder
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@ToString
+public class Post implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+    // ==================== 状态常量 ====================
+    public static final int STATUS_DRAFT = 0;       // 草稿
+    public static final int STATUS_PUBLISHED = 1;   // 已发布
+    public static final int STATUS_DELETED = 2;     // 已删除
+    public static final int STATUS_ARCHIVED = 3;    // 已归档
+
+    // ==================== 类型定义 ====================
+    // 文章的各种状态
+
+    // ==================== 属性定义 ====================
+
+    /**
+     * 文章ID
+     */
+    private Long id;
+
+    /**
+     * 文章标题
+     */
+    private String title;
+
+    /**
+     * 文章描述
+     */
+    private String description;
+
+    /**
+     * 文章内容
+     */
+    private String content;
+
+    /**
+     * 封面URL
+     */
+    private String coverUrl;
+
+    /**
+     * 用户ID
+     */
+    private Long userId;
+
+    /**
+     * 是否置顶: 0 - 否, 1 - 是
+     */
+    private Integer isFeatured;
+
+    /**
+     * 查看次数
+     */
+    private Long viewCount;
+
+    /**
+     * 收藏次数
+     */
+    private Long favoriteCount;
+
+    /**
+     * 评论次数
+     */
+    private Long commentCount;
+
+    /**
+     * 点赞次数
+     */
+    private Long likeCount;
+
+    /**
+     * 分享次数
+     */
+    private Long shareCount;
+
+    /**
+     * 状态
+     */
+    private Integer status;
+
+    /**
+     * 创建时间
+     */
+    private LocalDateTime createTime;
+
+    /**
+     * 更新时间
+     */
+    private LocalDateTime updateTime;
+
+    // ==================== 方法 ====================
+
+    /**
+     * 创建草稿
+     */
+    public static Post createDraft(Long userId, String title, String content, String description) {
+        if (userId == null) throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "用户ID不能为空");
+        if (title == null || title.trim().isEmpty()) throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "文章标题不能为空");
+        if (content == null || content.trim().isEmpty()) throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "文章内容不能为空");
+
+        return Post.builder()
+                .userId(userId)
+                .title(title)
+                .content(content)
+                .description(description)
+                .status(STATUS_DRAFT)
+                .isFeatured(0)
+                .viewCount(0L)
+                .favoriteCount(0L)
+                .commentCount(0L)
+                .likeCount(0L)
+                .shareCount(0L)
+                .createTime(LocalDateTime.now())
+                .updateTime(LocalDateTime.now())
+                .build();
+    }
+
+    /**
+     * 发布文章
+     */
+    public void publish() {
+        if (this.status != null && this.status == STATUS_PUBLISHED) {
+            throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "文章已经发布");
+        }
+        if (this.status != null && this.status == STATUS_DELETED) {
+            throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "已删除的文章不能发布");
+        }
+
+        this.status = STATUS_PUBLISHED;
+        this.updateTime = LocalDateTime.now();
+    }
+
+    /**
+     * 撤回文章
+     */
+    public void withdraw() {
+        if (this.status == null || this.status != STATUS_PUBLISHED) {
+            throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "只有已发布的文章才能撤回");
+        }
+
+        this.status = STATUS_DRAFT;
+        this.updateTime = LocalDateTime.now();
+    }
+
+    /**
+     * 删除文章
+     */
+    public void delete() {
+        if (this.status != null && this.status == STATUS_DELETED) {
+            throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "文章已删除");
+        }
+
+        this.status = STATUS_DELETED;
+        this.updateTime = LocalDateTime.now();
+    }
+
+    /**
+     * 更新文章内容
+     * 更新时判断是否是删除状态
+     */
+    public void updateContent(String title, String content, String description) {
+        if (this.status != null && this.status == STATUS_DELETED) {
+            throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "已删除的文章不能编辑");
+        }
+
+        if (title != null) this.title = title;
+        if (content != null) this.content = content;
+        if (description != null) this.description = description;
+
+        this.updateTime = LocalDateTime.now();
+    }
+
+    // ==================== 数据统计方法 ====================
+
+    public void increaseViewCount() {
+        this.viewCount = (this.viewCount == null ? 0 : this.viewCount) + 1;
+    }
+
+    public void increaseLikeCount() {
+        this.likeCount = (this.likeCount == null ? 0 : this.likeCount) + 1;
+    }
+
+    public void decreaseLikeCount() {
+        this.likeCount = Math.max(0, (this.likeCount == null ? 0 : this.likeCount) - 1);
+    }
+
+    public void increaseFavoriteCount() {
+        this.favoriteCount = (this.favoriteCount == null ? 0 : this.favoriteCount) + 1;
+    }
+
+    public void decreaseFavoriteCount() {
+        this.favoriteCount = Math.max(0, (this.favoriteCount == null ? 0 : this.favoriteCount) - 1);
+    }
+
+    public void increaseCommentCount() {
+        this.commentCount = (this.commentCount == null ? 0 : this.commentCount) + 1;
+    }
+
+    public void decreaseCommentCount() {
+        this.commentCount = Math.max(0, (this.commentCount == null ? 0 : this.commentCount) - 1);
+    }
+
+    public void increaseShareCount() {
+        this.shareCount = (this.shareCount == null ? 0 : this.shareCount) + 1;
+    }
+
+    // ==================== 状态判断 ====================
+
+    public boolean isPublished() {
+        return this.status != null && this.status == STATUS_PUBLISHED;
+    }
+
+    public boolean isDraft() {
+        return this.status != null && this.status == STATUS_DRAFT;
+    }
+
+    public boolean isDeleted() {
+        return this.status != null && this.status == STATUS_DELETED;
+    }
+
+    // ==================== 置顶操作 ====================
+
+    public boolean isFeaturedPost() {
+        return this.isFeatured != null && this.isFeatured == 1;
+    }
+
+    public void setFeaturedPost(boolean featured) {
+        this.isFeatured = featured ? 1 : 0;
+        this.updateTime = LocalDateTime.now();
+    }
+
+    // ==================== 权限验证 ====================
+
+    /**
+     * 验证用户是否是文章的拥有者
+     */
+    public void validateOwnership(Long userId, boolean isAdmin) {
+        if (isAdmin) return; // 管理员不进行验证
+
+        if (!this.userId.equals(userId)) {
+            throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "用户没有权限操作该文章");
+        }
+    }
+
+    /**
+     * 验证文章创建的有效性
+     */
+    public void validateForCreation() {
+        if (this.title == null || this.title.trim().isEmpty()) {
+            throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "文章标题不能为空");
+        }
+
+        if (this.title.length() > 100) {
+            throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "文章标题长度不能超过100字符");
+        }
+
+        if (this.content == null || this.content.trim().isEmpty()) {
+            throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "文章内容不能为空");
+        }
+
+        if (this.content.length() > 50000) {
+            throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "文章内容长度不能超过50000字符");
+        }
+
+        if (this.userId == null) {
+            throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "文章用户ID不能为空");
+        }
+    }
+}

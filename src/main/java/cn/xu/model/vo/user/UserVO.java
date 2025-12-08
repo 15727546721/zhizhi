@@ -1,8 +1,10 @@
 package cn.xu.model.vo.user;
 
+import cn.xu.support.exception.BusinessException;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
 
@@ -12,6 +14,7 @@ import java.time.LocalDateTime;
  */
 @Data
 @Builder
+@Slf4j
 public class UserVO {
 
     private Long id;
@@ -73,7 +76,8 @@ public class UserVO {
         if (username != null && !username.isEmpty()) {
             this.username = username;
         } else {
-            throw new IllegalArgumentException("用户名不能为空");
+            log.warn("设置UserVO用户名时参数为空");
+            throw new BusinessException("用户名不能为空");
         }
     }
 

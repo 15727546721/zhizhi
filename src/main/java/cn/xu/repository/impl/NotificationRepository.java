@@ -17,8 +17,6 @@ import java.util.Map;
 
 /**
  * 通知仓储实现
- *
- * @author xu
  */
 @Slf4j
 @Repository

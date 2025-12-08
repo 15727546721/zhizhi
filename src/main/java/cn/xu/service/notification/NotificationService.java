@@ -2,7 +2,6 @@ package cn.xu.service.notification;
 
 import cn.xu.model.entity.Notification;
 import cn.xu.repository.INotificationRepository;
-import cn.xu.support.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -17,8 +16,6 @@ import java.util.Map;
  * 
  * <p>提供通知的查询、已读标记、删除等功能
  *
- * @author xu
- * @since 1.0
  */
 @Slf4j
 @Service

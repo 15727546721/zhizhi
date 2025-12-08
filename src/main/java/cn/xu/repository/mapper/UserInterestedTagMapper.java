@@ -8,9 +8,6 @@ import java.util.List;
 
 /**
  * 用户关注标签Mapper接口
- * 
- * @author xu
- * @since 1.0.0
  */
 @Mapper
 public interface UserInterestedTagMapper {

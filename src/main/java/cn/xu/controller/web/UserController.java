@@ -15,8 +15,8 @@ import cn.xu.service.security.PasswordResetService;
 import cn.xu.service.security.VerificationCodeService;
 import cn.xu.service.user.IUserService;
 import cn.xu.service.user.UserProfileService;
-import cn.xu.service.user.UserSettingsService;
 import cn.xu.service.user.UserServiceImpl;
+import cn.xu.service.user.UserSettingsService;
 import cn.xu.support.exception.BusinessException;
 import cn.xu.support.util.IpUtils;
 import cn.xu.support.util.LoginUserUtil;
@@ -26,6 +26,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
+
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
@@ -43,8 +44,6 @@ import java.util.List;
  *   <li>安全：修改密码、重置密码、注销账户</li>
  * </ul>
  *
- * @author zhizhi
- * @since 1.0
  */
 @Slf4j
 @RequestMapping("api/user")

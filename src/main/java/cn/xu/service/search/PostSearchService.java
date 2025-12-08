@@ -7,7 +7,6 @@ import cn.xu.model.dto.search.SearchFilter;
 import cn.xu.model.entity.Post;
 import cn.xu.model.entity.User;
 import cn.xu.model.vo.post.PostSearchResponseVO;
-import java.util.List;
 import cn.xu.service.user.IUserService;
 import cn.xu.support.exception.BusinessException;
 import lombok.extern.slf4j.Slf4j;
@@ -20,7 +19,8 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -129,7 +129,8 @@ public class PostSearchService {
      */
     public Page<Post> search(String keyword, SearchFilter filter, Pageable pageable) {
         if (keyword == null || keyword.trim().isEmpty()) {
-            throw new IllegalArgumentException("搜索关键字不能为空");
+            log.warn("搜索关键字为空");
+            throw new BusinessException("搜索关键字不能为空");
         }
 
         String normalizedKeyword = normalizeKeyword(keyword);
@@ -277,7 +278,8 @@ public class PostSearchService {
             currentStrategy = mysqlStrategy;
             log.info("切换到MySQL策略");
         } else {
-            throw new IllegalArgumentException("策略无效: " + strategyName);
+            log.warn("无效的搜索策略: {}", strategyName);
+            throw new BusinessException("策略无效: " + strategyName);
         }
     }
 

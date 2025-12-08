@@ -1,8 +1,7 @@
 package cn.xu.model.entity;
 
 import cn.dev33.satoken.secure.SaSecureUtil;
-import cn.xu.common.ResponseCode;
-import cn.xu.support.exception.BusinessException;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -10,7 +9,6 @@ import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.util.regex.Pattern;
 
 /**
  * 用户实体
@@ -51,6 +49,15 @@ public class User implements Serializable {
     
     private Long id;
     private String username;
+    
+    /**
+     * 用户密码（已加密）
+     * <p>安全说明：
+     * 1. 密码使用SHA256加密存储，不存储明文
+     * 2. @JsonIgnore 防止序列化时泄露到前端
+     * 3. 任何情况下都不应将此字段返回给客户端</p>
+     */
+    @JsonIgnore
     private String password;
     private String email;
     private String nickname;

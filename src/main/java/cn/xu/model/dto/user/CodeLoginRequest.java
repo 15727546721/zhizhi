@@ -9,9 +9,6 @@ import javax.validation.constraints.Size;
 
 /**
  * 验证码登录请求
- *
- * @author xu
- * @since 2024-12-07
  */
 @Data
 @Schema(description = "验证码登录请求")

@@ -25,8 +25,6 @@ import java.util.List;
  * 重要：此服务使用增量同步策略
  * - 如果Redis中有数据，使用数据库当前值 + Redis增量值
  * - 如果Redis中没有数据，从数据库恢复真实值到Redis（而不是用0覆盖数据库）
- * 
- * @author xu
  */
 @Slf4j
 @Service

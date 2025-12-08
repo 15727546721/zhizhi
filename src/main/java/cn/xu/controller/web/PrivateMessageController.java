@@ -9,15 +9,12 @@ import cn.xu.model.vo.ConversationListVO;
 import cn.xu.service.message.PrivateMessageService;
 import cn.xu.support.exception.BusinessException;
 import cn.xu.support.util.LoginUserUtil;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -35,8 +32,6 @@ import java.util.List;
  *   <li>拉黑 → 不可发送</li>
  * </ul>
  *
- * @author xu
- * @since 1.0
  */
 @Slf4j
 @RestController

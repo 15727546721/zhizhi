@@ -9,8 +9,6 @@ import lombok.NoArgsConstructor;
 /**
  * 帖子列表VO
  * 包含帖子完整信息
- * 
- * @author zhizhi
  */
 @Data
 @Builder

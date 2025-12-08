@@ -1,1 +1,113 @@
-package cn.xu.model.entity;import lombok.AllArgsConstructor;import lombok.Builder;import lombok.Data;import lombok.NoArgsConstructor;import java.io.Serializable;import java.time.LocalDateTime;/** * 系统配置实体类 * 用于存储和管理系统的配置项 */@Data@Builder@NoArgsConstructor@AllArgsConstructorpublic class SystemConfig implements Serializable {    /**     * 配置ID     */    private Long id;    /**     * 配置键     */    private String configKey;    /**     * 配置值     */    private String configValue;    /**     * 配置描述     */    private String configDesc;    /**     * 创建时间     */    private LocalDateTime createTime;    /**     * 更新时间     */    private LocalDateTime updateTime;    // ==================== 业务方法 ====================    /**     * 获取配置值（转换为整数类型）     */    public Integer getIntValue() {        try {            return Integer.parseInt(configValue);        } catch (NumberFormatException e) {            return null;        }    }    /**     * 获取配置值（转换为布尔类型）     */    public Boolean getBooleanValue() {        if (configValue == null) {            return null;        }        return "1".equals(configValue) || "true".equalsIgnoreCase(configValue);    }    /**     * 获取配置值（转换为长整型）     */    public Long getLongValue() {        try {            return Long.parseLong(configValue);        } catch (NumberFormatException e) {            return null;        }    }    /**     * 更新配置值     */    public void updateValue(String value) {        this.configValue = value;        this.updateTime = LocalDateTime.now();    }    /**     * 创建系统配置     */    public static SystemConfig create(String configKey, String configValue, String configDesc) {        if (configKey == null || configKey.trim().isEmpty()) {            throw new IllegalArgumentException("配置键不能为空");        }        if (configValue == null) {            throw new IllegalArgumentException("配置值不能为空");        }        LocalDateTime now = LocalDateTime.now();        return SystemConfig.builder()                .configKey(configKey)                .configValue(configValue)                .configDesc(configDesc)                .createTime(now)                .updateTime(now)                .build();    }}
+package cn.xu.model.entity;
+
+import cn.xu.support.exception.BusinessException;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.io.Serializable;
+import java.time.LocalDateTime;
+
+/**
+ * 系统配置实体类
+ * 用于存储和管理系统的配置项
+ */
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class SystemConfig implements Serializable {
+
+    /**
+     * 配置ID
+     */
+    private Long id;
+
+    /**
+     * 配置键
+     */
+    private String configKey;
+
+    /**
+     * 配置值
+     */
+    private String configValue;
+
+    /**
+     * 配置描述
+     */
+    private String configDesc;
+
+    /**
+     * 创建时间
+     */
+    private LocalDateTime createTime;
+
+    /**
+     * 更新时间
+     */
+    private LocalDateTime updateTime;
+
+    // ==================== 业务方法 ====================
+
+    /**
+     * 获取配置值（转换为整数类型）
+     */
+    public Integer getIntValue() {
+        try {
+            return Integer.parseInt(configValue);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    /**
+     * 获取配置值（转换为布尔类型）
+     */
+    public Boolean getBooleanValue() {
+        if (configValue == null) {
+            return null;
+        }
+        return "1".equals(configValue) || "true".equalsIgnoreCase(configValue);
+    }
+
+    /**
+     * 获取配置值（转换为长整型）
+     */
+    public Long getLongValue() {
+        try {
+            return Long.parseLong(configValue);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    /**
+     * 更新配置值
+     */
+    public void updateValue(String value) {
+        this.configValue = value;
+        this.updateTime = LocalDateTime.now();
+    }
+
+    /**
+     * 创建系统配置
+     */
+    public static SystemConfig create(String configKey, String configValue, String configDesc) {
+        if (configKey == null || configKey.trim().isEmpty()) {
+            throw new BusinessException("配置键不能为空");
+        }
+        if (configValue == null) {
+            throw new BusinessException("配置值不能为空");
+        }
+        LocalDateTime now = LocalDateTime.now();
+        return SystemConfig.builder()
+                .configKey(configKey)
+                .configValue(configValue)
+                .configDesc(configDesc)
+                .createTime(now)
+                .updateTime(now)
+                .build();
+    }
+}

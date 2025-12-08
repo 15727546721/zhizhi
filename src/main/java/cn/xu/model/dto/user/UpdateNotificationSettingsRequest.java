@@ -6,8 +6,6 @@ import lombok.Data;
 /**
  * 更新通知设置请求
  *
- * @author xu
- * @since 1.0.0
  */
 @Data
 @Schema(description = "更新通知设置请求")

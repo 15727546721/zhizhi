@@ -1,5 +1,6 @@
 package cn.xu.model.entity;
 
+import cn.xu.support.exception.BusinessException;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -16,9 +17,6 @@ import java.time.LocalDateTime;
  * - 用户关注感兴趣的标签/领域
  * - 系统根据关注的标签推荐相关内容
  * - 标签页面显示关注该标签的用户数
- * 
- * @author zhizhi
- * @version 1.0 - 极简设计
  */
 @Data
 @Builder
@@ -75,10 +73,10 @@ public class UserInterestedTag implements Serializable {
      */
     public static void validateParams(Long userId, Long tagId) {
         if (userId == null || userId <= 0) {
-            throw new IllegalArgumentException("用户ID不能为空");
+            throw new BusinessException("用户ID不能为空");
         }
         if (tagId == null || tagId <= 0) {
-            throw new IllegalArgumentException("标签ID不能为空");
+            throw new BusinessException("标签ID不能为空");
         }
     }
     

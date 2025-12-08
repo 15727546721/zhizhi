@@ -167,20 +167,22 @@ public class TagRepository implements ITagRepository {
     @Override
     public void updateTag(Long id, String name) {
         if (id == null || name == null || name.trim().isEmpty()) {
-            throw new IllegalArgumentException("标签ID和名称不能为空");
+            log.warn("更新标签参数错误 - id: {}, name: {}", id, name);
+            throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "标签ID和名称不能为空");
         }
         try {
             // 检查标签是否存在
             Tag existingTag = getTagById(id);
             if (existingTag == null) {
-                throw new IllegalArgumentException("标签不存在，ID: " + id);
+                log.warn("标签不存在 - id: {}", id);
+                throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "标签不存在，ID: " + id);
             }
 
             // 更新标签
             tagMapper.updateTag(id, name.trim());
             log.info("更新标签成功 - id: {}, name: {}", id, name);
-        } catch (IllegalArgumentException e) {
-            throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), e.getMessage());
+        } catch (BusinessException e) {
+            throw e;
         } catch (Exception e) {
             log.error("更新标签失败 - id: {}, name: {}", id, name, e);
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "更新标签失败: " + e.getMessage());
@@ -190,7 +192,8 @@ public class TagRepository implements ITagRepository {
     @Override
     public void updateTag(Tag tag) {
         if (tag == null || tag.getId() == null) {
-            throw new IllegalArgumentException("标签对象或ID不能为空");
+            log.warn("更新标签参数错误 - tag为null或id为null");
+            throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "标签对象或ID不能为空");
         }
         try {
             tagMapper.updateTagFull(tag);
@@ -204,21 +207,22 @@ public class TagRepository implements ITagRepository {
     @Override
     public void deleteTag(Long id) {
         if (id == null) {
-            throw new IllegalArgumentException("标签ID不能为空");
+            log.warn("删除标签参数错误 - id为null");
+            throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "标签ID不能为空");
         }
         try {
             // 检查标签是否存在
             Tag existingTag = getTagById(id);
             if (existingTag == null) {
-                log.warn("标签不存在，ID: {}", id);
-                throw new IllegalArgumentException("标签不存在，ID: " + id);
+                log.warn("标签不存在 - id: {}", id);
+                throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "标签不存在，ID: " + id);
             }
 
             // 删除标签
             tagMapper.deleteTag(id);
             log.info("删除标签成功 - id: {}", id);
-        } catch (IllegalArgumentException e) {
-            throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), e.getMessage());
+        } catch (BusinessException e) {
+            throw e;
         } catch (Exception e) {
             log.error("删除标签失败 - id: {}", id, e);
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "删除标签失败: " + e.getMessage());

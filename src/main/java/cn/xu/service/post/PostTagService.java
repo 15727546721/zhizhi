@@ -84,7 +84,8 @@ public class PostTagService {
     public Tag updateTag(Long id, String name) {
         try {
             if (id == null || name == null || name.trim().isEmpty()) {
-                throw new IllegalArgumentException("标签ID和名称不能为空");
+                log.warn("更新标签时参数错误, id: {}, name: {}", id, name);
+                throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "标签 ID和名称不能为空");
             }
 
             tagRepository.updateTag(id, name.trim());
@@ -97,9 +98,8 @@ public class PostTagService {
 
             log.info("更新标签成功, id: {}, name: {}", id, name);
             return updatedTag;
-        } catch (IllegalArgumentException e) {
-            log.error("更新标签时参数错误, id: {}, name: {}", id, name, e);
-            throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), e.getMessage());
+        } catch (BusinessException e) {
+            throw e;
         } catch (Exception e) {
             log.error("更新标签时发生错误, id: {}, name: {}", id, name, e);
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "更新标签时发生错误: " + e.getMessage());
@@ -109,14 +109,14 @@ public class PostTagService {
     public void deleteTag(Long id) {
         try {
             if (id == null) {
-                throw new IllegalArgumentException("标签ID不能为空");
+                log.warn("删除标签时参数错误, id为空");
+                throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "标签ID不能为空");
             }
 
             tagRepository.deleteTag(id);
             log.info("删除标签成功, id: {}", id);
-        } catch (IllegalArgumentException e) {
-            log.error("删除标签时参数错误, id: {}", id, e);
-            throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), e.getMessage());
+        } catch (BusinessException e) {
+            throw e;
         } catch (Exception e) {
             log.error("删除标签时发生错误, id: {}", id, e);
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "删除标签时发生错误: " + e.getMessage());

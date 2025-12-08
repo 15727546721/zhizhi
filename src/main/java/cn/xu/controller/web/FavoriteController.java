@@ -8,7 +8,6 @@ import cn.xu.common.response.ResponseEntity;
 import cn.xu.model.dto.favorite.FavoriteCountResponse;
 import cn.xu.model.dto.favorite.FavoriteRequest;
 import cn.xu.model.dto.favorite.GetMyFavoritesRequest;
-import cn.xu.model.entity.Favorite;
 import cn.xu.model.entity.Post;
 import cn.xu.model.entity.User;
 import cn.xu.model.enums.favorite.TargetType;
@@ -24,6 +23,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+
 import javax.validation.Valid;
 import java.util.*;
 import java.util.stream.Collectors;

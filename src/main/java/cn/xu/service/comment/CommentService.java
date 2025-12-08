@@ -2,11 +2,10 @@ package cn.xu.service.comment;
 
 import cn.xu.common.constant.CommentSortType;
 import cn.xu.common.constant.CommentType;
-import cn.xu.event.core.BaseEvent.EventAction;
 import cn.xu.event.publisher.SocialEventPublisher;
 import cn.xu.model.dto.comment.FindCommentRequest;
-import cn.xu.model.dto.comment.SaveCommentRequest;
 import cn.xu.model.dto.comment.FindReplyRequest;
+import cn.xu.model.dto.comment.SaveCommentRequest;
 import cn.xu.model.entity.Comment;
 import cn.xu.model.entity.Notification;
 import cn.xu.model.entity.User;
@@ -24,7 +23,6 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.TimeUnit;

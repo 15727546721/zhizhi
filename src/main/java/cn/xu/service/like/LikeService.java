@@ -1,7 +1,6 @@
 package cn.xu.service.like;
 
 import cn.xu.cache.LikeCacheRepository;
-import cn.xu.event.publisher.SocialEventPublisher;
 import cn.xu.event.events.LikeEvent;
 import cn.xu.model.entity.Like;
 import cn.xu.model.entity.Like.LikeType;
@@ -17,11 +16,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
-
-import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * 点赞服务

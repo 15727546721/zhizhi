@@ -7,9 +7,6 @@ import javax.validation.constraints.NotBlank;
 
 /**
  * 注销账户请求
- *
- * @author xu
- * @since 1.0.0
  */
 @Data
 @Schema(description = "注销账户请求")

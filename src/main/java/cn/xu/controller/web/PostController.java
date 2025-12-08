@@ -33,6 +33,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.bind.annotation.*;
+
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
@@ -48,8 +49,6 @@ import java.util.stream.Collectors;
  *   <li>交互：点赞、收藏、分享、浏览</li>
  * </ul>
  *
- * @author zhizhi
- * @since 1.0
  */
 @RequestMapping("/api/post")
 @RestController
@@ -93,11 +92,12 @@ public class PostController {
         });
 
         // 批量获取用户信息
+        // 【优雅降级】获取用户信息失败时，不影响帖子列表展示，只是缺少用户头像/昵称
         Map<Long, User> tempUserMap;
         try {
             tempUserMap = userService.batchGetUserInfo(new ArrayList<>(userIds));
         } catch (Exception e) {
-            log.warn("批量获取用户信息失败", e);
+            log.error("【降级】批量获取用户信息失败，帖子将不显示作者信息 - userIds: {}", userIds, e);
             tempUserMap = new HashMap<>();
         }
         final Map<Long, User> userMap = tempUserMap;
@@ -141,7 +141,8 @@ public class PostController {
                     }
                 });
             } catch (Exception e) {
-                log.warn("批量获取帖子标签失败", e);
+                // 【优雅降级】获取标签失败时，帖子仍可展示，只是缺少标签信息
+                log.error("【降级】批量获取帖子标签失败，帖子将不显示标签 - postIds: {}", postIds, e);
             }
         }
 

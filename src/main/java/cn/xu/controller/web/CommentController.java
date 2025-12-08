@@ -3,13 +3,12 @@ package cn.xu.controller.web;
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.common.ResponseCode;
-import cn.xu.common.annotation.ApiOperationLog;
 import cn.xu.common.response.PageResponse;
 import cn.xu.common.response.ResponseEntity;
-import cn.xu.model.dto.comment.SaveCommentRequest;
 import cn.xu.model.dto.comment.CommentCreateRequest;
 import cn.xu.model.dto.comment.FindCommentRequest;
 import cn.xu.model.dto.comment.FindReplyRequest;
+import cn.xu.model.dto.comment.SaveCommentRequest;
 import cn.xu.model.entity.Comment;
 import cn.xu.model.entity.Like;
 import cn.xu.model.entity.Post;
@@ -21,8 +20,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+
 import javax.annotation.Resource;
-import java.time.LocalDateTime;
 import java.util.*;
 
 /**
@@ -212,8 +211,13 @@ public class CommentController {
 
     private List<CommentVO> convertToResponseList(List<Comment> comments, Long postId) {
         if (comments == null || comments.isEmpty()) return new ArrayList<>();
+        // 获取当前登录用户（未登录时为null，静默处理异常是intentional的）
         Long currentUserId = null;
-        try { currentUserId = StpUtil.getLoginIdAsLong(); } catch (Exception e) { }
+        try { 
+            currentUserId = StpUtil.getLoginIdAsLong(); 
+        } catch (Exception ignored) { 
+            // 用户未登录时会抛出异常，此处忽略，currentUserId保持为null
+        }
         Long authorId = null;
         if (postId != null) {
             Optional<Post> postOpt = postService.getPostById(postId);

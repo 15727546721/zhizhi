@@ -1,1 +1,68 @@
-package cn.xu.model.dto.search;import lombok.Builder;import lombok.Data;/** * 搜索查询 * 用于执行各种查询请求的参数封装 */@Data@Builderpublic class SearchQuery {    /**     * 搜索关键字     */    private String keyword;    /**     * 搜索过滤器     */    private SearchFilter filter;    /**     * 页码，默认为1     */    private int page;    /**     * 每页大小     */    private int size;    /**     * 校验搜索查询的合法性     */    public void validate() {        if (keyword == null || keyword.trim().isEmpty()) {            throw new IllegalArgumentException("搜索关键字不能为空");        }        if (keyword.trim().length() > 100) {            throw new IllegalArgumentException("搜索关键字长度不能超过100个字符");        }        if (page < 1) {            throw new IllegalArgumentException("页码不能小于1");        }        if (size < 1 || size > 100) {            throw new IllegalArgumentException("每页大小必须在1到100之间");        }    }    /**     * 获取标准化后的关键字     * 去除前后空格     */    public String getNormalizedKeyword() {        return keyword != null ? keyword.trim() : "";    }}
+package cn.xu.model.dto.search;
+
+import cn.xu.support.exception.BusinessException;
+import lombok.Builder;
+import lombok.Data;
+
+/**
+ * 搜索查询
+ * 用于执行各种查询请求的参数封装
+ */
+@Data
+@Builder
+public class SearchQuery {
+
+    /**
+     * 搜索关键字
+     */
+    private String keyword;
+
+    /**
+     * 搜索过滤器
+     */
+    private SearchFilter filter;
+
+    /**
+     * 页码，默认为1
+     */
+    private int page;
+
+    /**
+     * 每页大小
+     */
+    private int size;
+
+    /**
+     * 校验搜索查询的合法性
+     */
+    public void validate() {
+
+        if (keyword == null || keyword.trim().isEmpty()) {
+
+            throw new BusinessException("搜索关键字不能为空");
+        }
+
+        if (keyword.trim().length() > 100) {
+
+            throw new BusinessException("搜索关键字长度不能超过100个字符");
+        }
+
+        if (page < 1) {
+
+            throw new BusinessException("页码不能小于1");
+        }
+
+        if (size < 1 || size > 100) {
+
+            throw new BusinessException("每页大小必须在1到100之间");
+        }
+    }
+
+    /**
+     * 获取标准化后的关键字
+     * 去除前后空格
+     */
+    public String getNormalizedKeyword() {
+        return keyword != null ? keyword.trim() : "";
+    }
+}

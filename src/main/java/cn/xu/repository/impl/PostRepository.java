@@ -1,10 +1,12 @@
 package cn.xu.repository.impl;
 
 import cn.xu.cache.RedisService;
+import cn.xu.common.ResponseCode;
 import cn.xu.model.entity.Post;
 import cn.xu.model.entity.PostTag;
 import cn.xu.repository.mapper.PostMapper;
 import cn.xu.repository.mapper.PostTagMapper;
+import cn.xu.support.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
@@ -42,7 +44,8 @@ public class PostRepository {
     @Transactional(rollbackFor = Exception.class)
     public Long save(Post post, List<Long> tagIds) {
         if (post == null) {
-            throw new IllegalArgumentException("帖子对象不能为空");
+            log.warn("保存帖子参数错误 - post为null");
+            throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "帖子对象不能为空");
         }
 
         // 验证帖子完整性
@@ -69,7 +72,8 @@ public class PostRepository {
     @Transactional(rollbackFor = Exception.class)
     public void update(Post post, List<Long> tagIds) {
         if (post == null || post.getId() == null) {
-            throw new IllegalArgumentException("帖子对象或ID不能为空");
+            log.warn("更新帖子参数错误 - post为null或id为null");
+            throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "帖子对象或ID不能为空");
         }
 
         Long postId = post.getId();
@@ -387,7 +391,8 @@ public class PostRepository {
 
         // 验证标签数量
         if (tagIds.size() > 10) {
-            throw new IllegalArgumentException("帖子标签数量不能超过10个");
+            log.warn("帖子标签数量超限 - 当前数量: {}", tagIds.size());
+            throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "帖子标签数量不能超过10个");
         }
 
         List<PostTag> postTags = tagIds.stream()

@@ -29,8 +29,6 @@ import java.util.stream.Collectors;
  *   <li>支持按类型查询、标记已读、删除等操作</li>
  * </ul>
  *
- * @author xu
- * @since 1.0
  */
 @Slf4j
 @Validated
