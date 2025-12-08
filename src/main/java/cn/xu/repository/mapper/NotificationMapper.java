@@ -109,4 +109,20 @@ public interface NotificationMapper {
      * 批量删除通知（带用户ID校验）
      */
     void batchDeleteByReceiverIdAndIds(@Param("receiverId") Long receiverId, @Param("ids") List<Long> ids);
+
+    // ==================== 管理后台方法 ====================
+
+    /**
+     * 分页查询所有通知（管理后台用）
+     */
+    List<Notification> selectAllNotifications(
+            @Param("type") Integer type,
+            @Param("isRead") Integer isRead,
+            @Param("offset") int offset,
+            @Param("limit") int limit);
+
+    /**
+     * 统计所有通知数量（管理后台用）
+     */
+    long countAllNotifications(@Param("type") Integer type, @Param("isRead") Integer isRead);
 }

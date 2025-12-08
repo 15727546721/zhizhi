@@ -494,6 +494,45 @@ CREATE TABLE `file_record` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='文件记录表';
 
 -- ============================================================================
+-- 第七部分：举报模块（1个表）
+-- ============================================================================
+
+-- 7.1 举报表
+DROP TABLE IF EXISTS `report`;
+CREATE TABLE `report` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '举报ID',
+  `reporter_id` BIGINT UNSIGNED NOT NULL COMMENT '举报人ID',
+  
+  -- 举报目标
+  `target_type` TINYINT NOT NULL COMMENT '目标类型: 1-帖子 2-评论 3-用户',
+  `target_id` BIGINT UNSIGNED NOT NULL COMMENT '目标ID',
+  `target_user_id` BIGINT UNSIGNED NOT NULL COMMENT '被举报用户ID',
+  
+  -- 举报内容
+  `reason` TINYINT NOT NULL COMMENT '举报原因: 1-垃圾广告 2-违法违规 3-色情低俗 4-人身攻击 5-抄袭侵权 6-其他',
+  `description` VARCHAR(500) DEFAULT NULL COMMENT '详细说明',
+  `evidence_urls` VARCHAR(2000) DEFAULT NULL COMMENT '截图证据URL(JSON数组)',
+  
+  -- 处理信息
+  `status` TINYINT NOT NULL DEFAULT 0 COMMENT '状态: 0-待处理 1-已通过 2-已驳回 3-已忽略',
+  `handler_id` BIGINT UNSIGNED DEFAULT NULL COMMENT '处理人ID',
+  `handle_result` VARCHAR(500) DEFAULT NULL COMMENT '处理结果说明',
+  `handle_action` TINYINT DEFAULT NULL COMMENT '处罚措施: 0-无 1-删除内容 2-警告 3-禁言7天 4-禁言30天 5-永久封号',
+  `handle_time` DATETIME DEFAULT NULL COMMENT '处理时间',
+  
+  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  
+  PRIMARY KEY (`id`),
+  KEY `idx_reporter_id` (`reporter_id`),
+  KEY `idx_target` (`target_type`, `target_id`),
+  KEY `idx_target_user_id` (`target_user_id`),
+  KEY `idx_status` (`status`),
+  KEY `idx_create_time` (`create_time` DESC),
+  KEY `idx_status_time` (`status`, `create_time` DESC)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='举报表';
+
+-- ============================================================================
 -- 完成
 -- ============================================================================
 SELECT '
@@ -501,13 +540,14 @@ SELECT '
 ✅ 表结构创建完成！
 ============================================
 
-📊 表结构统计（共22个表）：
+📊 表结构统计（共23个表）：
    - 用户模块：4个表 (user, user_settings, user_interested_tag, user_block)
    - 内容模块：4个表 (post, tag, post_tag, comment)
    - 互动模块：3个表 (like, favorite, follow)
    - 消息模块：5个表 (notification, user_conversation, private_message, greeting_record, user_message_settings)
    - 权限模块：4个表 (role, menu, user_role, role_menu)
    - 文件模块：1个表 (file_record)
+   - 举报模块：1个表 (report)
    
 ⚠️ 请执行 02_data.sql 插入初始数据！
 

@@ -13,7 +13,7 @@
 -- ┌─────────────────────────────────────────────────────────────┐
 -- │ 1. 用户数据（5个管理员账号）                                   │
 -- │ 2. 角色数据（4个角色）                                        │
--- │ 3. 菜单权限数据（27个菜单/按钮）                               │
+-- │ 3. 菜单权限数据（31个菜单/按钮，含文件管理）                     │
 -- │ 4. 用户角色关联                                              │
 -- │ 5. 角色菜单关联                                              │
 -- │ 6. 默认标签（10个）                                          │
@@ -134,6 +134,13 @@ INSERT INTO `menu` (`id`, `parent_id`, `path`, `component`, `title`, `sort`, `ic
 (123, 12, NULL, NULL, '菜单修改', 3, NULL, 'BUTTON', NULL, NULL, 0, 'system:menu:update'),
 (124, 12, NULL, NULL, '菜单删除', 4, NULL, 'BUTTON', NULL, NULL, 0, 'system:menu:delete');
 
+-- 文件管理
+INSERT INTO `menu` (`id`, `parent_id`, `path`, `component`, `title`, `sort`, `icon`, `type`, `redirect`, `name`, `hidden`, `perm`) VALUES
+(13, 1, 'file', '/system/file', '文件管理', 4, 'el-icon-FolderOpened', 'MENU', NULL, 'File', 0, NULL),
+(131, 13, NULL, NULL, '文件列表', 1, NULL, 'BUTTON', NULL, NULL, 0, 'system:file:list'),
+(132, 13, NULL, NULL, '文件上传', 2, NULL, 'BUTTON', NULL, NULL, 0, 'system:file:upload'),
+(133, 13, NULL, NULL, '文件删除', 3, NULL, 'BUTTON', NULL, NULL, 0, 'system:file:delete');
+
 -- === 内容管理目录 ===
 INSERT INTO `menu` (`id`, `parent_id`, `path`, `component`, `title`, `sort`, `icon`, `type`, `redirect`, `name`, `hidden`, `perm`) VALUES
 (2, 0, '/content', 'Layout', '内容管理', 2, 'el-icon-Document', 'CATALOG', '/content/post', 'Content', 0, NULL);
@@ -162,6 +169,12 @@ INSERT INTO `menu` (`id`, `parent_id`, `path`, `component`, `title`, `sort`, `ic
 (221, 22, NULL, NULL, '评论列表', 1, NULL, 'BUTTON', NULL, NULL, 0, 'system:comment:list'),
 (222, 22, NULL, NULL, '评论删除', 2, NULL, 'BUTTON', NULL, NULL, 0, 'system:comment:delete');
 
+-- 举报管理
+INSERT INTO `menu` (`id`, `parent_id`, `path`, `component`, `title`, `sort`, `icon`, `type`, `redirect`, `name`, `hidden`, `perm`) VALUES
+(23, 2, 'report', '/content/report', '举报管理', 4, 'el-icon-Warning', 'MENU', NULL, 'Report', 0, NULL),
+(231, 23, NULL, NULL, '举报列表', 1, NULL, 'BUTTON', NULL, NULL, 0, 'system:report:list'),
+(232, 23, NULL, NULL, '处理举报', 2, NULL, 'BUTTON', NULL, NULL, 0, 'system:report:handle');
+
 -- ============================================================================
 -- 第五部分：用户角色关联
 -- ============================================================================
@@ -182,7 +195,7 @@ INSERT INTO `user_role` (`user_id`, `role_id`) VALUES
 INSERT INTO `role_menu` (`role_id`, `menu_id`)
 SELECT 1, `id` FROM `menu`;
 
--- 内容管理员：内容管理模块全部权限
+-- 内容管理员：内容管理模块全部权限 + 文件上传权限
 INSERT INTO `role_menu` (`role_id`, `menu_id`) VALUES
 (2, 2),   -- 内容管理目录
 (2, 20),  -- 帖子管理
@@ -190,7 +203,11 @@ INSERT INTO `role_menu` (`role_id`, `menu_id`) VALUES
 (2, 21),  -- 标签管理
 (2, 211), (2, 212), (2, 213), (2, 214),
 (2, 22),  -- 评论管理
-(2, 221), (2, 222);
+(2, 221), (2, 222),
+(2, 23),  -- 举报管理
+(2, 231), (2, 232),  -- 举报列表、处理举报
+(2, 13),  -- 文件管理
+(2, 131), (2, 132);  -- 文件列表、上传
 
 -- 用户管理员：用户管理模块权限
 INSERT INTO `role_menu` (`role_id`, `menu_id`) VALUES

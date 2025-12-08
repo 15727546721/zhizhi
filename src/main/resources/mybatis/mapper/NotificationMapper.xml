@@ -232,4 +232,35 @@
               </foreach>
           </if>
     </select>
+
+    <!-- ==================== 管理后台方法 ==================== -->
+
+    <!-- 分页查询所有通知（管理后台用） -->
+    <select id="selectAllNotifications" resultMap="notificationMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM notification
+        WHERE status = 1
+        <if test="type != null">
+            AND type = #{type}
+        </if>
+        <if test="isRead != null">
+            AND is_read = #{isRead}
+        </if>
+        ORDER BY create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 统计所有通知数量（管理后台用） -->
+    <select id="countAllNotifications" resultType="long">
+        SELECT COUNT(*)
+        FROM notification
+        WHERE status = 1
+        <if test="type != null">
+            AND type = #{type}
+        </if>
+        <if test="isRead != null">
+            AND is_read = #{isRead}
+        </if>
+    </select>
 </mapper>

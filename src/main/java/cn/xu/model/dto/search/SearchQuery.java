@@ -38,22 +38,18 @@ public class SearchQuery {
     public void validate() {
 
         if (keyword == null || keyword.trim().isEmpty()) {
-
             throw new BusinessException("搜索关键字不能为空");
         }
 
         if (keyword.trim().length() > 100) {
-
             throw new BusinessException("搜索关键字长度不能超过100个字符");
         }
 
         if (page < 1) {
-
             throw new BusinessException("页码不能小于1");
         }
 
         if (size < 1 || size > 100) {
-
             throw new BusinessException("每页大小必须在1到100之间");
         }
     }

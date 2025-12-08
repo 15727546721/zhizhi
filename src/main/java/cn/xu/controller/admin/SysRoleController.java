@@ -35,7 +35,7 @@ import java.util.List;
 @Tag(name = "角色管理", description = "角色管理相关接口")
 public class SysRoleController {
 
-    private PermissionService permissionService;
+    private final PermissionService permissionService;
 
     /**
      * 查询角色列表

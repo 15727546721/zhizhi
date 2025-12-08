@@ -15,7 +15,6 @@ import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -239,40 +238,6 @@ public class SysJobController {
                 .build();
     }
 
-    // ==================== 任务日志 ====================
-
-    /**
-     * 获取任务日志列表
-     * 
-     * <p>分页查询任务执行日志
-     * <p>需要system:job:list权限
-     * 
-     * @param pageNo 页码
-     * @param pageSize 每页数量
-     * @param jobId 任务ID（可选）
-     * @return 分页的日志列表
-     */
-    @GetMapping("/log/list")
-    @Operation(summary = "获取任务日志列表")
-    @SaCheckLogin
-    @SaCheckPermission("system:job:list")
-    @ApiOperationLog(description = "获取任务日志列表")
-    public ResponseEntity<PageResponse<List<JobLogVO>>> getJobLogList(
-            @RequestParam(defaultValue = "1") Integer pageNo,
-            @RequestParam(defaultValue = "10") Integer pageSize,
-            @RequestParam(required = false) Long jobId) {
-        log.info("获取任务日志列表: pageNo={}, pageSize={}, jobId={}", pageNo, pageSize, jobId);
-        
-        List<JobLogVO> logs = new ArrayList<>();
-        PageResponse<List<JobLogVO>> pageResponse = PageResponse.ofList(pageNo, pageSize, 0L, logs);
-        
-        return ResponseEntity.<PageResponse<List<JobLogVO>>>builder()
-                .code(ResponseCode.SUCCESS.getCode())
-                .info("获取成功")
-                .data(pageResponse)
-                .build();
-    }
-
     // ==================== VO类定义 ====================
 
     @Data
@@ -290,22 +255,5 @@ public class SysJobController {
         private Integer status;
         private String remark;
         private LocalDateTime createTime;
-    }
-
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class JobLogVO {
-        private Long id;
-        private Long jobId;
-        private String jobName;
-        private String jobGroup;
-        private String invokeTarget;
-        private String jobMessage;
-        private Integer status;
-        private String exceptionInfo;
-        private LocalDateTime startTime;
-        private LocalDateTime endTime;
     }
 }

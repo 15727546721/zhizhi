@@ -7,6 +7,8 @@ import cn.xu.common.annotation.ApiOperationLog;
 import cn.xu.common.response.PageResponse;
 import cn.xu.common.response.ResponseEntity;
 import cn.xu.model.entity.Notification;
+import cn.xu.repository.INotificationRepository;
+import cn.xu.repository.mapper.NotificationMapper;
 import cn.xu.service.notification.NotificationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -14,14 +16,14 @@ import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 系统消息管理控制器
  * 
  * <p>提供系统通知和消息的查询、发送、删除功能</p>
- * <p>需要登录并拥有相应权限：system:message:send</p>
+ * <p>需要登录并拥有相应权限</p>
  */
 @Slf4j
 @RestController
@@ -31,18 +33,19 @@ import java.util.List;
 public class SysMessageController {
 
     private final NotificationService notificationService;
+    private final NotificationMapper notificationMapper;
+    private final INotificationRepository notificationRepository;
 
     /**
      * 获取系统消息列表
      * 
      * <p>分页查询系统消息，支持按类型和状态筛选</p>
      * <p>需要system:message:list权限</p>
-     * <p>需要system:message:list权限
      * 
      * @param pageNo 页码
      * @param pageSize 每页数量
-     * @param type 消息类型，1-系统通知 2-公告 3-私信）
-     * @param status 状态（0-未读 1-已读）
+     * @param type 消息类型（0-系统 1-点赞 2-收藏 3-评论 4-回复 5-关注 6-@提及）
+     * @param isRead 已读状态（0-未读 1-已读）
      * @return 分页的消息列表
      */
     @GetMapping("/list")
@@ -54,12 +57,18 @@ public class SysMessageController {
             @RequestParam(defaultValue = "1") Integer pageNo,
             @RequestParam(defaultValue = "10") Integer pageSize,
             @RequestParam(required = false) Integer type,
-            @RequestParam(required = false) Integer status) {
-        log.info("获取系统消息列表: pageNo={}, pageSize={}, type={}", pageNo, pageSize, type);
+            @RequestParam(required = false) Integer isRead) {
+        log.info("获取系统消息列表: pageNo={}, pageSize={}, type={}, isRead={}", pageNo, pageSize, type, isRead);
         
-        // 暂时返回空列表
-        List<SystemMessageVO> messages = new ArrayList<>();
-        PageResponse<List<SystemMessageVO>> pageResponse = PageResponse.ofList(pageNo, pageSize, 0L, messages);
+        int offset = (pageNo - 1) * pageSize;
+        List<Notification> notifications = notificationMapper.selectAllNotifications(type, isRead, offset, pageSize);
+        long total = notificationMapper.countAllNotifications(type, isRead);
+        
+        List<SystemMessageVO> voList = notifications.stream()
+                .map(SystemMessageVO::fromNotification)
+                .collect(Collectors.toList());
+        
+        PageResponse<List<SystemMessageVO>> pageResponse = PageResponse.ofList(pageNo, pageSize, total, voList);
         
         return ResponseEntity.<PageResponse<List<SystemMessageVO>>>builder()
                 .code(ResponseCode.SUCCESS.getCode())
@@ -84,6 +93,7 @@ public class SysMessageController {
     @ApiOperationLog(description = "删除系统消息")
     public ResponseEntity<Void> deleteMessage(@RequestBody List<Long> ids) {
         log.info("删除系统消息: ids={}", ids);
+        notificationRepository.batchDelete(ids);
         return ResponseEntity.<Void>builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .info("删除成功")
@@ -141,13 +151,55 @@ public class SysMessageController {
         private Long id;
         private String title;
         private String content;
-        private Integer type;          // 1-系统通知 2-公告 3-私信
-        private Integer status;        // 0-未读 1-已读
+        private Integer type;          // 0-系统 1-点赞 2-收藏 3-评论 4-回复 5-关注 6-@提及
+        private Integer isRead;        // 0-未读 1-已读
         private Long senderId;
-        private String senderName;
+        private Integer senderType;    // 0-系统 1-用户
         private Long receiverId;
-        private String receiverName;
+        private Integer businessType;  // 0-系统 1-帖子 2-评论 3-用户
+        private Long businessId;
         private LocalDateTime createTime;
         private LocalDateTime readTime;
+
+        /**
+         * 从 Notification 转换
+         */
+        public static SystemMessageVO fromNotification(Notification notification) {
+            if (notification == null) {
+                return null;
+            }
+            return SystemMessageVO.builder()
+                    .id(notification.getId())
+                    .title(notification.getTitle())
+                    .content(notification.getContent())
+                    .type(notification.getType())
+                    .isRead(notification.getIsRead())
+                    .senderId(notification.getSenderId())
+                    .senderType(notification.getSenderType())
+                    .receiverId(notification.getReceiverId())
+                    .businessType(notification.getBusinessType())
+                    .businessId(notification.getBusinessId())
+                    .createTime(notification.getCreateTime())
+                    .readTime(notification.getReadTime())
+                    .build();
+        }
+
+        /**
+         * 获取类型名称
+         */
+        public String getTypeName() {
+            if (type == null) return "未知";
+            switch (type) {
+                case 0: return "系统通知";
+                case 1: return "点赞";
+                case 2: return "收藏";
+                case 3: return "评论";
+                case 4: return "回复";
+                case 5: return "关注";
+                case 6: return "@提及";
+                case 7: return "私信";
+                default: return "其他";
+            }
+        }
     }
 }

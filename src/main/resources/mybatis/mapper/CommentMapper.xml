@@ -420,4 +420,33 @@
   <select id="getAuthorId" resultType="java.lang.Long">
     SELECT user_id FROM comment WHERE id = #{commentId}
   </select>
+  
+  <!-- 查询所有根评论（管理后台用） -->
+  <select id="findAllRootComments" resultMap="BaseResultMap">
+    SELECT
+    <include refid="Base_Column_List"/>
+    FROM comment
+    WHERE (parent_id IS NULL OR parent_id = 0)
+    <if test="targetType != null">
+        AND target_type = #{targetType}
+    </if>
+    <if test="targetId != null">
+        AND target_id = #{targetId}
+    </if>
+    ORDER BY create_time DESC
+    LIMIT #{offset}, #{limit}
+  </select>
+  
+  <!-- 统计根评论数量（管理后台用） -->
+  <select id="countAllRootComments" resultType="java.lang.Long">
+    SELECT COUNT(*)
+    FROM comment
+    WHERE (parent_id IS NULL OR parent_id = 0)
+    <if test="targetType != null">
+        AND target_type = #{targetType}
+    </if>
+    <if test="targetId != null">
+        AND target_id = #{targetId}
+    </if>
+  </select>
 </mapper>
