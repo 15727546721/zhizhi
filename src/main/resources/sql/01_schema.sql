@@ -9,7 +9,7 @@
 -- 
 -- ⚠️ 警告：此脚本会删除并重建所有表，请先备份数据！
 -- 
--- 表结构概览（共22个表）：
+-- 表结构概览（共24个表）：
 -- ┌─────────────────────────────────────────────────────────────┐
 -- │ 用户模块（4个）                                              │
 -- │   user, user_settings, user_interested_tag, user_block     │
@@ -20,15 +20,18 @@
 -- │ 互动模块（3个）                                              │
 -- │   `like`, favorite, follow                                 │
 -- ├─────────────────────────────────────────────────────────────┤
--- │ 消息模块（5个）                                              │
+-- │ 消息模块（6个）                                              │
 -- │   notification, user_conversation, private_message,        │
--- │   greeting_record, user_message_settings                   │
+-- │   greeting_record, user_message_settings, feedback         │
 -- ├─────────────────────────────────────────────────────────────┤
 -- │ 权限模块（4个）                                              │
 -- │   role, menu, user_role, role_menu                         │
 -- ├─────────────────────────────────────────────────────────────┤
 -- │ 文件模块（1个）                                              │
 -- │   file_record                                              │
+-- ├─────────────────────────────────────────────────────────────┤
+-- │ 举报模块（1个）                                              │
+-- │   report                                                   │
 -- └─────────────────────────────────────────────────────────────┘
 -- ============================================================================
 
@@ -49,6 +52,7 @@ DROP TABLE IF EXISTS `user_conversation`;
 DROP TABLE IF EXISTS `user_message_settings`;
 DROP TABLE IF EXISTS `private_message`;
 DROP TABLE IF EXISTS `notification`;
+DROP TABLE IF EXISTS `feedback`;
 DROP TABLE IF EXISTS `follow`;
 DROP TABLE IF EXISTS `favorite`;
 DROP TABLE IF EXISTS `like`;
@@ -404,8 +408,29 @@ CREATE TABLE `user_message_settings` (
   UNIQUE KEY `uk_user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户消息设置表';
 
+-- 4.6 用户反馈表
+CREATE TABLE `feedback` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `user_id` BIGINT UNSIGNED NOT NULL COMMENT '用户ID',
+  `type` TINYINT NOT NULL DEFAULT 0 COMMENT '反馈类型: 0-Bug问题 1-功能建议 2-内容问题 3-其他',
+  `title` VARCHAR(100) NOT NULL COMMENT '标题',
+  `content` TEXT NOT NULL COMMENT '详细内容',
+  `images` VARCHAR(500) DEFAULT NULL COMMENT '图片URL，多个用逗号分隔',
+  `contact` VARCHAR(100) DEFAULT NULL COMMENT '联系方式',
+  `status` TINYINT NOT NULL DEFAULT 0 COMMENT '状态: 0-待处理 1-处理中 2-已解决 3-已关闭',
+  `reply` TEXT DEFAULT NULL COMMENT '管理员回复',
+  `reply_time` DATETIME DEFAULT NULL COMMENT '回复时间',
+  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_type` (`type`),
+  KEY `idx_status` (`status`),
+  KEY `idx_create_time` (`create_time` DESC)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户反馈表';
+
 -- ============================================================================
--- 第五部分：权限模块（5个表）
+-- 第五部分：权限模块（4个表）
 -- ============================================================================
 
 -- 5.1 角色表
@@ -542,11 +567,11 @@ SELECT '
 ✅ 表结构创建完成！
 ============================================
 
-📊 表结构统计（共23个表）：
+📊 表结构统计（共24个表）：
    - 用户模块：4个表 (user, user_settings, user_interested_tag, user_block)
    - 内容模块：4个表 (post, tag, post_tag, comment)
    - 互动模块：3个表 (like, favorite, follow)
-   - 消息模块：5个表 (notification, user_conversation, private_message, greeting_record, user_message_settings)
+   - 消息模块：6个表 (notification, user_conversation, private_message, greeting_record, user_message_settings, feedback)
    - 权限模块：4个表 (role, menu, user_role, role_menu)
    - 文件模块：1个表 (file_record)
    - 举报模块：1个表 (report)

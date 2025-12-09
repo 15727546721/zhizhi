@@ -4,19 +4,13 @@ import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.xu.common.ResponseCode;
 import cn.xu.common.annotation.ApiOperationLog;
-import cn.xu.common.response.PageResponse;
 import cn.xu.common.response.ResponseEntity;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
-import java.util.ArrayList;
+
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -143,95 +137,5 @@ public class SysConfigController {
                 .code(ResponseCode.SUCCESS.getCode())
                 .info("更新成功")
                 .build();
-    }
-
-    // ==================== 反馈管理 ====================
-
-    /**
-     * 获取反馈列表
-     *
-     * <p>分页查询用户反馈
-     * <p>需要登录后才能访问
-     *
-     * @param pageNo 页码
-     * @param pageSize 每页数量
-     * @return 分页的反馈列表
-     */
-    @GetMapping("/api/system/feedback/list")
-    @Operation(summary = "获取反馈列表")
-    @SaCheckLogin
-    @ApiOperationLog(description = "获取反馈列表")
-    public ResponseEntity<PageResponse<List<FeedbackVO>>> getFeedbackList(
-            @RequestParam(defaultValue = "1") Integer pageNo,
-            @RequestParam(defaultValue = "10") Integer pageSize) {
-        log.info("获取反馈列表");
-
-        List<FeedbackVO> feedbacks = new ArrayList<>();
-        PageResponse<List<FeedbackVO>> pageResponse = PageResponse.ofList(pageNo, pageSize, 0L, feedbacks);
-
-        return ResponseEntity.<PageResponse<List<FeedbackVO>>>builder()
-                .code(ResponseCode.SUCCESS.getCode())
-                .info("获取成功")
-                .data(pageResponse)
-                .build();
-    }
-
-    /**
-     * 更新反馈状态
-     *
-     * <p>更新反馈处理状态和回复
-     * <p>需要system:feedback:update权限
-     *
-     * @param feedback 反馈信息
-     * @return 更新结果
-     */
-    @PutMapping("/api/system/feedback/update")
-    @Operation(summary = "更新反馈状态")
-    @SaCheckLogin
-    @SaCheckPermission("system:feedback:update")
-    @ApiOperationLog(description = "更新反馈状态")
-    public ResponseEntity<Void> updateFeedback(@RequestBody FeedbackVO feedback) {
-        log.info("更新反馈: {}", feedback);
-        return ResponseEntity.<Void>builder()
-                .code(ResponseCode.SUCCESS.getCode())
-                .info("更新成功")
-                .build();
-    }
-
-    /**
-     * 删除反馈
-     *
-     * <p>批量删除反馈
-     * <p>需要system:feedback:delete权限
-     *
-     * @param ids 反馈ID列表
-     * @return 删除结果
-     */
-    @DeleteMapping("/api/system/feedback/delete")
-    @Operation(summary = "删除反馈")
-    @SaCheckLogin
-    @SaCheckPermission("system:feedback:delete")
-    @ApiOperationLog(description = "删除反馈")
-    public ResponseEntity<Void> deleteFeedback(@RequestBody List<Long> ids) {
-        log.info("删除反馈: {}", ids);
-        return ResponseEntity.<Void>builder()
-                .code(ResponseCode.SUCCESS.getCode())
-                .info("删除成功")
-                .build();
-    }
-
-    // ==================== VO类定义 ====================
-
-    @Data
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class FeedbackVO {
-        private Long id;
-        private String content;
-        private String contact;
-        private Integer status;
-        private String reply;
-        private String createTime;
     }
 }
