@@ -182,44 +182,6 @@ public class NotificationHandler {
         }
     }
 
-    // ==================== 私信通知 ====================
-
-    @Async
-    @EventListener
-    public void onDM(DMEvent event) {
-        if (event.getDmEventType() != DMEvent.DMEventType.SENT) return;
-
-        try {
-            String content = event.isGreeting()
-                    ? "向你打了个招呼"
-                    : "给你发送了一条消息";
-
-            if (event.getContentPreview() != null) {
-                content = content + " " + event.getContentPreview();
-            }
-
-            Notification notification = Notification.builder()
-                    .type(Notification.TYPE_PRIVATE_MESSAGE)
-                    .senderId(event.getSenderId())
-                    .receiverId(event.getReceiverId())
-                    .senderType(Notification.SENDER_TYPE_USER)
-                    .content(content)
-                    .businessType(Notification.BUSINESS_USER)
-                    .businessId(event.getSenderId())
-                    .isRead(Notification.READ_NO)
-                    .status(Notification.STATUS_VALID)
-                    .createTime(LocalDateTime.now())
-                    .updateTime(LocalDateTime.now())
-                    .build();
-
-            notificationService.sendNotification(notification);
-            log.debug("[Handler] 私信通知已创建 - receiver: {}", event.getReceiverId());
-
-        } catch (Exception e) {
-            log.error("[Handler] 处理私信事件失败", e);
-        }
-    }
-
     // ==================== 工具方法 ====================
 
     private String truncate(String str, int maxLength) {

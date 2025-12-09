@@ -13,7 +13,7 @@
 -- ┌─────────────────────────────────────────────────────────────┐
 -- │ 1. 用户数据（5个管理员账号）                                   │
 -- │ 2. 角色数据（4个角色）                                        │
--- │ 3. 菜单权限数据（31个菜单/按钮，含文件管理）                     │
+-- │ 3. 菜单权限数据（39个菜单/按钮，含文件管理+消息管理）             │
 -- │ 4. 用户角色关联                                              │
 -- │ 5. 角色菜单关联                                              │
 -- │ 6. 默认标签（10个）                                          │
@@ -175,6 +175,23 @@ INSERT INTO `menu` (`id`, `parent_id`, `path`, `component`, `title`, `sort`, `ic
 (231, 23, NULL, NULL, '举报列表', 1, NULL, 'BUTTON', NULL, NULL, 0, 'system:report:list'),
 (232, 23, NULL, NULL, '处理举报', 2, NULL, 'BUTTON', NULL, NULL, 0, 'system:report:handle');
 
+-- === 消息管理目录 ===
+INSERT INTO `menu` (`id`, `parent_id`, `path`, `component`, `title`, `sort`, `icon`, `type`, `redirect`, `name`, `hidden`, `perm`) VALUES
+(3, 0, '/message', 'Layout', '消息管理', 3, 'el-icon-Message', 'CATALOG', '/message/message', 'Message', 0, NULL);
+
+-- 系统消息
+INSERT INTO `menu` (`id`, `parent_id`, `path`, `component`, `title`, `sort`, `icon`, `type`, `redirect`, `name`, `hidden`, `perm`) VALUES
+(30, 3, 'message', '/message/message', '系统消息', 1, 'el-icon-Bell', 'MENU', NULL, 'SystemMessage', 0, NULL),
+(301, 30, NULL, NULL, '消息列表', 1, NULL, 'BUTTON', NULL, NULL, 0, 'system:message:list'),
+(302, 30, NULL, NULL, '发送消息', 2, NULL, 'BUTTON', NULL, NULL, 0, 'system:message:send'),
+(303, 30, NULL, NULL, '删除消息', 3, NULL, 'BUTTON', NULL, NULL, 0, 'system:message:delete');
+
+-- 用户反馈
+INSERT INTO `menu` (`id`, `parent_id`, `path`, `component`, `title`, `sort`, `icon`, `type`, `redirect`, `name`, `hidden`, `perm`) VALUES
+(31, 3, 'feedback', '/message/feedback', '用户反馈', 2, 'el-icon-ChatLineSquare', 'MENU', NULL, 'Feedback', 0, NULL),
+(311, 31, NULL, NULL, '反馈列表', 1, NULL, 'BUTTON', NULL, NULL, 0, 'system:feedback:list'),
+(312, 31, NULL, NULL, '处理反馈', 2, NULL, 'BUTTON', NULL, NULL, 0, 'system:feedback:handle');
+
 -- ============================================================================
 -- 第五部分：用户角色关联
 -- ============================================================================
@@ -195,7 +212,7 @@ INSERT INTO `user_role` (`user_id`, `role_id`) VALUES
 INSERT INTO `role_menu` (`role_id`, `menu_id`)
 SELECT 1, `id` FROM `menu`;
 
--- 内容管理员：内容管理模块全部权限 + 文件上传权限
+-- 内容管理员：内容管理模块全部权限 + 文件上传权限 + 消息管理
 INSERT INTO `role_menu` (`role_id`, `menu_id`) VALUES
 (2, 2),   -- 内容管理目录
 (2, 20),  -- 帖子管理
@@ -205,9 +222,14 @@ INSERT INTO `role_menu` (`role_id`, `menu_id`) VALUES
 (2, 22),  -- 评论管理
 (2, 221), (2, 222),
 (2, 23),  -- 举报管理
-(2, 231), (2, 232),  -- 举报列表、处理举报
+(2, 231), (2, 232),
 (2, 13),  -- 文件管理
-(2, 131), (2, 132);  -- 文件列表、上传
+(2, 131), (2, 132),
+(2, 3),   -- 消息管理目录
+(2, 30),  -- 系统消息
+(2, 301), (2, 302), (2, 303),
+(2, 31),  -- 用户反馈
+(2, 311), (2, 312);
 
 -- 用户管理员：用户管理模块权限
 INSERT INTO `role_menu` (`role_id`, `menu_id`) VALUES
@@ -300,7 +322,7 @@ SELECT '
 
 🔐 权限体系：
    - 超级管理员：所有权限
-   - 内容管理员：帖子、标签、评论管理
+   - 内容管理员：帖子、标签、评论、消息管理
    - 用户管理员：用户管理
    - 只读用户：仅查看权限
 

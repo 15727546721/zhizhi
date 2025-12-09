@@ -480,4 +480,9 @@
     <select id="countByStatus" resultType="java.lang.Long">
         SELECT COUNT(*) FROM user WHERE status = #{status}
     </select>
+    
+    <!-- 查询所有有效用户的ID（用于群发系统通知） -->
+    <select id="selectAllUserIds" resultType="java.lang.Long">
+        SELECT id FROM user WHERE status = 1
+    </select>
 </mapper>

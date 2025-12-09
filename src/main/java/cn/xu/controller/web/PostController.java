@@ -693,6 +693,8 @@ public class PostController {
 
     /**
      * 获取我的帖子列表
+     * 
+     * @param request 请求参数：pageNo, pageSize, status, keyword(可选)
      */
     @PostMapping("/my")
     @Operation(summary = "获取我的帖子列表")
@@ -703,10 +705,22 @@ public class PostController {
             Long userId = LoginUserUtil.getLoginUserId();
             Integer pageNo = request.get("pageNo") != null ? Integer.valueOf(request.get("pageNo").toString()) : 1;
             Integer pageSize = request.get("pageSize") != null ? Integer.valueOf(request.get("pageSize").toString()) : 10;
-            String status = request.get("status") != null ? request.get("status").toString() : "PUBLISHED";
+            String status = request.get("status") != null ? request.get("status").toString() : null;
+            String keyword = request.get("keyword") != null ? request.get("keyword").toString().trim() : null;
+            
             postValidationService.validatePageParams(pageNo, pageSize);
-            List<Post> posts = postService.getUserPostsByStatus(userId, "PUBLISHED".equals(status) ? 1 : 0, pageNo, pageSize);
-            long total = "PUBLISHED".equals(status) ? postService.countUserPublishedPosts(userId) : postService.countUserDrafts(userId);
+            
+            // 根据状态确定查询条件：null=全部, PUBLISHED=已发布(1), DRAFT=草稿(0)
+            Integer statusCode = null;
+            if ("PUBLISHED".equals(status)) {
+                statusCode = 1;
+            } else if ("DRAFT".equals(status)) {
+                statusCode = 0;
+            }
+            
+            List<Post> posts = postService.getUserPostsWithKeyword(userId, statusCode, keyword, pageNo, pageSize);
+            long total = postService.countUserPostsWithKeyword(userId, statusCode, keyword);
+            
             return ResponseEntity.<PageResponse<List<PostListVO>>>builder()
                     .code(ResponseCode.SUCCESS.getCode())
                     .data(PageResponse.ofList(pageNo, pageSize, total, convertToPostListVOs(posts)))

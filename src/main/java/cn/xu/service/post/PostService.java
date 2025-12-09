@@ -209,6 +209,21 @@ public class PostService {
         return getUserPosts(userId, status, pageNo, pageSize);
     }
 
+    /**
+     * 获取用户帖子（支持状态和关键词过滤）
+     */
+    public List<Post> getUserPostsWithKeyword(Long userId, Integer status, String keyword, int pageNo, int pageSize) {
+        int offset = Math.max(0, (pageNo - 1) * pageSize);
+        return postMapper.findByUserIdWithKeyword(userId, status, keyword, offset, pageSize);
+    }
+
+    /**
+     * 统计用户帖子数（支持状态和关键词过滤）
+     */
+    public long countUserPostsWithKeyword(Long userId, Integer status, String keyword) {
+        return postMapper.countByUserIdWithKeyword(userId, status, keyword);
+    }
+
     public List<Post> getLatestPosts(int pageNo, int pageSize) {
         int offset = Math.max(0, (pageNo - 1) * pageSize);
         return postRepository.findAll(offset, pageSize);

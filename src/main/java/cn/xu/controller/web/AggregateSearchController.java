@@ -1,19 +1,19 @@
 package cn.xu.controller.web;
 
+import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.common.ResponseCode;
 import cn.xu.common.annotation.ApiOperationLog;
 import cn.xu.common.response.ResponseEntity;
 import cn.xu.model.vo.search.AggregateSearchVO;
 import cn.xu.service.search.AggregateSearchService;
+import cn.xu.service.search.SearchHistoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import java.util.List;
 
 /**
  * 聚合搜索控制器
@@ -30,6 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AggregateSearchController {
     
     private final AggregateSearchService aggregateSearchService;
+    private final SearchHistoryService searchHistoryService;
     
     /**
      * 聚合搜索
@@ -62,6 +63,10 @@ public class AggregateSearchController {
                         .info("搜索关键词不能为空")
                         .build();
             }
+            
+            // 记录搜索历史
+            Long userId = StpUtil.isLogin() ? StpUtil.getLoginIdAsLong() : null;
+            searchHistoryService.recordSearch(userId, keyword);
             
             AggregateSearchVO result = aggregateSearchService.search(
                     keyword, postLimit, userLimit, tagLimit);
@@ -190,5 +195,95 @@ public class AggregateSearchController {
                     .info("搜索失败")
                     .build();
         }
+    }
+    
+    // ==================== 搜索历史与热词 ====================
+    
+    /**
+     * 获取搜索历史
+     * 
+     * <p>返回当前登录用户的搜索历史（最近20条）
+     * 
+     * @return 搜索历史列表
+     */
+    @GetMapping("/history")
+    @Operation(summary = "获取搜索历史", description = "获取当前用户的搜索历史")
+    public ResponseEntity<List<String>> getSearchHistory() {
+        Long userId = StpUtil.isLogin() ? StpUtil.getLoginIdAsLong() : null;
+        List<String> history = searchHistoryService.getHistory(userId);
+        return ResponseEntity.<List<String>>builder()
+                .code(ResponseCode.SUCCESS.getCode())
+                .data(history)
+                .build();
+    }
+    
+    /**
+     * 删除单条搜索历史
+     * 
+     * @param keyword 要删除的关键词
+     * @return 操作结果
+     */
+    @DeleteMapping("/history")
+    @Operation(summary = "删除搜索历史", description = "删除指定的搜索历史")
+    public ResponseEntity<Void> deleteSearchHistory(@RequestParam String keyword) {
+        Long userId = StpUtil.isLogin() ? StpUtil.getLoginIdAsLong() : null;
+        searchHistoryService.deleteHistory(userId, keyword);
+        return ResponseEntity.<Void>builder()
+                .code(ResponseCode.SUCCESS.getCode())
+                .info("删除成功")
+                .build();
+    }
+    
+    /**
+     * 清空搜索历史
+     * 
+     * @return 操作结果
+     */
+    @DeleteMapping("/history/clear")
+    @Operation(summary = "清空搜索历史", description = "清空当前用户的所有搜索历史")
+    public ResponseEntity<Void> clearSearchHistory() {
+        Long userId = StpUtil.isLogin() ? StpUtil.getLoginIdAsLong() : null;
+        searchHistoryService.clearHistory(userId);
+        return ResponseEntity.<Void>builder()
+                .code(ResponseCode.SUCCESS.getCode())
+                .info("清空成功")
+                .build();
+    }
+    
+    /**
+     * 获取热门搜索词
+     * 
+     * <p>返回热门搜索词（Top10）
+     * 
+     * @return 热门搜索词列表
+     */
+    @GetMapping("/hot")
+    @Operation(summary = "获取热门搜索", description = "获取热门搜索词")
+    public ResponseEntity<List<String>> getHotWords() {
+        List<String> hotWords = searchHistoryService.getHotWords();
+        return ResponseEntity.<List<String>>builder()
+                .code(ResponseCode.SUCCESS.getCode())
+                .data(hotWords)
+                .build();
+    }
+    
+    /**
+     * 获取搜索建议
+     * 
+     * <p>根据输入前缀匹配历史和热词
+     * 
+     * @param prefix 输入前缀
+     * @return 搜索建议列表
+     */
+    @GetMapping("/suggest")
+    @Operation(summary = "获取搜索建议", description = "根据输入获取搜索建议")
+    public ResponseEntity<List<String>> getSuggestions(
+            @Parameter(description = "输入前缀") @RequestParam String prefix) {
+        Long userId = StpUtil.isLogin() ? StpUtil.getLoginIdAsLong() : null;
+        List<String> suggestions = searchHistoryService.getSuggestions(userId, prefix);
+        return ResponseEntity.<List<String>>builder()
+                .code(ResponseCode.SUCCESS.getCode())
+                .data(suggestions)
+                .build();
     }
 }

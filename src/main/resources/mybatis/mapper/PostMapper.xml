@@ -754,5 +754,33 @@
     <select id="getAuthorId" resultType="java.lang.Long">
         SELECT user_id FROM post WHERE id = #{postId}
     </select>
+    
+    <!-- 根据用户ID、状态和关键词查询帖子 -->
+    <select id="findByUserIdWithKeyword" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM post
+        WHERE user_id = #{userId}
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND title LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+        ORDER BY create_time DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+    
+    <!-- 统计用户帖子数（支持状态和关键词过滤） -->
+    <select id="countByUserIdWithKeyword" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM post
+        WHERE user_id = #{userId}
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND title LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+    </select>
 
 </mapper>

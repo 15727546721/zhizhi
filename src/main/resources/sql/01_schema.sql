@@ -304,6 +304,8 @@ CREATE TABLE `follow` (
 -- ============================================================================
 
 -- 4.1 互动通知表
+-- 用途：记录用户的互动通知（点赞/评论/关注等）和系统通知
+-- 注意：私信系统独立管理，不在此表中
 CREATE TABLE `notification` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '通知ID',
   `type` TINYINT NOT NULL COMMENT '类型: 0-系统 1-点赞 2-收藏 3-评论 4-回复 5-关注 6-@提及',

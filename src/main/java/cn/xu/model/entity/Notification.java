@@ -49,10 +49,6 @@ public class Notification {
      * 通知类型：@提及通知 */
     public static final int TYPE_MENTION = 6;
 
-    /**
-     * 通知类型：私信通知 */
-    public static final int TYPE_PRIVATE_MESSAGE = 7;
-
     // ==================== 业务类型 ====================
 
     /**
@@ -161,7 +157,7 @@ public class Notification {
     // ==================== 创建通知方法 ====================
 
     /**
-     * 创建系统通知
+     * 创建系统通知（发送给指定用户）
      */
     public static Notification createSystemNotification(Long receiverId, String title, String content) {
         return Notification.builder()
@@ -298,11 +294,11 @@ public class Notification {
      * 校验通知是否合法
      */
     public void validate() {
-        if (receiverId == null) {
-            throw new BusinessException("接收者ID不能为空");
-        }
         if (type == null) {
             throw new BusinessException("通知类型不能为空");
+        }
+        if (receiverId == null) {
+            throw new BusinessException("接收者ID不能为空");
         }
         if (content == null || content.trim().isEmpty()) {
             throw new BusinessException("通知内容不能为空");

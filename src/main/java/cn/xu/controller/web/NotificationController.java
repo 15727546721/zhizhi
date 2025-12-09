@@ -1,5 +1,6 @@
 package cn.xu.controller.web;
 
+import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.common.annotation.ApiOperationLog;
 import cn.xu.common.response.PageResponse;
@@ -48,6 +49,7 @@ public class NotificationController {
      * @param request 查询参数（type支持逗号分隔多类型，如"3,4"表示评论+回复）
      */
     @GetMapping
+    @SaCheckLogin
     @Operation(summary = "获取用户通知列表")
     @ApiOperationLog(description = "获取用户通知列表")
     public ResponseEntity<PageResponse<List<NotificationVO>>> list(
@@ -74,6 +76,7 @@ public class NotificationController {
      * 获取未读通知总数
      */
     @GetMapping("/unread/count")
+    @SaCheckLogin
     @Operation(summary = "获取未读通知总数")
     @ApiOperationLog(description = "获取未读通知总数")
     public ResponseEntity<Long> unreadCount() {
@@ -84,13 +87,16 @@ public class NotificationController {
     /**
      * 获取各类型未读通知数量
      * 
-     * @return Map<类型, 数量>，如 {1: 5, 3: 2} 表示点赞5条、评论2条
+     * @return Map<类型, 数量>，如 {0: 1, 1: 5, 3: 2} 表示系统通知1条、点赞5条、评论2条
      */
     @GetMapping("/unread/count-by-type")
+    @SaCheckLogin
     @Operation(summary = "获取各类型未读通知数量")
     @ApiOperationLog(description = "获取各类型未读通知数量")
     public ResponseEntity<Map<Integer, Long>> unreadCountByType() {
-        Map<Integer, Long> counts = notificationService.getUnreadCountByType(currentUserId());
+        Long userId = currentUserId();
+        Map<Integer, Long> counts = notificationService.getUnreadCountByType(userId);
+        log.info("[通知] 获取各类型未读数量: userId={}, counts={}", userId, counts);
         return ResponseEntity.success(counts);
     }
 
@@ -100,6 +106,7 @@ public class NotificationController {
      * 标记单个通知为已读
      */
     @PutMapping("/{id}/read")
+    @SaCheckLogin
     @Operation(summary = "标记通知为已读")
     @ApiOperationLog(description = "标记通知为已读")
     public ResponseEntity<Void> markAsRead(
@@ -114,6 +121,7 @@ public class NotificationController {
      * @param type 通知类型（可选，不传则标记全部）
      */
     @PutMapping("/read-all")
+    @SaCheckLogin
     @Operation(summary = "标记全部通知为已读")
     @ApiOperationLog(description = "标记全部通知为已读")
     public ResponseEntity<Void> markAllAsRead(
@@ -128,6 +136,7 @@ public class NotificationController {
      * 删除单个通知
      */
     @DeleteMapping("/{id}")
+    @SaCheckLogin
     @Operation(summary = "删除通知")
     @ApiOperationLog(description = "删除通知")
     public ResponseEntity<Void> delete(
@@ -140,6 +149,7 @@ public class NotificationController {
      * 批量删除通知
      */
     @DeleteMapping("/batch")
+    @SaCheckLogin
     @Operation(summary = "批量删除通知")
     @ApiOperationLog(description = "批量删除通知")
     public ResponseEntity<Void> batchDelete(

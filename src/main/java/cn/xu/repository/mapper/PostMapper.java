@@ -368,4 +368,31 @@ public interface PostMapper {
      * @return 作者ID
      */
     Long getAuthorId(@Param("postId") Long postId);
+    
+    /**
+     * 根据用户ID、状态和关键词查询帖子
+     *
+     * @param userId 用户ID
+     * @param status 状态（null=全部, 0=草稿, 1=已发布）
+     * @param keyword 搜索关键词（匹配标题）
+     * @param offset 偏移量
+     * @param limit 数量
+     * @return 帖子列表
+     */
+    List<Post> findByUserIdWithKeyword(
+            @Param("userId") Long userId,
+            @Param("status") Integer status,
+            @Param("keyword") String keyword,
+            @Param("offset") int offset,
+            @Param("limit") int limit
+    );
+    
+    /**
+     * 统计用户帖子数（支持状态和关键词过滤）
+     */
+    Long countByUserIdWithKeyword(
+            @Param("userId") Long userId,
+            @Param("status") Integer status,
+            @Param("keyword") String keyword
+    );
 }

@@ -339,4 +339,13 @@ public interface UserMapper {
      * @return 用户列表
      */
     List<User> searchByKeyword(@Param("keyword") String keyword, @Param("limit") int limit);
+    
+    /**
+     * 查询所有有效用户的ID
+     *
+     * <p>用于群发系统通知</p>
+     *
+     * @return 用户ID列表
+     */
+    List<Long> selectAllUserIds();
 }

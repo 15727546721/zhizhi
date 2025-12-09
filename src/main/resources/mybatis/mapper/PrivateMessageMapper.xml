@@ -61,31 +61,35 @@
     </select>
     
     <!-- 查询两个用户之间的消息，根据查看者过滤已删除的消息，包含用户头像和昵称 -->
+    <!-- 分页逻辑：先按时间倒序取最新N条，再按时间升序返回（UI从上到下时间递增） -->
     <select id="selectMessagesBetweenUsers" resultMap="MessageWithUserResultMap">
-        SELECT 
-            pm.id, pm.sender_id, pm.receiver_id, pm.content, pm.message_type, pm.media_url,
-            pm.status, pm.is_read, pm.read_time, pm.sender_deleted, pm.receiver_deleted,
-            pm.create_time, pm.update_time,
-            sender.avatar AS sender_avatar,
-            sender.nickname AS sender_nickname,
-            receiver.avatar AS receiver_avatar,
-            receiver.nickname AS receiver_nickname
-        FROM private_message pm
-        LEFT JOIN user sender ON pm.sender_id = sender.id
-        LEFT JOIN user receiver ON pm.receiver_id = receiver.id
-        WHERE (
-            (pm.sender_id = #{userId1} AND pm.receiver_id = #{userId2})
-            OR
-            (pm.sender_id = #{userId2} AND pm.receiver_id = #{userId1})
-        )
-        AND (
-            (pm.sender_id = #{viewerId} AND pm.sender_deleted = 0)
-            OR
-            (pm.receiver_id = #{viewerId} AND pm.receiver_deleted = 0)
-        )
-        AND (pm.status = 1 OR pm.sender_id = #{viewerId})
-        ORDER BY pm.create_time ASC
-        LIMIT #{limit} OFFSET #{offset}
+        SELECT * FROM (
+            SELECT 
+                pm.id, pm.sender_id, pm.receiver_id, pm.content, pm.message_type, pm.media_url,
+                pm.status, pm.is_read, pm.read_time, pm.sender_deleted, pm.receiver_deleted,
+                pm.create_time, pm.update_time,
+                sender.avatar AS sender_avatar,
+                sender.nickname AS sender_nickname,
+                receiver.avatar AS receiver_avatar,
+                receiver.nickname AS receiver_nickname
+            FROM private_message pm
+            LEFT JOIN user sender ON pm.sender_id = sender.id
+            LEFT JOIN user receiver ON pm.receiver_id = receiver.id
+            WHERE (
+                (pm.sender_id = #{userId1} AND pm.receiver_id = #{userId2})
+                OR
+                (pm.sender_id = #{userId2} AND pm.receiver_id = #{userId1})
+            )
+            AND (
+                (pm.sender_id = #{viewerId} AND pm.sender_deleted = 0)
+                OR
+                (pm.receiver_id = #{viewerId} AND pm.receiver_deleted = 0)
+            )
+            AND (pm.status = 1 OR pm.sender_id = #{viewerId})
+            ORDER BY pm.create_time DESC
+            LIMIT #{limit} OFFSET #{offset}
+        ) AS t
+        ORDER BY t.create_time ASC
     </select>
     
     <select id="countUnread" resultType="int">

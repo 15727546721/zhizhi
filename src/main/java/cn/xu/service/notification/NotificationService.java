@@ -1,9 +1,11 @@
 package cn.xu.service.notification;
 
+import cn.xu.event.NotificationEvent;
 import cn.xu.model.entity.Notification;
 import cn.xu.repository.INotificationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +25,7 @@ import java.util.Map;
 public class NotificationService {
 
     private final INotificationRepository notificationRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     // ==================== 查询方法 ====================
 
@@ -142,11 +145,16 @@ public class NotificationService {
 
     /**
      * 发送通知
+     * 
+     * <p>保存通知到数据库后，发布事件触发WebSocket推送</p>
      */
     @Transactional
     public void sendNotification(Notification notification) {
         notification.validate();
         notificationRepository.save(notification);
         log.debug("[通知] 已发送: type={}, receiver={}", notification.getType(), notification.getReceiverId());
+        
+        // 发布通知事件，触发WebSocket推送
+        eventPublisher.publishEvent(new NotificationEvent(this, notification));
     }
 }

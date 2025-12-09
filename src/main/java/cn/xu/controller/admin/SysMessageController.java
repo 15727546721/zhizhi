@@ -7,8 +7,10 @@ import cn.xu.common.annotation.ApiOperationLog;
 import cn.xu.common.response.PageResponse;
 import cn.xu.common.response.ResponseEntity;
 import cn.xu.model.entity.Notification;
+import cn.xu.model.entity.User;
 import cn.xu.repository.INotificationRepository;
 import cn.xu.repository.mapper.NotificationMapper;
+import cn.xu.repository.mapper.UserMapper;
 import cn.xu.service.notification.NotificationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -35,6 +37,7 @@ public class SysMessageController {
     private final NotificationService notificationService;
     private final NotificationMapper notificationMapper;
     private final INotificationRepository notificationRepository;
+    private final UserMapper userMapper;
 
     /**
      * 获取系统消息列表
@@ -103,8 +106,9 @@ public class SysMessageController {
     /**
      * 发送系统通知
      * 
-     * <p>向指定用户发送系统通知，需要管理员权限
-     * <p>需要system:message:send权限
+     * <p>向指定用户发送系统通知，需要管理员权限</p>
+     * <p>receiverIds为空表示群发公告（只存一条记录，receiverId为null）</p>
+     * <p>需要system:message:send权限</p>
      * 
      * @param request 发送请求
      * @return 发送结果
@@ -117,17 +121,61 @@ public class SysMessageController {
     public ResponseEntity<Void> sendSystemNotification(@RequestBody SendNotificationRequest request) {
         log.info("[管理端] 发送系统通知: title={}, receiverIds={}", request.getTitle(), request.getReceiverIds());
         
-        // 发送给指定用户
-        if (request.getReceiverIds() != null && !request.getReceiverIds().isEmpty()) {
-            for (Long receiverId : request.getReceiverIds()) {
-                Notification notification = Notification.createSystemNotification(
-                        receiverId, request.getTitle(), request.getContent());
-                notificationService.sendNotification(notification);
-            }
-            log.info("[管理端] 系统通知发送完成, 发送给{}个用户", request.getReceiverIds().size());
+        List<Long> targetUserIds;
+        
+        if (request.getReceiverIds() == null || request.getReceiverIds().isEmpty()) {
+            // 群发：查询所有用户ID
+            targetUserIds = userMapper.selectAllUserIds();
+            log.info("[管理端] 群发系统通知，共{}个用户", targetUserIds.size());
+        } else {
+            // 发送给指定用户
+            targetUserIds = request.getReceiverIds();
         }
         
+        // 为每个用户创建独立的通知记录
+        int count = 0;
+        for (Long receiverId : targetUserIds) {
+            Notification notification = Notification.createSystemNotification(
+                    receiverId, request.getTitle(), request.getContent());
+            notificationService.sendNotification(notification);
+            count++;
+        }
+        
+        log.info("[管理端] 系统通知发送完成, 发送给{}个用户", count);
         return ResponseEntity.success();
+    }
+
+    /**
+     * 搜索用户（用于发送通知时选择用户）
+     * 
+     * <p>按用户名或昵称模糊搜索，返回简要信息</p>
+     * <p>需要system:message:send权限</p>
+     * 
+     * @param keyword 搜索关键词
+     * @return 用户列表
+     */
+    @GetMapping("/user/search")
+    @Operation(summary = "搜索用户")
+    @SaCheckLogin
+    @SaCheckPermission("system:message:send")
+    public ResponseEntity<List<UserSimpleVO>> searchUsers(
+            @RequestParam String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return ResponseEntity.<List<UserSimpleVO>>builder()
+                    .code(ResponseCode.SUCCESS.getCode())
+                    .data(java.util.Collections.emptyList())
+                    .build();
+        }
+        
+        List<User> users = userMapper.searchByUsernameOrNickname(keyword.trim(), 20);
+        List<UserSimpleVO> voList = users.stream()
+                .map(UserSimpleVO::fromUser)
+                .collect(Collectors.toList());
+        
+        return ResponseEntity.<List<UserSimpleVO>>builder()
+                .code(ResponseCode.SUCCESS.getCode())
+                .data(voList)
+                .build();
     }
 
     /**
@@ -197,9 +245,32 @@ public class SysMessageController {
                 case 4: return "回复";
                 case 5: return "关注";
                 case 6: return "@提及";
-                case 7: return "私信";
                 default: return "其他";
             }
+        }
+    }
+
+    /**
+     * 用户简要信息VO（用于用户搜索选择）
+     */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class UserSimpleVO {
+        private Long id;
+        private String username;
+        private String nickname;
+        private String avatar;
+
+        public static UserSimpleVO fromUser(User user) {
+            if (user == null) return null;
+            return UserSimpleVO.builder()
+                    .id(user.getId())
+                    .username(user.getUsername())
+                    .nickname(user.getNickname())
+                    .avatar(user.getAvatar())
+                    .build();
         }
     }
 }

@@ -386,6 +386,9 @@ public class PrivateMessageService {
     public void markAsRead(Long currentUserId, Long otherUserId) {
         messageRepository.markAsRead(currentUserId, otherUserId);
         conversationRepository.clearUnreadCount(currentUserId, otherUserId);
+        
+        // 发布已读事件，通知对方
+        eventPublisher.publishRead(currentUserId, otherUserId);
     }
 
     /** 删除消息（仅自己不可见） */
