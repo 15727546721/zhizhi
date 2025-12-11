@@ -6,6 +6,32 @@ spring:
   # 激活开发环境配置
   profiles:
     active: dev
+  # 邮件服务配置（请替换为您的真实配置）
+  mail:
+    host: ${MAIL_HOST:smtp.qq.com}                    # SMTP服务器地址
+    port: ${MAIL_PORT:587}                            # SMTP端口（587-TLS, 465-SSL）
+    username: ${MAIL_USERNAME:your_email@qq.com}      # 发件人邮箱
+    password: ${MAIL_PASSWORD:your_authorization_code} # 邮箱授权码（从环境变量读取）
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: true                            # 启用SMTP认证
+          starttls:
+            enable: true                        # 启用TLS
+            required: true
+          connectiontimeout: 5000               # 连接超时（毫秒）
+          timeout: 5000                         # 读取超时
+          writetimeout: 5000                    # 写入超时
+  # 文件上传配置
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 100MB
+      max-request-size: 100MB
+      file-size-threshold: 10MB  # 超过此大小才写入磁盘
+      location: ${java.io.tmpdir}  # 临时文件位置
+      resolve-lazily: false  # 立即解析（避免延迟）
 
 server:
   port: 8091
@@ -14,7 +40,7 @@ server:
 logging:
   config: classpath:logback-spring.xml
   level:
-    cn.xu.infrastructure.persistent.repository: debug
+    cn.xu.repository.impl: debug
 
 # 评论热度计算策略配置
 comment:
@@ -22,13 +48,32 @@ comment:
     score:
       strategy: SIMPLE  # 可选值: SIMPLE, REDDIT, TRENDING, LINEAR
 
+# 帖子热度计算策略配置
+post:
+  hot-score:
+    like-weight: 3.0
+    comment-weight: 5.0
+    view-weight: 0.5
+    favorite-weight: 4.0
+    time-decay-exponent: 1.2
+    time-decay-base: 2.0
+
 # MinIO配置
 minio:
-  url: http://localhost:5000
-  accessKey: admin
-  secretKey: superadmin
-  bucketName: zhizhi
-  enabled: true  # 启用MinIO
+  url: ${MINIO_URL:http://localhost:5000}
+  accessKey: ${MINIO_ACCESS_KEY:admin}
+  secretKey: ${MINIO_SECRET_KEY:superadmin}  # 生产环境必须使用环境变量
+  bucketName: ${MINIO_BUCKET:zhizhi}
+  enabled: ${MINIO_ENABLED:true}  # 启用MinIO
+
+# 文件访问配置
+file:
+  access:
+    mode: direct  # 访问模式: direct(直接), proxy(代理), cdn(CDN)
+  proxy:
+    base-url: http://localhost:8091/api/file  # 代理服务URL（proxy模式使用）
+  cdn:
+    base-url: https://cdn.example.com  # CDN URL（cdn模式使用）
 
 # Sa-Token配置
 sa-token:
@@ -52,7 +97,39 @@ app:
   elasticsearch:
     index:
       comments: comments
-      articles: articles
-  article:
+      posts: posts
+    # ES索引自动初始化配置
+    auto-init:
+      enabled: true  # 是否启用自动初始化（默认true）
+      sync-threshold: 0.5  # 同步阈值，如果ES数据量小于MySQL的此百分比，则自动同步（默认0.5，即50%）
+  post:
     query:
-      strategy: mysql  # 文章查询策略：elasticsearch 或 mysql
+      strategy: elasticsearch  # 帖子查询策略：elasticsearch 或 mysql
+      cache:
+        enabled: true  # 是否启用搜索缓存，默认true
+  event:
+    enabled: true
+    async-thread-pool-size: 10
+    ring-buffer-size: 1024
+    consumer-thread-count: 4
+    monitoring-enabled: true
+    retry-count: 3
+    timeout-ms: 5000
+  # 账户安全配置
+  security:
+    # 验证码配置
+    verify-code:
+      enabled: true  # 是否启用验证码验证（开发环境可设为false）
+    # 登录安全配置
+    login:
+      max-fail-count: 5        # 最大登录失败次数
+      lock-duration: 1800      # 账户锁定时长（秒），默认30分钟
+      fail-count-expire: 3600  # 失败计数过期时间（秒），默认1小时
+    # IP封禁配置
+    ip:
+      suspicious-threshold: 10     # 可疑行为阈值
+      auto-block-duration: 3600    # 自动封禁时长（秒），默认1小时
+      suspicious-expire: 3600      # 可疑行为计数过期时间（秒）
+  # 前端URL配置
+  frontend:
+    reset-password-url: ${FRONTEND_RESET_PASSWORD_URL:http://localhost:3000/reset-password}

@@ -1,0 +1,1 @@
+package cn.xu.model.vo.permission;import lombok.Getter;import lombok.RequiredArgsConstructor;/** * 菜单组件权限 * <p>描述每个菜单组件的权限信息，包括其可视化状态及功能权限。</p> */@Getter@RequiredArgsConstructorpublic enum MenuComponentVO {    Layout("Layout", "布局：用于控制页面布局结构及各种UI组件的显示与隐藏");    private final String name;    private final String desc;}

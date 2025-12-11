@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="cn.xu.infrastructure.persistent.dao.NotificationMapper">
+<mapper namespace="cn.xu.repository.mapper.NotificationMapper">
 
-    <resultMap id="notificationMap" type="cn.xu.infrastructure.persistent.po.Notification">
+    <resultMap id="notificationMap" type="cn.xu.model.entity.Notification">
         <id column="id" property="id"/>
         <result column="type" property="type"/>
         <result column="receiver_id" property="receiverId"/>
         <result column="sender_id" property="senderId"/>
+        <result column="sender_type" property="senderType"/>
         <result column="title" property="title"/>
         <result column="content" property="content"/>
         <result column="business_type" property="businessType"/>
@@ -19,21 +20,20 @@
     </resultMap>
 
     <sql id="Base_Column_List">
-        id
-        , type, receiver_id, sender_id, sender_type, title, content, business_type, business_id,
+        id, type, receiver_id, sender_id, sender_type, title, content, business_type, business_id,
         status, is_read, read_time, create_time, update_time
     </sql>
 
-    <insert id="insert" parameterType="cn.xu.infrastructure.persistent.po.Notification" useGeneratedKeys="true"
+    <insert id="insert" parameterType="cn.xu.model.entity.Notification" useGeneratedKeys="true"
             keyProperty="id">
-        INSERT INTO notification (type, receiver_id, sender_id, title, content, business_type,
+        INSERT INTO notification (type, receiver_id, sender_id, sender_type, title, content, business_type,
                                   business_id, status, is_read, read_time, create_time, update_time)
-        VALUES (#{type}, #{receiverId}, #{senderId}, #{title}, #{content},
+        VALUES (#{type}, #{receiverId}, #{senderId}, #{senderType}, #{title}, #{content},
                 #{businessType}, #{businessId}, #{status}, #{isRead},
                 #{readTime}, now(), now())
     </insert>
 
-    <update id="update" parameterType="cn.xu.infrastructure.persistent.po.Notification">
+    <update id="update" parameterType="cn.xu.model.entity.Notification">
         UPDATE notification
         <set>
             <if test="type != null">type = #{type},</if>
@@ -67,7 +67,7 @@
         SELECT
         <include refid="Base_Column_List"/>
         FROM notification
-        WHERE receiver_id = #{receiverId}
+        WHERE (receiver_id = #{receiverId} OR receiver_id IS NULL)
         AND status = 1
         <if test="type != null">
             AND type = #{type}
@@ -79,7 +79,7 @@
     <select id="countUnreadNotifications" resultType="long">
         SELECT COUNT(*)
         FROM notification
-        WHERE receiver_id = #{receiverId}
+        WHERE (receiver_id = #{receiverId} OR receiver_id IS NULL)
           AND is_read = 0
           AND status = 1
     </select>
@@ -112,8 +112,155 @@
     <select id="countUnreadByReceiverId" resultType="java.lang.Long">
         SELECT COUNT(*)
         FROM notification
-        WHERE receiver_id = #{receiverId}
+        WHERE (receiver_id = #{receiverId} OR receiver_id IS NULL)
           AND is_read = 0
           AND status = 1
     </select>
-</mapper> 
+    
+    <select id="findByReceiverIdAndType" resultMap="notificationMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM notification
+        WHERE receiver_id = #{receiverId}
+        AND status = 1
+        <if test="type != null">
+            AND type = #{type}
+        </if>
+        ORDER BY create_time DESC
+        LIMIT #{pageable.offset}, #{pageable.pageSize}
+    </select>
+    
+    <select id="selectByReceiverIdAndType" resultMap="notificationMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM notification
+        WHERE receiver_id = #{receiverId}
+        AND status = 1
+        <if test="type != null">
+            AND type = #{type}
+        </if>
+        ORDER BY create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+    
+    <select id="existsById" resultType="boolean">
+        SELECT COUNT(1) > 0
+        FROM notification
+        WHERE id = #{id}
+          AND status = 1
+    </select>
+    
+    <select id="countUnreadByReceiverIdGroupByType" resultType="java.util.Map">
+        SELECT CAST(type AS SIGNED) as type, COUNT(*) as count
+        FROM notification
+        WHERE (receiver_id = #{receiverId} OR receiver_id IS NULL)
+          AND is_read = 0
+          AND status = 1
+        GROUP BY type
+    </select>
+    
+    <delete id="batchDeleteByIds">
+        DELETE FROM notification
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <!-- 按类型标记已读 -->
+    <update id="markAllAsReadByType">
+        UPDATE notification
+        SET is_read     = 1,
+            read_time   = NOW(),
+            update_time = NOW()
+        WHERE receiver_id = #{receiverId}
+          AND is_read = 0
+          AND status = 1
+          <if test="type != null">
+              AND type = #{type}
+          </if>
+    </update>
+
+    <!-- 统计用户通知数量（按类型） -->
+    <select id="countByReceiverIdAndType" resultType="long">
+        SELECT COUNT(*)
+        FROM notification
+        WHERE receiver_id = #{receiverId}
+          AND status = 1
+          <if test="type != null">
+              AND type = #{type}
+          </if>
+    </select>
+
+    <!-- 批量删除通知（带用户ID校验） -->
+    <delete id="batchDeleteByReceiverIdAndIds">
+        DELETE FROM notification
+        WHERE receiver_id = #{receiverId}
+          AND id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <!-- 根据用户ID和多类型分页查询通知（包含群发公告） -->
+    <select id="findByReceiverIdAndTypes" resultMap="notificationMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM notification
+        WHERE (receiver_id = #{receiverId} OR receiver_id IS NULL)
+        AND status = 1
+        <if test="types != null and types.size() > 0">
+            AND type IN
+            <foreach collection="types" item="type" open="(" separator="," close=")">
+                #{type}
+            </foreach>
+        </if>
+        ORDER BY create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 统计用户通知数量（按多类型，包含群发公告） -->
+    <select id="countByReceiverIdAndTypes" resultType="long">
+        SELECT COUNT(*)
+        FROM notification
+        WHERE (receiver_id = #{receiverId} OR receiver_id IS NULL)
+          AND status = 1
+          <if test="types != null and types.size() > 0">
+              AND type IN
+              <foreach collection="types" item="type" open="(" separator="," close=")">
+                  #{type}
+              </foreach>
+          </if>
+    </select>
+
+    <!-- ==================== 管理后台方法 ==================== -->
+
+    <!-- 分页查询所有通知（管理后台用） -->
+    <select id="selectAllNotifications" resultMap="notificationMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM notification
+        WHERE status = 1
+        <if test="type != null">
+            AND type = #{type}
+        </if>
+        <if test="isRead != null">
+            AND is_read = #{isRead}
+        </if>
+        ORDER BY create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 统计所有通知数量（管理后台用） -->
+    <select id="countAllNotifications" resultType="long">
+        SELECT COUNT(*)
+        FROM notification
+        WHERE status = 1
+        <if test="type != null">
+            AND type = #{type}
+        </if>
+        <if test="isRead != null">
+            AND is_read = #{isRead}
+        </if>
+    </select>
+</mapper>

@@ -2,9 +2,9 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="cn.xu.infrastructure.persistent.dao.RoleMapper">
+<mapper namespace="cn.xu.repository.mapper.RoleMapper">
 
-    <resultMap id="BaseResultMap" type="cn.xu.infrastructure.persistent.po.Role">
+    <resultMap id="BaseResultMap" type="cn.xu.model.entity.Role">
         <id property="id" column="id" jdbcType="BIGINT"/>
         <result property="code" column="code" jdbcType="VARCHAR"/>
         <result property="name" column="name" jdbcType="VARCHAR"/>
@@ -83,13 +83,13 @@
     </insert>
 
     <!-- 新增角色 -->
-    <insert id="insertRole" parameterType="cn.xu.infrastructure.persistent.po.Role">
+    <insert id="insertRole" parameterType="cn.xu.model.entity.Role">
         INSERT INTO role (code, name, remark, create_time, update_time)
         VALUES (#{code}, #{name}, #{remark}, NOW(), NOW())
     </insert>
 
     <!-- 更新角色 -->
-    <update id="updateRole" parameterType="cn.xu.infrastructure.persistent.po.Role">
+    <update id="updateRole" parameterType="cn.xu.model.entity.Role">
         UPDATE role
         SET code        = #{code},
             name        = #{name},

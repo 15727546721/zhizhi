@@ -3,6 +3,23 @@ server:
 
 # 数据库配置
 spring:
+  # 邮件服务配置
+  mail:
+    host: smtp.qq.com                          # SMTP服务器地址
+    port: 587                                   # SMTP端口（587-TLS, 465-SSL）
+    username: your_email@qq.com                 # 发件人邮箱（请替换）
+    password: your_authorization_code           # 邮箱授权码（请替换，不是密码）
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
   datasource:
     username: root
     password: 123456
@@ -19,8 +36,8 @@ spring:
       connection-timeout: 30000 #数据库连接超时时间,默认30秒，即30000
       connection-test-query: SELECT 1
   elasticsearch:
-    enabled: true  # 开发环境中默认禁用Elasticsearch
-    uris: 124.222.71.27:9200  # ES服务器地址
+    enabled: true  # 本地开发默认禁用Elasticsearch，避免无可用ES导致启动失败
+    uris: 124.222.71.27:9200  # 如需启用ES，请将enabled改为true并确保地址可访问
     connection-timeout: 5s
     read-timeout: 30s
 # 可选：配置索引名称
@@ -28,7 +45,14 @@ app:
   elasticsearch:
     index:
       comments: comments
-      articles: articles
+      posts: posts
+    # ES索引自动初始化配置
+    auto-init:
+      enabled: true  # 是否启用自动初始化（默认true）
+      sync-threshold: 0.5  # 同步阈值，如果ES数据量小于MySQL的此百分比，则自动同步（默认0.5，即50%）
+  post:
+    query:
+      strategy: elasticsearch  # 开发环境默认使用MySQL兜底搜索；如需ES，请在启用后改回elasticsearch
 
 # 线程池配置
 thread:
@@ -43,10 +67,8 @@ thread:
 
 mybatis:
   mapper-locations: classpath:mybatis/mapper/*.xml
-  configuration:
-    map-underscore-to-camel-case: true
-    default-enum-type-handler: org.apache.ibatis.type.EnumTypeHandler
-  type-handlers-package: cn.xu.infrastructure.persistent.handler
+  config-location: classpath:mybatis/config/mybatis-config.xml
+  # type-handlers-package: cn.xu.support.handler  # 暂无自定义TypeHandler
 
 # Sa-Token配置
 sa-token:
@@ -91,9 +113,10 @@ minio:
   bucketName: zhizhi
   enabled: true  # 在开发环境中启用MinIO
 
-
 # 日志
 logging:
   level:
-    cn.xu.infrastructure.persistent.repository: debug
+    cn.xu.repository.impl: debug
+    cn.xu.repository.read.elastic.init: info  # ES初始化器日志
+    cn.xu.repository.read.elastic.service: info  # ES服务日志
   config: classpath:logback-spring.xml

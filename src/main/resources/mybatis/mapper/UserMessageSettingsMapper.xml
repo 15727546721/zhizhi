@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.xu.repository.mapper.UserMessageSettingsMapper">
+
+    <resultMap id="BaseResultMap" type="cn.xu.model.entity.UserMessageSettings">
+        <id property="id" column="id" jdbcType="BIGINT"/>
+        <result property="userId" column="user_id" jdbcType="BIGINT"/>
+        <result property="allowStrangerMessage" column="allow_stranger_message" jdbcType="TINYINT"/>
+        <result property="allowNonMutualFollowMessage" column="allow_non_mutual_follow_message" jdbcType="TINYINT"/>
+        <result property="messageNotificationEnabled" column="message_notification_enabled" jdbcType="TINYINT"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, user_id, allow_stranger_message, allow_non_mutual_follow_message, message_notification_enabled, create_time, update_time
+    </sql>
+
+    <insert id="insert" parameterType="cn.xu.model.entity.UserMessageSettings" useGeneratedKeys="true" keyProperty="id">
+        insert into user_message_settings
+        (user_id, allow_stranger_message, allow_non_mutual_follow_message, message_notification_enabled, create_time, update_time)
+        values
+        (#{userId}, #{allowStrangerMessage}, #{allowNonMutualFollowMessage}, #{messageNotificationEnabled}, #{createTime}, #{updateTime})
+    </insert>
+
+    <update id="update" parameterType="cn.xu.model.entity.UserMessageSettings">
+        update user_message_settings
+        <set>
+            <if test="allowStrangerMessage != null">allow_stranger_message = #{allowStrangerMessage},</if>
+            <if test="allowNonMutualFollowMessage != null">allow_non_mutual_follow_message = #{allowNonMutualFollowMessage},</if>
+            <if test="messageNotificationEnabled != null">message_notification_enabled = #{messageNotificationEnabled},</if>
+            update_time = #{updateTime}
+        </set>
+        where id = #{id}
+    </update>
+
+    <select id="selectByUserId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM user_message_settings
+        WHERE user_id = #{userId}
+    </select>
+
+    <delete id="deleteByUserId">
+        DELETE FROM user_message_settings
+        WHERE user_id = #{userId}
+    </delete>
+
+</mapper>
+

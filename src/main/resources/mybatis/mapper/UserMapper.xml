@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="cn.xu.infrastructure.persistent.dao.UserMapper">
-    <resultMap id="userMap" type="cn.xu.infrastructure.persistent.po.User">
+<mapper namespace="cn.xu.repository.mapper.UserMapper">
+    <!-- 基础映射（不含密码，用于普通查询） -->
+    <resultMap id="UserFormResponseMap" type="cn.xu.model.vo.user.UserFormVO">
         <id column="id" property="id"/>
         <result column="username" property="username"/>
         <result column="email" property="email"/>
@@ -12,10 +13,64 @@
         <result column="region" property="region"/>
         <result column="birthday" property="birthday"/>
         <result column="status" property="status"/>
+        <result column="user_type" property="userType"/>
         <result column="description" property="description"/>
         <result column="follow_count" property="followCount"/>
         <result column="fans_count" property="fansCount"/>
         <result column="like_count" property="likeCount"/>
+        <result column="post_count" property="postCount"/>
+        <result column="comment_count" property="commentCount"/>
+        <result column="last_login_time" property="lastLoginTime"/>
+        <result column="last_login_ip" property="lastLoginIp"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+    
+    <!-- 基础映射（不含密码，用于普通查询） -->
+    <resultMap id="userMap" type="cn.xu.model.entity.User">
+        <id column="id" property="id"/>
+        <result column="username" property="username"/>
+        <result column="email" property="email"/>
+        <result column="nickname" property="nickname"/>
+        <result column="avatar" property="avatar"/>
+        <result column="gender" property="gender"/>
+        <result column="phone" property="phone"/>
+        <result column="region" property="region"/>
+        <result column="birthday" property="birthday"/>
+        <result column="status" property="status"/>
+        <result column="user_type" property="userType"/>
+        <result column="description" property="description"/>
+        <result column="follow_count" property="followCount"/>
+        <result column="fans_count" property="fansCount"/>
+        <result column="like_count" property="likeCount"/>
+        <result column="post_count" property="postCount"/>
+        <result column="comment_count" property="commentCount"/>
+        <result column="last_login_time" property="lastLoginTime"/>
+        <result column="last_login_ip" property="lastLoginIp"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+    
+    <!-- 完整映射（含密码，用于登录验证等需要密码的场景） -->
+    <resultMap id="userMapWithPassword" type="cn.xu.model.entity.User">
+        <id column="id" property="id"/>
+        <result column="username" property="username"/>
+        <result column="password" property="password"/>
+        <result column="email" property="email"/>
+        <result column="nickname" property="nickname"/>
+        <result column="avatar" property="avatar"/>
+        <result column="gender" property="gender"/>
+        <result column="phone" property="phone"/>
+        <result column="region" property="region"/>
+        <result column="birthday" property="birthday"/>
+        <result column="status" property="status"/>
+        <result column="user_type" property="userType"/>
+        <result column="description" property="description"/>
+        <result column="follow_count" property="followCount"/>
+        <result column="fans_count" property="fansCount"/>
+        <result column="like_count" property="likeCount"/>
+        <result column="post_count" property="postCount"/>
+        <result column="comment_count" property="commentCount"/>
         <result column="last_login_time" property="lastLoginTime"/>
         <result column="last_login_ip" property="lastLoginIp"/>
         <result column="create_time" property="createTime"/>
@@ -24,15 +79,13 @@
 
 
     <sql id="Base_Column_List">
-        id
-        ,
-    username, password, email, nickname, avatar, gender, phone, region, birthday, status,
-    description, follow_count, fans_count, like_count, last_login_time, last_login_ip,
-    create_time, update_time
+        id, username, password, email, nickname, avatar, gender, phone, region, birthday, 
+        status, user_type, description, follow_count, fans_count, like_count, 
+        post_count, comment_count, last_login_time, last_login_ip, create_time, update_time
     </sql>
 
 
-    <insert id="insert" parameterType="cn.xu.infrastructure.persistent.po.User" useGeneratedKeys="true"
+    <insert id="insert" parameterType="cn.xu.model.entity.User" useGeneratedKeys="true"
             keyProperty="id">
         INSERT INTO user (username, password, email, nickname, avatar, gender, phone, region, birthday, description,
                           status)
@@ -43,10 +96,10 @@
     <insert id="register" useGeneratedKeys="true" keyProperty="id">
         insert into `user`
         (username, password, nickname, email, status, create_time, update_time)
-        values (#{username}, #{password}, #{nickname}, #{email}, 0, now(), now())
+        values (#{username}, #{password}, #{nickname}, #{email}, 1, now(), now())
     </insert>
 
-    <update id="update" parameterType="cn.xu.infrastructure.persistent.po.User">
+    <update id="update" parameterType="cn.xu.model.entity.User">
         UPDATE user
         <set>
             <if test="username != null">username = #{username},</if>
@@ -100,6 +153,21 @@
         FROM user
         WHERE username = #{username}
     </select>
+    
+    <!-- 带密码的用户查询（用于修改密码验证等场景） -->
+    <select id="selectByUsernameWithPassword" resultMap="userMapWithPassword">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM user
+        WHERE username = #{username}
+    </select>
+    
+    <select id="selectByIdWithPassword" resultMap="userMapWithPassword">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM user
+        WHERE id = #{id}
+    </select>
 
     <select id="selectByEmail" resultMap="userMap">
         SELECT
@@ -126,6 +194,43 @@
         FROM user
         ORDER BY id DESC
         LIMIT #{offset}, #{size}
+    </select>
+
+    <!-- 带条件分页查询用户 -->
+    <select id="selectByConditions" resultMap="userMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM user
+        <where>
+            <if test="username != null and username != ''">
+                AND (username LIKE CONCAT('%', #{username}, '%') OR nickname LIKE CONCAT('%', #{username}, '%'))
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+            <if test="userType != null">
+                AND user_type = #{userType}
+            </if>
+        </where>
+        ORDER BY id DESC
+        LIMIT #{offset}, #{size}
+    </select>
+
+    <!-- 统计带条件的用户数量 -->
+    <select id="countByConditions" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM user
+        <where>
+            <if test="username != null and username != ''">
+                AND (username LIKE CONCAT('%', #{username}, '%') OR nickname LIKE CONCAT('%', #{username}, '%'))
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+            <if test="userType != null">
+                AND user_type = #{userType}
+            </if>
+        </where>
     </select>
 
     <delete id="deleteById">
@@ -192,12 +297,192 @@
             #{userId}
         </foreach>
     </select>
-    <select id="selectUsernameAndPasswordByUsername" resultType="cn.xu.domain.user.model.vo.UserFormVO">
+    <select id="selectUsernameAndPasswordByUsername" resultType="cn.xu.model.vo.user.UserFormVO">
         SELECT id, username, password
         FROM user
         WHERE username = #{username}
     </select>
     <select id="selectAll" resultMap="userMap">
-        select * from user
+        SELECT id, username, password, nickname, email, avatar, gender, 
+               phone, region, birthday, description, status, user_type,
+               follow_count, fans_count, like_count, post_count, comment_count,
+               last_login_time, create_time, update_time
+        FROM user
+    </select>
+    
+    <!-- 查询用户排行榜 -->
+    <select id="findUserRanking" resultMap="userMap">
+        SELECT 
+            u.id,
+            u.username,
+            u.email,
+            u.nickname,
+            u.avatar,
+            u.gender,
+            u.phone,
+            u.region,
+            u.birthday,
+            u.status,
+            u.description,
+            u.follow_count,
+            u.fans_count,
+            u.like_count,
+            u.last_login_time,
+            u.last_login_ip,
+            u.create_time,
+            u.update_time,
+            COALESCE(p.post_count, 0) as post_count
+        FROM user u
+        LEFT JOIN (
+            SELECT user_id, COUNT(*) as post_count
+            FROM post
+            WHERE status = 1
+            GROUP BY user_id
+        ) p ON u.id = p.user_id
+        WHERE u.status = 1
+        <choose>
+            <when test="sortType == 'fans'">
+                ORDER BY u.fans_count DESC, u.like_count DESC, COALESCE(p.post_count, 0) DESC
+            </when>
+            <when test="sortType == 'likes'">
+                ORDER BY u.like_count DESC, u.fans_count DESC, COALESCE(p.post_count, 0) DESC
+            </when>
+            <when test="sortType == 'posts'">
+                ORDER BY COALESCE(p.post_count, 0) DESC, u.like_count DESC, u.fans_count DESC
+            </when>
+            <when test="sortType == 'comprehensive'">
+                ORDER BY (u.fans_count * 0.4 + u.like_count * 0.4 + COALESCE(p.post_count, 0) * 0.2) DESC
+            </when>
+            <otherwise>
+                ORDER BY u.fans_count DESC, u.like_count DESC, COALESCE(p.post_count, 0) DESC
+            </otherwise>
+        </choose>
+        LIMIT #{offset}, #{limit}
+    </select>
+    
+    <!-- 统计用户总数 -->
+    <select id="countAllUsers" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM user
+        WHERE status = 1
+    </select>
+    
+    <!-- ==================== 方案A：原子更新SQL（避免并发问题） ==================== -->
+    
+    <!-- 原子增加关注数 -->
+    <update id="increaseFollowCount">
+        UPDATE user 
+        SET follow_count = follow_count + 1 
+        WHERE id = #{userId}
+    </update>
+    
+    <!-- 原子减少关注数 -->
+    <update id="decreaseFollowCount">
+        UPDATE user 
+        SET follow_count = follow_count - 1 
+        WHERE id = #{userId} 
+          AND follow_count > 0
+    </update>
+    
+    <!-- 原子增加粉丝数 -->
+    <update id="increaseFansCount">
+        UPDATE user 
+        SET fans_count = fans_count + 1 
+        WHERE id = #{userId}
+    </update>
+    
+    <!-- 原子减少粉丝数 -->
+    <update id="decreaseFansCount">
+        UPDATE user 
+        SET fans_count = fans_count - 1 
+        WHERE id = #{userId} 
+          AND fans_count > 0
+    </update>
+    
+    <!-- 原子增加获赞数 -->
+    <update id="increaseLikeCount">
+        UPDATE user 
+        SET like_count = like_count + 1 
+        WHERE id = #{userId}
+    </update>
+    
+    <!-- 原子减少获赞数 -->
+    <update id="decreaseLikeCount">
+        UPDATE user 
+        SET like_count = like_count - 1 
+        WHERE id = #{userId} 
+          AND like_count > 0
+    </update>
+    
+    <!-- 原子增加发帖数 -->
+    <update id="increasePostCount">
+        UPDATE user 
+        SET post_count = post_count + 1 
+        WHERE id = #{userId}
+    </update>
+    
+    <!-- 原子减少发帖数 -->
+    <update id="decreasePostCount">
+        UPDATE user 
+        SET post_count = post_count - 1 
+        WHERE id = #{userId} 
+          AND post_count > 0
+    </update>
+    
+    <!-- 原子增加评论数 -->
+    <update id="increaseCommentCount">
+        UPDATE user 
+        SET comment_count = comment_count + 1 
+        WHERE id = #{userId}
+    </update>
+    
+    <!-- 原子减少评论数 -->
+    <update id="decreaseCommentCount">
+        UPDATE user 
+        SET comment_count = comment_count - 1 
+        WHERE id = #{userId} 
+          AND comment_count > 0
+    </update>
+    
+    <!-- ==================== 定时校验相关SQL ==================== -->
+    
+    <!-- 批量更新用户统计字段 -->
+    <update id="updateUserCounts">
+        UPDATE user 
+        SET follow_count = #{followCount},
+            fans_count = #{fansCount},
+            like_count = #{likeCount},
+            post_count = #{postCount},
+            comment_count = #{commentCount}
+        WHERE id = #{userId}
+    </update>
+    
+    <!-- 搜索用户（支持@自动补全） -->
+    <select id="searchByUsernameOrNickname" resultMap="userMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM user
+        WHERE status = 1
+          AND (username LIKE CONCAT('%', #{keyword}, '%') 
+               OR nickname LIKE CONCAT('%', #{keyword}, '%'))
+        ORDER BY 
+            CASE WHEN username LIKE CONCAT(#{keyword}, '%') THEN 0 ELSE 1 END,
+            CASE WHEN nickname LIKE CONCAT(#{keyword}, '%') THEN 0 ELSE 1 END,
+            fans_count DESC
+        LIMIT #{limit}
+    </select>
+    
+    <!-- 统计所有用户数 -->
+    <select id="countAll" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM user
+    </select>
+    
+    <!-- 按状态统计用户数 -->
+    <select id="countByStatus" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM user WHERE status = #{status}
+    </select>
+    
+    <!-- 查询所有有效用户的ID（用于群发系统通知） -->
+    <select id="selectAllUserIds" resultType="java.lang.Long">
+        SELECT id FROM user WHERE status = 1
     </select>
 </mapper>

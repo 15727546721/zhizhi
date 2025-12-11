@@ -1,75 +1,103 @@
-# 知之 — 开源社区
+# 知知社区 - 后端服务
 
----
+一个现代化的开源社区系统后端，基于 Spring Boot 构建。
 
-<br>
+## 技术栈
 
-<p align="center">
-    <img width="" src="src/test/4VENJ%5DW8T41X~NX%25LSHW02T.png" >
-</p>
+| 技术 | 版本 | 说明 |
+|------|------|------|
+| Spring Boot | 2.7.0 | 核心框架 |
+| MyBatis-Plus | 3.5.x | ORM框架 |
+| MySQL | 8.0+ | 数据库 |
+| Redis | 6.0+ | 缓存 |
+| Elasticsearch | 7.x | 搜索引擎（可选） |
+| MinIO | - | 文件存储（可选） |
+| Sa-Token | 1.38.0 | 权限认证 |
+| Knife4j | 4.3.0 | API文档 |
 
-<div align="center">
+## 快速开始
 
+### 1. 环境要求
 
-[![star](https://gitee.com/xu-wq/zhizhi/badge/star.svg?theme=dark)](https://gitee.com/veal98/Echo/stargazers)
-[![fork](https://gitee.com/xu-wq/zhizhi/badge/fork.svg?theme=dark)](https://gitee.com/veal98/Echo/members)
+- JDK 8+
+- Maven 3.6+
+- MySQL 8.0+
+- Redis 6.0+
 
-</div>
+### 2. 初始化数据库
 
+```bash
+# 创建表结构
+mysql -u root -p < src/main/resources/sql/01_schema.sql
 
-
-## 📚 项目简介
-
-知之 是一套前后端分离的开源社区系统，基于目前主流 Java Web 技术栈（SpringBoot + MyBatis + MySQL + Redis + Disruptor + Lucene + Sa-Token + Vue3...），包含文章、话题、评论、系统通知、点赞、关注、搜索等模块。
-
-## 🏗️ 架构设计
-
-### 文章查询策略模式
-
-本项目实现了文章查询的策略模式，支持在Elasticsearch和MySQL之间切换：
-
-1. **Elasticsearch策略**：用于全文搜索和热门文章排行
-2. **MySQL策略**：作为兜底查询方案
-
-可以通过配置文件中的`app.article.query.strategy`参数来切换策略：
-- `elasticsearch`：使用Elasticsearch查询（默认）
-- `mysql`：使用MySQL查询
-
-当Elasticsearch不可用时，系统会自动回退到MySQL查询。
-
-### 配置说明
-
-```yaml
-# Elasticsearch配置
-spring:
-  elasticsearch:
-    enabled: true  # 启用Elasticsearch
-    uris: 127.0.0.1:9200  # Elasticsearch地址
-
-# 文章查询策略配置
-app:
-  article:
-    query:
-      strategy: elasticsearch  # 文章查询策略：elasticsearch 或 mysql
+# 导入初始数据
+mysql -u root -p zhizhi < src/main/resources/sql/02_data.sql
 ```
 
-### 测试环境配置
+### 3. 启动依赖服务
 
-在测试环境中，为了确保测试的稳定性和独立性，系统会自动禁用Elasticsearch：
+```bash
+# 使用 Docker Compose 启动 MySQL、Redis
+cd docs/部署/environment
+docker-compose up -d
+```
+
+### 4. 修改配置
+
+编辑 `src/main/resources/application-dev.yml`：
 
 ```yaml
-# 测试环境配置 (src/test/resources/application.yml)
 spring:
-  elasticsearch:
-    enabled: false  # 在测试环境中禁用Elasticsearch
   datasource:
-    url: jdbc:mysql://127.0.0.1:13306/zhizhi?useUnicode=true&characterEncoding=utf8&autoReconnect=true&zeroDateTimeBehavior=convertToNull&serverTimezone=UTC&useSSL=true
+    url: jdbc:mysql://localhost:3306/zhizhi
     username: root
-    password: 123456
-    driver-class-name: com.mysql.cj.jdbc.Driver
-
-app:
-  article:
-    query:
-      strategy: mysql  # 在测试环境中使用MySQL策略
+    password: your_password
 ```
+
+### 5. 启动应用
+
+```bash
+mvn spring-boot:run
+```
+
+### 6. 访问
+
+- **API文档**: http://localhost:8091/doc.html
+- **健康检查**: http://localhost:8091/actuator/health
+
+## 项目结构
+
+```
+cn.xu/
+├── controller/     # 接口层（admin/web）
+├── service/        # 业务层
+├── repository/     # 数据访问层
+├── model/          # 数据模型（entity/dto/vo）
+├── cache/          # 缓存服务
+├── config/         # 配置类
+├── event/          # 事件处理
+├── task/           # 定时任务
+├── support/        # 基础支撑
+└── integration/    # 外部集成
+```
+
+## 核心功能
+
+| 模块 | 说明 |
+|------|------|
+| 帖子 | 发布、编辑、删除、热度排行 |
+| 标签 | 标签管理、热门标签 |
+| 用户 | 注册登录、个人资料、关注系统 |
+| 评论 | 多级回复、点赞 |
+| 通知 | 互动通知（点赞、评论、关注等） |
+| 私信 | 用户私信、会话管理 |
+| 搜索 | 全文搜索（ES/MySQL双策略） |
+| 收藏 | 收藏夹管理 |
+
+## 文档
+
+详细文档请查看 [docs/README.md](docs/README.md)
+
+## 许可证
+
+MIT License

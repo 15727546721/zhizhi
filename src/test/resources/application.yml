@@ -38,9 +38,6 @@ spring:
 mybatis:
   mapper-locations: classpath:/mybatis/mapper/*.xml
   config-location: classpath:/mybatis/config/mybatis-config.xml
-  configuration:
-    map-underscore-to-camel-case: true
-    default-enum-type-handler: org.apache.ibatis.type.EnumTypeHandler
   type-handlers-package: cn.xu.infrastructure.persistent.handler
 
 server:
@@ -105,8 +102,8 @@ app:
   elasticsearch:
     index:
       comments: comments
-      articles: articles
-  article:
+      posts: posts
+  post:
     query:
       strategy: mysql  # 在测试环境中使用MySQL策略
 

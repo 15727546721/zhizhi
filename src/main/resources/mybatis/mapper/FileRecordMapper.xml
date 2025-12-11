@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.xu.repository.mapper.FileRecordMapper">
+
+    <resultMap id="BaseResultMap" type="cn.xu.model.entity.FileRecord">
+        <id column="id" property="id"/>
+        <result column="storage_name" property="fileName"/>
+        <result column="original_name" property="originalFileName"/>
+        <result column="storage_path" property="storagePath"/>
+        <result column="bucket_name" property="bucketName"/>
+        <result column="size_bytes" property="fileSize"/>
+        <result column="mime_type" property="contentType"/>
+        <result column="extension" property="extension"/>
+        <result column="upload_user_id" property="uploadUserId"/>
+        <result column="status" property="status"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, storage_name, original_name, storage_path, bucket_name, size_bytes, mime_type, extension,
+        upload_user_id, status, create_time, update_time
+    </sql>
+
+    <!-- 插入文件记录 -->
+    <insert id="insert" parameterType="cn.xu.model.entity.FileRecord" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO file_record (
+            storage_name, original_name, storage_path, bucket_name, size_bytes, mime_type, extension,
+            upload_user_id, status, create_time, update_time
+        ) VALUES (
+            #{fileName}, #{originalFileName}, #{storagePath}, #{bucketName}, #{fileSize}, #{contentType}, #{extension},
+            #{uploadUserId}, #{status}, #{createTime}, #{updateTime}
+        )
+    </insert>
+
+    <!-- 根据ID查询 -->
+    <select id="findById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM file_record
+        WHERE id = #{id}
+    </select>
+
+    <!-- 根据存储路径查询 -->
+    <select id="findByStoragePath" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM file_record
+        WHERE storage_path = #{storagePath}
+        LIMIT 1
+    </select>
+
+    <!-- 根据文件名查询 -->
+    <select id="findByFileName" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM file_record
+        WHERE storage_name = #{fileName}
+        LIMIT 1
+    </select>
+
+    <!-- 查询用户上传的文件 -->
+    <select id="findByUserId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM file_record
+        WHERE upload_user_id = #{userId}
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        ORDER BY create_time DESC
+    </select>
+
+
+    <!-- 查询指定时间之前的临时文件 -->
+    <select id="findTemporaryFilesBefore" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM file_record
+        WHERE status = 0
+          AND create_time &lt; #{beforeTime}
+        ORDER BY create_time ASC
+    </select>
+
+    <!-- 更新文件记录 -->
+    <update id="update" parameterType="cn.xu.model.entity.FileRecord">
+        UPDATE file_record
+        <set>
+            <if test="fileName != null">storage_name = #{fileName},</if>
+            <if test="originalFileName != null">original_name = #{originalFileName},</if>
+            <if test="storagePath != null">storage_path = #{storagePath},</if>
+            <if test="fileSize != null">size_bytes = #{fileSize},</if>
+            <if test="contentType != null">mime_type = #{contentType},</if>
+            <if test="extension != null">extension = #{extension},</if>
+            <if test="uploadUserId != null">upload_user_id = #{uploadUserId},</if>
+            <if test="bucketName != null">bucket_name = #{bucketName},</if>
+            <if test="status != null">status = #{status},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 更新文件状态 -->
+    <update id="updateStatus">
+        UPDATE file_record
+        SET status = #{status}, update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+
+    <!-- 批量更新状态 -->
+    <update id="batchUpdateStatus">
+        UPDATE file_record
+        SET status = #{status}, update_time = NOW()
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <!-- 物理删除 -->
+    <delete id="deleteById">
+        DELETE FROM file_record WHERE id = #{id}
+    </delete>
+
+    <!-- 统计用户文件数量 -->
+    <select id="countByUserId" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM file_record
+        WHERE upload_user_id = #{userId}
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+    </select>
+
+</mapper>
