@@ -22,8 +22,8 @@ spring:
           writetimeout: 5000
   datasource:
     username: root
-    password: 123456
-    url: jdbc:mysql://127.0.0.1:13306/zhizhi?useUnicode=true&characterEncoding=utf8&autoReconnect=true&zeroDateTimeBehavior=convertToNull&serverTimezone=UTC&useSSL=true
+    password: zhizhi123
+    url: jdbc:mysql://zhizhi-mysql:3306/zhizhi?useUnicode=true&characterEncoding=utf8&autoReconnect=true&zeroDateTimeBehavior=convertToNull&serverTimezone=UTC&useSSL=true
     driver-class-name: com.mysql.cj.jdbc.Driver
     type: com.zaxxer.hikari.HikariDataSource
     hikari:
@@ -35,31 +35,30 @@ spring:
       max-lifetime: 1800000 #此属性控制池中连接的最长生命周期，值0表示无限生命周期，默认1800000即30分钟
       connection-timeout: 30000 #数据库连接超时时间,默认30秒，即30000
       connection-test-query: SELECT 1
-  redis:
-    host: 127.0.0.1
-    port: 6379
-    lettuce:
-      pool:
-        max-active: 10
-        max-idle: 10
-        min-idle: 0
-        max-wait: 2000
   elasticsearch:
-    enabled: true  # 在生产环境中启用Elasticsearch
-    uris: 124.222.71.27:9200  # ES服务器地址
+    enabled: true  # 本地开发默认禁用Elasticsearch，避免无可用ES导致启动失败
+    uris: 124.222.71.27:9200  # 如需启用ES，请将enabled改为true并确保地址可访问
     connection-timeout: 5s
     read-timeout: 30s
-  main:
-    allow-bean-definition-overriding: true
-  jackson:
-    default-property-inclusion: non_null
-
-mybatis:
-  mapper-locations: classpath:/mybatis/mapper/*.xml
-  config-location: classpath:/mybatis/config/mybatis-config.xml
-  configuration:
-    map-underscore-to-camel-case: true
-    default-enum-type-handler: org.apache.ibatis.type.EnumTypeHandler
+#  data:
+#    elasticsearch:
+#      enabled: true  # 本地开发默认禁用Elasticsearch，避免无可用ES导致启动失败
+#      uris: 124.222.71.27:9200  # 如需启用ES，请将enabled改为true并确保地址可访问
+#      connection-timeout: 5s
+#      read-timeout: 30s
+# 可选：配置索引名称
+app:
+  elasticsearch:
+    index:
+      comments: comments
+      posts: posts
+    # ES索引自动初始化配置
+    auto-init:
+      enabled: true  # 是否启用自动初始化（默认true）
+      sync-threshold: 0.5  # 同步阈值，如果ES数据量小于MySQL的此百分比，则自动同步（默认0.5，即50%）
+  post:
+    query:
+      strategy: elasticsearch  # 开发环境默认使用MySQL兜底搜索；如需ES，请在启用后改回elasticsearch
 
 # 线程池配置
 thread:
@@ -72,34 +71,22 @@ thread:
         block-queue-size: 5000
         policy: CallerRunsPolicy
 
-# 可选：配置索引名称
-app:
-  elasticsearch:
-    index:
-      comments: comments
-      posts: posts
-  post:
-    query:
-      strategy: elasticsearch  # 在生产环境中使用Elasticsearch策略
-
-# 评论热度计算策略配置
-comment:
-  hot:
-    score:
-      strategy: SIMPLE  # 可选值: SIMPLE, REDDIT, TRENDING, LINEAR
-
-# MinIO配置
-minio:
-  url: http://localhost:9000
-  accessKey: minioadmin
-  secretKey: minioadmin
-  bucketName: zhizhi
-  enabled: true  # 在生产环境中启用MinIO
+mybatis:
+  mapper-locations: classpath:mybatis/mapper/*.xml
+  config-location: classpath:mybatis/config/mybatis-config.xml
+  # type-handlers-package: cn.xu.support.handler  # 暂无自定义TypeHandler
 
 # Sa-Token配置
 sa-token:
+  # token前缀
+  # Token前缀 与 Token值 之间必须有一个空格。
+  # 一旦配置了 Token前缀，则前端提交 Token 时，必须带有前缀，否则会导致框架无法读取 Token。
+  # 由于Cookie中无法存储空格字符，也就意味配置 Token 前缀后，Cookie 鉴权方式将会失效，此时只能将 Token 提交到header里进行传输
+  #  token-prefix: Bearer
   # token 名称 (同时也是cookie名称)
   token-name: Authorization
+  # 设置前缀token就需要放入到header里，否则无法读取到token
+  token-prefix: Bearer
   # token 有效期，单位s 默认30天, -1代表永不过期
   timeout: 2592000
   # token 临时有效期 (指定时间内无操作就视为token过期) 单位: 秒
@@ -117,13 +104,20 @@ sa-token:
     # Redis数据库索引（默认为0）
     database: 0
     # Redis服务器地址
-    host: 127.0.0.1
+    host: zhizhi-redis
     # Redis服务器连接端口
     port: 6379
     # Redis服务器连接密码（默认为空）
     password:
     # 连接超时时间
     timeout: 6s
+
+minio:
+  url: http://zhizhi-minio:9000
+  accessKey: minioadmin
+  secretKey: minioadmin
+  bucketName: zhizhi
+  enabled: true  # 在开发环境中启用MinIO
 
 # 日志
 logging:

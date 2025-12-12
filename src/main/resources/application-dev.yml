@@ -22,8 +22,8 @@ spring:
           writetimeout: 5000
   datasource:
     username: root
-    password: 123456
-    url: jdbc:mysql://127.0.0.1:13306/zhizhi?useUnicode=true&characterEncoding=utf8&autoReconnect=true&zeroDateTimeBehavior=convertToNull&serverTimezone=UTC&useSSL=true
+    password: zhizhi123
+    url: jdbc:mysql://127.0.0.1:3306/zhizhi?useUnicode=true&characterEncoding=utf8&autoReconnect=true&zeroDateTimeBehavior=convertToNull&serverTimezone=UTC&useSSL=true
     driver-class-name: com.mysql.cj.jdbc.Driver
     type: com.zaxxer.hikari.HikariDataSource
     hikari:
@@ -107,9 +107,9 @@ sa-token:
     timeout: 6s
 
 minio:
-  url: http://localhost:5000
-  accessKey: admin
-  secretKey: superadmin
+  url: http://localhost:9000
+  accessKey: minioadmin
+  secretKey: minioadmin
   bucketName: zhizhi
   enabled: true  # 在开发环境中启用MinIO
 
