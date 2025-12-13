@@ -40,6 +40,12 @@ spring:
     uris: 124.222.71.27:9200  # 如需启用ES，请将enabled改为true并确保地址可访问
     connection-timeout: 5s
     read-timeout: 30s
+#  data:
+#    elasticsearch:
+#      enabled: true  # 本地开发默认禁用Elasticsearch，避免无可用ES导致启动失败
+#      uris: 124.222.71.27:9200  # 如需启用ES，请将enabled改为true并确保地址可访问
+#      connection-timeout: 5s
+#      read-timeout: 30s
 # 可选：配置索引名称
 app:
   elasticsearch:
@@ -107,7 +113,7 @@ sa-token:
     timeout: 6s
 
 minio:
-  url: http://localhost:9000
+  url: http://127.0.0.1:9000
   accessKey: minioadmin
   secretKey: minioadmin
   bucketName: zhizhi

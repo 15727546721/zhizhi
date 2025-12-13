@@ -104,7 +104,7 @@ sa-token:
     # Redis数据库索引（默认为0）
     database: 0
     # Redis服务器地址
-    host: zhizhi-redis
+    host: redis
     # Redis服务器连接端口
     port: 6379
     # Redis服务器连接密码（默认为空）
@@ -113,7 +113,7 @@ sa-token:
     timeout: 6s
 
 minio:
-  url: http://zhizhi-minio:9000
+  url: http://minio:9000
   accessKey: minioadmin
   secretKey: minioadmin
   bucketName: zhizhi
