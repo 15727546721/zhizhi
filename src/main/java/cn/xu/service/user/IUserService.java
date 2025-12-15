@@ -1,7 +1,7 @@
 package cn.xu.service.user;
 
 import cn.xu.common.request.PageRequest;
-import cn.xu.controller.admin.model.dto.user.SysUserRequest;
+import cn.xu.model.dto.user.SysUserRequest;
 import cn.xu.model.dto.user.UpdateUserProfileRequest;
 import cn.xu.model.dto.user.UserLoginRequest;
 import cn.xu.model.dto.user.UserRegisterRequest;

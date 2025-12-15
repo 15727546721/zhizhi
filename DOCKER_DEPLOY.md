@@ -28,6 +28,10 @@ docker-compose up -d --build
 
 默认账号：MySQL `root/zhizhi123`，MinIO `minioadmin/minioadmin`
 
+## 生产环境部署
+
+对于生产环境部署，请参考 [PRODUCTION_DEPLOY.md](PRODUCTION_DEPLOY.md) 文件，其中包含了详细的部署指南和安全建议。
+
 ## 常用命令
 
 ```bash

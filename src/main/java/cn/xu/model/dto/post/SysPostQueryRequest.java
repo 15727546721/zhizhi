@@ -1,4 +1,4 @@
-package cn.xu.controller.admin.model.dto.post;
+package cn.xu.model.dto.post;
 
 import cn.xu.common.request.PageRequest;
 import io.swagger.v3.oas.annotations.media.Schema;

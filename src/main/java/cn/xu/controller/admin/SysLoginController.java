@@ -4,7 +4,7 @@ import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.common.ResponseCode;
 import cn.xu.common.annotation.ApiOperationLog;
 import cn.xu.common.response.ResponseEntity;
-import cn.xu.controller.admin.model.dto.user.LoginFormRequest;
+import cn.xu.model.dto.user.LoginFormRequest;
 import cn.xu.model.entity.User;
 import cn.xu.service.user.IUserService;
 import cn.xu.support.exception.BusinessException;

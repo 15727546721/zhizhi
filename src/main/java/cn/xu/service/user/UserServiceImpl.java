@@ -4,7 +4,7 @@ import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.cache.UserRankingCacheRepository;
 import cn.xu.common.ResponseCode;
 import cn.xu.common.request.PageRequest;
-import cn.xu.controller.admin.model.dto.user.SysUserRequest;
+import cn.xu.model.dto.user.SysUserRequest;
 import cn.xu.event.publisher.UserEventPublisher;
 import cn.xu.integration.file.service.FileStorageService;
 import cn.xu.model.dto.user.UpdateUserProfileRequest;

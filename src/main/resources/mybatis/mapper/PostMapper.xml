@@ -656,7 +656,7 @@
     <!-- ============================================== -->
     
     <!-- 后台帖子列表VO映射 -->
-    <resultMap id="SysPostListResultMap" type="cn.xu.controller.admin.model.vo.SysPostListVO">
+    <resultMap id="SysPostListResultMap" type="cn.xu.model.vo.post.SysPostListVO">
         <id property="id" column="id" jdbcType="BIGINT"/>
         <result property="userId" column="user_id" jdbcType="BIGINT"/>
         <result property="nickname" column="nickname" jdbcType="VARCHAR"/>

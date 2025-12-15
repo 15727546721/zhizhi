@@ -1,4 +1,4 @@
-package cn.xu.controller.admin.model.vo;
+package cn.xu.model.vo.post;
 
 import cn.xu.model.entity.Post;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -14,7 +14,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Schema(description = "系统帖子详情Response")
-public class SysPostDetailResponse {
+public class SysPostDetailVO {
     @Schema(description = "帖子信息")
     private Post post;
     

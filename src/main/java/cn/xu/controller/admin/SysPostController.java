@@ -6,11 +6,11 @@ import cn.xu.common.ResponseCode;
 import cn.xu.common.annotation.ApiOperationLog;
 import cn.xu.common.response.PageResponse;
 import cn.xu.common.response.ResponseEntity;
-import cn.xu.controller.admin.model.dto.post.CreatePostRequest;
-import cn.xu.controller.admin.model.dto.post.PublishPostRequest;
-import cn.xu.controller.admin.model.dto.post.SysPostQueryRequest;
-import cn.xu.controller.admin.model.vo.SysPostDetailResponse;
-import cn.xu.controller.admin.model.vo.SysPostListVO;
+import cn.xu.model.dto.post.CreatePostRequest;
+import cn.xu.model.dto.post.PublishPostRequest;
+import cn.xu.model.dto.post.SysPostQueryRequest;
+import cn.xu.model.vo.post.SysPostDetailVO;
+import cn.xu.model.vo.post.SysPostListVO;
 import cn.xu.event.publisher.ContentEventPublisher;
 import cn.xu.model.entity.Post;
 import cn.xu.repository.mapper.PostMapper;
@@ -329,7 +329,7 @@ public class SysPostController {
     @SaCheckLogin
     @SaCheckPermission("system:post:list")
     @ApiOperationLog(description = "获取帖子详情")
-    public ResponseEntity<SysPostDetailResponse> getPost(@Parameter(description = "帖子ID") @PathVariable("id") Long id) {
+    public ResponseEntity<SysPostDetailVO> getPost(@Parameter(description = "帖子ID") @PathVariable("id") Long id) {
         log.info("帖子详情获取参数: id={}", id);
         if (id == null) {
             throw new BusinessException(ResponseCode.NULL_PARAMETER.getCode(), "帖子ID不能为空");
@@ -348,10 +348,10 @@ public class SysPostController {
                 .map(cn.xu.model.entity.Tag::getId)
                 .collect(java.util.stream.Collectors.toList());
 
-        return ResponseEntity.<SysPostDetailResponse>builder()
+        return ResponseEntity.<SysPostDetailVO>builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .info("帖子获取成功")
-                .data(SysPostDetailResponse.builder()
+                .data(SysPostDetailVO.builder()
                         .post(post)
                         .tagNames(tagNames)
                         .tagIds(tagIds)

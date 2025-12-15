@@ -7,7 +7,7 @@ import cn.xu.common.ResponseCode;
 import cn.xu.common.annotation.ApiOperationLog;
 import cn.xu.common.response.PageResponse;
 import cn.xu.common.response.ResponseEntity;
-import cn.xu.controller.admin.model.dto.user.SysUserRequest;
+import cn.xu.model.dto.user.SysUserRequest;
 import cn.xu.model.entity.User;
 import cn.xu.service.user.IUserService;
 import cn.xu.support.exception.BusinessException;
@@ -17,6 +17,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+
 import javax.annotation.Resource;
 import javax.validation.Valid;
 import java.util.List;

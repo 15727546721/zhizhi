@@ -1,4 +1,4 @@
-package cn.xu.controller.admin.model.dto.user;
+package cn.xu.model.dto.user;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
