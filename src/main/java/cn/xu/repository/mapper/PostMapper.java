@@ -1,6 +1,7 @@
 package cn.xu.repository.mapper;
 
-import cn.xu.controller.admin.model.dto.post.SysPostQueryRequest;
+import cn.xu.model.dto.post.SysPostQueryRequest;
+import cn.xu.model.vo.post.SysPostListVO;
 import cn.xu.model.entity.Post;
 import cn.xu.model.entity.Tag;
 import org.apache.ibatis.annotations.Mapper;
@@ -326,7 +327,7 @@ public interface PostMapper {
     /**
      * 后台帖子列表查询（不包含content字段，优化性能）
      */
-    List<cn.xu.controller.admin.model.vo.SysPostListVO> findPostListForAdmin(
+    List<SysPostListVO> findPostListForAdmin(
             @Param("title") String title,
             @Param("status") Integer status,
             @Param("userId") Long userId,

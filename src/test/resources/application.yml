@@ -1,9 +1,28 @@
+server:
+  port: 8091
+
+# 数据库配置
 spring:
-  application:
-    name: zhizhi-test
+  # 邮件服务配置
+  mail:
+    host: smtp.qq.com                          # SMTP服务器地址
+    port: 587                                   # SMTP端口（587-TLS, 465-SSL）
+    username: your_email@qq.com                 # 发件人邮箱（请替换）
+    password: your_authorization_code           # 邮箱授权码（请替换，不是密码）
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
   datasource:
     username: root
-    password: 123456
+    password: zhizhi123
     url: jdbc:mysql://127.0.0.1:13306/zhizhi?useUnicode=true&characterEncoding=utf8&autoReconnect=true&zeroDateTimeBehavior=convertToNull&serverTimezone=UTC&useSSL=true
     driver-class-name: com.mysql.cj.jdbc.Driver
     type: com.zaxxer.hikari.HikariDataSource
@@ -30,18 +49,16 @@ spring:
     uris: 124.222.71.27:9200  # ES服务器地址
     connection-timeout: 5s
     read-timeout: 30s
-  jackson:
-    default-property-inclusion: non_null
   main:
     allow-bean-definition-overriding: true
+  jackson:
+    default-property-inclusion: non_null
 
 mybatis:
   mapper-locations: classpath:/mybatis/mapper/*.xml
-  config-location: classpath:/mybatis/config/mybatis-config.xml
-  type-handlers-package: cn.xu.infrastructure.persistent.handler
-
-server:
-  port: 8090
+  configuration:
+    map-underscore-to-camel-case: true
+    default-enum-type-handler: org.apache.ibatis.type.EnumTypeHandler
 
 # 线程池配置
 thread:
@@ -53,6 +70,16 @@ thread:
         keep-alive-time: 5000
         block-queue-size: 5000
         policy: CallerRunsPolicy
+
+# 可选：配置索引名称
+app:
+  elasticsearch:
+    index:
+      comments: comments
+      posts: posts
+  post:
+    query:
+      strategy: mysql  # 在测试环境中使用MySQL策略
 
 # 评论热度计算策略配置
 comment:
@@ -82,7 +109,7 @@ sa-token:
   is-share: true
   # token风格
   token-style: uuid
-  # 是否输出操作日志 (在测试环境中也启用日志便于调试)
+  # 是否输出操作日志
   is-log: true
   # 配置 Sa-Token 单独使用的 Redis 连接
   alone-redis:
@@ -97,18 +124,8 @@ sa-token:
     # 连接超时时间
     timeout: 6s
 
-# 可选：配置索引名称
-app:
-  elasticsearch:
-    index:
-      comments: comments
-      posts: posts
-  post:
-    query:
-      strategy: mysql  # 在测试环境中使用MySQL策略
-
 # 日志
 logging:
   level:
-    cn.xu.infrastructure.persistent.repository: debug
+    root: info
   config: classpath:logback-spring.xml

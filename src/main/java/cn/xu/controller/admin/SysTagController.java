@@ -6,7 +6,7 @@ import cn.xu.common.ResponseCode;
 import cn.xu.common.annotation.ApiOperationLog;
 import cn.xu.common.request.PageRequest;
 import cn.xu.common.response.ResponseEntity;
-import cn.xu.controller.admin.model.dto.post.TagRequest;
+import cn.xu.model.dto.post.TagRequest;
 import cn.xu.model.entity.Tag;
 import cn.xu.service.post.TagService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.bind.annotation.*;
+
 import javax.annotation.Resource;
 import java.util.List;
 

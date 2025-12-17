@@ -1,4 +1,4 @@
-package cn.xu.controller.admin.model.dto.post;
+package cn.xu.model.dto.post;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;

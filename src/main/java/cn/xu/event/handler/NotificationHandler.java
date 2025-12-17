@@ -1,6 +1,9 @@
 package cn.xu.event.handler;
 
-import cn.xu.event.events.*;
+import cn.xu.event.events.CommentEvent;
+import cn.xu.event.events.FavoriteEvent;
+import cn.xu.event.events.FollowEvent;
+import cn.xu.event.events.LikeEvent;
 import cn.xu.model.entity.Comment;
 import cn.xu.model.entity.Notification;
 import cn.xu.model.entity.Post;

@@ -1,4 +1,4 @@
-package cn.xu.controller.admin.model.vo.comment;
+package cn.xu.model.vo.comment;
 
 import cn.xu.model.entity.Comment;
 import cn.xu.model.entity.User;

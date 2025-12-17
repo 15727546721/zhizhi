@@ -1,7 +1,6 @@
 package cn.xu.controller.admin;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
-import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.xu.common.ResponseCode;
 import cn.xu.common.annotation.ApiOperationLog;
 import cn.xu.common.response.PageResponse;

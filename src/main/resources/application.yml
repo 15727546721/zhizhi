@@ -5,7 +5,7 @@ spring:
     allow-bean-definition-overriding: true
   # 激活开发环境配置
   profiles:
-    active: dev
+    active: prod
   # 邮件服务配置（请替换为您的真实配置）
   mail:
     host: ${MAIL_HOST:smtp.qq.com}                    # SMTP服务器地址
@@ -60,9 +60,9 @@ post:
 
 # MinIO配置
 minio:
-  url: ${MINIO_URL:http://localhost:5000}
-  accessKey: ${MINIO_ACCESS_KEY:admin}
-  secretKey: ${MINIO_SECRET_KEY:superadmin}  # 生产环境必须使用环境变量
+  url: ${MINIO_URL:http://localhost:9000}
+  accessKey: ${MINIO_ACCESS_KEY:minioadmin}
+  secretKey: ${MINIO_SECRET_KEY:minioadmin}  # 生产环境必须使用环境变量
   bucketName: ${MINIO_BUCKET:zhizhi}
   enabled: ${MINIO_ENABLED:true}  # 启用MinIO
 

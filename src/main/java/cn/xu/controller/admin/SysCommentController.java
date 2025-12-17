@@ -6,7 +6,7 @@ import cn.xu.common.ResponseCode;
 import cn.xu.common.annotation.ApiOperationLog;
 import cn.xu.common.response.PageResponse;
 import cn.xu.common.response.ResponseEntity;
-import cn.xu.controller.admin.model.vo.comment.SysCommentVO;
+import cn.xu.model.vo.comment.SysCommentVO;
 import cn.xu.model.dto.comment.FindReplyRequest;
 import cn.xu.model.entity.Comment;
 import cn.xu.service.comment.CommentService;
@@ -17,6 +17,7 @@ import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+
 import javax.annotation.Resource;
 import javax.validation.constraints.NotNull;
 import java.util.List;

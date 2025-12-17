@@ -1,4 +1,4 @@
-package cn.xu.controller.admin.model.vo;
+package cn.xu.model.vo.post;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

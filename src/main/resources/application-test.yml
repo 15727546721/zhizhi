@@ -22,7 +22,7 @@ spring:
           writetimeout: 5000
   datasource:
     username: root
-    password: 123456
+    password: zhizhi123
     url: jdbc:mysql://127.0.0.1:13306/zhizhi?useUnicode=true&characterEncoding=utf8&autoReconnect=true&zeroDateTimeBehavior=convertToNull&serverTimezone=UTC&useSSL=true
     driver-class-name: com.mysql.cj.jdbc.Driver
     type: com.zaxxer.hikari.HikariDataSource
@@ -56,7 +56,6 @@ spring:
 
 mybatis:
   mapper-locations: classpath:/mybatis/mapper/*.xml
-  config-location: classpath:/mybatis/config/mybatis-config.xml
   configuration:
     map-underscore-to-camel-case: true
     default-enum-type-handler: org.apache.ibatis.type.EnumTypeHandler
