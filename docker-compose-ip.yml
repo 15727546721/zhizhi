@@ -8,19 +8,22 @@ services:
     ports:
       - "8091:8091"
     environment:
-      - SPRING_PROFILES_ACTIVE=dev
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/zhizhi?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/zhizhi?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai  # 使用宿主机的 IP
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=zhizhi123
-      - SPRING_REDIS_HOST=redis
-      - SPRING_ELASTICSEARCH_URIS=124.222.71.27:9200  # 本地测试时连接线上 Elasticsearch
-      - MINIO_URL=http://minio:9000
+      - SPRING_REDIS_HOST=redis  # 使用宿主机的 Redis 地址
+      - SPRING_ELASTICSEARCH_URIS=124.222.71.27:9200  # 使用线上 ES 地址
+      - MINIO_URL=http://minio:9000  # 使用宿主机的 Minio 地址
       - MINIO_ACCESS_KEY=minioadmin
       - MINIO_SECRET_KEY=minioadmin
     depends_on:
       - mysql
       - redis
       - minio
+    # dns:
+    #   - 8.8.8.8  # Google 公共 DNS
+    #   - 8.8.4.4  # 备用 DNS
     networks:
       - zhizhi-net  # 使用自定义网络
 
@@ -70,8 +73,7 @@ services:
 
 networks:
   zhizhi-net:
-    external: true
-    name: zhizhi-network  # 使用现有的自定义网络
+    driver: bridge
 
 volumes:
   mysql-data:

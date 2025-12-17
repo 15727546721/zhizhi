@@ -9,23 +9,21 @@ services:
       - "8091:8091"
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/zhizhi?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai  # 使用宿主机的 IP
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/zhizhi?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=zhizhi123
-      - SPRING_REDIS_HOST=redis  # 使用宿主机的 Redis 地址
-      - SPRING_ELASTICSEARCH_URIS=124.222.71.27:9200  # 使用线上 ES 地址
-      - MINIO_URL=http://minio:9000  # 使用宿主机的 Minio 地址
+      - SPRING_REDIS_HOST=redis
+      - SPRING_ELASTICSEARCH_URIS=elasticsearch:9200  # 使用本地 ES 地址
+      - MINIO_URL=http://minio:9000
       - MINIO_ACCESS_KEY=minioadmin
       - MINIO_SECRET_KEY=minioadmin
     depends_on:
       - mysql
       - redis
+      - elasticsearch  # 添加对本地 ES 的依赖
       - minio
-    # dns:
-    #   - 8.8.8.8  # Google 公共 DNS
-    #   - 8.8.4.4  # 备用 DNS
     networks:
-      - zhizhi-net  # 使用自定义网络
+      - zhizhi-net
 
   mysql:
     image: mysql:8.0.32
@@ -40,7 +38,7 @@ services:
       - mysql-data:/var/lib/mysql
       - ./src/main/resources/sql:/docker-entrypoint-initdb.d:ro
     networks:
-      - zhizhi-net  # 使用自定义网络
+      - zhizhi-net
 
   redis:
     image: redis:7.2.0
@@ -53,7 +51,26 @@ services:
       - redis-data:/data
       - ./redis/redis.conf:/etc/redis/redis.conf:ro
     networks:
-      - zhizhi-net  # 使用自定义网络
+      - zhizhi-net
+
+  elasticsearch:
+    # 使用您实际拥有的 Elasticsearch 镜像
+    image: elasticsearch:7.17.12
+    container_name: zhizhi-elasticsearch
+    restart: always
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+      # 挂载本地配置文件
+      - ./mounted/elasticsearch/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
+    networks:
+      - zhizhi-net
 
   minio:
     image: minio/minio:latest
@@ -69,7 +86,7 @@ services:
     volumes:
       - minio-data:/data
     networks:
-      - zhizhi-net  # 使用自定义网络
+      - zhizhi-net
 
 networks:
   zhizhi-net:
@@ -78,4 +95,5 @@ networks:
 volumes:
   mysql-data:
   redis-data:
+  elasticsearch-data:
   minio-data:

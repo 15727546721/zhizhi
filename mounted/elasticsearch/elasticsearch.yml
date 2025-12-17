@@ -1,0 +1,17 @@
+cluster.name: zhizhi-es-cluster
+node.name: zhizhi-es-node-1
+
+network.host: 0.0.0.0
+http.port: 9200
+
+discovery.type: single-node
+
+# 关闭安全（Spring Boot 直连）
+xpack.security.enabled: false
+
+# 数据与日志
+path.data: /usr/share/elasticsearch/data
+path.logs: /usr/share/elasticsearch/logs
+
+# 内存与性能
+bootstrap.memory_lock: false
