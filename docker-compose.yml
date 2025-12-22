@@ -49,7 +49,7 @@ services:
     command: ["redis-server", "/etc/redis/redis.conf"]
     volumes:
       - redis-data:/data
-      - ./redis/redis.conf:/etc/redis/redis.conf:ro
+      - ./mounted/redis/redis.conf:/etc/redis/redis.conf:ro
     networks:
       - zhizhi-net
 
@@ -64,7 +64,7 @@ services:
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
-      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - ES_JAVA_OPTS=-Xms256m -Xmx256m
     volumes:
       - elasticsearch-data:/usr/share/elasticsearch/data
       # 挂载本地配置文件
