@@ -235,6 +235,25 @@ docker-compose -f docker-compose.prod.yml pull
 docker-compose -f docker-compose.prod.yml up -d --build
 ```
 
+### 4. 低内存服务器配置优化
+如果在内存较小的服务器（如2GB RAM）上部署，建议调整 Elasticsearch 的内存配置：
+
+1. 修改 `docker-compose.prod.yml` 文件中的 Elasticsearch 内存设置：
+```yaml
+environment:
+  - discovery.type=single-node
+  - xpack.security.enabled=false
+  - ES_JAVA_OPTS=-Xms256m -Xmx256m  # 从512m调整为256m
+```
+
+2. 同样调整 `docker-compose.yml` 文件中的 Elasticsearch 内存设置：
+```yaml
+environment:
+  - discovery.type=single-node
+  - xpack.security.enabled=false
+  - ES_JAVA_OPTS=-Xms256m -Xmx256m
+```
+
 ### 4. 配置日志轮转
 ```bash
 # 配置logrotate防止磁盘空间耗尽

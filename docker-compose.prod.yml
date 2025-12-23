@@ -1,6 +1,6 @@
 services:
   backend:
-    build: ..
+    build: .
     container_name: zhizhi-backend
     restart: always
     ports:
@@ -50,8 +50,8 @@ services:
       TZ: Asia/Shanghai
     volumes:
       - /var/lib/zhizhi/mysql:/var/lib/mysql
-      - ../mounted/mysql/mysql.cnf:/etc/mysql/conf.d/mysql.cnf:ro
-      - ../src/main/resources/sql:/docker-entrypoint-initdb.d:ro
+      - ./mounted/mysql/mysql.cnf:/etc/mysql/conf.d/mysql.cnf:ro
+      - ./src/main/resources/sql:/docker-entrypoint-initdb.d:ro
     networks:
       - zhizhi-net
     command:
@@ -68,7 +68,7 @@ services:
       - "6379:6379"
     volumes:
       - /var/lib/zhizhi/redis:/data
-      - ../mounted/redis/redis.conf:/etc/redis/redis.conf:ro
+      - ./mounted/redis/redis.conf:/etc/redis/redis.conf:ro
     command: ["redis-server", "/etc/redis/redis.conf"]
     networks:
       - zhizhi-net
@@ -84,11 +84,11 @@ services:
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
-      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - ES_JAVA_OPTS=-Xms256m -Xmx256m
     volumes:
       - /var/lib/zhizhi/elasticsearch/data:/usr/share/elasticsearch/data
-      # 修改挂载方式，将配置文件目录挂载到配置目录，而不是单个文件
-      - ../mounted/elasticsearch:/usr/share/elasticsearch/config:ro
+      # 挂载单独的配置文件而不是整个目录，避免覆盖容器内默认配置
+      - ./mounted/elasticsearch/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
     networks:
       - zhizhi-net
 

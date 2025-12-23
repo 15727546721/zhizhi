@@ -20,13 +20,14 @@ public class WebConfig implements WebMvcConfigurer {
     public void addCorsMappings(CorsRegistry registry) {
         // 配置允许的跨域请求
         registry.addMapping("/**")
-                .allowedOriginPatterns(
-                        "http://localhost:*", 
-                        "https://*.zhizhi.cn", 
-                        "http://127.0.0.1:*",
-                        "http://localhost:517[0-9]",  // Vite端口范围 5170-5179
-                        "http://127.0.0.1:517[0-9]"   // Vite端口范围 5170-5179
-                )  // 允许的域名模式
+//                .allowedOriginPatterns(
+//                        "http://localhost:*",
+//                        "https://*.zhizhi.cn",
+//                        "http://127.0.0.1:*",
+//                        "http://localhost:517[0-9]",  // Vite端口范围 5170-5179
+//                        "http://127.0.0.1:517[0-9]"   // Vite端口范围 5170-5179
+//                )  // 允许的域名模式
+                .allowedOriginPatterns("*")  // 开发环境允许所有来源
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")  // 允许的请求方法
                 .allowedHeaders("Origin", "Content-Type", "Accept", "Authorization", "X-Requested-With")  // 允许的请求头
                 .allowCredentials(true)  // 允许发送Cookie

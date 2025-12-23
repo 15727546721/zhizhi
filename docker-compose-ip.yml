@@ -51,7 +51,7 @@ services:
     command: ["redis-server", "/etc/redis/redis.conf"]
     volumes:
       - redis-data:/data
-      - ./redis/redis.conf:/etc/redis/redis.conf:ro
+      - ./mounted/redis/redis.conf:/etc/redis/redis.conf:ro
     networks:
       - zhizhi-net  # 使用自定义网络
 
