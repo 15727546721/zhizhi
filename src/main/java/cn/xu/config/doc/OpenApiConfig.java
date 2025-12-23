@@ -8,7 +8,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * @Description: openapi 界面配置
+ * OpenAPI文档配置类
+ *
+ * 
  */
 @Configuration
 public class OpenApiConfig {
@@ -19,17 +21,15 @@ public class OpenApiConfig {
                 // 接口文档标题
                 .info(new Info().title("API接口文档")
                         // 接口文档描述
-                        .description("调用的接口文档")
+                        .description("调用的接口文档，详细描述了所有可用的API接口和其功能")
                         // 接口文档版本
                         .version("v1.0")
-                        // 开发者联系方式
-                        .contact(new Contact().name("").url("")))
+                        // 开发者联系信息
+                        .contact(new Contact().name("开发者团队").url("http://example.com")))
                 .externalDocs(new ExternalDocumentation()
                         // 额外补充说明
-                        .description("")
+                        .description("更多详细信息请访问开发文档")
                         // 额外补充链接
-                        .url(""));
+                        .url("http://example.com/docs"));
     }
-
-
 }

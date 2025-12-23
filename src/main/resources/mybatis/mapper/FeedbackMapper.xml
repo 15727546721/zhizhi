@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.xu.repository.mapper.FeedbackMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="feedbackMap" type="cn.xu.model.entity.Feedback">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="type" property="type"/>
+        <result column="title" property="title"/>
+        <result column="content" property="content"/>
+        <result column="images" property="images"/>
+        <result column="contact" property="contact"/>
+        <result column="status" property="status"/>
+        <result column="reply" property="reply"/>
+        <result column="reply_time" property="replyTime"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <!-- 基础列 -->
+    <sql id="Base_Column_List">
+        id, user_id, type, title, content, images, contact, status, reply, reply_time, create_time, update_time
+    </sql>
+
+    <!-- 插入反馈 -->
+    <insert id="insert" parameterType="cn.xu.model.entity.Feedback" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO feedback (user_id, type, title, content, images, contact, status, reply, reply_time, create_time, update_time)
+        VALUES (#{userId}, #{type}, #{title}, #{content}, #{images}, #{contact}, #{status}, #{reply}, #{replyTime}, 
+                COALESCE(#{createTime}, NOW()), COALESCE(#{updateTime}, NOW()))
+    </insert>
+
+    <!-- 根据ID查询 -->
+    <select id="selectById" resultMap="feedbackMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM feedback
+        WHERE id = #{id}
+    </select>
+
+    <!-- 更新反馈 -->
+    <update id="updateById" parameterType="cn.xu.model.entity.Feedback">
+        UPDATE feedback
+        <set>
+            <if test="type != null">type = #{type},</if>
+            <if test="title != null">title = #{title},</if>
+            <if test="content != null">content = #{content},</if>
+            <if test="images != null">images = #{images},</if>
+            <if test="contact != null">contact = #{contact},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="reply != null">reply = #{reply},</if>
+            <if test="replyTime != null">reply_time = #{replyTime},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 批量删除 -->
+    <delete id="deleteBatchIds">
+        DELETE FROM feedback
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <!-- 分页查询反馈列表（管理端） -->
+    <select id="selectFeedbackList" resultMap="feedbackMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM feedback
+        <where>
+            <if test="type != null">
+                AND type = #{type}
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+        </where>
+        ORDER BY 
+            CASE WHEN status = 0 THEN 0 ELSE 1 END,
+            create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 统计反馈数量（管理端） -->
+    <select id="countFeedback" resultType="long">
+        SELECT COUNT(*)
+        FROM feedback
+        <where>
+            <if test="type != null">
+                AND type = #{type}
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+        </where>
+    </select>
+
+    <!-- 查询用户的反馈列表 -->
+    <select id="selectByUserId" resultMap="feedbackMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM feedback
+        WHERE user_id = #{userId}
+        ORDER BY create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 统计用户的反馈数量 -->
+    <select id="countByUserId" resultType="long">
+        SELECT COUNT(*)
+        FROM feedback
+        WHERE user_id = #{userId}
+    </select>
+
+</mapper>

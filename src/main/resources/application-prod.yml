@@ -1,6 +1,65 @@
 server:
   port: 8091
 
+# 数据库配置
+spring:
+  # 邮件服务配置
+  mail:
+    host: smtp.qq.com                          # SMTP服务器地址
+    port: 587                                   # SMTP端口（587-TLS, 465-SSL）
+    username: your_email@qq.com                 # 发件人邮箱（请替换）
+    password: your_authorization_code           # 邮箱授权码（请替换，不是密码）
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+  datasource:
+    username: root
+    password: zhizhi123
+    url: jdbc:mysql://zhizhi-mysql:3306/zhizhi?useUnicode=true&characterEncoding=utf8&autoReconnect=true&zeroDateTimeBehavior=convertToNull&serverTimezone=UTC&useSSL=true
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    type: com.zaxxer.hikari.HikariDataSource
+    hikari:
+      pool-name: Retail_HikariCP
+      minimum-idle: 15 #最小空闲连接数量
+      idle-timeout: 180000 #空闲连接存活最大时间，默认600000（10分钟）
+      maximum-pool-size: 25 #连接池最大连接数，默认是10
+      auto-commit: true  #此属性控制从池返回的连接的默认自动提交行为,默认值：true
+      max-lifetime: 1800000 #此属性控制池中连接的最长生命周期，值0表示无限生命周期，默认1800000即30分钟
+      connection-timeout: 30000 #数据库连接超时时间,默认30秒，即30000
+      connection-test-query: SELECT 1
+#  elasticsearch:
+#    enabled: true  # 本地开发默认禁用Elasticsearch，避免无可用ES导致启动失败
+#    uris: elasticsearch:9200  # 使用本地ES容器
+#    connection-timeout: 5s
+#    read-timeout: 30s
+#  data:
+#    elasticsearch:
+#      enabled: true  # 本地开发默认禁用Elasticsearch，避免无可用ES导致启动失败
+#      uris: elasticsearch:9200  # 使用本地ES容器
+#      connection-timeout: 5s
+#      read-timeout: 30s
+# 可选：配置索引名称
+app:
+  elasticsearch:
+    index:
+      comments: comments
+      posts: posts
+    # ES索引自动初始化配置
+    auto-init:
+      enabled: true  # 是否启用自动初始化（默认true）
+      sync-threshold: 0.5  # 同步阈值，如果ES数据量小于MySQL的此百分比，则自动同步（默认0.5，即50%）
+  post:
+    query:
+      strategy: mysql  # 开发环境默认使用MySQL兜底搜索；如需ES，请在启用后改回elasticsearch
+
 # 线程池配置
 thread:
   pool:
@@ -12,30 +71,50 @@ thread:
         block-queue-size: 5000
         policy: CallerRunsPolicy
 
-# 数据库配置
-#spring:
-#  datasource:
-#    username: root
-#    password: 123456
-#    url: jdbc:mysql://127.0.0.1:3306/xfg_frame_archetype?useUnicode=true&characterEncoding=utf8&autoReconnect=true&zeroDateTimeBehavior=convertToNull&serverTimezone=UTC&useSSL=true
-#    driver-class-name: com.mysql.cj.jdbc.Driver
-#  hikari:
-#    pool-name: Retail_HikariCP
-#    minimum-idle: 15 #最小空闲连接数量
-#    idle-timeout: 180000 #空闲连接存活最大时间，默认600000（10分钟）
-#    maximum-pool-size: 25 #连接池最大连接数，默认是10
-#    auto-commit: true  #此属性控制从池返回的连接的默认自动提交行为,默认值：true
-#    max-lifetime: 1800000 #此属性控制池中连接的最长生命周期，值0表示无限生命周期，默认1800000即30分钟
-#    connection-timeout: 30000 #数据库连接超时时间,默认30秒，即30000
-#    connection-test-query: SELECT 1
-#  type: com.zaxxer.hikari.HikariDataSource
+mybatis:
+  mapper-locations: classpath:mybatis/mapper/*.xml
+  config-location: classpath:mybatis/config/mybatis-config.xml
+  # type-handlers-package: cn.xu.support.handler  # 暂无自定义TypeHandler
 
-#mybatis:
-#  mapper-locations: classpath:/mybatis/mapper/*.xml
-#  config-location:  classpath:/mybatis/config/mybatis-config.xml
+# Sa-Token配置
+sa-token:
+  # token前缀
+  # Token前缀 与 Token值 之间必须有一个空格。
+  # 一旦配置了 Token前缀，则前端提交 Token 时，必须带有前缀，否则会导致框架无法读取 Token。
+  # 由于Cookie中无法存储空格字符，也就意味配置 Token 前缀后，Cookie 鉴权方式将会失效，此时只能将 Token 提交到header里进行传输
+  #  token-prefix: Bearer
+  # token 名称 (同时也是cookie名称)
+  token-name: Authorization
+  # 设置前缀token就需要放入到header里，否则无法读取到token
+  token-prefix: Bearer
+  # token 有效期，单位s 默认30天, -1代表永不过期
+  timeout: 2592000
+  # token 临时有效期 (指定时间内无操作就视为token过期) 单位: 秒
+  active-timeout: -1
+  # 是否允许同一账号并发登录 (为true时允许一起登录, 为false时新登录挤掉旧登录)
+  is-concurrent: true
+  # 在多人登录同一账号时，是否共用一个token (为true时所有登录共用一个token, 为false时每次登录新建一个token)
+  is-share: true
+  # token风格
+  token-style: uuid
+  # 是否输出操作日志
+  is-log: true
+  # 配置 Sa-Token 单独使用的 Redis 连接
+  alone-redis:
+    # Redis数据库索引（默认为0）
+    database: 0
+    # Redis服务器地址
+    host: redis
+    # Redis服务器连接端口
+    port: 6379
+    # Redis服务器连接密码（默认为空）
+    password:
+    # 连接超时时间
+    timeout: 6s
 
-# 日志
-logging:
-  level:
-    root: info
-  config: classpath:logback-spring.xml
+minio:
+  url: http://minio:9000
+  accessKey: minioadmin
+  secretKey: minioadmin
+  bucketName: zhizhi
+  enabled: true  # 在开发环境中启用MinIO

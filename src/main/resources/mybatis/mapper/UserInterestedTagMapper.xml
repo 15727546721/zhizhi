@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.xu.repository.mapper.UserInterestedTagMapper">
+    
+    <!-- 结果映射 -->
+    <resultMap id="UserInterestedTagMap" type="cn.xu.model.entity.UserInterestedTag">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="tag_id" property="tagId"/>
+        <result column="create_time" property="createTime"/>
+    </resultMap>
+    
+    <!-- 基础字段列表 -->
+    <sql id="Base_Column_List">
+        id, user_id, tag_id, create_time
+    </sql>
+    
+    <!-- 插入用户关注标签 -->
+    <insert id="insert" parameterType="cn.xu.model.entity.UserInterestedTag"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO user_interested_tag (user_id, tag_id, create_time)
+        VALUES (#{userId}, #{tagId}, #{createTime})
+    </insert>
+    
+    <!-- 删除用户关注标签 -->
+    <delete id="delete">
+        DELETE FROM user_interested_tag
+        WHERE user_id = #{userId} AND tag_id = #{tagId}
+    </delete>
+    
+    <!-- 查询用户是否关注某标签 -->
+    <select id="findByUserIdAndTagId" resultMap="UserInterestedTagMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM user_interested_tag
+        WHERE user_id = #{userId} AND tag_id = #{tagId}
+    </select>
+    
+    <!-- 查询用户关注的所有标签ID列表 -->
+    <select id="findTagIdsByUserId" resultType="java.lang.Long">
+        SELECT tag_id
+        FROM user_interested_tag
+        WHERE user_id = #{userId}
+        ORDER BY create_time DESC
+    </select>
+    
+    <!-- 查询用户关注的标签列表（分页）-->
+    <select id="findByUserIdWithPage" resultMap="UserInterestedTagMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM user_interested_tag
+        WHERE user_id = #{userId}
+        ORDER BY create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+    
+    <!-- 查询关注该标签的用户ID列表 -->
+    <select id="findUserIdsByTagId" resultType="java.lang.Long">
+        SELECT user_id
+        FROM user_interested_tag
+        WHERE tag_id = #{tagId}
+        ORDER BY create_time DESC
+    </select>
+    
+    <!-- 查询关注该标签的用户列表（分页）-->
+    <select id="findByTagIdWithPage" resultMap="UserInterestedTagMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM user_interested_tag
+        WHERE tag_id = #{tagId}
+        ORDER BY create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+    
+    <!-- 统计用户关注的标签数量 -->
+    <select id="countByUserId" resultType="int">
+        SELECT COUNT(*)
+        FROM user_interested_tag
+        WHERE user_id = #{userId}
+    </select>
+    
+    <!-- 统计关注该标签的用户数量 -->
+    <select id="countByTagId" resultType="int">
+        SELECT COUNT(*)
+        FROM user_interested_tag
+        WHERE tag_id = #{tagId}
+    </select>
+    
+    <!-- 批量删除用户关注的所有标签 -->
+    <delete id="deleteByUserId">
+        DELETE FROM user_interested_tag
+        WHERE user_id = #{userId}
+    </delete>
+    
+    <!-- 批量删除关注某标签的所有记录 -->
+    <delete id="deleteByTagId">
+        DELETE FROM user_interested_tag
+        WHERE tag_id = #{tagId}
+    </delete>
+    
+    <!-- 查询用户是否关注某标签（返回布尔值）-->
+    <select id="exists" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM user_interested_tag
+        WHERE user_id = #{userId} AND tag_id = #{tagId}
+    </select>
+    
+</mapper>

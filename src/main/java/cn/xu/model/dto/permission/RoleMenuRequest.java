@@ -1,0 +1,1 @@
+package cn.xu.model.dto.permission;import lombok.Data;import java.util.List;/** * 角色菜单分配请求DTO * 用于角色与菜单的关联请求，表示角色需要访问的菜单ID列表。 */@Datapublic class RoleMenuRequest {    /**     * 角色ID     * 用于标识需要分配菜单的角色。     */    private Long roleId;    /**     * 菜单ID列表     * 表示角色所能访问的菜单ID集合。     */    private List<Long> menuIds;}

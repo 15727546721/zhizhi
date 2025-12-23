@@ -1,23 +1,78 @@
-# 知之 — 开源社区
+# 知之社区后端服务
 
----
+基于 Spring Boot 的后端服务，提供 RESTful API 接口。
 
-<br>
+## 项目结构
 
-<p align="center">
-    <img width="" src="src/test/4VENJ%5DW8T41X~NX%25LSHW02T.png" >
-</p>
+```
+zhizhi-backend/
+├── src/                    # 源代码目录
+├── docs/                   # 文档目录
+├── mounted/                # 配置文件目录（MySQL、Redis、Nginx等）
+├── target/                 # 构建输出目录
+├── Dockerfile              # Docker 构建文件
+├── docker-compose.yml      # 开发环境 Docker 编排文件
+├── docker-compose.prod.yml # 生产环境 Docker 编排文件
+└── pom.xml                 # Maven 项目配置文件
+```
 
-<div align="center">
+## 快速开始
 
+### 开发环境启动
 
-[![star](https://gitee.com/xu-wq/zhizhi/badge/star.svg?theme=dark)](https://gitee.com/veal98/Echo/stargazers)
-[![fork](https://gitee.com/xu-wq/zhizhi/badge/fork.svg?theme=dark)](https://gitee.com/veal98/Echo/members)
+```bash
+# 启动所有服务（MySQL、Redis、MinIO、后端服务）
+docker-compose up -d
 
-</div>
+# 查看日志
+docker logs -f zhizhi-backend
+```
 
+### 生产环境部署
 
+请参考 [PRODUCTION_DEPLOY.md](PRODUCTION_DEPLOY.md) 文件获取详细的生产环境部署指南。
 
-## 📚 项目简介
+## 配置文件说明
 
-知之 是一套前后端分离的开源社区系统，基于目前主流 Java Web 技术栈（SpringBoot + MyBatis + MySQL + Redis + Disruptor + Lucene + Sa-Token + Vue3...），包含文章、话题、评论、系统通知、点赞、关注、搜索等模块。
+本项目使用 `mounted` 目录来统一管理所有服务的配置文件：
+
+- `mounted/mysql/custom.cnf` - MySQL 配置文件
+- `mounted/redis/redis.conf` - Redis 配置文件
+
+## API 文档
+
+启动服务后，可通过以下地址访问 API 文档：
+
+- Knife4j UI: http://localhost:8091/doc.html
+
+## 数据库初始化
+
+首次启动时，系统会自动执行 `src/main/resources/sql` 目录下的 SQL 脚本初始化数据库。
+
+## 技术栈
+
+- Java 8
+- Spring Boot 2.7.x
+- MySQL 8.0
+- Redis 7.2
+- Elasticsearch 7.17
+- MinIO
+- Sa-Token 权限认证框架
+- MyBatis Plus
+- Maven
+
+## 项目模块
+
+- 用户管理
+- 帖子管理
+- 评论管理
+- 标签管理
+- 点赞收藏
+- 消息通知
+- 权限管理
+- 文件存储
+- 搜索功能
+
+## 贡献指南
+
+欢迎提交 Issue 和 Pull Request 来改进项目。

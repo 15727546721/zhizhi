@@ -1,0 +1,114 @@
+services:
+  backend:
+    build: .
+    container_name: zhizhi-backend
+    restart: always
+    ports:
+      - "8091:8091"
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+
+      # MySQL
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/zhizhi?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: zhizhi123
+
+      # Redis
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+
+      # Elasticsearch 8（关闭安全）
+      SPRING_ELASTICSEARCH_URIS: elasticsearch:9200
+
+      # MinIO
+      MINIO_URL: http://minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+
+      # 启动等待（避免服务未 ready）
+      SPRING_DATASOURCE_HIKARI_INITIALIZATION_FAIL_TIMEOUT: 60000
+
+    depends_on:
+      - mysql
+      - redis
+      - elasticsearch
+      - minio
+    networks:
+      - zhizhi-net
+    command: ["java", "-Xms256m", "-Xmx512m", "-jar", "app.jar"]
+
+  mysql:
+    # 使用公共可访问的 MySQL 镜像，而不是私有仓库
+    image: mysql:8.0.32
+    container_name: zhizhi-mysql
+    restart: always
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: zhizhi123
+      MYSQL_DATABASE: zhizhi
+      TZ: Asia/Shanghai
+    volumes:
+      - /var/lib/zhizhi/mysql:/var/lib/mysql
+      - ./mounted/mysql/mysql.cnf:/etc/mysql/conf.d/mysql.cnf:ro
+      - ./src/main/resources/sql:/docker-entrypoint-initdb.d:ro
+    networks:
+      - zhizhi-net
+    command:
+      --default-authentication-plugin=mysql_native_password
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+
+  redis:
+    # 使用公共可访问的 Redis 镜像，而不是私有仓库
+    image: redis:7.2.0
+    container_name: zhizhi-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - /var/lib/zhizhi/redis:/data
+      - ./mounted/redis/redis.conf:/etc/redis/redis.conf:ro
+    command: ["redis-server", "/etc/redis/redis.conf"]
+    networks:
+      - zhizhi-net
+
+  elasticsearch:
+    # Elasticsearch 镜像
+    image: elasticsearch:7.17.12
+    container_name: zhizhi-elasticsearch
+    restart: always
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms256m -Xmx256m
+    volumes:
+      - /var/lib/zhizhi/elasticsearch/data:/usr/share/elasticsearch/data
+      # 挂载单独的配置文件而不是整个目录，避免覆盖容器内默认配置
+      - ./mounted/elasticsearch/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
+    networks:
+      - zhizhi-net
+
+  minio:
+    # 使用公共可访问的 MinIO 镜像，而不是私有仓库
+    image: minio/minio:latest
+    container_name: zhizhi-minio
+    restart: always
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - /var/lib/zhizhi/minio:/data
+    networks:
+      - zhizhi-net
+
+networks:
+  zhizhi-net:
+    driver: bridge

@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  backend:
+    build: .
+    container_name: zhizhi-backend
+    restart: always
+    ports:
+      - "8091:8091"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/zhizhi?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai  # 使用宿主机的 IP
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=zhizhi123
+      - SPRING_REDIS_HOST=redis  # 使用宿主机的 Redis 地址
+      - SPRING_ELASTICSEARCH_URIS=124.222.71.27:9200  # 使用线上 ES 地址
+      - MINIO_URL=http://minio:9000  # 使用宿主机的 Minio 地址
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+    depends_on:
+      - mysql
+      - redis
+      - minio
+    # dns:
+    #   - 8.8.8.8  # Google 公共 DNS
+    #   - 8.8.4.4  # 备用 DNS
+    networks:
+      - zhizhi-net  # 使用自定义网络
+
+  mysql:
+    image: mysql:8.0.32
+    container_name: zhizhi-mysql
+    restart: always
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=zhizhi123
+      - MYSQL_DATABASE=zhizhi
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./src/main/resources/sql:/docker-entrypoint-initdb.d:ro
+    networks:
+      - zhizhi-net  # 使用自定义网络
+
+  redis:
+    image: redis:7.2.0
+    container_name: zhizhi-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "/etc/redis/redis.conf"]
+    volumes:
+      - redis-data:/data
+      - ./mounted/redis/redis.conf:/etc/redis/redis.conf:ro
+    networks:
+      - zhizhi-net  # 使用自定义网络
+
+  minio:
+    image: minio/minio:latest
+    container_name: zhizhi-minio
+    restart: always
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio-data:/data
+    networks:
+      - zhizhi-net  # 使用自定义网络
+
+networks:
+  zhizhi-net:
+    driver: bridge
+
+volumes:
+  mysql-data:
+  redis-data:
+  minio-data:

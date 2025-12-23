@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.xu.repository.mapper.TagMapper">
+
+    <resultMap id="BaseResultMap" type="cn.xu.model.entity.Tag">
+        <id property="id" column="id" jdbcType="BIGINT"/>
+        <result property="name" column="name" jdbcType="VARCHAR"/>
+        <result property="description" column="description" jdbcType="VARCHAR"/>
+        <result property="isRecommended" column="is_recommended" jdbcType="TINYINT"/>
+        <result property="usageCount" column="usage_count" jdbcType="INTEGER"/>
+        <result property="sort" column="sort" jdbcType="INTEGER"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <resultMap id="PostAndTagAggMap" type="cn.xu.model.dto.post.PostAndTagAgg">
+        <result property="postId" column="postId" jdbcType="BIGINT"/>
+        <result property="tag" column="tag" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, name, description, is_recommended, usage_count, sort, create_time, update_time
+    </sql>
+
+    <insert id="addTag">
+        <selectKey keyProperty="id" resultType="java.lang.Long" order="AFTER">
+            SELECT LAST_INSERT_ID()
+        </selectKey>
+        INSERT INTO tag (name, create_time, update_time)
+        VALUES (#{name}, NOW(), NOW())
+    </insert>
+
+    <select id="getTagNamesByPostId" resultType="java.lang.String">
+        SELECT t.name
+        FROM tag t
+        INNER JOIN post_tag ptr ON t.id = ptr.tag_id
+        WHERE ptr.post_id = #{postId}
+    </select>
+
+    <select id="selectByPostIds" resultMap="PostAndTagAggMap">
+        SELECT
+        ptr.post_id AS postId,
+        SUBSTRING_INDEX(
+        GROUP_CONCAT(t.name ORDER BY t.id SEPARATOR ','),
+        ',', 3
+        ) AS tag
+        FROM post_tag ptr
+        JOIN tag t ON ptr.tag_id = t.id
+        <if test="postIds != null and postIds.size() > 0">
+            WHERE ptr.post_id IN
+            <foreach item="id" collection="postIds" open="(" separator="," close=")">
+                #{id}
+            </foreach>
+        </if>
+        GROUP BY ptr.post_id
+    </select>
+    
+    <select id="searchTags" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM tag
+        WHERE name LIKE CONCAT('%', #{keyword}, '%')
+        ORDER BY create_time DESC
+    </select>
+    
+    <select id="getHotTags" resultMap="BaseResultMap">
+        SELECT 
+        t.id,
+        t.name,
+        t.description,
+        t.is_recommended,
+        t.usage_count,
+        t.sort,
+        t.create_time,
+        t.update_time
+        FROM tag t
+        LEFT JOIN post_tag pt ON t.id = pt.tag_id
+        LEFT JOIN post p ON pt.post_id = p.id AND p.status = 1
+        GROUP BY t.id, t.name, t.description, t.is_recommended, t.usage_count, t.sort, t.create_time, t.update_time
+        HAVING COUNT(pt.tag_id) > 0
+        ORDER BY 
+            -- 综合热度分数计算：
+            -- 1. 使用频率（30%权重）：总使用次数
+            COUNT(pt.tag_id) * 0.3 +
+            -- 2. 时间衰减（30%权重）：最近7天使用次数加权
+            SUM(CASE WHEN p.create_time >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN 10 ELSE 0 END) * 0.3 +
+            -- 3. 帖子质量（40%权重）：平均帖子热度
+            AVG(
+                COALESCE(p.like_count, 0) * 3 + 
+                COALESCE(p.comment_count, 0) * 5 + 
+                COALESCE(p.view_count, 0) * 0.5 + 
+                COALESCE(p.favorite_count, 0) * 4
+            ) * 0.4
+        DESC
+        LIMIT #{limit}
+    </select>
+    
+    <select id="getHotTagsByTimeRange" resultMap="BaseResultMap">
+        SELECT 
+        t.id,
+        t.name,
+        t.description,
+        t.is_recommended,
+        t.usage_count,
+        t.sort,
+        t.create_time,
+        t.update_time
+        FROM tag t
+        LEFT JOIN post_tag pt ON t.id = pt.tag_id
+        LEFT JOIN post p ON pt.post_id = p.id AND p.status = 1
+        <where>
+            <choose>
+                <when test="timeRange == 'today'">
+                    AND p.create_time >= DATE_FORMAT(NOW(), '%Y-%m-%d 00:00:00')
+                </when>
+                <when test="timeRange == 'week'">
+                    AND p.create_time >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+                </when>
+                <when test="timeRange == 'month'">
+                    AND p.create_time >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+                </when>
+                <!-- all: 不添加时间限制，统计全部 -->
+            </choose>
+        </where>
+        GROUP BY t.id, t.name, t.description, t.is_recommended, t.usage_count, t.sort, t.create_time, t.update_time
+        HAVING COUNT(pt.tag_id) > 0
+        ORDER BY 
+            -- 综合热度分数计算：
+            -- 1. 使用频率（30%权重）：总使用次数
+            COUNT(pt.tag_id) * 0.3 +
+            -- 2. 时间衰减（30%权重）：最近7天使用次数加权
+            SUM(CASE WHEN p.create_time >= DATE_SUB(NOW(), INTERVAL 7 DAY) THEN 10 ELSE 0 END) * 0.3 +
+            -- 3. 帖子质量（40%权重）：平均帖子热度
+            AVG(
+                COALESCE(p.like_count, 0) * 3 + 
+                COALESCE(p.comment_count, 0) * 5 + 
+                COALESCE(p.view_count, 0) * 0.5 + 
+                COALESCE(p.favorite_count, 0) * 4
+            ) * 0.4
+        DESC
+        LIMIT #{limit}
+    </select>
+    
+    <select id="getAllTags" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM tag
+        ORDER BY create_time DESC
+    </select>
+    
+    <select id="getTagById" resultMap="BaseResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM tag
+        WHERE id = #{id}
+    </select>
+    
+    <update id="updateTag">
+        UPDATE tag
+        SET name = #{name},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+    
+    <update id="updateTagFull">
+        UPDATE tag
+        SET name = #{tag.name},
+            description = #{tag.description},
+            is_recommended = #{tag.isRecommended},
+            usage_count = #{tag.usageCount},
+            sort = #{tag.sort},
+            update_time = #{tag.updateTime}
+        WHERE id = #{tag.id}
+    </update>
+    
+    <delete id="deleteTag">
+        DELETE FROM tag
+        WHERE id = #{id}
+    </delete>
+    
+    <!-- 批量增加标签使用次数 -->
+    <update id="incrementUsageCountBatch">
+        UPDATE tag
+        SET usage_count = usage_count + 1,
+            update_time = NOW()
+        WHERE id IN
+        <foreach collection="tagIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+    
+    <!-- 批量减少标签使用次数 -->
+    <update id="decrementUsageCountBatch">
+        UPDATE tag
+        SET usage_count = GREATEST(usage_count - 1, 0),
+            update_time = NOW()
+        WHERE id IN
+        <foreach collection="tagIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+    
+    <!-- 统计所有标签数 -->
+    <select id="countAll" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM tag
+    </select>
+    
+    <!-- 批量根据ID获取标签 -->
+    <select id="findByIds" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM tag
+        WHERE id IN
+        <foreach collection="tagIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </select>
+</mapper>

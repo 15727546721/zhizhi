@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.xu.repository.mapper.LikeMapper">
+    <sql id="Base_Column_List">
+        id
+        , user_id, target_id, type, status, create_time
+    </sql>
+
+    <insert id="save" parameterType="cn.xu.model.entity.Like" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO `like` (user_id, target_id, type, status, create_time)
+        VALUES (#{userId}, #{targetId}, #{type}, #{status}, #{createTime})
+    </insert>
+    
+    <!-- 原子性保存或更新（解决并发竞态条件） -->
+    <!-- 使用 ON DUPLICATE KEY UPDATE 确保高并发下不会创建重复记录 -->
+    <insert id="saveOrUpdate" parameterType="cn.xu.model.entity.Like">
+        INSERT INTO `like` (user_id, target_id, type, status, create_time)
+        VALUES (#{userId}, #{targetId}, #{type}, #{status}, #{createTime})
+        ON DUPLICATE KEY UPDATE 
+            status = #{status},
+            create_time = #{createTime}
+    </insert>
+    
+    <update id="update" parameterType="cn.xu.model.entity.Like">
+        UPDATE `like`
+        SET user_id = #{userId},
+            target_id = #{targetId},
+            type = #{type},
+            status = #{status},
+            create_time = #{createTime}
+        WHERE id = #{id}
+    </update>
+    
+    <delete id="deleteById" parameterType="java.lang.Long">
+        DELETE FROM `like`
+        WHERE id = #{id}
+    </delete>
+    
+    <delete id="deleteByIds" parameterType="java.util.List">
+        DELETE FROM `like`
+        WHERE id IN
+        <foreach collection="list" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <update id="updateStatus">
+        UPDATE `like`
+        SET status = #{status}
+        WHERE user_id = #{userId}
+        AND target_id = #{targetId}
+        AND type = #{type}
+    </update>
+
+    <delete id="delete">
+        DELETE FROM `like`
+        WHERE target_id = #{targetId}
+        AND type = #{type}
+    </delete>
+
+    <select id="findById" resultType="cn.xu.model.entity.Like">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM `like`
+        WHERE id = #{id}
+        LIMIT 1
+    </select>
+
+    <select id="findByUserIdAndTypeAndTargetId" resultType="cn.xu.model.entity.Like">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM `like`
+        WHERE user_id = #{userId}
+        AND target_id = #{targetId}
+        AND type = #{type}
+        LIMIT 1
+    </select>
+
+    <select id="checkStatus" resultType="java.lang.Integer">
+        SELECT status
+        FROM `like`
+        WHERE user_id = #{userId}
+        AND target_id = #{targetId}
+        AND type = #{type}
+        LIMIT 1
+    </select>
+    
+    <select id="countByTargetIdAndType" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM `like`
+        WHERE target_id = #{targetId}
+        AND type = #{type}
+        AND status = 1
+    </select>
+    
+    <select id="selectLikedTargetIdsByUserId" resultType="java.lang.Long">
+        SELECT target_id
+        FROM `like`
+        WHERE user_id = #{userId}
+        AND type = #{type}
+        AND status = 1
+    </select>
+    
+    <select id="selectUserIdsByTargetId" resultType="java.lang.Long">
+        SELECT user_id
+        FROM `like`
+        WHERE target_id = #{targetId}
+        AND type = #{type}
+        AND status = 1
+    </select>
+    
+    <select id="findByUserId" resultType="cn.xu.model.entity.Like">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM `like`
+        WHERE user_id = #{userId}
+        AND status = 1
+        ORDER BY create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+    
+    <select id="countByUserId" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM `like`
+        WHERE user_id = #{userId}
+        AND status = 1
+    </select>
+    
+    <select id="findByUserIdAndTargetIds" resultType="cn.xu.model.entity.Like">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM `like`
+        WHERE user_id = #{userId}
+        AND type = #{type}
+        AND target_id IN
+        <foreach collection="targetIds" item="targetId" open="(" separator="," close=")">
+            #{targetId}
+        </foreach>
+        AND status = 1
+    </select>
+    
+    <!-- 统计用户发布的帖子收到的点赞数 -->
+    <select id="countReceivedLikesByUserPosts" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM `like` l
+        INNER JOIN post p ON l.target_id = p.id
+        WHERE p.user_id = #{userId}
+        AND l.type = 1
+        AND l.status = 1
+        AND p.status = 1
+    </select>
+    
+    <!-- 统计用户发布的评论收到的点赞数 -->
+    <select id="countReceivedLikesByUserComments" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM `like` l
+        INNER JOIN comment c ON l.target_id = c.id
+        WHERE c.user_id = #{userId}
+        AND l.type = 3
+        AND l.status = 1
+        AND c.is_deleted = 0
+    </select>
+    
+    <!-- 统计所有点赞数 -->
+    <select id="countAll" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM `like` WHERE status = 1
+    </select>
+    
+    <!-- 按类型统计点赞数 -->
+    <select id="countByType" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM `like` WHERE status = 1 AND type = #{type}
+    </select>
+    
+    <!-- 批量检查点赞状态，返回已点赞的目标ID集合 -->
+    <select id="batchCheckStatus" resultType="java.lang.Long">
+        SELECT target_id
+        FROM `like`
+        WHERE user_id = #{userId}
+        AND type = #{type}
+        AND status = 1
+        AND target_id IN
+        <foreach collection="targetIds" item="targetId" open="(" separator="," close=")">
+            #{targetId}
+        </foreach>
+    </select>
+
+</mapper>

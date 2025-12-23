@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.xu.repository.mapper.PrivateMessageMapper">
+    
+    <resultMap id="BaseResultMap" type="cn.xu.model.entity.PrivateMessage">
+        <id column="id" property="id"/>
+        <result column="sender_id" property="senderId"/>
+        <result column="receiver_id" property="receiverId"/>
+        <result column="content" property="content"/>
+        <result column="message_type" property="messageType"/>
+        <result column="media_url" property="mediaUrl"/>
+        <result column="status" property="status"/>
+        <result column="is_read" property="isRead"/>
+        <result column="read_time" property="readTime"/>
+        <result column="sender_deleted" property="senderDeleted"/>
+        <result column="receiver_deleted" property="receiverDeleted"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+    
+    <!-- 带用户信息的ResultMap（用于消息列表查询） -->
+    <resultMap id="MessageWithUserResultMap" type="cn.xu.model.entity.PrivateMessage" extends="BaseResultMap">
+        <result column="sender_avatar" property="senderAvatar"/>
+        <result column="sender_nickname" property="senderNickname"/>
+        <result column="receiver_avatar" property="receiverAvatar"/>
+        <result column="receiver_nickname" property="receiverNickname"/>
+    </resultMap>
+    
+    <sql id="Base_Column_List">
+        id, sender_id, receiver_id, content, message_type, media_url,
+        status, is_read, read_time, sender_deleted, receiver_deleted,
+        create_time, update_time
+    </sql>
+    
+    <insert id="insert" parameterType="cn.xu.model.entity.PrivateMessage" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO private_message (
+            sender_id, receiver_id, content, message_type, media_url,
+            status, is_read, sender_deleted, receiver_deleted, create_time, update_time
+        ) VALUES (
+            #{senderId}, #{receiverId}, #{content}, #{messageType}, #{mediaUrl},
+            #{status}, #{isRead}, #{senderDeleted}, #{receiverDeleted}, #{createTime}, #{updateTime}
+        )
+    </insert>
+    
+    <update id="update" parameterType="cn.xu.model.entity.PrivateMessage">
+        UPDATE private_message SET
+            content = #{content},
+            status = #{status},
+            is_read = #{isRead},
+            read_time = #{readTime},
+            sender_deleted = #{senderDeleted},
+            receiver_deleted = #{receiverDeleted},
+            update_time = NOW()
+        WHERE id = #{id}
+    </update>
+    
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM private_message
+        WHERE id = #{id}
+    </select>
+    
+    <!-- 查询两个用户之间的消息，根据查看者过滤已删除的消息，包含用户头像和昵称 -->
+    <!-- 分页逻辑：先按时间倒序取最新N条，再按时间升序返回（UI从上到下时间递增） -->
+    <select id="selectMessagesBetweenUsers" resultMap="MessageWithUserResultMap">
+        SELECT * FROM (
+            SELECT 
+                pm.id, pm.sender_id, pm.receiver_id, pm.content, pm.message_type, pm.media_url,
+                pm.status, pm.is_read, pm.read_time, pm.sender_deleted, pm.receiver_deleted,
+                pm.create_time, pm.update_time,
+                sender.avatar AS sender_avatar,
+                sender.nickname AS sender_nickname,
+                receiver.avatar AS receiver_avatar,
+                receiver.nickname AS receiver_nickname
+            FROM private_message pm
+            LEFT JOIN user sender ON pm.sender_id = sender.id
+            LEFT JOIN user receiver ON pm.receiver_id = receiver.id
+            WHERE (
+                (pm.sender_id = #{userId1} AND pm.receiver_id = #{userId2})
+                OR
+                (pm.sender_id = #{userId2} AND pm.receiver_id = #{userId1})
+            )
+            AND (
+                (pm.sender_id = #{viewerId} AND pm.sender_deleted = 0)
+                OR
+                (pm.receiver_id = #{viewerId} AND pm.receiver_deleted = 0)
+            )
+            AND (pm.status = 1 OR pm.sender_id = #{viewerId})
+            ORDER BY pm.create_time DESC
+            LIMIT #{limit} OFFSET #{offset}
+        ) AS t
+        ORDER BY t.create_time ASC
+    </select>
+    
+    <select id="countUnread" resultType="int">
+        SELECT COUNT(*)
+        FROM private_message
+        WHERE receiver_id = #{receiverId}
+          AND sender_id = #{senderId}
+          AND is_read = 0
+          AND status = 1
+          AND receiver_deleted = 0
+    </select>
+    
+    <update id="markAsRead">
+        UPDATE private_message
+        SET is_read = 1, read_time = NOW(), update_time = NOW()
+        WHERE receiver_id = #{receiverId}
+          AND sender_id = #{senderId}
+          AND is_read = 0
+    </update>
+    
+    <update id="withdraw">
+        UPDATE private_message
+        SET status = 4, content = '[消息已撤回]', update_time = NOW()
+        WHERE id = #{messageId} AND sender_id = #{senderId}
+    </update>
+    
+    <select id="hasMessageFrom" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM private_message
+        WHERE sender_id = #{senderId} AND receiver_id = #{receiverId}
+    </select>
+    
+    <select id="hasReplyFrom" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM private_message
+        WHERE sender_id = #{receiverId} AND receiver_id = #{senderId} AND status = 1
+    </select>
+    
+    <update id="deleteBySender">
+        UPDATE private_message
+        SET sender_deleted = 1, update_time = NOW()
+        WHERE id = #{messageId} AND sender_id = #{senderId}
+    </update>
+    
+    <update id="deleteByReceiver">
+        UPDATE private_message
+        SET receiver_deleted = 1, update_time = NOW()
+        WHERE id = #{messageId} AND receiver_id = #{receiverId}
+    </update>
+    
+    <!-- 物理删除双方都已删除的消息 -->
+    <delete id="deleteBothDeletedMessages">
+        DELETE FROM private_message
+        WHERE sender_deleted = 1 AND receiver_deleted = 1
+    </delete>
+    
+    <!-- 物理删除某会话的所有消息 -->
+    <delete id="deleteMessagesByConversation">
+        DELETE FROM private_message
+        WHERE (sender_id = #{userId1} AND receiver_id = #{userId2})
+           OR (sender_id = #{userId2} AND receiver_id = #{userId1})
+    </delete>
+    
+</mapper>

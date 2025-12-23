@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.xu.repository.mapper.UserBlockMapper">
+    
+    <resultMap id="BaseResultMap" type="cn.xu.model.entity.UserBlock">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="blocked_user_id" property="blockedUserId"/>
+        <result column="create_time" property="createTime"/>
+    </resultMap>
+    
+    <sql id="Base_Column_List">
+        id, user_id, blocked_user_id, create_time
+    </sql>
+    
+    <insert id="insert" parameterType="cn.xu.model.entity.UserBlock" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO `user_block` (user_id, blocked_user_id, create_time)
+        VALUES (#{userId}, #{blockedUserId}, #{createTime})
+    </insert>
+    
+    <delete id="deleteById">
+        DELETE FROM `user_block`
+        WHERE id = #{id}
+    </delete>
+    
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM `user_block`
+        WHERE id = #{id}
+    </select>
+    
+    <select id="existsBlock" resultType="boolean">
+        SELECT COUNT(1) > 0
+        FROM `user_block`
+        WHERE user_id = #{userId} AND blocked_user_id = #{blockedUserId}
+    </select>
+    
+    <select id="selectByUserAndBlockedUser" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM `user_block`
+        WHERE user_id = #{userId} AND blocked_user_id = #{blockedUserId}
+        LIMIT 1
+    </select>
+    
+    <select id="selectByUserId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM `user_block`
+        WHERE user_id = #{userId}
+        ORDER BY create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+    
+    <select id="countByUserId" resultType="int">
+        SELECT COUNT(1)
+        FROM `user_block`
+        WHERE user_id = #{userId}
+    </select>
+    
+    <delete id="deleteByUserAndBlockedUser">
+        DELETE FROM `user_block`
+        WHERE user_id = #{userId} AND blocked_user_id = #{blockedUserId}
+    </delete>
+</mapper>
+

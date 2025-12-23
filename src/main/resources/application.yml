@@ -1,44 +1,135 @@
 spring:
-  config:
-    name: zhizhi-app
+  application:
+    name: zhizhi
+  main:
+    allow-bean-definition-overriding: true
+  # 激活开发环境配置
   profiles:
-    active: dev
-  redis:
-    host: localhost
-    port: 6379
-    database: 0
-    timeout: 10000
-    lettuce:
-      pool:
-        max-active: 8
-        max-wait: -1
-        max-idle: 8
-        min-idle: 0
+    active: prod
+  # 邮件服务配置（请替换为您的真实配置）
+  mail:
+    host: ${MAIL_HOST:smtp.qq.com}                    # SMTP服务器地址
+    port: ${MAIL_PORT:587}                            # SMTP端口（587-TLS, 465-SSL）
+    username: ${MAIL_USERNAME:your_email@qq.com}      # 发件人邮箱
+    password: ${MAIL_PASSWORD:your_authorization_code} # 邮箱授权码（从环境变量读取）
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: true                            # 启用SMTP认证
+          starttls:
+            enable: true                        # 启用TLS
+            required: true
+          connectiontimeout: 5000               # 连接超时（毫秒）
+          timeout: 5000                         # 读取超时
+          writetimeout: 5000                    # 写入超时
+  # 文件上传配置
   servlet:
     multipart:
-      max-file-size: 10MB
-      max-request-size: 10MB
+      enabled: true
+      max-file-size: 100MB
+      max-request-size: 100MB
+      file-size-threshold: 10MB  # 超过此大小才写入磁盘
+      location: ${java.io.tmpdir}  # 临时文件位置
+      resolve-lazily: false  # 立即解析（避免延迟）
 
-# 热点数据配置
-hot-data:
-  items:
-    # 热门文章的点赞数据
-    - targetId: 1
-      type: ARTICLE
-      needWarmup: true
-      needRebuild: true
-    - targetId: 2
-      type: ARTICLE
-      needWarmup: true
-      needRebuild: true
-    # 热门话题的点赞数据
-    - targetId: 1
-      type: TOPIC
-      needWarmup: true
-      needRebuild: true
+server:
+  port: 8091
 
-upload:
-  article:
-    cover:
-      path: ${user.home}/zhizhi/upload/article/cover/
-      url-prefix: /upload/article/cover/
+# 日志配置
+logging:
+  config: classpath:logback-spring.xml
+  level:
+    cn.xu.repository.impl: debug
+
+# 评论热度计算策略配置
+comment:
+  hot:
+    score:
+      strategy: SIMPLE  # 可选值: SIMPLE, REDDIT, TRENDING, LINEAR
+
+# 帖子热度计算策略配置
+post:
+  hot-score:
+    like-weight: 3.0
+    comment-weight: 5.0
+    view-weight: 0.5
+    favorite-weight: 4.0
+    time-decay-exponent: 1.2
+    time-decay-base: 2.0
+
+# MinIO配置
+minio:
+  url: ${MINIO_URL:http://localhost:9000}
+  accessKey: ${MINIO_ACCESS_KEY:minioadmin}
+  secretKey: ${MINIO_SECRET_KEY:minioadmin}  # 生产环境必须使用环境变量
+  bucketName: ${MINIO_BUCKET:zhizhi}
+  enabled: ${MINIO_ENABLED:true}  # 启用MinIO
+
+# 文件访问配置
+file:
+  access:
+    mode: direct  # 访问模式: direct(直接), proxy(代理), cdn(CDN)
+  proxy:
+    base-url: http://localhost:8091/api/file  # 代理服务URL（proxy模式使用）
+  cdn:
+    base-url: https://cdn.example.com  # CDN URL（cdn模式使用）
+
+# Sa-Token配置
+sa-token:
+  # token 名称 (同时也是cookie名称)
+  token-name: Authorization
+  # token 有效期，单位s 默认30天, -1代表永不过期
+  timeout: 2592000
+  # token 临时有效期 (指定时间内无操作就视为token过期) 单位: 秒
+  active-timeout: -1
+  # 是否允许同一账号并发登录 (为true时允许一起登录, 为false时新登录挤掉旧登录)
+  is-concurrent: true
+  # 在多人登录同一账号时，是否共用一个token (为true时所有登录共用一个token, 为false时每次登录新建一个token)
+  is-share: true
+  # token风格
+  token-style: uuid
+  # 是否输出操作日志 (启用日志便于调试)
+  is-log: true
+
+# 可选：配置索引名称
+app:
+  elasticsearch:
+    index:
+      comments: comments
+      posts: posts
+    # ES索引自动初始化配置
+    auto-init:
+      enabled: true  # 是否启用自动初始化（默认true）
+      sync-threshold: 0.5  # 同步阈值，如果ES数据量小于MySQL的此百分比，则自动同步（默认0.5，即50%）
+  post:
+    query:
+      strategy: elasticsearch  # 帖子查询策略：elasticsearch 或 mysql
+      cache:
+        enabled: true  # 是否启用搜索缓存，默认true
+  event:
+    enabled: true
+    async-thread-pool-size: 10
+    ring-buffer-size: 1024
+    consumer-thread-count: 4
+    monitoring-enabled: true
+    retry-count: 3
+    timeout-ms: 5000
+  # 账户安全配置
+  security:
+    # 验证码配置
+    verify-code:
+      enabled: true  # 是否启用验证码验证（开发环境可设为false）
+    # 登录安全配置
+    login:
+      max-fail-count: 5        # 最大登录失败次数
+      lock-duration: 1800      # 账户锁定时长（秒），默认30分钟
+      fail-count-expire: 3600  # 失败计数过期时间（秒），默认1小时
+    # IP封禁配置
+    ip:
+      suspicious-threshold: 10     # 可疑行为阈值
+      auto-block-duration: 3600    # 自动封禁时长（秒），默认1小时
+      suspicious-expire: 3600      # 可疑行为计数过期时间（秒）
+  # 前端URL配置
+  frontend:
+    reset-password-url: ${FRONTEND_RESET_PASSWORD_URL:http://localhost:3000/reset-password}
