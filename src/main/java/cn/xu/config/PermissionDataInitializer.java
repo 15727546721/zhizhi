@@ -3,8 +3,8 @@ package cn.xu.config;
 import cn.xu.model.entity.Menu;
 import cn.xu.model.entity.Role;
 import cn.xu.model.entity.User;
-import cn.xu.repository.IRoleRepository;
-import cn.xu.repository.IUserRepository;
+import cn.xu.repository.RoleRepository;
+import cn.xu.repository.UserRepository;
 import cn.xu.service.permission.PermissionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,10 +44,10 @@ public class PermissionDataInitializer implements CommandLineRunner {
     private PermissionService permissionService;
 
     @Resource
-    private IUserRepository userRepository;
+    private UserRepository userRepository;
 
     @Resource
-    private IRoleRepository roleRepository;
+    private RoleRepository roleRepository;
 
     /**
      * 是否启用数据完整性检查

@@ -11,7 +11,10 @@ import cn.xu.model.dto.user.UpdateUserProfileRequest;
 import cn.xu.model.dto.user.UserLoginRequest;
 import cn.xu.model.dto.user.UserRegisterRequest;
 import cn.xu.model.entity.User;
-import cn.xu.repository.IUserRepository;
+import cn.xu.model.entity.UserSettings;
+import cn.xu.model.enums.UserRankingSortType;
+import cn.xu.repository.UserRepository;
+import cn.xu.repository.UserSettingsRepository;
 import cn.xu.service.security.LoginSecurityService;
 import cn.xu.service.security.VerificationCodeService;
 import cn.xu.support.exception.BusinessException;
@@ -34,9 +37,10 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service("userService")
 @RequiredArgsConstructor
-public class UserServiceImpl implements IUserService {
+public class UserServiceImpl implements UserService {
 
-    private final IUserRepository userRepository;
+    private final UserRepository userRepository;
+    private final UserSettingsRepository userSettingsRepository;
     private final FileStorageService fileStorageService;
     private final UserEventPublisher userEventPublisher;
     private final UserRankingCacheRepository userRankingCacheRepository;
@@ -247,13 +251,20 @@ public class UserServiceImpl implements IUserService {
         String trimmedEmail = email.trim().toLowerCase();
 
         try {
-            // 1. 验证验证码
-            verificationCodeService.verifyCodeOrThrow(trimmedEmail, code, VerificationCodeService.CodeScene.LOGIN);
+            // 1. 验证验证码（优先检查LOGIN场景，兼容GENERAL场景）
+            boolean verified = verificationCodeService.verifyCode(trimmedEmail, code, VerificationCodeService.CodeScene.LOGIN);
+            if (!verified) {
+                verified = verificationCodeService.verifyCode(trimmedEmail, code, VerificationCodeService.CodeScene.GENERAL);
+            }
+            if (!verified) {
+                throw new BusinessException(40004, "验证码错误或已过期");
+            }
 
-            // 2. 查找用户
+            // 2. 查找用户，不存在则自动注册
             User user = userRepository.findByEmail(trimmedEmail).orElse(null);
             if (user == null) {
-                throw new BusinessException(ResponseCode.USER_NOT_FOUND.getCode(), "用户不存在，请先注册");
+                user = autoRegisterUser(trimmedEmail);
+                log.info("新用户自动注册成功, userId: {}, email: {}", user.getId(), trimmedEmail);
             }
 
             // 3. 检查用户状态
@@ -279,6 +290,57 @@ public class UserServiceImpl implements IUserService {
             log.error("验证码登录失败, email: {}", trimmedEmail, e);
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "登录失败，请稍后重试");
         }
+    }
+    
+    /**
+     * 自动注册用户（验证码登录时用户不存在自动创建）
+     */
+    private User autoRegisterUser(String email) {
+        // 生成用户名：邮箱@前面的部分
+        String emailPrefix = email.substring(0, email.indexOf("@"));
+        String username = emailPrefix;
+        
+        // 检查用户名是否已存在，存在则加随机数
+        int retry = 0;
+        while (userRepository.findByUsername(username).isPresent() && retry < 10) {
+            username = emailPrefix + "_" + (1000 + new java.util.Random().nextInt(9000));
+            retry++;
+        }
+        
+        // 生成昵称：zhizhi_随机数字
+        String nickname = "zhizhi_" + (100000 + new java.util.Random().nextInt(900000));
+        
+        // 生成随机密码（用户可以后续在设置中修改）
+        String randomPassword = java.util.UUID.randomUUID().toString().substring(0, 16);
+        
+        // 创建用户
+        User user = User.builder()
+                .username(username)
+                .email(email)
+                .nickname(nickname)
+                .password(randomPassword)  // 会在User实体中自动加密
+                .status(User.STATUS_NORMAL)
+                .userType(User.USER_TYPE_NORMAL)
+                .followCount(0L)
+                .fansCount(0L)
+                .likeCount(0L)
+                .postCount(0L)
+                .commentCount(0L)
+                .createTime(LocalDateTime.now())
+                .updateTime(LocalDateTime.now())
+                .build();
+        
+        // 加密密码
+        user.encryptPassword();
+        
+        // 保存用户
+        userRepository.save(user);
+        
+        // 创建默认用户设置
+        UserSettings settings = UserSettings.createDefault(user.getId());
+        userSettingsRepository.save(settings);
+        
+        return user;
     }
 
     /**
@@ -926,14 +988,17 @@ public class UserServiceImpl implements IUserService {
      */
     private double calculateRankingScore(User user, String sortType) {
         if (user == null) return 0.0;
-        switch (sortType) {
-            case "fans":
+        
+        UserRankingSortType rankingSortType = UserRankingSortType.fromCode(sortType);
+        
+        switch (rankingSortType) {
+            case FANS:
                 return user.getFansCount() != null ? user.getFansCount().doubleValue() : 0.0;
-            case "likes":
+            case LIKES:
                 return user.getLikeCount() != null ? user.getLikeCount().doubleValue() : 0.0;
-            case "posts":
+            case POSTS:
                 return user.getPostCount() != null ? user.getPostCount().doubleValue() : 0.0;
-            case "comprehensive":
+            case COMPREHENSIVE:
             default:
                 // 综合分数 = 粉丝数*1 + 获赞数*0.5 + 帖子数*2
                 double fans = user.getFansCount() != null ? user.getFansCount() : 0.0;

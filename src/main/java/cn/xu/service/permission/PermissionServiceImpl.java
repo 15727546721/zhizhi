@@ -12,7 +12,7 @@ import cn.xu.model.vo.permission.MenuComponentVO;
 import cn.xu.model.vo.permission.MenuOptionsVO;
 import cn.xu.model.vo.permission.MenuTypeVO;
 import cn.xu.model.vo.permission.RouterVO;
-import cn.xu.repository.IPermissionRepository;
+import cn.xu.repository.PermissionRepository;
 import cn.xu.support.exception.BusinessException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 public class PermissionServiceImpl implements PermissionService {
 
     @Resource
-    private IPermissionRepository permissionRepository;
+    private PermissionRepository permissionRepository;
     @Resource
     private TransactionTemplate transactionTemplate;
     @Resource

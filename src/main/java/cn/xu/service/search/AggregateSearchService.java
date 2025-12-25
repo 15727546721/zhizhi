@@ -11,7 +11,7 @@ import cn.xu.model.vo.search.AggregateSearchVO.TagSearchItem;
 import cn.xu.model.vo.search.AggregateSearchVO.UserSearchItem;
 import cn.xu.service.post.PostService;
 import cn.xu.service.post.TagService;
-import cn.xu.service.user.IUserService;
+import cn.xu.service.user.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -42,7 +42,7 @@ public class AggregateSearchService {
     private TagService tagService;
     
     @Resource(name = "userService")
-    private IUserService userService;
+    private UserService userService;
     
     /**
      * 自定义线程池，用于异步搜索

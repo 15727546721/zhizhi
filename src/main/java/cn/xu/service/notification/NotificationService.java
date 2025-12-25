@@ -1,8 +1,8 @@
 package cn.xu.service.notification;
 
-import cn.xu.event.NotificationEvent;
+import cn.xu.event.events.NotificationEvent;
 import cn.xu.model.entity.Notification;
-import cn.xu.repository.INotificationRepository;
+import cn.xu.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -24,7 +24,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class NotificationService {
 
-    private final INotificationRepository notificationRepository;
+    private final NotificationRepository notificationRepository;
     private final ApplicationEventPublisher eventPublisher;
 
     // ==================== 查询方法 ====================

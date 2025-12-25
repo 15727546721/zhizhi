@@ -13,7 +13,7 @@ import cn.xu.model.entity.UserSettings;
 import cn.xu.model.vo.user.*;
 import cn.xu.service.security.PasswordResetService;
 import cn.xu.service.security.VerificationCodeService;
-import cn.xu.service.user.IUserService;
+import cn.xu.service.user.UserService;
 import cn.xu.service.user.UserProfileService;
 import cn.xu.service.user.UserServiceImpl;
 import cn.xu.service.user.UserSettingsService;
@@ -52,7 +52,7 @@ import java.util.List;
 public class UserController {
 
     @Resource(name = "userService")
-    private IUserService userService;
+    private UserService userService;
 
     @Resource
     private UserSettingsService userSettingsService;
@@ -289,7 +289,7 @@ public class UserController {
     // ==================== 用户设置相关接口 ====================
 
     /**
-     * 获取用户设置（隐私、通知、邮箱验证状态）
+     * 获取用户设置（隐私、通知、私信、邮箱验证状态）
      */
     @GetMapping("/settings")
     @Operation(summary = "获取用户设置")
@@ -310,6 +310,9 @@ public class UserController {
                             .emailNotification(settings.getEmailNotificationBool())
                             .browserNotification(settings.getBrowserNotificationBool())
                             .soundNotification(settings.getSoundNotificationBool())
+                            .build())
+                    .messageSettings(UserSettingsVO.MessageSettingsVO.builder()
+                            .allowStrangerMessage(settings.getAllowStrangerMessageBool())
                             .build())
                     .emailVerified(settings.getEmailVerifiedBool())
                     .build();

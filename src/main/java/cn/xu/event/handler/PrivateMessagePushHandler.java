@@ -3,7 +3,7 @@ package cn.xu.event.handler;
 import cn.xu.config.websocket.WebSocketSessionManager;
 import cn.xu.event.events.DMEvent;
 import cn.xu.model.entity.User;
-import cn.xu.service.user.IUserService;
+import cn.xu.service.user.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
@@ -28,7 +28,7 @@ public class PrivateMessagePushHandler {
 
     private final SimpMessagingTemplate messagingTemplate;
     private final WebSocketSessionManager sessionManager;
-    private final IUserService userService;
+    private final UserService userService;
 
     /**
      * 处理私信发送事件

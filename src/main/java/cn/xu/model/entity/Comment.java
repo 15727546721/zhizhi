@@ -27,6 +27,8 @@ import java.util.List;
 @AllArgsConstructor
 public class Comment implements Serializable {
     
+    private static final long serialVersionUID = 1L;
+    
     // ========== 数据库字段 ==========
     
     /** 评论ID */

@@ -6,7 +6,7 @@ import cn.xu.common.response.PageResponse;
 import cn.xu.common.response.ResponseEntity;
 import cn.xu.model.entity.Post;
 import cn.xu.model.entity.Tag;
-import cn.xu.repository.IPostTagRepository;
+import cn.xu.repository.PostTagRepository;
 import cn.xu.service.post.TagService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -33,7 +33,7 @@ public class TagController {
     private TagService tagService;
 
     @Resource
-    private IPostTagRepository postTagRepository;
+    private PostTagRepository postTagRepository;
 
     /**
      * 获取标签列表

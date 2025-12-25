@@ -2,7 +2,7 @@ package cn.xu.service.user;
 
 import cn.xu.common.ResponseCode;
 import cn.xu.model.entity.User;
-import cn.xu.repository.ICommentRepository;
+import cn.xu.repository.CommentRepository;
 import cn.xu.service.favorite.FavoriteService;
 import cn.xu.service.follow.FollowService;
 import cn.xu.service.post.PostService;
@@ -19,11 +19,11 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class UserProfileService {
 
-    private final IUserService userService;
+    private final UserService userService;
     private final PostService postService;
     private final FollowService followService;
     private final FavoriteService favoriteService;
-    private final ICommentRepository commentRepository;
+    private final CommentRepository commentRepository;
 
     /**
      * 获取用户个人资料

@@ -345,7 +345,7 @@
   </select>
   
   <!-- 批量统计目标的评论数 -->
-  <select id="batchCountByTargetIds" resultType="cn.xu.repository.mapper.CommentMapper$CommentCountResult">
+  <select id="batchCountByTargetIds" resultType="cn.xu.model.dto.comment.CommentCountResult">
     SELECT target_id as targetId, COUNT(*) as count
     FROM comment
     WHERE target_type = #{targetType} AND target_id IN

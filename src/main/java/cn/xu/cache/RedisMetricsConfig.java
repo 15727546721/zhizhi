@@ -1,6 +1,6 @@
 package cn.xu.cache;
 
-import cn.xu.integration.constant.LogConstants;
+import cn.xu.common.constants.LogConstants;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

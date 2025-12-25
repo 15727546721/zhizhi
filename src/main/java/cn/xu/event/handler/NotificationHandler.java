@@ -7,7 +7,7 @@ import cn.xu.event.events.LikeEvent;
 import cn.xu.model.entity.Comment;
 import cn.xu.model.entity.Notification;
 import cn.xu.model.entity.Post;
-import cn.xu.repository.ICommentRepository;
+import cn.xu.repository.CommentRepository;
 import cn.xu.service.notification.NotificationService;
 import cn.xu.service.post.PostService;
 import lombok.RequiredArgsConstructor;
@@ -40,7 +40,7 @@ public class NotificationHandler {
 
     private final NotificationService notificationService;
     private final PostService postService;
-    private final ICommentRepository commentRepository;
+    private final CommentRepository commentRepository;
 
     // ==================== 评论通知 ====================
 

@@ -24,7 +24,7 @@ import cn.xu.service.like.LikeService;
 import cn.xu.service.post.PostService;
 import cn.xu.service.post.PostValidationService;
 import cn.xu.service.post.TagService;
-import cn.xu.service.user.IUserService;
+import cn.xu.service.user.UserService;
 import cn.xu.support.exception.BusinessException;
 import cn.xu.support.util.LoginUserUtil;
 import io.swagger.v3.oas.annotations.Operation;
@@ -63,7 +63,7 @@ public class PostController {
     @Resource
     private TransactionTemplate transactionTemplate;
     @Resource(name = "userService")
-    private IUserService userService;
+    private UserService userService;
     @Resource
     private LikeService likeService;
     @Resource

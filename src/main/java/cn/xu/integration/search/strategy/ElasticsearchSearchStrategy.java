@@ -5,8 +5,8 @@ import cn.xu.model.dto.search.SearchFilter;
 import cn.xu.model.entity.Post;
 import cn.xu.repository.read.elastic.model.PostIndex;
 import cn.xu.repository.read.elastic.repository.PostElasticRepository;
-import cn.xu.service.search.IElasticsearchIndexManager;
-import cn.xu.service.search.ISearchStrategy;
+import cn.xu.service.search.ElasticsearchIndexManager;
+import cn.xu.service.search.SearchStrategy;
 import cn.xu.support.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,7 +44,7 @@ import java.util.stream.Collectors;
 @Component
 @RequiredArgsConstructor
 @ConditionalOnProperty(name = "spring.elasticsearch.enabled", havingValue = "true", matchIfMissing = false)
-public class ElasticsearchSearchStrategy implements ISearchStrategy, IElasticsearchIndexManager {
+public class ElasticsearchSearchStrategy implements SearchStrategy, ElasticsearchIndexManager {
 
     private final PostElasticRepository postElasticRepository;
     private final ElasticsearchOperations elasticsearchOperations;

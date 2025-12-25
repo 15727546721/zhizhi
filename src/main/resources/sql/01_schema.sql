@@ -20,9 +20,9 @@
 -- │ 互动模块（3个）                                              │
 -- │   `like`, favorite, follow                                 │
 -- ├─────────────────────────────────────────────────────────────┤
--- │ 消息模块（6个）                                              │
+-- │ 消息模块（5个）                                              │
 -- │   notification, user_conversation, private_message,        │
--- │   greeting_record, user_message_settings, feedback         │
+-- │   greeting_record, feedback                                │
 -- ├─────────────────────────────────────────────────────────────┤
 -- │ 权限模块（4个）                                              │
 -- │   role, menu, user_role, role_menu                         │
@@ -49,7 +49,6 @@ DROP TABLE IF EXISTS `menu`;
 DROP TABLE IF EXISTS `role`;
 DROP TABLE IF EXISTS `greeting_record`;
 DROP TABLE IF EXISTS `user_conversation`;
-DROP TABLE IF EXISTS `user_message_settings`;
 DROP TABLE IF EXISTS `private_message`;
 DROP TABLE IF EXISTS `notification`;
 DROP TABLE IF EXISTS `feedback`;
@@ -120,12 +119,21 @@ CREATE TABLE `user` (
   KEY `idx_status_type` (`status`, `user_type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户表';
 
--- 1.2 用户设置表
+-- 1.2 用户设置表（合并了通用设置和私信设置）
 CREATE TABLE `user_settings` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '设置ID',
   `user_id` BIGINT UNSIGNED NOT NULL COMMENT '用户ID',
   `profile_visibility` TINYINT NOT NULL DEFAULT 1 COMMENT '资料可见性: 1-公开 2-仅关注者 3-私密',
   `show_online_status` TINYINT NOT NULL DEFAULT 1 COMMENT '显示在线状态: 0-否 1-是',
+  `email_notification` TINYINT NOT NULL DEFAULT 1 COMMENT '邮件通知: 0-关 1-开',
+  `browser_notification` TINYINT NOT NULL DEFAULT 1 COMMENT '浏览器通知: 0-关 1-开',
+  `sound_notification` TINYINT NOT NULL DEFAULT 0 COMMENT '提示音: 0-关 1-开',
+  `allow_stranger_message` TINYINT NOT NULL DEFAULT 1 COMMENT '允许陌生人私信: 0-否 1-是',
+  `email_verified` TINYINT NOT NULL DEFAULT 0 COMMENT '邮箱已验证: 0-否 1-是',
+  `email_verify_token` VARCHAR(255) DEFAULT NULL COMMENT '邮箱验证令牌',
+  `email_verify_expire_time` DATETIME DEFAULT NULL COMMENT '邮箱验证过期时间',
+  `password_reset_token` VARCHAR(255) DEFAULT NULL COMMENT '密码重置令牌',
+  `password_reset_expire_time` DATETIME DEFAULT NULL COMMENT '密码重置过期时间',
   `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
@@ -394,21 +402,7 @@ CREATE TABLE `greeting_record` (
     KEY `idx_target_id` (`target_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='打招呼消息记录表';
 
--- 4.5 用户消息设置表
-CREATE TABLE `user_message_settings` (
-  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `user_id` BIGINT UNSIGNED NOT NULL COMMENT '用户ID',
-  `allow_stranger_message` TINYINT NOT NULL DEFAULT 1 COMMENT '允许陌生人私信: 0-否 1-是',
-  `email_notification` TINYINT NOT NULL DEFAULT 0 COMMENT '邮件通知: 0-关 1-开',
-  `browser_notification` TINYINT NOT NULL DEFAULT 1 COMMENT '浏览器通知: 0-关 1-开',
-  `sound_notification` TINYINT NOT NULL DEFAULT 1 COMMENT '提示音: 0-关 1-开',
-  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uk_user_id` (`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户消息设置表';
-
--- 4.6 用户反馈表
+-- 4.5 用户反馈表
 CREATE TABLE `feedback` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键ID',
   `user_id` BIGINT UNSIGNED NOT NULL COMMENT '用户ID',
@@ -567,11 +561,11 @@ SELECT '
 ✅ 表结构创建完成！
 ============================================
 
-📊 表结构统计（共24个表）：
+📊 表结构统计（共23个表）：
    - 用户模块：4个表 (user, user_settings, user_interested_tag, user_block)
    - 内容模块：4个表 (post, tag, post_tag, comment)
    - 互动模块：3个表 (like, favorite, follow)
-   - 消息模块：6个表 (notification, user_conversation, private_message, greeting_record, user_message_settings, feedback)
+   - 消息模块：5个表 (notification, user_conversation, private_message, greeting_record, feedback)
    - 权限模块：4个表 (role, menu, user_role, role_menu)
    - 文件模块：1个表 (file_record)
    - 举报模块：1个表 (report)

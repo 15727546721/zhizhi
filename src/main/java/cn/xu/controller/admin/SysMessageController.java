@@ -8,7 +8,7 @@ import cn.xu.common.response.PageResponse;
 import cn.xu.common.response.ResponseEntity;
 import cn.xu.model.entity.Notification;
 import cn.xu.model.entity.User;
-import cn.xu.repository.INotificationRepository;
+import cn.xu.repository.NotificationRepository;
 import cn.xu.repository.mapper.NotificationMapper;
 import cn.xu.repository.mapper.UserMapper;
 import cn.xu.service.notification.NotificationService;
@@ -37,7 +37,7 @@ public class SysMessageController {
 
     private final NotificationService notificationService;
     private final NotificationMapper notificationMapper;
-    private final INotificationRepository notificationRepository;
+    private final NotificationRepository notificationRepository;
     private final UserMapper userMapper;
 
     /**

@@ -1,6 +1,6 @@
 package cn.xu.cache;
 
-import cn.xu.common.constant.CommentType;
+import cn.xu.common.constants.CommentType;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 

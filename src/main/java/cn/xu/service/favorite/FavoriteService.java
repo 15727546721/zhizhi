@@ -4,7 +4,7 @@ import cn.xu.cache.FavoriteCacheRepository;
 import cn.xu.event.publisher.SocialEventPublisher;
 import cn.xu.model.entity.Favorite;
 import cn.xu.model.entity.Favorite.FavoriteType;
-import cn.xu.repository.IFavoriteRepository;
+import cn.xu.repository.FavoriteRepository;
 import cn.xu.repository.mapper.PostMapper;
 import cn.xu.support.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +25,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 @RequiredArgsConstructor
 public class FavoriteService {
 
-    private final IFavoriteRepository favoriteRepository;
+    private final FavoriteRepository favoriteRepository;
     private final PostMapper postMapper;
     private final FavoriteCacheRepository favoriteCacheRepository;
     private final ApplicationEventPublisher eventPublisher;

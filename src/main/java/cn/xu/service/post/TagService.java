@@ -2,8 +2,8 @@ package cn.xu.service.post;
 
 import cn.xu.model.dto.post.PostTagRelation;
 import cn.xu.model.entity.Tag;
-import cn.xu.repository.IPostTagRepository;
-import cn.xu.repository.ITagRepository;
+import cn.xu.repository.PostTagRepository;
+import cn.xu.repository.TagRepository;
 import cn.xu.support.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,8 +23,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class TagService {
 
-    private final ITagRepository tagRepository;
-    private final IPostTagRepository postTagRepository;
+    private final TagRepository tagRepository;
+    private final PostTagRepository postTagRepository;
 
     // ==================== 标签CRUD ====================
 

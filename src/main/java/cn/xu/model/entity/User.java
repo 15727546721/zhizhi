@@ -20,6 +20,8 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class User implements Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     // ========== 状态常量 ==========
     
     /** 正常状态 */

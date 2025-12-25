@@ -5,7 +5,7 @@ import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.common.ResponseCode;
 import cn.xu.common.annotation.ApiOperationLog;
 import cn.xu.common.response.ResponseEntity;
-import cn.xu.model.vo.FollowUserVO;
+import cn.xu.model.vo.follow.FollowUserVO;
 import cn.xu.service.follow.FollowService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

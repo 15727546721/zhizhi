@@ -1,6 +1,7 @@
 package cn.xu.repository.mapper;
 
-import cn.xu.common.constant.CommentSortType;
+import cn.xu.common.constants.CommentSortType;
+import cn.xu.model.dto.comment.CommentCountResult;
 import cn.xu.model.entity.Comment;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -251,26 +252,4 @@ public interface CommentMapper {
      * @return 作者ID
      */
     Long getAuthorId(@Param("commentId") Long commentId);
-    
-    class CommentCountResult {
-        private Long targetId;
-        private Long count;
-        
-        // Getters and Setters
-        public Long getTargetId() {
-            return targetId;
-        }
-        
-        public void setTargetId(Long targetId) {
-            this.targetId = targetId;
-        }
-        
-        public Long getCount() {
-            return count;
-        }
-        
-        public void setCount(Long count) {
-            this.count = count;
-        }
-    }
 }

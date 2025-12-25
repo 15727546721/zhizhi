@@ -2,7 +2,7 @@ package cn.xu.service.user;
 
 import cn.xu.common.ResponseCode;
 import cn.xu.model.entity.UserSettings;
-import cn.xu.repository.IUserSettingsRepository;
+import cn.xu.repository.UserSettingsRepository;
 import cn.xu.support.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,16 +13,14 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 
 /**
- * 用户设置服务
- * <p>负责用户设置的获取、更新等功能</p>
- 
+ * 用户设置服务（合并了通用设置和私信设置）
  */
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class UserSettingsService {
 
-    private final IUserSettingsRepository settingsRepository;
+    private final UserSettingsRepository settingsRepository;
 
     /**
      * 获取或创建默认用户设置
@@ -69,6 +67,17 @@ public class UserSettingsService {
         settingsRepository.update(settings);
         log.info("更新通知设置 - userId: {}", userId);
     }
+    
+    /**
+     * 更新私信设置
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void updateMessageSettings(Long userId, Boolean allowStrangerMessage) {
+        UserSettings settings = getOrCreateDefaultSettings(userId);
+        settings.updateMessageSettings(allowStrangerMessage);
+        settingsRepository.update(settings);
+        log.info("更新私信设置 - userId: {}", userId);
+    }
 
     /**
      * 设置邮箱验证Token
@@ -97,5 +106,13 @@ public class UserSettingsService {
 
         settingsRepository.clearEmailVerifyToken(settings.getUserId());
         log.info("邮箱验证成功 - userId: {}", settings.getUserId());
+    }
+    
+    /**
+     * 检查是否允许陌生人私信
+     */
+    public boolean isAllowStrangerMessage(Long userId) {
+        UserSettings settings = getOrCreateDefaultSettings(userId);
+        return settings.getAllowStrangerMessageBool();
     }
 }

@@ -9,7 +9,7 @@ import cn.xu.common.response.PageResponse;
 import cn.xu.common.response.ResponseEntity;
 import cn.xu.model.dto.user.SysUserRequest;
 import cn.xu.model.entity.User;
-import cn.xu.service.user.IUserService;
+import cn.xu.service.user.UserService;
 import cn.xu.support.exception.BusinessException;
 import cn.xu.support.util.LoginUserUtil;
 import io.swagger.v3.oas.annotations.Operation;
@@ -34,7 +34,7 @@ import java.util.List;
 public class SysUserController {
 
     @Resource
-    private IUserService userService;
+    private UserService userService;
 
     /**
      * 获取用户列表

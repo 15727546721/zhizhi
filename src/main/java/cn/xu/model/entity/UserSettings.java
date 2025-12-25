@@ -9,7 +9,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * 用户设置PO（充血模型）
+ * 用户设置实体（合并了通用设置和私信设置）
  */
 @Data
 @Builder
@@ -36,6 +36,9 @@ public class UserSettings implements Serializable {
     
     /** 消息提示音: 0-关闭 1-开启 */
     private Integer soundNotification;
+    
+    /** 允许陌生人私信: 0-不允许 1-允许 */
+    private Integer allowStrangerMessage;
     
     /** 邮箱是否已验证: 0-未验证 1-已验证 */
     private Integer emailVerified;
@@ -64,12 +67,13 @@ public class UserSettings implements Serializable {
         LocalDateTime now = LocalDateTime.now();
         return UserSettings.builder()
                 .userId(userId)
-                .profileVisibility(1)      // 默认公开
-                .showOnlineStatus(1)       // 默认显示在线状态
-                .emailNotification(1)      // 默认开启邮件通知
-                .browserNotification(1)    // 默认开启浏览器通知
-                .soundNotification(0)      // 默认关闭提示音
-                .emailVerified(0)          // 默认未验证
+                .profileVisibility(1)        // 默认公开
+                .showOnlineStatus(1)         // 默认显示在线状态
+                .emailNotification(1)        // 默认开启邮件通知
+                .browserNotification(1)      // 默认开启浏览器通知
+                .soundNotification(0)        // 默认关闭提示音
+                .allowStrangerMessage(1)     // 默认允许陌生人私信
+                .emailVerified(0)            // 默认未验证
                 .createTime(now)
                 .updateTime(now)
                 .build();
@@ -103,6 +107,16 @@ public class UserSettings implements Serializable {
         }
         this.updateTime = LocalDateTime.now();
     }
+    
+    /**
+     * 更新私信设置
+     */
+    public void updateMessageSettings(Boolean allowStrangerMessage) {
+        if (allowStrangerMessage != null) {
+            this.allowStrangerMessage = allowStrangerMessage ? 1 : 0;
+        }
+        this.updateTime = LocalDateTime.now();
+    }
 
     /**
      * 检查邮箱验证令牌是否有效
@@ -124,7 +138,7 @@ public class UserSettings implements Serializable {
         return LocalDateTime.now().isBefore(passwordResetExpireTime);
     }
 
-    // ========== Getter方法 ==========
+    // ========== Boolean Getter方法 ==========
     
     public Boolean getShowOnlineStatusBool() {
         return showOnlineStatus != null && showOnlineStatus == 1;
@@ -140,6 +154,10 @@ public class UserSettings implements Serializable {
 
     public Boolean getSoundNotificationBool() {
         return soundNotification != null && soundNotification == 1;
+    }
+    
+    public Boolean getAllowStrangerMessageBool() {
+        return allowStrangerMessage != null && allowStrangerMessage == 1;
     }
 
     public Boolean getEmailVerifiedBool() {

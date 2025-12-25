@@ -6,7 +6,7 @@ import cn.xu.common.annotation.ApiOperationLog;
 import cn.xu.common.response.ResponseEntity;
 import cn.xu.model.dto.user.LoginFormRequest;
 import cn.xu.model.entity.User;
-import cn.xu.service.user.IUserService;
+import cn.xu.service.user.UserService;
 import cn.xu.support.exception.BusinessException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -30,7 +30,7 @@ import javax.annotation.Resource;
 public class SysLoginController {
 
     @Resource(name = "userService")
-    private IUserService userService;
+    private UserService userService;
 
     /**
      * 后台管理登录

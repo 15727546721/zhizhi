@@ -4,9 +4,9 @@ import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.common.ResponseCode;
 import cn.xu.common.annotation.ApiOperationLog;
 import cn.xu.common.response.ResponseEntity;
-import cn.xu.model.dto.UpdateUserMessageSettingsDTO;
-import cn.xu.model.entity.UserMessageSettings;
-import cn.xu.model.vo.UserMessageSettingsVO;
+import cn.xu.model.dto.message.UpdateUserMessageSettingsRequest;
+import cn.xu.model.entity.UserSettings;
+import cn.xu.model.vo.message.UserMessageSettingsVO;
 import cn.xu.service.message.UserMessageSettingsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -16,11 +16,6 @@ import org.springframework.web.bind.annotation.*;
 
 /**
  * 用户消息设置控制器
- * 
- * <p>提供用户私信设置的查询和修改接口</p>
- *
- * @author xu
- * @since 2024-12-08
  */
 @Slf4j
 @Tag(name = "用户消息设置", description = "用户私信设置相关API")
@@ -33,8 +28,6 @@ public class UserMessageSettingsController {
 
     /**
      * 获取当前用户的消息设置
-     * 
-     * @return 用户消息设置
      */
     @Operation(summary = "获取消息设置")
     @GetMapping("/message")
@@ -42,7 +35,7 @@ public class UserMessageSettingsController {
     public ResponseEntity<UserMessageSettingsVO> getMessageSettings() {
         try {
             Long userId = StpUtil.getLoginIdAsLong();
-            UserMessageSettings settings = userMessageSettingsService.getSettings(userId);
+            UserSettings settings = userMessageSettingsService.getSettings(userId);
             
             UserMessageSettingsVO vo = convertToVO(settings);
             
@@ -61,23 +54,15 @@ public class UserMessageSettingsController {
 
     /**
      * 更新当前用户的消息设置
-     * 
-     * @param dto 更新请求
-     * @return 操作结果
      */
     @Operation(summary = "更新消息设置")
     @PutMapping("/message")
     @ApiOperationLog(description = "更新消息设置")
-    public ResponseEntity<Void> updateMessageSettings(@RequestBody UpdateUserMessageSettingsDTO dto) {
+    public ResponseEntity<Void> updateMessageSettings(@RequestBody UpdateUserMessageSettingsRequest dto) {
         try {
             Long userId = StpUtil.getLoginIdAsLong();
             
-            userMessageSettingsService.updateSettings(
-                    userId,
-                    dto.getAllowStrangerMessage(),
-                    dto.getAllowNonMutualFollowMessage(),
-                    dto.getMessageNotificationEnabled()
-            );
+            userMessageSettingsService.updateSettings(userId, dto.getAllowStrangerMessage());
             
             log.info("用户{}更新消息设置成功", userId);
             
@@ -96,8 +81,6 @@ public class UserMessageSettingsController {
 
     /**
      * 重置消息设置为默认值
-     * 
-     * @return 重置后的设置
      */
     @Operation(summary = "重置消息设置")
     @PostMapping("/message/reset")
@@ -106,9 +89,9 @@ public class UserMessageSettingsController {
         try {
             Long userId = StpUtil.getLoginIdAsLong();
             
-            // 重置为默认值：全部开启
-            userMessageSettingsService.updateSettings(userId, true, true, true);
-            UserMessageSettings settings = userMessageSettingsService.getSettings(userId);
+            // 重置为默认值：允许陌生人私信
+            userMessageSettingsService.updateSettings(userId, true);
+            UserSettings settings = userMessageSettingsService.getSettings(userId);
             
             log.info("用户{}重置消息设置成功", userId);
             
@@ -126,14 +109,10 @@ public class UserMessageSettingsController {
         }
     }
 
-    // ==================== 私有方法 ====================
-
-    private UserMessageSettingsVO convertToVO(UserMessageSettings settings) {
+    private UserMessageSettingsVO convertToVO(UserSettings settings) {
         UserMessageSettingsVO vo = new UserMessageSettingsVO();
         vo.setUserId(settings.getUserId());
-        vo.setAllowStrangerMessage(settings.isAllowStrangerMessage());
-        vo.setAllowNonMutualFollowMessage(settings.isAllowNonMutualFollowMessage());
-        vo.setMessageNotificationEnabled(settings.isMessageNotificationEnabled());
+        vo.setAllowStrangerMessage(settings.getAllowStrangerMessageBool());
         return vo;
     }
 }

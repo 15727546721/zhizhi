@@ -1,7 +1,7 @@
 package cn.xu.repository.read.elastic.init;
 
 import cn.xu.model.entity.Comment;
-import cn.xu.repository.ICommentRepository;
+import cn.xu.repository.CommentRepository;
 import cn.xu.repository.read.elastic.model.CommentIndex;
 import cn.xu.repository.read.elastic.repository.CommentElasticRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 @ConditionalOnProperty(name = "spring.elasticsearch.enabled", havingValue = "true", matchIfMissing = false)
 public class CommentDataInitializer implements ApplicationRunner {
 
-    private final ICommentRepository commentRepository;
+    private final CommentRepository commentRepository;
     private final CommentElasticRepository commentElasticRepository;
 
     @Override

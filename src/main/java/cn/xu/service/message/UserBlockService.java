@@ -1,7 +1,7 @@
 package cn.xu.service.message;
 
 import cn.xu.model.entity.UserBlock;
-import cn.xu.repository.IUserBlockRepository;
+import cn.xu.repository.UserBlockRepository;
 import cn.xu.support.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +19,7 @@ import java.util.List;
 @Slf4j
 public class UserBlockService {
 
-    private final IUserBlockRepository userBlockRepository;
+    private final UserBlockRepository userBlockRepository;
 
     // ==================== 屏蔽管理 ====================
 

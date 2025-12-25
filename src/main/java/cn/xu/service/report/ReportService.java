@@ -6,11 +6,11 @@ import cn.xu.model.dto.report.ReportRequest;
 import cn.xu.model.entity.*;
 import cn.xu.model.vo.report.ReportDetailVO;
 import cn.xu.model.vo.report.ReportVO;
-import cn.xu.repository.ICommentRepository;
+import cn.xu.repository.CommentRepository;
 import cn.xu.repository.mapper.ReportMapper;
 import cn.xu.service.notification.NotificationService;
 import cn.xu.service.post.PostService;
-import cn.xu.service.user.IUserService;
+import cn.xu.service.user.UserService;
 import cn.xu.support.exception.BusinessException;
 import com.alibaba.fastjson2.JSON;
 import lombok.RequiredArgsConstructor;
@@ -34,9 +34,9 @@ import java.util.stream.Collectors;
 public class ReportService {
 
     private final ReportMapper reportMapper;
-    private final IUserService userService;
+    private final UserService userService;
     private final PostService postService;
-    private final ICommentRepository commentRepository;
+    private final CommentRepository commentRepository;
     private final NotificationService notificationService;
 
     // ==================== 用户端接口 ====================

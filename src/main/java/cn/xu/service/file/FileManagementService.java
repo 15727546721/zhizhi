@@ -3,7 +3,7 @@ package cn.xu.service.file;
 import cn.xu.integration.file.service.FileStorageService;
 import cn.xu.integration.file.service.FileUrlService;
 import cn.xu.model.entity.FileRecord;
-import cn.xu.repository.impl.FileRecordRepository;
+import cn.xu.repository.FileRecordRepository;
 import cn.xu.support.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;

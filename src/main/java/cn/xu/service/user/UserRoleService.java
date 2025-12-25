@@ -1,7 +1,7 @@
 package cn.xu.service.user;
 
 import cn.xu.config.satoken.UserPermission;
-import cn.xu.repository.IUserRepository;
+import cn.xu.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -20,7 +20,7 @@ import java.util.List;
 public class UserRoleService {
     
     @Resource
-    private IUserRepository userRepository;
+    private UserRepository userRepository;
     
     @Resource
     private UserPermission userPermission;

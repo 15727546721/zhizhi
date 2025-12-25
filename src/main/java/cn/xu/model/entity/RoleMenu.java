@@ -16,6 +16,8 @@ import java.io.Serializable;
 @AllArgsConstructor
 public class RoleMenu implements Serializable {
     
+    private static final long serialVersionUID = 1L;
+    
     /**
      * 关系唯一标识符
      */

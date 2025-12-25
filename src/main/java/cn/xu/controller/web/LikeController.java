@@ -5,8 +5,8 @@ import cn.xu.common.ResponseCode;
 import cn.xu.common.annotation.ApiOperationLog;
 import cn.xu.common.response.PageResponse;
 import cn.xu.common.response.ResponseEntity;
-import cn.xu.model.dto.like.LikeCountResponse;
 import cn.xu.model.dto.like.LikeRequest;
+import cn.xu.model.vo.like.LikeStatusVO;
 import cn.xu.model.entity.Comment;
 import cn.xu.model.entity.Like;
 import cn.xu.model.entity.Post;
@@ -183,7 +183,7 @@ public class LikeController {
     @Operation(summary = "获取点赞数")
     @GetMapping("/count")
     @ApiOperationLog(description = "获取点赞数")
-    public ResponseEntity<LikeCountResponse> getLikeCount(
+    public ResponseEntity<LikeStatusVO> getLikeCount(
             @Parameter(description = "目标ID") @RequestParam Long targetId,
             @Parameter(description = "点赞类型") @RequestParam String type) {
         try {
@@ -200,15 +200,15 @@ public class LikeController {
                 log.debug("用户未登录，不返回点赞状态");
             }
             
-            LikeCountResponse response = new LikeCountResponse(targetId, type, count, liked);
-            return ResponseEntity.<LikeCountResponse>builder()
+            LikeStatusVO response = new LikeStatusVO(targetId, type, count, liked);
+            return ResponseEntity.<LikeStatusVO>builder()
                     .code(ResponseCode.SUCCESS.getCode())
                     .info(ResponseCode.SUCCESS.getMessage())
                     .data(response)
                     .build();
         } catch (Exception e) {
             log.error("获取点赞数异常", e);
-            return ResponseEntity.<LikeCountResponse>builder()
+            return ResponseEntity.<LikeStatusVO>builder()
                     .code(ResponseCode.UN_ERROR.getCode())
                     .info("查询失败，请稍后重试")
                     .build();
@@ -227,7 +227,7 @@ public class LikeController {
     @Operation(summary = "批量获取点赞数")
     @PostMapping("/counts")
     @ApiOperationLog(description = "批量获取点赞数")
-    public ResponseEntity<List<LikeCountResponse>> getLikeCounts(
+    public ResponseEntity<List<LikeStatusVO>> getLikeCounts(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "点赞请求列表") @RequestBody List<LikeRequest> requests) {
         try {
             // 从登录上下文获取用户ID，确保安全性
@@ -239,7 +239,7 @@ public class LikeController {
             }
             
             final Long finalUserId = userId; // 用于lambda表达式
-            List<LikeCountResponse> responses = requests.stream()
+            List<LikeStatusVO> responses = requests.stream()
                     .map(request -> {
                         Like.LikeType likeType = parseLikeType(request.getType());
                         Long count = likeService.getLikeCount(
@@ -256,7 +256,7 @@ public class LikeController {
                             );
                         }
                         
-                        return new LikeCountResponse(
+                        return new LikeStatusVO(
                                 request.getTargetId(), 
                                 request.getType(), 
                                 count, 
@@ -265,14 +265,14 @@ public class LikeController {
                     })
                     .collect(Collectors.toList());
                     
-            return ResponseEntity.<List<LikeCountResponse>>builder()
+            return ResponseEntity.<List<LikeStatusVO>>builder()
                     .code(ResponseCode.SUCCESS.getCode())
                     .info(ResponseCode.SUCCESS.getMessage())
                     .data(responses)
                     .build();
         } catch (Exception e) {
             log.error("批量获取点赞数异常", e);
-            return ResponseEntity.<List<LikeCountResponse>>builder()
+            return ResponseEntity.<List<LikeStatusVO>>builder()
                     .code(ResponseCode.UN_ERROR.getCode())
                     .info("查询失败，请稍后重试")
                     .build();

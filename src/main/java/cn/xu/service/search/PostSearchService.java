@@ -6,8 +6,9 @@ import cn.xu.integration.search.strategy.MysqlSearchStrategy;
 import cn.xu.model.dto.search.SearchFilter;
 import cn.xu.model.entity.Post;
 import cn.xu.model.entity.User;
+import cn.xu.model.enums.SearchStrategyType;
 import cn.xu.model.vo.post.PostSearchResponseVO;
-import cn.xu.service.user.IUserService;
+import cn.xu.service.user.UserService;
 import cn.xu.support.exception.BusinessException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,7 +35,7 @@ public class PostSearchService {
 
     // 必需依赖 - 构造器注入
     private final MysqlSearchStrategy mysqlStrategy;
-    private final IUserService userService;
+    private final UserService userService;
 
     // 可选依赖 - setter 注入
     private ElasticsearchSearchStrategy esStrategy;
@@ -50,14 +51,14 @@ public class PostSearchService {
     @Value("${app.post.query.cache.ttl:300}")
     private int cacheTtlSeconds; // 缓存失效时间，单位秒
 
-    private ISearchStrategy currentStrategy;
+    private SearchStrategy currentStrategy;
     private boolean esAvailable = false;
 
     // ==================== 构造方法 ====================
 
     public PostSearchService(
             MysqlSearchStrategy mysqlStrategy,
-            IUserService userService
+            UserService userService
     ) {
         this.mysqlStrategy = mysqlStrategy;
         this.userService = userService;
@@ -95,13 +96,15 @@ public class PostSearchService {
     }
 
     private void selectStrategy() {
-        if ("mysql".equals(preferredStrategy)) {
+        SearchStrategyType strategyType = SearchStrategyType.fromCode(preferredStrategy);
+        
+        if (strategyType == SearchStrategyType.MYSQL) {
             currentStrategy = mysqlStrategy;
             log.info("使用MySQL搜索策略");
             return;
         }
 
-        if ("elasticsearch".equals(preferredStrategy) && esAvailable) {
+        if (strategyType == SearchStrategyType.ELASTICSEARCH && esAvailable) {
             currentStrategy = esStrategy;
             log.info("使用Elasticsearch搜索策略");
             return;
@@ -271,10 +274,12 @@ public class PostSearchService {
     }
 
     public void switchStrategy(String strategyName) {
-        if ("elasticsearch".equals(strategyName) && esAvailable) {
+        SearchStrategyType strategyType = SearchStrategyType.fromCode(strategyName);
+        
+        if (strategyType == SearchStrategyType.ELASTICSEARCH && esAvailable) {
             currentStrategy = esStrategy;
             log.info("切换到Elasticsearch策略");
-        } else if ("mysql".equals(strategyName)) {
+        } else if (strategyType == SearchStrategyType.MYSQL) {
             currentStrategy = mysqlStrategy;
             log.info("切换到MySQL策略");
         } else {

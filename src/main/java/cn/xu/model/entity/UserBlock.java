@@ -18,6 +18,8 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class UserBlock implements Serializable {
     
+    private static final long serialVersionUID = 1L;
+    
     /**
      * 屏蔽关系ID
      */

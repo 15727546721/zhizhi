@@ -1,7 +1,7 @@
 package cn.xu.service.comment;
 
-import cn.xu.common.constant.CommentSortType;
-import cn.xu.common.constant.CommentType;
+import cn.xu.common.constants.CommentSortType;
+import cn.xu.common.constants.CommentType;
 import cn.xu.event.publisher.SocialEventPublisher;
 import cn.xu.model.dto.comment.FindCommentRequest;
 import cn.xu.model.dto.comment.FindReplyRequest;
@@ -9,13 +9,13 @@ import cn.xu.model.dto.comment.SaveCommentRequest;
 import cn.xu.model.entity.Comment;
 import cn.xu.model.entity.Notification;
 import cn.xu.model.entity.User;
-import cn.xu.repository.ICommentRepository;
+import cn.xu.repository.CommentRepository;
 import cn.xu.repository.mapper.PostMapper;
 import cn.xu.repository.mapper.UserMapper;
 import cn.xu.service.file.FileManagementService;
 import cn.xu.service.follow.FollowService;
 import cn.xu.service.notification.NotificationService;
-import cn.xu.service.user.IUserService;
+import cn.xu.service.user.UserService;
 import cn.xu.support.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,9 +37,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class CommentService {
 
-    private final ICommentRepository commentRepository;
+    private final CommentRepository commentRepository;
     private final SocialEventPublisher socialEventPublisher;
-    private final IUserService IUserService;
+    private final UserService userService;
     private final RedisTemplate<String, Object> redisTemplate;
     private final FileManagementService fileManagementService;
     private final PostMapper postMapper;
@@ -361,7 +361,7 @@ public class CommentService {
                 .collect(Collectors.toSet());
 
         if (!userIds.isEmpty()) {
-            Map<Long, User> userMap = IUserService.findUserInfo(userIds);
+            Map<Long, User> userMap = userService.findUserInfo(userIds);
             comments.forEach(comment -> {
                 if (comment.getUserId() != null) {
                     comment.setUser(userMap.get(comment.getUserId()));

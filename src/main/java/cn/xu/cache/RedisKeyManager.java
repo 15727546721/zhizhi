@@ -1,6 +1,6 @@
 package cn.xu.cache;
 
-import cn.xu.common.constant.CommentType;
+import cn.xu.common.constants.CommentType;
 import cn.xu.model.entity.Like;
 
 import java.util.Arrays;

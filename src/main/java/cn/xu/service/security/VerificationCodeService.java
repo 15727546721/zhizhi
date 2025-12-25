@@ -95,8 +95,17 @@ public class VerificationCodeService {
 
         // 2. 检查每日发送次数限制
         String dailyCountKey = KEY_PREFIX_DAILY_COUNT + sceneCode + ":" + trimmedEmail;
-        Object countObj = redisService.get(dailyCountKey);
-        int currentCount = countObj != null ? Integer.parseInt(countObj.toString()) : 0;
+        int currentCount = 0;
+        try {
+            Object countObj = redisService.get(dailyCountKey);
+            if (countObj != null) {
+                currentCount = Integer.parseInt(countObj.toString());
+            }
+        } catch (NumberFormatException e) {
+            // 旧数据格式不对，删除重新计数
+            redisService.del(dailyCountKey);
+            currentCount = 0;
+        }
         if (currentCount >= DAILY_SEND_LIMIT) {
             throw new BusinessException(40003, "今日发送次数已达上限，请明天再试");
         }
@@ -112,12 +121,10 @@ public class VerificationCodeService {
         redisService.set(intervalKey, "1", SEND_INTERVAL_SECONDS);
 
         // 6. 增加每日发送计数
-        if (currentCount == 0) {
+        long newCount = redisService.incr(dailyCountKey, 1);
+        if (newCount == 1) {
             // 第一次发送，设置24小时过期
-            redisService.set(dailyCountKey, "1", 86400);
-        } else {
-            // 增加计数
-            redisService.incr(dailyCountKey, 1);
+            redisService.expire(dailyCountKey, 86400);
         }
 
         // 7. 发送邮件

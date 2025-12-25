@@ -1,7 +1,7 @@
 package cn.xu.service.message;
 
 import cn.xu.model.entity.SystemConfig;
-import cn.xu.repository.ISystemConfigRepository;
+import cn.xu.repository.SystemConfigRepository;
 import cn.xu.support.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +19,7 @@ import java.util.*;
 @Slf4j
 public class SystemConfigService {
 
-    private final ISystemConfigRepository configRepository;
+    private final SystemConfigRepository configRepository;
 
     /**
      * 允许通过API修改的配置键白名单

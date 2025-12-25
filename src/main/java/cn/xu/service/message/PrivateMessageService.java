@@ -4,13 +4,13 @@ import cn.xu.event.publisher.MessageEventPublisher;
 import cn.xu.model.entity.PrivateMessage;
 import cn.xu.model.entity.User;
 import cn.xu.model.entity.UserConversation;
-import cn.xu.model.vo.ConversationListVO;
-import cn.xu.repository.IGreetingRecordRepository;
-import cn.xu.repository.IPrivateMessageRepository;
-import cn.xu.repository.IUserBlockRepository;
-import cn.xu.repository.IUserConversationRepository;
+import cn.xu.model.vo.message.ConversationListVO;
+import cn.xu.repository.GreetingRecordRepository;
+import cn.xu.repository.PrivateMessageRepository;
+import cn.xu.repository.UserBlockRepository;
+import cn.xu.repository.UserConversationRepository;
 import cn.xu.service.follow.FollowService;
-import cn.xu.service.user.IUserService;
+import cn.xu.service.user.UserService;
 import cn.xu.support.exception.BusinessException;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -41,11 +41,11 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class PrivateMessageService {
 
-    private final IUserConversationRepository conversationRepository;
-    private final IPrivateMessageRepository messageRepository;
-    private final IUserBlockRepository userBlockRepository;
-    private final IGreetingRecordRepository greetingRecordRepository;
-    private final IUserService userService;
+    private final UserConversationRepository conversationRepository;
+    private final PrivateMessageRepository messageRepository;
+    private final UserBlockRepository userBlockRepository;
+    private final GreetingRecordRepository greetingRecordRepository;
+    private final UserService userService;
     private final FollowService followService;
     private final MessageEventPublisher eventPublisher;
 

@@ -19,6 +19,8 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class SystemConfig implements Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     /**
      * 配置ID
      */

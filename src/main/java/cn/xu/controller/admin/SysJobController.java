@@ -48,7 +48,7 @@ public class SysJobController {
                     .id(2L)
                     .jobName("Redis数据同步")
                     .jobGroup("CACHE")
-                    .invokeTarget("redisSyncService.syncAll()")
+                    .invokeTarget("redisSyncTask.syncAll()")
                     .cronExpression("0 */30 * * * ?")
                     .status(1)
                     .remark("每30分钟同步Redis缓存")

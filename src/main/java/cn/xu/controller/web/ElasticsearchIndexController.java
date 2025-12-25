@@ -4,8 +4,8 @@ import cn.xu.common.ResponseCode;
 import cn.xu.common.response.ResponseEntity;
 import cn.xu.model.entity.Post;
 import cn.xu.service.post.PostService;
-import cn.xu.service.search.IElasticsearchIndexManager;
-import cn.xu.service.search.ISearchStrategy;
+import cn.xu.service.search.ElasticsearchIndexManager;
+import cn.xu.service.search.SearchStrategy;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -33,8 +33,8 @@ import java.util.Set;
 public class ElasticsearchIndexController {
 
     // 依赖接口而非具体实现，符合依赖倒置原则（DIP）
-    private final IElasticsearchIndexManager indexManager;
-    private final ISearchStrategy searchStrategy;
+    private final ElasticsearchIndexManager indexManager;
+    private final SearchStrategy searchStrategy;
     private final PostService postService;
     
     @org.springframework.beans.factory.annotation.Autowired(required = false)
@@ -45,8 +45,8 @@ public class ElasticsearchIndexController {
      * 使用@Qualifier指定注入elasticsearchSearchStrategy而非mysqlSearchStrategy
      */
     public ElasticsearchIndexController(
-            IElasticsearchIndexManager indexManager,
-            @Qualifier("elasticsearchSearchStrategy") ISearchStrategy searchStrategy,
+            ElasticsearchIndexManager indexManager,
+            @Qualifier("elasticsearchSearchStrategy") SearchStrategy searchStrategy,
             PostService postService) {
         this.indexManager = indexManager;
         this.searchStrategy = searchStrategy;

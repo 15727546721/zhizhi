@@ -12,7 +12,7 @@ import cn.xu.model.vo.post.PostListVO;
 import cn.xu.service.follow.FollowService;
 import cn.xu.service.post.PostService;
 import cn.xu.service.post.TagService;
-import cn.xu.service.user.IUserService;
+import cn.xu.service.user.UserService;
 import cn.xu.support.util.LoginUserUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -41,7 +41,7 @@ public class HomeController {
     @Resource(name = "tagService")
     private TagService tagService;
     @Resource(name = "userService")
-    private IUserService userService;
+    private UserService userService;
     @Resource
     private FollowService followService;
 

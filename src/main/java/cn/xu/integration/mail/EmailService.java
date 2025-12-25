@@ -36,7 +36,6 @@ public class EmailService {
      * @param to   收件人邮箱
      * @param code 验证码
      */
-    @Async
     public void sendVerifyCode(String to, String code) {
         String subject = "[" + appName + "] 邮箱验证码";
         String content = buildVerifyCodeContent(code);
@@ -50,7 +49,6 @@ public class EmailService {
      * @param token    重置令牌
      * @param resetUrl 重置链接基础URL
      */
-    @Async
     public void sendPasswordResetEmail(String to, String token, String resetUrl) {
         String subject = "[" + appName + "] 密码重置";
         String content = buildPasswordResetContent(token, resetUrl);
@@ -64,7 +62,6 @@ public class EmailService {
      * @param token      验证令牌
      * @param expiration 过期时间
      */
-    @Async
     public void sendVerificationEmail(String to, String token, java.time.LocalDateTime expiration) {
         String subject = "[" + appName + "] 邮箱验证";
         String content = buildVerificationEmailContent(token, expiration);
@@ -72,7 +69,7 @@ public class EmailService {
     }
 
     /**
-     * 发送欢迎邮件
+     * 发送欢迎邮件（异步，不影响主流程）
      *
      * @param to       收件人邮箱
      * @param nickname 用户昵称

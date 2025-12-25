@@ -3,8 +3,8 @@ package cn.xu.service.post;
 import cn.xu.common.ResponseCode;
 import cn.xu.model.dto.post.PostTagRelation;
 import cn.xu.model.entity.Tag;
-import cn.xu.repository.IPostTagRepository;
-import cn.xu.repository.ITagRepository;
+import cn.xu.repository.PostTagRepository;
+import cn.xu.repository.TagRepository;
 import cn.xu.support.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,8 +24,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PostTagService {
 
-    private final IPostTagRepository postTagRepository;
-    private final ITagRepository tagRepository;
+    private final PostTagRepository postTagRepository;
+    private final TagRepository tagRepository;
 
     public List<PostTagRelation> batchGetTagIdsByPostIds(List<Long> postIds) {
         try {

@@ -3,7 +3,7 @@ package cn.xu.service.security;
 import cn.xu.cache.RedisService;
 import cn.xu.integration.mail.EmailService;
 import cn.xu.model.entity.User;
-import cn.xu.repository.IUserRepository;
+import cn.xu.repository.UserRepository;
 import cn.xu.support.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,7 +26,7 @@ public class PasswordResetService {
 
     private final RedisService redisService;
     private final EmailService emailService;
-    private final IUserRepository userRepository;
+    private final UserRepository userRepository;
     private final VerificationCodeService verificationCodeService;
 
     /** Redis Key前缀 */

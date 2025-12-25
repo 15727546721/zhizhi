@@ -5,7 +5,7 @@ import cn.xu.common.ResponseCode;
 import cn.xu.common.annotation.ApiOperationLog;
 import cn.xu.common.response.ResponseEntity;
 import cn.xu.model.entity.PrivateMessage;
-import cn.xu.model.vo.ConversationListVO;
+import cn.xu.model.vo.message.ConversationListVO;
 import cn.xu.service.message.PrivateMessageService;
 import cn.xu.support.exception.BusinessException;
 import cn.xu.support.util.LoginUserUtil;

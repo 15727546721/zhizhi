@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
@@ -17,7 +18,9 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Feedback {
+public class Feedback implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     // ==================== 反馈类型常量 ====================
     
