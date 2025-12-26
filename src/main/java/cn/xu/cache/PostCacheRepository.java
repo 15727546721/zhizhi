@@ -15,10 +15,6 @@ import java.util.stream.Collectors;
 @Slf4j
 @Repository
 public class PostCacheRepository extends BaseCacheRepository {
-    
-    // TTL配置
-    private static final int DEFAULT_CACHE_TTL = 1800; // 30分钟
-    private static final int EMPTY_RESULT_TTL = 60;    // 1分钟（空结果）
 
     /**
      * 获取热门帖子ID列表
@@ -67,7 +63,7 @@ public class PostCacheRepository extends BaseCacheRepository {
                 }
             });
             
-            expire(redisKey, DEFAULT_CACHE_TTL);
+            expire(redisKey, RedisKeyManager.POST_HOT_RANK_TTL);
             
             log.debug("缓存热门帖子排行成功: key={}, size={}", redisKey, postScores.size());
         } catch (Exception e) {
@@ -80,7 +76,7 @@ public class PostCacheRepository extends BaseCacheRepository {
      */
     public void cacheEmptyResult() {
         String redisKey = RedisKeyManager.postHotRankKey() + ":empty";
-        setValue(redisKey, "1", EMPTY_RESULT_TTL);
+        setValue(redisKey, "1", RedisKeyManager.EMPTY_RESULT_TTL);
     }
 
     /**

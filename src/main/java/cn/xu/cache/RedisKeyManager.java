@@ -1,6 +1,6 @@
 package cn.xu.cache;
 
-import cn.xu.common.constants.CommentType;
+import cn.xu.model.enums.CommentType;
 import cn.xu.model.entity.Like;
 
 import java.util.Arrays;
@@ -424,4 +424,24 @@ public class RedisKeyManager {
      * 空结果过期时间（1分钟）
      */
     public static final int EMPTY_RESULT_TTL = 60;
+
+    /**
+     * 短期空结果过期时间（30秒）- 用于评论等高频更新场景
+     */
+    public static final int SHORT_EMPTY_RESULT_TTL = 30;
+
+    /**
+     * 热门标签空结果过期时间（5分钟）
+     */
+    public static final int TAG_EMPTY_RESULT_TTL = 300;
+
+    /**
+     * 评论缓存过期时间（10分钟）
+     */
+    public static final int COMMENT_TTL = 600;
+
+    /**
+     * 帖子热门排行缓存过期时间（30分钟）
+     */
+    public static final int POST_HOT_RANK_TTL = 1800;
 }

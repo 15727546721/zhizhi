@@ -357,7 +357,7 @@ public class RedisService {
             return;
         }
 
-        String key = "post:view:count:" + postId;
+        String key = RedisKeyManager.postViewCountKey(postId);
         redisTemplate.opsForValue().increment(key, 1);
 
         // 设置过期时间为24小时
@@ -372,7 +372,7 @@ public class RedisService {
             return 0L;
         }
 
-        String key = "post:view:count:" + postId;
+        String key = RedisKeyManager.postViewCountKey(postId);
         Object count = redisTemplate.opsForValue().get(key);
         return count != null ? Long.valueOf(count.toString()) : 0L;
     }

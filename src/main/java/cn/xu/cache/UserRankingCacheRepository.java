@@ -15,10 +15,6 @@ import java.util.stream.Collectors;
 @Slf4j
 @Repository
 public class UserRankingCacheRepository extends BaseCacheRepository {
-    
-    // TTL配置
-    private static final int DEFAULT_CACHE_TTL = 300; // 5分钟（排行榜更新频率较高）
-    private static final int EMPTY_RESULT_TTL = 60;   // 1分钟（空结果）
 
     /**
      * 获取用户排行榜ID列表
@@ -70,7 +66,7 @@ public class UserRankingCacheRepository extends BaseCacheRepository {
                 }
             });
             
-            expire(redisKey, DEFAULT_CACHE_TTL);
+            expire(redisKey, RedisKeyManager.RANKING_TTL);
             
             log.debug("缓存用户排行榜成功: key={}, size={}", redisKey, userScores.size());
         } catch (Exception e) {
@@ -205,7 +201,7 @@ public class UserRankingCacheRepository extends BaseCacheRepository {
      */
     public void cacheEmptyResult(String sortType) {
         String redisKey = RedisKeyManager.userRankingKey(sortType) + ":empty";
-        setValue(redisKey, "1", EMPTY_RESULT_TTL);
+        setValue(redisKey, "1", RedisKeyManager.EMPTY_RESULT_TTL);
     }
 
     /**

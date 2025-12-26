@@ -1,6 +1,6 @@
 package cn.xu.cache;
 
-import cn.xu.common.constants.CommentType;
+import cn.xu.model.enums.CommentType;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 
@@ -16,11 +16,6 @@ import java.util.stream.Collectors;
 @Slf4j
 @Repository
 public class CommentCacheRepository extends BaseCacheRepository {
-    
-    /** 默认缓存TTL：10分钟 */
-    private static final int DEFAULT_CACHE_TTL = 600;
-    /** 空结果缓存TTL：30秒 */
-    private static final int EMPTY_RESULT_TTL = 30;
 
     /**
      * 获取热门评论ID列表
@@ -71,7 +66,7 @@ public class CommentCacheRepository extends BaseCacheRepository {
                 }
             });
             
-            expire(redisKey, DEFAULT_CACHE_TTL);
+            expire(redisKey, RedisKeyManager.COMMENT_TTL);
             log.debug("缓存热门评论排行成功: key={}, size={}", redisKey, commentScores.size());
         } catch (Exception e) {
             log.error("[缓存] 缓存热门评论排行失败 - key: {}", redisKey, e);
@@ -85,7 +80,7 @@ public class CommentCacheRepository extends BaseCacheRepository {
      */
     public void cacheEmptyResult(CommentType commentType, Long targetId) {
         String redisKey = RedisKeyManager.commentHotRankKey(commentType, targetId) + ":empty";
-        setValue(redisKey, "1", EMPTY_RESULT_TTL);
+        setValue(redisKey, "1", RedisKeyManager.SHORT_EMPTY_RESULT_TTL);
     }
 
     /**
@@ -132,7 +127,7 @@ public class CommentCacheRepository extends BaseCacheRepository {
      */
     public void updateCommentCount(int targetType, Long targetId, long increment) {
         String redisKey = RedisKeyManager.commentCountKey(targetType, targetId);
-        incrementCount(redisKey, increment, DEFAULT_CACHE_TTL);
+        incrementCount(redisKey, increment, RedisKeyManager.COMMENT_TTL);
     }
 
     /**

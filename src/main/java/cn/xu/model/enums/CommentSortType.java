@@ -1,12 +1,9 @@
-package cn.xu.common.constants;
+package cn.xu.model.enums;
 
 import lombok.Getter;
 
 /**
  * 评论排序类型枚举
- * 用于指定评论的排序方式
- *
- *
  */
 @Getter
 public enum CommentSortType {
@@ -14,15 +11,8 @@ public enum CommentSortType {
     HOT("like_count", "点赞数"),
     TIME("create_time", "时间排序");
 
-    /**
-     * 排序字段
-     */
-    private String value;
-
-    /**
-     * 排序类型描述
-     */
-    private String desc;
+    private final String value;
+    private final String desc;
 
     CommentSortType(String value, String desc) {
         this.value = value;

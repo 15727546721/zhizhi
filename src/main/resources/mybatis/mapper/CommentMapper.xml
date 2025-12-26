@@ -74,12 +74,6 @@
     from comment
     where id = #{id}
   </delete>
-  <select id="findById" resultMap="BaseResultMap">
-    select
-    <include refid="Base_Column_List"/>
-    from comment
-    where id = #{id}
-  </select>
   <!-- 按热度查询一级评论 -->
   <select id="findRootCommentsByHot" resultMap="BaseResultMap">
     SELECT c.*
@@ -147,18 +141,6 @@
     WHERE target_type = #{targetType}
       AND target_id = #{targetId}
   </delete>
-  <!-- 查询一级评论列表 -->
-  <select id="findRootComments" resultMap="BaseResultMap">
-    SELECT
-    <include refid="Base_Column_List"/>
-    FROM comment
-    WHERE target_id = #{targetId}
-    AND parent_id IS NULL
-    <if test="target_type != null">
-        AND target_type = #{targetType}
-    </if>
-    ORDER BY create_time DESC
-  </select>
   <!-- 分页查询二级评论列表 -->
   <select id="findRepliesByPage" resultMap="BaseResultMap">
     SELECT

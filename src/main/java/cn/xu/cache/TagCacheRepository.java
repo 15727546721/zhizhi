@@ -16,10 +16,6 @@ import java.util.List;
 @Slf4j
 @Repository
 public class TagCacheRepository extends BaseCacheRepository {
-    
-    // TTL配置
-    private static final int DEFAULT_CACHE_TTL = 3600; // 1小时
-    private static final int EMPTY_RESULT_TTL = 300;   // 5分钟（空结果）
 
     /**
      * 获取热门标签
@@ -49,11 +45,11 @@ public class TagCacheRepository extends BaseCacheRepository {
         String redisKey = RedisKeyManager.tagHotKey(timeRange, limit);
         
         if (tags == null || tags.isEmpty()) {
-            setValue(redisKey, Collections.emptyList(), EMPTY_RESULT_TTL);
-            log.debug("缓存空热门标签结果: key={}, ttl={}s", redisKey, EMPTY_RESULT_TTL);
+            setValue(redisKey, Collections.emptyList(), RedisKeyManager.TAG_EMPTY_RESULT_TTL);
+            log.debug("缓存空热门标签结果: key={}, ttl={}s", redisKey, RedisKeyManager.TAG_EMPTY_RESULT_TTL);
         } else {
-            setValue(redisKey, tags, DEFAULT_CACHE_TTL);
-            log.debug("缓存热门标签成功: key={}, count={}, ttl={}s", redisKey, tags.size(), DEFAULT_CACHE_TTL);
+            setValue(redisKey, tags, RedisKeyManager.DEFAULT_TTL);
+            log.debug("缓存热门标签成功: key={}, count={}, ttl={}s", redisKey, tags.size(), RedisKeyManager.DEFAULT_TTL);
         }
     }
 

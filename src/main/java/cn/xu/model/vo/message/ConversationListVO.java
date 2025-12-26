@@ -1,6 +1,6 @@
 package cn.xu.model.vo.message;
 
-import cn.xu.common.constants.ConversationRelationType;
+import cn.xu.model.enums.ConversationRelationType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

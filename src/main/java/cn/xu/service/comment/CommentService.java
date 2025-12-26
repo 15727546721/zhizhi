@@ -1,7 +1,7 @@
 package cn.xu.service.comment;
 
-import cn.xu.common.constants.CommentSortType;
-import cn.xu.common.constants.CommentType;
+import cn.xu.model.enums.CommentSortType;
+import cn.xu.model.enums.CommentType;
 import cn.xu.event.publisher.SocialEventPublisher;
 import cn.xu.model.dto.comment.FindCommentRequest;
 import cn.xu.model.dto.comment.FindReplyRequest;

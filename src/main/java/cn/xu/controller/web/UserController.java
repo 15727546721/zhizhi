@@ -46,7 +46,7 @@ import java.util.List;
  *
  */
 @Slf4j
-@RequestMapping("api/user")
+@RequestMapping("/api/user")
 @RestController
 @Tag(name = "用户接口", description = "用户认证、资料管理、账户安全")
 public class UserController {

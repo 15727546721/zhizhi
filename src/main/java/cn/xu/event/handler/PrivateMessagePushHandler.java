@@ -17,9 +17,6 @@ import java.util.Map;
 
 /**
  * 私信WebSocket推送处理器
- * 
- * <p>监听DMEvent，通过WebSocket实时推送私信通知给用户</p>
- * <p>注意：私信不再创建notification记录，只通过WebSocket推送</p>
  */
 @Slf4j
 @Component
@@ -32,8 +29,6 @@ public class PrivateMessagePushHandler {
 
     /**
      * 处理私信发送事件
-     * 
-     * <p>通过WebSocket推送私信通知给接收者</p>
      */
     @Async
     @EventListener
@@ -44,10 +39,16 @@ public class PrivateMessagePushHandler {
 
         Long receiverId = event.getReceiverId();
         Long senderId = event.getSenderId();
+        
+        log.info("[WebSocket推送] 收到私信事件 sender:{} → receiver:{} messageId:{}", 
+                senderId, receiverId, event.getMessageId());
 
         // 检查接收者是否在线
-        if (!sessionManager.isOnline(receiverId)) {
-            log.debug("[私信推送] 接收者不在线，跳过推送: receiverId={}", receiverId);
+        boolean isOnline = sessionManager.isOnline(receiverId);
+        log.info("[WebSocket推送] 接收者在线状态: receiverId={} isOnline={}", receiverId, isOnline);
+        
+        if (!isOnline) {
+            log.info("[WebSocket推送] 接收者不在线，跳过推送");
             return;
         }
 
@@ -67,23 +68,23 @@ public class PrivateMessagePushHandler {
             message.put("timestamp", LocalDateTime.now().toString());
 
             // 推送给接收者
+            String destination = "/queue/private-message";
             messagingTemplate.convertAndSendToUser(
                     receiverId.toString(),
-                    "/queue/private-message",
+                    destination,
                     message
             );
 
-            log.info("[私信推送] 推送成功: sender={} → receiver={}", senderId, receiverId);
+            log.info("[WebSocket推送] 推送成功 sender:{} → receiver:{} destination:/user/{}{}", 
+                    senderId, receiverId, receiverId, destination);
 
         } catch (Exception e) {
-            log.error("[私信推送] 推送失败: receiverId={}, error={}", receiverId, e.getMessage());
+            log.error("[WebSocket推送] 推送失败 receiverId:{} error:{}", receiverId, e.getMessage(), e);
         }
     }
 
     /**
      * 处理私信已读事件
-     * 
-     * <p>通知发送者消息已被阅读</p>
      */
     @Async
     @EventListener
@@ -92,11 +93,9 @@ public class PrivateMessagePushHandler {
             return;
         }
 
-        // READ事件中：senderId=阅读者, receiverId=对方用户
         Long readerId = event.getSenderId();
         Long otherUserId = event.getReceiverId();
 
-        // 检查对方是否在线
         if (!sessionManager.isOnline(otherUserId)) {
             return;
         }
@@ -113,10 +112,10 @@ public class PrivateMessagePushHandler {
                     message
             );
 
-            log.debug("[私信推送] 已读状态推送: reader={} → other={}", readerId, otherUserId);
+            log.info("[WebSocket推送] 已读状态推送 reader:{} → other:{}", readerId, otherUserId);
 
         } catch (Exception e) {
-            log.error("[私信推送] 已读状态推送失败: error={}", e.getMessage());
+            log.error("[WebSocket推送] 已读状态推送失败: {}", e.getMessage());
         }
     }
 }

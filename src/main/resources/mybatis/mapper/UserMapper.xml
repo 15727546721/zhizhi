@@ -471,6 +471,20 @@
         LIMIT #{limit}
     </select>
     
+    <!-- 搜索用户（聚合搜索使用） -->
+    <select id="searchByKeyword" resultMap="userMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM user
+        WHERE status = 1
+          AND (username LIKE CONCAT('%', #{keyword}, '%') 
+               OR nickname LIKE CONCAT('%', #{keyword}, '%'))
+        ORDER BY 
+            CASE WHEN username LIKE CONCAT(#{keyword}, '%') THEN 0 ELSE 1 END,
+            CASE WHEN nickname LIKE CONCAT(#{keyword}, '%') THEN 0 ELSE 1 END,
+            fans_count DESC
+        LIMIT #{limit}
+    </select>
+    
     <!-- 统计所有用户数 -->
     <select id="countAll" resultType="java.lang.Long">
         SELECT COUNT(*) FROM user

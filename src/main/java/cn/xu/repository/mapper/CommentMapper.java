@@ -1,6 +1,6 @@
 package cn.xu.repository.mapper;
 
-import cn.xu.common.constants.CommentSortType;
+import cn.xu.model.enums.CommentSortType;
 import cn.xu.model.dto.comment.CommentCountResult;
 import cn.xu.model.entity.Comment;
 import org.apache.ibatis.annotations.Mapper;
@@ -10,8 +10,6 @@ import java.util.List;
 
 /**
  * 评论Mapper接口
- * <p>处理评论相关的数据库操作</p>
- 
  */
 @Mapper
 public interface CommentMapper {
@@ -37,8 +35,11 @@ public interface CommentMapper {
 
     /**
      * 根据ID查询评论
+     *
+     * @param id 评论ID
+     * @return 评论实体
      */
-    Comment findById(@Param("id") Long id);
+    Comment selectById(@Param("id") Long id);
 
     // 按热度查询一级评论（带图片）
     List<Comment> findRootCommentsByHot(
@@ -94,15 +95,6 @@ public interface CommentMapper {
     List<Comment> findByParentIds(@Param("parentIds") List<Long> parentIds);
 
     /**
-     * 查询一级评论列表
-     *
-     * @param targetId 目标ID
-     * @param type     评论类型（可选）
-     * @return 一级评论列表
-     */
-    List<Comment> findRootComments(@Param("targetId") Long targetId, @Param("type") Integer type);
-
-    /**
      * 分页查询二级评论列表
      *
      * @param parentId 父评论ID
@@ -113,7 +105,7 @@ public interface CommentMapper {
     List<Comment> findRepliesByPage(@Param("parentId") Long parentId, @Param("offset") int offset, @Param("limit") int limit);
 
     /**
-     * 分页查询一级评论列表
+     * 分页查询一级评论列表（前台用，支持多条件过滤）
      */
     List<Comment> findRootCommentsByPage(@Param("targetType") Integer targetType,
                                          @Param("targetId") Long targetId,
@@ -122,19 +114,11 @@ public interface CommentMapper {
                                          @Param("limit") int limit);
     
     /**
-     * 统计一级评论数（支持多条件过滤）
+     * 统计一级评论数（前台用，支持多条件过滤）
      */
     Long countRootComments(@Param("targetType") Integer targetType,
                            @Param("targetId") Long targetId,
                            @Param("userId") Long userId);
-
-    /**
-     * 根据ID查询评论
-     *
-     * @param id 评论ID
-     * @return 评论实体
-     */
-    Comment selectById(@Param("id") Long id);
 
     /**
      * 根据父评论ID删除所有子评论
