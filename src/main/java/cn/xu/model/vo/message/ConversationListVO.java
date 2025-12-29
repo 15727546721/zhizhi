@@ -1,5 +1,6 @@
 package cn.xu.model.vo.message;
 
+import cn.xu.common.constants.BooleanConstants;
 import cn.xu.model.enums.ConversationRelationType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -78,10 +79,10 @@ public class ConversationListVO {
                 .unreadCount(entity.getUnreadCount() == null ? 0 : entity.getUnreadCount())
                 .lastMessage(entity.getLastMessage())
                 .lastMessageTime(entity.getLastMessageTime())
-                .lastMessageIsMine(entity.getLastMessageIsMine() != null && entity.getLastMessageIsMine() == 1)
-                .isPinned(entity.getIsPinned() != null && entity.getIsPinned() == 1)
-                .isMuted(entity.getIsMuted() != null && entity.getIsMuted() == 1)
-                .isBlocked(entity.getIsBlocked() != null && entity.getIsBlocked() == 1)
+                .lastMessageIsMine(BooleanConstants.isTrue(entity.getLastMessageIsMine()))
+                .isPinned(BooleanConstants.isTrue(entity.getIsPinned()))
+                .isMuted(BooleanConstants.isTrue(entity.getIsMuted()))
+                .isBlocked(BooleanConstants.isTrue(entity.getIsBlocked()))
                 .build();
     }
 }

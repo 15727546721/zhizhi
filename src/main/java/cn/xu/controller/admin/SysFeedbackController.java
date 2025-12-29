@@ -40,7 +40,7 @@ public class SysFeedbackController {
     private final FeedbackMapper feedbackMapper;
     private final UserMapper userMapper;
 
-    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final DateTimeFormatter FORMATTER = cn.xu.common.constants.TimeConstants.DATETIME_FORMATTER;
 
     /**
      * 获取反馈列表

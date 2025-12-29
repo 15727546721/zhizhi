@@ -67,7 +67,7 @@ public class PrivateMessageController {
                 .build();
     }
 
-    @DeleteMapping("/conversations/{userId}")
+    @PostMapping("/conversations/{userId}/delete")
     @SaCheckLogin
     @Operation(summary = "删除会话")
     @ApiOperationLog(description = "删除会话")
@@ -173,7 +173,7 @@ public class PrivateMessageController {
                 .build();
     }
 
-    @DeleteMapping("/{messageId}")
+    @PostMapping("/{messageId}/delete")
     @SaCheckLogin
     @Operation(summary = "删除消息")
     @ApiOperationLog(description = "删除消息")

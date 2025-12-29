@@ -258,7 +258,11 @@ public class PrivateMessageService {
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
             public void afterCommit() {
-                publisher.publishSent(senderId, receiverId, messageId, content, isGreeting);
+                try {
+                    publisher.publishSent(senderId, receiverId, messageId, content, isGreeting);
+                } catch (Exception e) {
+                    log.error("[事件发布] 消息发送事件发布失败 messageId:{}", messageId, e);
+                }
             }
         });
         log.info("[事件发布] 已注册事务同步 messageId:{}", messageId);

@@ -52,7 +52,7 @@ public class AggregateSearchService {
     /**
      * 日期格式化器
      */
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final DateTimeFormatter DATE_FORMATTER = cn.xu.common.constants.TimeConstants.DATETIME_FORMATTER;
 
     /**
      * 默认搜索数量限制
@@ -303,7 +303,7 @@ public class AggregateSearchService {
                 .name(tag.getName())
                 .description(tag.getDescription())
                 .usageCount(tag.getUsageCount() != null ? tag.getUsageCount() : 0)
-                .isRecommended(tag.getIsRecommended() != null && tag.getIsRecommended() == 1)
+                .isRecommended(cn.xu.common.constants.BooleanConstants.isTrue(tag.getIsRecommended()))
                 .build();
     }
     

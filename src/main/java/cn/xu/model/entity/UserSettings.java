@@ -141,26 +141,26 @@ public class UserSettings implements Serializable {
     // ========== Boolean Getter方法 ==========
     
     public Boolean getShowOnlineStatusBool() {
-        return showOnlineStatus != null && showOnlineStatus == 1;
+        return cn.xu.common.constants.BooleanConstants.isTrue(showOnlineStatus);
     }
 
     public Boolean getEmailNotificationBool() {
-        return emailNotification != null && emailNotification == 1;
+        return cn.xu.common.constants.BooleanConstants.isTrue(emailNotification);
     }
 
     public Boolean getBrowserNotificationBool() {
-        return browserNotification != null && browserNotification == 1;
+        return cn.xu.common.constants.BooleanConstants.isTrue(browserNotification);
     }
 
     public Boolean getSoundNotificationBool() {
-        return soundNotification != null && soundNotification == 1;
+        return cn.xu.common.constants.BooleanConstants.isTrue(soundNotification);
     }
     
     public Boolean getAllowStrangerMessageBool() {
-        return allowStrangerMessage != null && allowStrangerMessage == 1;
+        return cn.xu.common.constants.BooleanConstants.isTrue(allowStrangerMessage);
     }
 
     public Boolean getEmailVerifiedBool() {
-        return emailVerified != null && emailVerified == 1;
+        return cn.xu.common.constants.BooleanConstants.isTrue(emailVerified);
     }
 }

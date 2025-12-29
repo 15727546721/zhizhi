@@ -9,7 +9,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -82,7 +82,7 @@ public class SysConfigController {
      * @param config 配置集合
      * @return 更新结果
      */
-    @PutMapping("/api/system/config/update")
+    @PostMapping("/api/system/config/update")
     @Operation(summary = "更新系统配置")
     @SaCheckLogin
     @SaCheckPermission("system:config:update")
@@ -128,7 +128,7 @@ public class SysConfigController {
      * @param config 配置集合
      * @return 更新结果
      */
-    @PutMapping("/api/system/webConfig/update")
+    @PostMapping("/api/system/webConfig/update")
     @Operation(summary = "更新网站配置")
     @SaCheckLogin
     @SaCheckPermission("system:config:update")

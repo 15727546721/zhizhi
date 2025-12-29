@@ -1,6 +1,8 @@
 package cn.xu.config;
 
 import cn.dev33.satoken.interceptor.SaInterceptor;
+import cn.xu.interceptor.VisitStatisticsInterceptor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
@@ -14,7 +16,10 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  *
  */
 @Configuration
+@RequiredArgsConstructor
 public class WebConfig implements WebMvcConfigurer {
+
+    private final VisitStatisticsInterceptor visitStatisticsInterceptor;
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
@@ -36,6 +41,12 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
+        // 访问统计拦截器（优先级最高，确保所有请求都被统计）
+        registry.addInterceptor(visitStatisticsInterceptor)
+                .addPathPatterns("/api/**")
+                .order(0);
+        
+        // Sa-Token 认证拦截器
         registry.addInterceptor(new SaInterceptor())
                 .addPathPatterns("/**")
                 .excludePathPatterns(

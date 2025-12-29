@@ -12,6 +12,7 @@ import cn.xu.model.dto.comment.SaveCommentRequest;
 import cn.xu.model.entity.Comment;
 import cn.xu.model.entity.Like;
 import cn.xu.model.entity.Post;
+import cn.xu.model.enums.UserType;
 import cn.xu.model.vo.comment.CommentVO;
 import cn.xu.service.comment.CommentService;
 import cn.xu.service.like.LikeService;
@@ -151,7 +152,7 @@ public class CommentController {
     /**
      * 删除评论
      */
-    @DeleteMapping("/delete/{id}")
+    @PostMapping("/delete/{id}")
     @SaCheckLogin
     @Operation(summary = "deleteComment")
     public ResponseEntity<String> deleteComment(@PathVariable("id") Long id) {
@@ -272,7 +273,7 @@ public class CommentController {
                 .userId(c.getUserId())
                 .nickname(c.getUser() != null ? c.getUser().getNickname() : null)
                 .avatar(c.getUser() != null ? c.getUser().getAvatar() : null)
-                .userType(c.getUser() != null ? c.getUser().getUserType() : 1)
+                .userType(c.getUser() != null ? c.getUser().getUserType() : UserType.NORMAL.getCode())
                 .likeCount(c.getLikeCount())
                 .replyCount(c.getReplyCount())
                 .isLiked(userLikeMap.getOrDefault(c.getId(), false))

@@ -61,7 +61,7 @@ public class UserBlockController {
     /**
      * 取消拉黑
      */
-    @DeleteMapping("/{userId}")
+    @PostMapping("/unblock/{userId}")
     @SaCheckLogin
     @Operation(summary = "取消拉黑")
     @ApiOperationLog(description = "取消拉黑")

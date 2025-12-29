@@ -49,7 +49,7 @@ public class SysCommentController {
      * @return 删除结果
      */
     @Operation(summary = "管理员删除评论")
-    @DeleteMapping("/delete/{id}")
+    @PostMapping("/delete/{id}")
     @SaCheckLogin
     @SaCheckPermission("system:comment:delete")
     @ApiOperationLog(description = "管理员删除评论")

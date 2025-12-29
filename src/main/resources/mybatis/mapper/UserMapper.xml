@@ -499,4 +499,33 @@
     <select id="selectAllUserIds" resultType="java.lang.Long">
         SELECT id FROM user WHERE status = 1
     </select>
+    
+    <!-- ==================== 统计相关SQL ==================== -->
+    
+    <!-- 统计指定时间之后创建的用户数 -->
+    <select id="countByCreateTimeAfter" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM user WHERE create_time >= #{createTime}
+    </select>
+    
+    <!-- 统计指定时间范围内创建的用户数 -->
+    <select id="countByCreateTimeBetween" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM user WHERE create_time >= #{startTime} AND create_time &lt; #{endTime}
+    </select>
+    
+    <!-- 获取活跃用户排行（用于仪表盘） -->
+    <select id="selectActiveUsers" resultType="java.util.Map">
+        SELECT 
+            id,
+            username,
+            nickname,
+            avatar,
+            post_count AS postCount,
+            comment_count AS commentCount,
+            like_count AS likeCount,
+            fans_count AS fansCount
+        FROM user
+        WHERE status = 1
+        ORDER BY (post_count * 3 + comment_count * 2 + like_count) DESC
+        LIMIT #{limit}
+    </select>
 </mapper>

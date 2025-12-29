@@ -111,4 +111,11 @@
         WHERE user_id = #{userId}
     </select>
 
+    <!-- 按状态统计反馈数量 -->
+    <select id="countByStatus" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM feedback
+        WHERE status = #{status}
+    </select>
+
 </mapper>

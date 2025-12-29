@@ -3,6 +3,7 @@ package cn.xu.service.user;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.cache.UserRankingCacheRepository;
 import cn.xu.common.ResponseCode;
+import cn.xu.common.constants.RoleConstants;
 import cn.xu.common.request.PageRequest;
 import cn.xu.model.dto.user.SysUserRequest;
 import cn.xu.event.publisher.UserEventPublisher;
@@ -13,6 +14,7 @@ import cn.xu.model.dto.user.UserRegisterRequest;
 import cn.xu.model.entity.User;
 import cn.xu.model.entity.UserSettings;
 import cn.xu.model.enums.UserRankingSortType;
+import cn.xu.model.enums.UserType;
 import cn.xu.repository.UserRepository;
 import cn.xu.repository.UserSettingsRepository;
 import cn.xu.service.security.LoginSecurityService;
@@ -1026,36 +1028,33 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public User initAdminUser() {
-        final String ADMIN_USERNAME = "admin";
-        final String ADMIN_PASSWORD = "AdminPassword123!";
-
         try {
             // 查找是否存在admin用户
-            User admin = userRepository.findByUsername(ADMIN_USERNAME).orElse(null);
+            User admin = userRepository.findByUsername(RoleConstants.DEFAULT_ADMIN_USERNAME).orElse(null);
 
             if (admin == null) {
                 // 创建新的admin用户
                 admin = new User();
-                admin.setUsername(ADMIN_USERNAME);
-                admin.setNickname("系统管理员");
-                admin.setEmail("admin@zhizhi.com");
-                admin.setUserType(3); // 3=管理员
+                admin.setUsername(RoleConstants.DEFAULT_ADMIN_USERNAME);
+                admin.setNickname(RoleConstants.DEFAULT_ADMIN_NICKNAME);
+                admin.setEmail(RoleConstants.DEFAULT_ADMIN_EMAIL);
+                admin.setUserType(UserType.ADMIN.getCode());
                 admin.setStatus(User.STATUS_NORMAL);
-                admin.setPassword(ADMIN_PASSWORD);
+                admin.setPassword(RoleConstants.DEFAULT_ADMIN_PASSWORD);
                 admin.encryptPassword(); // 加密密码
                 admin.setCreateTime(LocalDateTime.now());
                 admin.setUpdateTime(LocalDateTime.now());
                 userRepository.save(admin);
-                log.info("创建管理员账号成功: {}", ADMIN_USERNAME);
+                log.info("创建管理员账号成功: {}", RoleConstants.DEFAULT_ADMIN_USERNAME);
             } else {
                 // 重置admin用户密码和状态
-                admin.setPassword(ADMIN_PASSWORD);
+                admin.setPassword(RoleConstants.DEFAULT_ADMIN_PASSWORD);
                 admin.encryptPassword(); // 重新加密密码
-                admin.setUserType(3); // 确保是管理员
+                admin.setUserType(UserType.ADMIN.getCode());
                 admin.setStatus(User.STATUS_NORMAL); // 确保未被禁用
                 admin.setUpdateTime(LocalDateTime.now());
                 userRepository.save(admin);
-                log.info("重置管理员账号密码成功: {}", ADMIN_USERNAME);
+                log.info("重置管理员账号密码成功: {}", RoleConstants.DEFAULT_ADMIN_USERNAME);
             }
 
             return admin;

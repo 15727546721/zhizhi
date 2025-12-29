@@ -396,4 +396,22 @@ public interface PostMapper {
             @Param("status") Integer status,
             @Param("keyword") String keyword
     );
+
+    // ==================== 统计相关方法 ====================
+    
+    /**
+     * 统计指定时间之后创建的帖子数
+     */
+    Long countByCreateTimeAfter(@Param("createTime") java.time.LocalDateTime createTime);
+    
+    /**
+     * 统计指定时间范围内创建的帖子数
+     */
+    Long countByCreateTimeBetween(@Param("startTime") java.time.LocalDateTime startTime, 
+                                   @Param("endTime") java.time.LocalDateTime endTime);
+    
+    /**
+     * 获取热门帖子排行（用于仪表盘）
+     */
+    List<java.util.Map<String, Object>> selectHotPosts(@Param("limit") int limit);
 }

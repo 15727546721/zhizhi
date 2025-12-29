@@ -611,7 +611,7 @@ public class PostController {
     /**
      * 删除草稿（仅能删除自己的草稿）
      */
-    @DeleteMapping("/draft/{id}")
+    @PostMapping("/draft/{id}/delete")
     @Operation(summary = "删除草稿")
     @SaCheckLogin
     @ApiOperationLog(description = "删除草稿")
@@ -634,6 +634,32 @@ public class PostController {
         } catch (Exception e) {
             log.error("删除草稿失败，id={}", id, e);
             return ResponseEntity.builder().code(ResponseCode.UN_ERROR.getCode()).info("删除草稿失败").build();
+        }
+    }
+
+    /**
+     * 删除帖子（仅能删除自己的帖子）
+     */
+    @PostMapping("/{id}/delete")
+    @Operation(summary = "删除帖子")
+    @SaCheckLogin
+    @ApiOperationLog(description = "删除帖子")
+    public ResponseEntity<?> deletePost(@PathVariable Long id) {
+        try {
+            Long userId = LoginUserUtil.getLoginUserId();
+            Optional<Post> postOpt = postService.getPostById(id);
+            if (!postOpt.isPresent()) {
+                return ResponseEntity.builder().code(ResponseCode.UN_ERROR.getCode()).info("帖子不存在").build();
+            }
+            Post post = postOpt.get();
+            if (!userId.equals(post.getUserId())) {
+                return ResponseEntity.builder().code(ResponseCode.UN_ERROR.getCode()).info("无权删除此帖子").build();
+            }
+            postService.deletePost(id, userId, false);
+            return ResponseEntity.builder().code(ResponseCode.SUCCESS.getCode()).info("帖子删除成功").build();
+        } catch (Exception e) {
+            log.error("删除帖子失败，id={}", id, e);
+            return ResponseEntity.builder().code(ResponseCode.UN_ERROR.getCode()).info("删除帖子失败").build();
         }
     }
 
@@ -805,9 +831,23 @@ public class PostController {
         boolean isLiked = false, isFavorited = false, isFollowed = false, isAuthor = false;
         if (currentUserId != null) {
             isAuthor = currentUserId.equals(post.getUserId());
-            try { isLiked = likeService.checkStatus(currentUserId, Like.LikeType.POST.getCode(), post.getId()); } catch (Exception e) {}
-            try { isFavorited = favoriteService.isFavorited(currentUserId, post.getId(), "POST"); } catch (Exception e) {}
-            try { if (post.getUserId() != null && !isAuthor) isFollowed = followService.isFollowed(currentUserId, post.getUserId()); } catch (Exception e) {}
+            try { 
+                isLiked = likeService.checkStatus(currentUserId, Like.LikeType.POST.getCode(), post.getId()); 
+            } catch (Exception e) {
+                log.debug("检查点赞状态失败: userId={}, postId={}", currentUserId, post.getId());
+            }
+            try { 
+                isFavorited = favoriteService.isFavorited(currentUserId, post.getId(), "POST"); 
+            } catch (Exception e) {
+                log.debug("检查收藏状态失败: userId={}, postId={}", currentUserId, post.getId());
+            }
+            try { 
+                if (post.getUserId() != null && !isAuthor) {
+                    isFollowed = followService.isFollowed(currentUserId, post.getUserId()); 
+                }
+            } catch (Exception e) {
+                log.debug("检查关注状态失败: userId={}, authorId={}", currentUserId, post.getUserId());
+            }
         }
         return PostDetailVO.builder()
                 .id(post.getId()).title(post.getTitle()).description(post.getDescription())
@@ -815,7 +855,7 @@ public class PostController {
                 .viewCount(post.getViewCount()).likeCount(post.getLikeCount())
                 .commentCount(post.getCommentCount()).favoriteCount(post.getFavoriteCount())
                 .shareCount(post.getShareCount()).status(post.getStatus())
-                .isFeatured(post.getIsFeatured() == 1).isLiked(isLiked).isFavorited(isFavorited)
+                .isFeatured(post.isFeaturedPost()).isLiked(isLiked).isFavorited(isFavorited)
                 .isFollowed(isFollowed).createTime(post.getCreateTime()).updateTime(post.getUpdateTime())
                 .build();
     }

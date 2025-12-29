@@ -312,7 +312,7 @@ public class LikeService {
      * 发布点赞事件
      */
     private void publishLikeEvent(Long userId, Long targetId, Integer type, boolean isLike) {
-        LikeEvent.LikeType likeType = (type == 1) ? LikeEvent.LikeType.POST : LikeEvent.LikeType.COMMENT;
+        LikeEvent.LikeType likeType = (type == LikeType.POST.getCode()) ? LikeEvent.LikeType.POST : LikeEvent.LikeType.COMMENT;
         LikeEvent event = new LikeEvent(userId, targetId, likeType, isLike);
         eventPublisher.publishEvent(event);
         log.debug("[点赞服务] 发布点赞事件成功 - userId: {}, targetId: {}, type: {}", userId, targetId, type);

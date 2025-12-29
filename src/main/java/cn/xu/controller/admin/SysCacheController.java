@@ -181,7 +181,7 @@ public class SysCacheController {
      * @param key 缓存Key
      * @return 删除结果
      */
-    @DeleteMapping("/delete/{key}")
+    @PostMapping("/delete/{key}")
     @Operation(summary = "删除缓存")
     @SaCheckLogin
     @SaCheckPermission("system:cache:delete")

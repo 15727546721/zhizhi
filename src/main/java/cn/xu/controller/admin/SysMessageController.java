@@ -90,7 +90,7 @@ public class SysMessageController {
      * @param ids 消息ID列表
      * @return 删除结果
      */
-    @DeleteMapping("/delete")
+    @PostMapping("/delete")
     @Operation(summary = "删除系统消息")
     @SaCheckLogin
     @SaCheckPermission("system:message:delete")

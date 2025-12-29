@@ -21,6 +21,14 @@ public class FileRecord implements Serializable {
     
     private static final long serialVersionUID = 1L;
     
+    // ==================== 文件状态常量 ====================
+    /** 临时文件（24h后清理） */
+    public static final int STATUS_TEMPORARY = 0;
+    /** 正式文件 */
+    public static final int STATUS_PERMANENT = 1;
+    /** 已删除 */
+    public static final int STATUS_DELETED = 2;
+    
     /** 主键ID */
     private Long id;
     
@@ -64,7 +72,7 @@ public class FileRecord implements Serializable {
      * 当文件被业务对象引用后调用
      */
     public void markAsPermanent() {
-        this.status = 1;
+        this.status = STATUS_PERMANENT;
         this.updateTime = LocalDateTime.now();
     }
     
@@ -73,7 +81,7 @@ public class FileRecord implements Serializable {
      * 软删除，保留记录但标记为删除状态
      */
     public void markAsDeleted() {
-        this.status = 2;
+        this.status = STATUS_DELETED;
         this.updateTime = LocalDateTime.now();
     }
     
@@ -81,21 +89,21 @@ public class FileRecord implements Serializable {
      * 判断是否为临时文件
      */
     public boolean isTemporary() {
-        return this.status != null && this.status == 0;
+        return this.status != null && this.status == STATUS_TEMPORARY;
     }
     
     /**
      * 判断是否为正式文件
      */
     public boolean isPermanent() {
-        return this.status != null && this.status == 1;
+        return this.status != null && this.status == STATUS_PERMANENT;
     }
     
     /**
      * 判断是否已删除
      */
     public boolean isDeleted() {
-        return this.status != null && this.status == 2;
+        return this.status != null && this.status == STATUS_DELETED;
     }
     
     /**

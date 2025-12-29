@@ -152,7 +152,7 @@ public class FileController {
      * @param fileUrls 文件URL列表
      * @return 删除结果
      */
-    @DeleteMapping("/batchDelete")
+    @PostMapping("/batchDelete")
     @Operation(summary = "批量删除文件", description = "批量删除文件存储系统中的文件")
     @SaCheckLogin
     @SaCheckPermission("system:file:delete")

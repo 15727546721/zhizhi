@@ -78,14 +78,19 @@ public class FollowService {
                 new TransactionSynchronization() {
                     @Override
                     public void afterCommit() {
-                        log.debug("[关注服务] 更新缓存 - followerId: {}, followedId: {}", followerId, followedId);
-                        followCacheRepository.removeFollowRelationCache(followerId, followedId);
-                        followCacheRepository.removeUserFollowCache(followerId);
-                        followCacheRepository.removeUserFollowCache(followedId);
-                        
-                        // 发布关注事件
-                        socialEventPublisher.publishFollowed(followerId, followedId);
-                        log.debug("[关注服务] 发布关注事件 - followerId: {}, followeeId: {}", followerId, followedId);
+                        try {
+                            log.debug("[关注服务] 更新缓存 - followerId: {}, followedId: {}", followerId, followedId);
+                            followCacheRepository.removeFollowRelationCache(followerId, followedId);
+                            followCacheRepository.removeUserFollowCache(followerId);
+                            followCacheRepository.removeUserFollowCache(followedId);
+                            
+                            // 发布关注事件
+                            socialEventPublisher.publishFollowed(followerId, followedId);
+                            log.debug("[关注服务] 发布关注事件 - followerId: {}, followeeId: {}", followerId, followedId);
+                        } catch (Exception e) {
+                            log.error("[关注服务] 事务提交后缓存更新失败，数据可能不一致 - followerId: {}, followedId: {}", 
+                                    followerId, followedId, e);
+                        }
                     }
                 }
         );
@@ -129,14 +134,19 @@ public class FollowService {
                 new TransactionSynchronization() {
                     @Override
                     public void afterCommit() {
-                        log.debug("[关注服务] 更新缓存 - followerId: {}, followedId: {}", followerId, followedId);
-                        followCacheRepository.removeFollowRelationCache(followerId, followedId);
-                        followCacheRepository.removeUserFollowCache(followerId);
-                        followCacheRepository.removeUserFollowCache(followedId);
-                        
-                        // 发布取消关注事件
-                        socialEventPublisher.publishUnfollowed(followerId, followedId);
-                        log.debug("[关注服务] 发布取消关注事件 - followerId: {}, followeeId: {}", followerId, followedId);
+                        try {
+                            log.debug("[关注服务] 更新缓存 - followerId: {}, followedId: {}", followerId, followedId);
+                            followCacheRepository.removeFollowRelationCache(followerId, followedId);
+                            followCacheRepository.removeUserFollowCache(followerId);
+                            followCacheRepository.removeUserFollowCache(followedId);
+                            
+                            // 发布取消关注事件
+                            socialEventPublisher.publishUnfollowed(followerId, followedId);
+                            log.debug("[关注服务] 发布取消关注事件 - followerId: {}, followeeId: {}", followerId, followedId);
+                        } catch (Exception e) {
+                            log.error("[关注服务] 事务提交后缓存更新失败，数据可能不一致 - followerId: {}, followedId: {}", 
+                                    followerId, followedId, e);
+                        }
                     }
                 }
         );

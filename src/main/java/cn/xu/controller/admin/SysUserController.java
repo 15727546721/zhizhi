@@ -5,10 +5,13 @@ import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.common.ResponseCode;
 import cn.xu.common.annotation.ApiOperationLog;
+import cn.xu.common.constants.PermissionConstants;
+import cn.xu.common.constants.RoleConstants;
 import cn.xu.common.response.PageResponse;
 import cn.xu.common.response.ResponseEntity;
 import cn.xu.model.dto.user.SysUserRequest;
 import cn.xu.model.entity.User;
+import cn.xu.model.enums.UserType;
 import cn.xu.service.user.UserService;
 import cn.xu.support.exception.BusinessException;
 import cn.xu.support.util.LoginUserUtil;
@@ -129,7 +132,7 @@ public class SysUserController {
         }
     }
 
-    @PutMapping("/{userId}")
+    @PostMapping("/{userId}/update")
     @SaCheckLogin
     @SaCheckPermission("system:user:edit")
     @Operation(summary = "修改用户")
@@ -152,7 +155,7 @@ public class SysUserController {
         }
     }
 
-    @DeleteMapping("/{userId}")
+    @PostMapping("/{userId}/delete")
     @SaCheckLogin
     @SaCheckPermission("system:user:delete")
     @Operation(summary = "删除用户")
@@ -178,7 +181,7 @@ public class SysUserController {
         }
     }
 
-    @DeleteMapping("/batch")
+    @PostMapping("/batch/delete")
     @SaCheckLogin
     @SaCheckPermission("system:user:delete")
     @Operation(summary = "批量删除用户")
@@ -208,7 +211,7 @@ public class SysUserController {
         }
     }
 
-    @PutMapping("/{userId}/status")
+    @PostMapping("/{userId}/status")
     @SaCheckLogin
     @SaCheckPermission("system:user:edit")
     @Operation(summary = "修改用户状态")
@@ -283,24 +286,20 @@ public class SysUserController {
             java.util.List<String> roles = new java.util.ArrayList<>();
             java.util.List<String> perms = new java.util.ArrayList<>();
             
-            if (user.getUserType() != null) {
-                if (user.getUserType() >= 3) {
-                    // 超级管理员 - ROOT 角色拥有所有权限
-                    roles.add("ROOT");
-                    perms.add("*:*:*");
-                } else if (user.getUserType() >= 2) {
-                    // 官方账号 - ADMIN 角色
-                    roles.add("ADMIN");
-                    perms.add("system:post:*");
-                    perms.add("system:comment:*");
-                    perms.add("system:tag:*");
-                    perms.add("system:user:query");
-                    perms.add("system:statistics:view");
-                } else {
-                    roles.add("USER");
-                }
+            if (UserType.isSuperAdmin(user.getUserType())) {
+                // 超级管理员 - ROOT 角色拥有所有权限
+                roles.add(RoleConstants.NAME_ROOT);
+                perms.add(PermissionConstants.ALL);
+            } else if (UserType.hasAdminAccess(user.getUserType())) {
+                // 官方账号 - ADMIN 角色
+                roles.add(RoleConstants.NAME_ADMIN);
+                perms.add(PermissionConstants.POST_ALL);
+                perms.add(PermissionConstants.COMMENT_ALL);
+                perms.add(PermissionConstants.TAG_ALL);
+                perms.add(PermissionConstants.USER_QUERY);
+                perms.add(PermissionConstants.STATISTICS_VIEW);
             } else {
-                roles.add("USER");
+                roles.add(RoleConstants.NAME_USER);
             }
             
             userInfo.put("roles", roles);

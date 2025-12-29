@@ -26,16 +26,14 @@ public class UserSettingsService {
      * 获取或创建默认用户设置
      */
     public UserSettings getOrCreateDefaultSettings(Long userId) {
-        Optional<UserSettings> settingsOpt = settingsRepository.findByUserId(userId);
-        if (settingsOpt.isPresent()) {
-            return settingsOpt.get();
-        }
-
-        // 创建默认设置
-        UserSettings defaultSettings = UserSettings.createDefault(userId);
-        settingsRepository.save(defaultSettings);
-        log.info("创建默认用户设置 - userId: {}", userId);
-        return defaultSettings;
+        return settingsRepository.findByUserId(userId)
+                .orElseGet(() -> {
+                    // 创建默认设置
+                    UserSettings defaultSettings = UserSettings.createDefault(userId);
+                    settingsRepository.save(defaultSettings);
+                    log.info("创建默认用户设置 - userId: {}", userId);
+                    return defaultSettings;
+                });
     }
 
     /**
@@ -94,12 +92,9 @@ public class UserSettingsService {
      */
     @Transactional(rollbackFor = Exception.class)
     public void verifyEmail(String token) {
-        Optional<UserSettings> settingsOpt = settingsRepository.findByEmailVerifyToken(token);
-        if (!settingsOpt.isPresent()) {
-            throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "邮箱验证Token无效");
-        }
+        UserSettings settings = settingsRepository.findByEmailVerifyToken(token)
+                .orElseThrow(() -> new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "邮箱验证Token无效"));
 
-        UserSettings settings = settingsOpt.get();
         if (!settings.isEmailVerifyTokenValid()) {
             throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "邮箱验证Token已过期");
         }

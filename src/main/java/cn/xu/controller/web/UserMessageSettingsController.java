@@ -56,7 +56,7 @@ public class UserMessageSettingsController {
      * 更新当前用户的消息设置
      */
     @Operation(summary = "更新消息设置")
-    @PutMapping("/message")
+    @PostMapping("/message")
     @ApiOperationLog(description = "更新消息设置")
     public ResponseEntity<Void> updateMessageSettings(@RequestBody UpdateUserMessageSettingsRequest dto) {
         try {

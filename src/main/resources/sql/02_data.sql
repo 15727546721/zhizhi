@@ -17,6 +17,7 @@
 -- │ 4. 用户角色关联                                              │
 -- │ 5. 角色菜单关联                                              │
 -- │ 6. 默认标签（83个，7大分类）                                   │
+-- │ 7. 公告数据（3条示例公告）                                     │
 -- └─────────────────────────────────────────────────────────────┘
 -- ============================================================================
 
@@ -175,6 +176,14 @@ INSERT INTO `menu` (`id`, `parent_id`, `path`, `component`, `title`, `sort`, `ic
 (231, 23, NULL, NULL, '举报列表', 1, NULL, 'BUTTON', NULL, NULL, 0, 'system:report:list'),
 (232, 23, NULL, NULL, '处理举报', 2, NULL, 'BUTTON', NULL, NULL, 0, 'system:report:handle');
 
+-- 公告管理
+INSERT INTO `menu` (`id`, `parent_id`, `path`, `component`, `title`, `sort`, `icon`, `type`, `redirect`, `name`, `hidden`, `perm`) VALUES
+(24, 2, 'announcement', '/content/announcement', '公告管理', 5, 'el-icon-Bell', 'MENU', NULL, 'Announcement', 0, NULL),
+(241, 24, NULL, NULL, '公告列表', 1, NULL, 'BUTTON', NULL, NULL, 0, 'system:announcement:list'),
+(242, 24, NULL, NULL, '公告添加', 2, NULL, 'BUTTON', NULL, NULL, 0, 'system:announcement:add'),
+(243, 24, NULL, NULL, '公告修改', 3, NULL, 'BUTTON', NULL, NULL, 0, 'system:announcement:edit'),
+(244, 24, NULL, NULL, '公告删除', 4, NULL, 'BUTTON', NULL, NULL, 0, 'system:announcement:delete');
+
 -- === 消息管理目录 ===
 INSERT INTO `menu` (`id`, `parent_id`, `path`, `component`, `title`, `sort`, `icon`, `type`, `redirect`, `name`, `hidden`, `perm`) VALUES
 (3, 0, '/message', 'Layout', '消息管理', 3, 'el-icon-Message', 'CATALOG', '/message/message', 'Message', 0, NULL);
@@ -226,6 +235,8 @@ INSERT INTO `role_menu` (`role_id`, `menu_id`) VALUES
 (2, 221), (2, 222),
 (2, 23),  -- 举报管理
 (2, 231), (2, 232),
+(2, 24),  -- 公告管理
+(2, 241), (2, 242), (2, 243), (2, 244),
 (2, 13),  -- 文件管理
 (2, 131), (2, 132),
 (2, 3),   -- 消息管理目录
@@ -360,7 +371,21 @@ ON DUPLICATE KEY UPDATE
     `sort` = VALUES(`sort`);
 
 -- ============================================================================
--- 第八部分：验证数据
+-- 第八部分：公告数据
+-- ============================================================================
+
+INSERT INTO `announcement` (`id`, `title`, `content`, `type`, `status`, `is_top`, `publisher_id`, `publish_time`) VALUES
+(1, '平台全新改版上线公告', '尊敬的用户，知之平台已完成全新改版升级。新版平台带来了更简洁的界面设计、更流畅的用户体验和更多实用功能。我们新增了文章分类浏览、热门话题推荐、个性化内容推送等功能，希望能为您带来更好的使用体验。如有任何问题或建议，欢迎联系我们的客服团队。', 2, 1, 1, 1, NOW()),
+(2, '用户积分系统上线公告', '为了感谢广大用户对知之平台的支持与厚爱，我们正式上线用户积分系统。用户在平台发布文章、评论互动、分享内容等行为都将获得积分奖励。积分可用于兑换平台会员权益、参与专属活动等。详情请查看《用户积分规则说明》。', 1, 1, 0, 1, NOW()),
+(3, '平台内容规范更新通知', '为了维护良好的社区环境，保障用户权益，知之平台对《内容发布规范》进行了更新。更新后的规范进一步明确了禁止发布的内容类型，加强了对侵权、低俗、虚假信息等违规内容的打击力度。请所有用户遵守平台规则，共同营造健康积极的内容生态。', 0, 1, 0, 1, NOW())
+ON DUPLICATE KEY UPDATE 
+    `title` = VALUES(`title`),
+    `content` = VALUES(`content`),
+    `type` = VALUES(`type`),
+    `status` = VALUES(`status`);
+
+-- ============================================================================
+-- 第九部分：验证数据
 -- ============================================================================
 
 SELECT '========== 用户数据 ==========' AS '';
@@ -381,6 +406,7 @@ SELECT
   (SELECT COUNT(*) FROM `role`) AS role_count,
   (SELECT COUNT(*) FROM `menu`) AS menu_count,
   (SELECT COUNT(*) FROM `tag`) AS tag_count,
+  (SELECT COUNT(*) FROM `announcement`) AS announcement_count,
   (SELECT COUNT(*) FROM `user_role`) AS user_role_count,
   (SELECT COUNT(*) FROM `role_menu`) AS role_menu_count;
 

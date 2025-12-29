@@ -1,5 +1,6 @@
 package cn.xu.model.vo.comment;
 
+import cn.xu.model.enums.UserType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -125,13 +126,13 @@ public class CommentVO {
      * 判断是否是官方账号评论
      */
     public boolean isOfficialAccount() {
-        return userType != null && userType == 2;
+        return UserType.isOfficial(userType);
     }
 
     /**
      * 判断是否是管理员评论
      */
     public boolean isAdmin() {
-        return userType != null && userType == 3;
+        return UserType.isSuperAdmin(userType);
     }
 }

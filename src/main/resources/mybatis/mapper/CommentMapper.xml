@@ -431,4 +431,16 @@
         AND target_id = #{targetId}
     </if>
   </select>
+  
+  <!-- ==================== 统计相关SQL ==================== -->
+  
+  <!-- 统计指定时间之后创建的评论数 -->
+  <select id="countByCreateTimeAfter" resultType="java.lang.Long">
+    SELECT COUNT(*) FROM comment WHERE create_time >= #{createTime}
+  </select>
+  
+  <!-- 统计指定时间范围内创建的评论数 -->
+  <select id="countByCreateTimeBetween" resultType="java.lang.Long">
+    SELECT COUNT(*) FROM comment WHERE create_time >= #{startTime} AND create_time &lt; #{endTime}
+  </select>
 </mapper>

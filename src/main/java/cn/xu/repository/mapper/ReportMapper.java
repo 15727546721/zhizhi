@@ -78,6 +78,11 @@ public interface ReportMapper {
     List<java.util.Map<String, Object>> countByStatus();
 
     /**
+     * 按单个状态统计举报数量
+     */
+    Long countByStatusValue(@Param("status") Integer status);
+
+    /**
      * 批量更新状态为忽略
      */
     int batchIgnore(@Param("ids") List<Long> ids, @Param("handlerId") Long handlerId);

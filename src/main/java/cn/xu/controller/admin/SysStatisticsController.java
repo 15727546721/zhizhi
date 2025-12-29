@@ -6,7 +6,9 @@ import cn.xu.common.ResponseCode;
 import cn.xu.common.annotation.ApiOperationLog;
 import cn.xu.common.response.ResponseEntity;
 import cn.xu.repository.mapper.*;
+import cn.xu.service.statistics.VisitStatisticsService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,11 +18,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
-import java.util.HashMap;
-import java.util.Map;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 
 /**
  * 数据统计控制器
@@ -49,6 +54,15 @@ public class SysStatisticsController {
     private FavoriteMapper favoriteMapper;
     @Autowired(required = false)
     private FollowMapper followMapper;
+    @Autowired(required = false)
+    private ReportMapper reportMapper;
+    @Autowired(required = false)
+    private FeedbackMapper feedbackMapper;
+    @Autowired(required = false)
+    private AnnouncementMapper announcementMapper;
+    
+    @Resource
+    private VisitStatisticsService visitStatisticsService;
 
     /**
      * 获取数据统计概览
@@ -160,6 +174,266 @@ public class SysStatisticsController {
                 .build();
     }
 
+    // ==================== 仪表盘统计接口 ====================
+
+    /**
+     * 获取仪表盘统计数据
+     * 
+     * <p>返回仪表盘所需的核心统计数据
+     * 
+     * @return 仪表盘统计数据
+     */
+    @Operation(summary = "获取仪表盘统计数据")
+    @GetMapping("/dashboard")
+    @SaCheckLogin
+    @ApiOperationLog(description = "获取仪表盘统计数据")
+    public ResponseEntity<DashboardStats> getDashboardStats() {
+        log.info("获取仪表盘统计数据");
+        
+        // 总数统计
+        long totalPosts = safeCount(() -> postMapper.countAll());
+        long totalUsers = safeCount(() -> userMapper.countAll());
+        long totalComments = safeCount(() -> commentMapper.countAll());
+        long totalTags = safeCount(() -> tagMapper.countAll());
+        
+        // 今日统计
+        LocalDateTime todayStart = LocalDate.now().atStartOfDay();
+        long todayPosts = safeCount(() -> postMapper.countByCreateTimeAfter(todayStart));
+        long todayUsers = safeCount(() -> userMapper.countByCreateTimeAfter(todayStart));
+        long todayComments = safeCount(() -> commentMapper.countByCreateTimeAfter(todayStart));
+        
+        // 昨日统计（用于计算环比）
+        LocalDateTime yesterdayStart = LocalDate.now().minusDays(1).atStartOfDay();
+        LocalDateTime yesterdayEnd = todayStart;
+        long yesterdayPosts = safeCount(() -> postMapper.countByCreateTimeBetween(yesterdayStart, yesterdayEnd));
+        long yesterdayComments = safeCount(() -> commentMapper.countByCreateTimeBetween(yesterdayStart, yesterdayEnd));
+        
+        // 待处理事项
+        long pendingReports = safeCount(() -> reportMapper != null ? reportMapper.countByStatusValue(0) : 0L);
+        long pendingFeedbacks = safeCount(() -> feedbackMapper != null ? feedbackMapper.countByStatus(0) : 0L);
+        
+        DashboardStats stats = DashboardStats.builder()
+                .totalPosts(totalPosts)
+                .totalUsers(totalUsers)
+                .totalComments(totalComments)
+                .totalTags(totalTags)
+                .todayPosts(todayPosts)
+                .todayUsers(todayUsers)
+                .todayComments(todayComments)
+                .yesterdayPosts(yesterdayPosts)
+                .yesterdayComments(yesterdayComments)
+                .pendingReports(pendingReports)
+                .pendingFeedbacks(pendingFeedbacks)
+                .build();
+        
+        return ResponseEntity.<DashboardStats>builder()
+                .code(ResponseCode.SUCCESS.getCode())
+                .data(stats)
+                .build();
+    }
+
+    /**
+     * 获取数据趋势
+     * 
+     * <p>返回近N天的数据趋势
+     * 
+     * @param days 天数，默认7天
+     * @return 趋势数据
+     */
+    @Operation(summary = "获取数据趋势")
+    @GetMapping("/trend")
+    @SaCheckLogin
+    @ApiOperationLog(description = "获取数据趋势")
+    public ResponseEntity<TrendData> getTrend(
+            @Parameter(description = "天数") @RequestParam(defaultValue = "7") Integer days) {
+        log.info("获取数据趋势: days={}", days);
+        
+        List<String> dates = new ArrayList<>();
+        List<Long> postCounts = new ArrayList<>();
+        List<Long> userCounts = new ArrayList<>();
+        List<Long> commentCounts = new ArrayList<>();
+        
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-dd");
+        
+        for (int i = days - 1; i >= 0; i--) {
+            LocalDate date = LocalDate.now().minusDays(i);
+            LocalDateTime dayStart = date.atStartOfDay();
+            LocalDateTime dayEnd = date.plusDays(1).atStartOfDay();
+            
+            dates.add(date.format(formatter));
+            postCounts.add(safeCount(() -> postMapper.countByCreateTimeBetween(dayStart, dayEnd)));
+            userCounts.add(safeCount(() -> userMapper.countByCreateTimeBetween(dayStart, dayEnd)));
+            commentCounts.add(safeCount(() -> commentMapper.countByCreateTimeBetween(dayStart, dayEnd)));
+        }
+        
+        TrendData trendData = TrendData.builder()
+                .dates(dates)
+                .postCounts(postCounts)
+                .userCounts(userCounts)
+                .commentCounts(commentCounts)
+                .build();
+        
+        return ResponseEntity.<TrendData>builder()
+                .code(ResponseCode.SUCCESS.getCode())
+                .data(trendData)
+                .build();
+    }
+
+    /**
+     * 获取热门帖子排行
+     * 
+     * @param limit 数量限制
+     * @return 热门帖子列表
+     */
+    @Operation(summary = "获取热门帖子排行")
+    @GetMapping("/hot-posts")
+    @SaCheckLogin
+    @ApiOperationLog(description = "获取热门帖子排行")
+    public ResponseEntity<List<Map<String, Object>>> getHotPosts(
+            @Parameter(description = "数量") @RequestParam(defaultValue = "10") Integer limit) {
+        log.info("获取热门帖子排行: limit={}", limit);
+        
+        List<Map<String, Object>> hotPosts = postMapper.selectHotPosts(limit);
+        
+        return ResponseEntity.<List<Map<String, Object>>>builder()
+                .code(ResponseCode.SUCCESS.getCode())
+                .data(hotPosts != null ? hotPosts : new ArrayList<>())
+                .build();
+    }
+
+    /**
+     * 获取活跃用户排行
+     * 
+     * @param limit 数量限制
+     * @return 活跃用户列表
+     */
+    @Operation(summary = "获取活跃用户排行")
+    @GetMapping("/active-users")
+    @SaCheckLogin
+    @ApiOperationLog(description = "获取活跃用户排行")
+    public ResponseEntity<List<Map<String, Object>>> getActiveUsers(
+            @Parameter(description = "数量") @RequestParam(defaultValue = "10") Integer limit) {
+        log.info("获取活跃用户排行: limit={}", limit);
+        
+        List<Map<String, Object>> activeUsers = userMapper.selectActiveUsers(limit);
+        
+        return ResponseEntity.<List<Map<String, Object>>>builder()
+                .code(ResponseCode.SUCCESS.getCode())
+                .data(activeUsers != null ? activeUsers : new ArrayList<>())
+                .build();
+    }
+
+    /**
+     * 获取热门标签排行
+     * 
+     * @param limit 数量限制
+     * @return 热门标签列表
+     */
+    @Operation(summary = "获取热门标签排行")
+    @GetMapping("/hot-tags")
+    @SaCheckLogin
+    @ApiOperationLog(description = "获取热门标签排行")
+    public ResponseEntity<List<Map<String, Object>>> getHotTags(
+            @Parameter(description = "数量") @RequestParam(defaultValue = "10") Integer limit) {
+        log.info("获取热门标签排行: limit={}", limit);
+        
+        List<Map<String, Object>> hotTags = tagMapper.selectHotTags(limit);
+        
+        return ResponseEntity.<List<Map<String, Object>>>builder()
+                .code(ResponseCode.SUCCESS.getCode())
+                .data(hotTags != null ? hotTags : new ArrayList<>())
+                .build();
+    }
+
+    /**
+     * 获取内容类型分布
+     * 
+     * @return 内容类型分布数据
+     */
+    @Operation(summary = "获取内容类型分布")
+    @GetMapping("/content-distribution")
+    @SaCheckLogin
+    @ApiOperationLog(description = "获取内容类型分布")
+    public ResponseEntity<List<Map<String, Object>>> getContentDistribution() {
+        log.info("获取内容类型分布");
+        
+        // 按帖子状态统计
+        List<Map<String, Object>> distribution = new ArrayList<>();
+        
+        Map<String, Object> published = new HashMap<>();
+        published.put("name", "已发布");
+        published.put("value", safeCount(() -> postMapper.countByStatus(1)));
+        distribution.add(published);
+        
+        Map<String, Object> draft = new HashMap<>();
+        draft.put("name", "草稿");
+        draft.put("value", safeCount(() -> postMapper.countByStatus(0)));
+        distribution.add(draft);
+        
+        Map<String, Object> featured = new HashMap<>();
+        featured.put("name", "精选");
+        featured.put("value", safeCount(() -> postMapper.countFeatured()));
+        distribution.add(featured);
+        
+        return ResponseEntity.<List<Map<String, Object>>>builder()
+                .code(ResponseCode.SUCCESS.getCode())
+                .data(distribution)
+                .build();
+    }
+
+    /**
+     * 获取UV/PV统计数据
+     * 
+     * @return UV/PV统计数据
+     */
+    @Operation(summary = "获取UV/PV统计数据")
+    @GetMapping("/visit")
+    @SaCheckLogin
+    @ApiOperationLog(description = "获取UV/PV统计数据")
+    public ResponseEntity<VisitStats> getVisitStats() {
+        log.info("获取UV/PV统计数据");
+        
+        VisitStats stats = VisitStats.builder()
+                .todayUV(visitStatisticsService.getTodayUV())
+                .yesterdayUV(visitStatisticsService.getYesterdayUV())
+                .totalUV(visitStatisticsService.getTotalUV())
+                .todayPV(visitStatisticsService.getTodayPV())
+                .yesterdayPV(visitStatisticsService.getYesterdayPV())
+                .totalPV(visitStatisticsService.getTotalPV())
+                .build();
+        
+        return ResponseEntity.<VisitStats>builder()
+                .code(ResponseCode.SUCCESS.getCode())
+                .data(stats)
+                .build();
+    }
+
+    /**
+     * 获取UV/PV趋势数据
+     * 
+     * @param days 天数
+     * @return UV/PV趋势数据
+     */
+    @Operation(summary = "获取UV/PV趋势数据")
+    @GetMapping("/visit-trend")
+    @SaCheckLogin
+    @ApiOperationLog(description = "获取UV/PV趋势数据")
+    public ResponseEntity<VisitTrendData> getVisitTrend(
+            @Parameter(description = "天数") @RequestParam(defaultValue = "7") Integer days) {
+        log.info("获取UV/PV趋势数据: days={}", days);
+        
+        VisitTrendData trendData = VisitTrendData.builder()
+                .dates(visitStatisticsService.getDateLabels(days))
+                .uvCounts(visitStatisticsService.getUVTrend(days))
+                .pvCounts(visitStatisticsService.getPVTrend(days))
+                .build();
+        
+        return ResponseEntity.<VisitTrendData>builder()
+                .code(ResponseCode.SUCCESS.getCode())
+                .data(trendData)
+                .build();
+    }
+
     /**
      * 安全执行统计查询
      */
@@ -190,5 +464,57 @@ public class SysStatisticsController {
         private Long likeCount;
         private Long favoriteCount;
         private Long followCount;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class DashboardStats {
+        private Long totalPosts;
+        private Long totalUsers;
+        private Long totalComments;
+        private Long totalTags;
+        private Long todayPosts;
+        private Long todayUsers;
+        private Long todayComments;
+        private Long yesterdayPosts;
+        private Long yesterdayComments;
+        private Long pendingReports;
+        private Long pendingFeedbacks;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class TrendData {
+        private List<String> dates;
+        private List<Long> postCounts;
+        private List<Long> userCounts;
+        private List<Long> commentCounts;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class VisitStats {
+        private Long todayUV;
+        private Long yesterdayUV;
+        private Long totalUV;
+        private Long todayPV;
+        private Long yesterdayPV;
+        private Long totalPV;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class VisitTrendData {
+        private List<String> dates;
+        private List<Long> uvCounts;
+        private List<Long> pvCounts;
     }
 }

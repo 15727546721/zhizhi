@@ -334,7 +334,7 @@ public class UserController {
     /**
      * 更新隐私设置
      */
-    @PutMapping("/settings/privacy")
+    @PostMapping("/settings/privacy")
     @Operation(summary = "更新隐私设置")
     @ApiOperationLog(description = "更新隐私设置")
     @SaCheckLogin
@@ -364,7 +364,7 @@ public class UserController {
     /**
      * 更新通知设置
      */
-    @PutMapping("/settings/notification")
+    @PostMapping("/settings/notification")
     @Operation(summary = "更新通知设置")
     @ApiOperationLog(description = "更新通知设置")
     @SaCheckLogin

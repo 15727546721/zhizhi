@@ -2,6 +2,7 @@ package cn.xu.service.post;
 
 import cn.xu.cache.RedisService;
 import cn.xu.common.ResponseCode;
+import cn.xu.common.constants.BooleanConstants;
 import cn.xu.event.publisher.ContentEventPublisher;
 import cn.xu.integration.file.service.FileStorageService;
 import cn.xu.model.entity.Post;
@@ -558,7 +559,7 @@ public class PostService {
     @Transactional(rollbackFor = Exception.class)
     public void toggleFeatured(Long postId) {
         Post post = getPostOrThrow(postId);
-        int newFeatured = (post.getIsFeatured() == null || post.getIsFeatured() == 0) ? 1 : 0;
+        int newFeatured = BooleanConstants.toggle(post.getIsFeatured());
         postMapper.updateFeatured(newFeatured, postId);
         log.info("切换帖子加精状态, postId: {}, isFeatured: {}", postId, newFeatured);
     }

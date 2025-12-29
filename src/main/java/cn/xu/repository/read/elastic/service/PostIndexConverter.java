@@ -20,7 +20,7 @@ public class PostIndexConverter {
         index.setCommentCount(post.getCommentCount());
         index.setLikeCount(post.getLikeCount());
         index.setShareCount(post.getShareCount() != null ? post.getShareCount() : 0L);
-        index.setIsFeatured(post.getIsFeatured() != null && post.getIsFeatured() == 1);
+        index.setIsFeatured(post.isFeaturedPost());
         // 使用createTime作为发布时间
         index.setPublishTime(post.getCreateTime());
         index.setUpdateTime(post.getUpdateTime());

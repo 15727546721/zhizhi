@@ -1,5 +1,6 @@
 package cn.xu.config;
 
+import cn.xu.common.constants.RoleConstants;
 import cn.xu.model.entity.Menu;
 import cn.xu.model.entity.Role;
 import cn.xu.model.entity.User;
@@ -65,11 +66,11 @@ public class PermissionDataInitializer implements CommandLineRunner {
 
     /** 预期的角色编码列表*/
     private static final String[] EXPECTED_ROLES = {
-            "super_admin", "content_admin", "user_admin", "viewer"
+            RoleConstants.CODE_SUPER_ADMIN, "content_admin", "user_admin", "viewer"
     };
 
     /** 预期的管理员用户名*/
-    private static final String ADMIN_USERNAME = "admin";
+    private static final String ADMIN_USERNAME = RoleConstants.DEFAULT_ADMIN_USERNAME;
 
     /** 预期的最少菜单数 */
     private static final int MIN_MENU_COUNT = 20;

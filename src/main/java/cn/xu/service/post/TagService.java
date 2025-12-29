@@ -1,5 +1,6 @@
 package cn.xu.service.post;
 
+import cn.xu.common.constants.BooleanConstants;
 import cn.xu.model.dto.post.PostTagRelation;
 import cn.xu.model.entity.Tag;
 import cn.xu.repository.PostTagRepository;
@@ -239,7 +240,7 @@ public class TagService {
             }
 
             // 切换推荐状态
-            int newStatus = (tag.getIsRecommended() == null || tag.getIsRecommended() == 0) ? 1 : 0;
+            int newStatus = BooleanConstants.toggle(tag.getIsRecommended());
             tag.setIsRecommended(newStatus);
             tag.setUpdateTime(java.time.LocalDateTime.now());
             tagRepository.updateTag(tag);

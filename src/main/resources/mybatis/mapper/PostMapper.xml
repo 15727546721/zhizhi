@@ -783,4 +783,32 @@
         </if>
     </select>
 
+    <!-- ==================== 统计相关SQL ==================== -->
+    
+    <!-- 统计指定时间之后创建的帖子数 -->
+    <select id="countByCreateTimeAfter" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM post WHERE status = 1 AND create_time >= #{createTime}
+    </select>
+    
+    <!-- 统计指定时间范围内创建的帖子数 -->
+    <select id="countByCreateTimeBetween" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM post WHERE status = 1 AND create_time >= #{startTime} AND create_time &lt; #{endTime}
+    </select>
+    
+    <!-- 获取热门帖子排行（用于仪表盘） -->
+    <select id="selectHotPosts" resultType="java.util.Map">
+        SELECT 
+            p.id,
+            p.title,
+            p.view_count AS viewCount,
+            p.like_count AS likeCount,
+            p.comment_count AS commentCount,
+            u.nickname AS authorName
+        FROM post p
+        LEFT JOIN `user` u ON p.user_id = u.id
+        WHERE p.status = 1
+        ORDER BY (p.like_count * 3 + p.comment_count * 5 + p.view_count * 0.5) DESC
+        LIMIT #{limit}
+    </select>
+
 </mapper>

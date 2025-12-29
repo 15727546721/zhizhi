@@ -236,4 +236,17 @@ public interface CommentMapper {
      * @return 作者ID
      */
     Long getAuthorId(@Param("commentId") Long commentId);
+
+    // ==================== 统计相关方法 ====================
+    
+    /**
+     * 统计指定时间之后创建的评论数
+     */
+    Long countByCreateTimeAfter(@Param("createTime") java.time.LocalDateTime createTime);
+    
+    /**
+     * 统计指定时间范围内创建的评论数
+     */
+    Long countByCreateTimeBetween(@Param("startTime") java.time.LocalDateTime startTime, 
+                                   @Param("endTime") java.time.LocalDateTime endTime);
 }

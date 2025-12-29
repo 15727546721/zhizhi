@@ -26,12 +26,15 @@
 -- ├─────────────────────────────────────────────────────────────┤
 -- │ 权限模块（4个）                                              │
 -- │   role, menu, user_role, role_menu                         │
--- ├─────────────────────────────────────────────────────────────┤
+-- ┌─────────────────────────────────────────────────────────────┐
 -- │ 文件模块（1个）                                              │
 -- │   file_record                                              │
 -- ├─────────────────────────────────────────────────────────────┤
 -- │ 举报模块（1个）                                              │
 -- │   report                                                   │
+-- ├─────────────────────────────────────────────────────────────┤
+-- │ 公告模块（1个）                                              │
+-- │   announcement                                             │
 -- └─────────────────────────────────────────────────────────────┘
 -- ============================================================================
 
@@ -554,6 +557,31 @@ CREATE TABLE `report` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='举报表';
 
 -- ============================================================================
+-- 第八部分：公告模块（1个表）
+-- ============================================================================
+
+-- 8.1 公告表
+DROP TABLE IF EXISTS `announcement`;
+CREATE TABLE `announcement` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '公告ID',
+  `title` VARCHAR(200) NOT NULL COMMENT '公告标题',
+  `content` TEXT NOT NULL COMMENT '公告内容',
+  `type` TINYINT NOT NULL DEFAULT 0 COMMENT '公告类型: 0-普通 1-活动 2-系统 3-更新',
+  `status` TINYINT NOT NULL DEFAULT 0 COMMENT '状态: 0-草稿 1-已发布 2-已下架',
+  `is_top` TINYINT NOT NULL DEFAULT 0 COMMENT '是否置顶: 0-否 1-是',
+  `publisher_id` BIGINT UNSIGNED DEFAULT NULL COMMENT '发布者ID',
+  `publish_time` DATETIME DEFAULT NULL COMMENT '发布时间',
+  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_status` (`status`),
+  KEY `idx_type` (`type`),
+  KEY `idx_is_top` (`is_top`),
+  KEY `idx_publish_time` (`publish_time` DESC),
+  KEY `idx_status_top_time` (`status`, `is_top` DESC, `publish_time` DESC)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='公告表';
+
+-- ============================================================================
 -- 完成
 -- ============================================================================
 SELECT '
@@ -561,7 +589,7 @@ SELECT '
 ✅ 表结构创建完成！
 ============================================
 
-📊 表结构统计（共22个表）：
+📊 表结构统计（共23个表）：
    - 用户模块：4个表 (user, user_settings, user_interested_tag, user_block)
    - 内容模块：4个表 (post, tag, post_tag, comment)
    - 互动模块：3个表 (like, favorite, follow)
@@ -569,6 +597,7 @@ SELECT '
    - 权限模块：4个表 (role, menu, user_role, role_menu)
    - 文件模块：1个表 (file_record)
    - 举报模块：1个表 (report)
+   - 公告模块：1个表 (announcement)
 
 注：私信设置已合并到 user_settings 表中
    
