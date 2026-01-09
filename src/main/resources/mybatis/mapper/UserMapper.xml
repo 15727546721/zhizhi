@@ -528,4 +528,17 @@
         ORDER BY (post_count * 3 + comment_count * 2 + like_count) DESC
         LIMIT #{limit}
     </select>
+    
+    <!-- ==================== 批量操作SQL（性能优化） ==================== -->
+    
+    <!-- 批量更新用户状态（避免 N+1 问题） -->
+    <update id="batchUpdateStatus">
+        UPDATE user 
+        SET status = #{status}, update_time = NOW()
+        WHERE id IN
+        <foreach collection="userIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+    
 </mapper>

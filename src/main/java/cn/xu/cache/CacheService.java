@@ -1,0 +1,283 @@
+package cn.xu.cache;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Service;
+
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+
+/**
+ * 通用缓存服务
+ * <p>
+ * 提供带降级处理的缓存操作，解决以下问题：
+ * <ul>
+ *   <li>缓存穿透：空值缓存</li>
+ *   <li>缓存击穿：分布式锁</li>
+ *   <li>缓存雪崩：随机过期时间</li>
+ *   <li>降级处理：Redis 不可用时直接查库</li>
+ * </ul>
+ */
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class CacheService {
+
+    private final RedisTemplate<String, Object> redisTemplate;
+
+    // 空值缓存标记
+    private static final String NULL_VALUE = "NULL";
+    // 空值缓存时间（秒）
+    private static final long NULL_CACHE_TTL = 60;
+    // 默认缓存时间（秒）
+    private static final long DEFAULT_TTL = 300;
+    // 随机过期时间范围（秒）
+    private static final int RANDOM_TTL_RANGE = 60;
+
+    // ==================== 单值缓存 ====================
+
+    /**
+     * 获取缓存，不存在则从数据源加载
+     *
+     * @param key      缓存键
+     * @param loader   数据加载器
+     * @param ttl      过期时间（秒）
+     * @param <T>      返回类型
+     * @return 缓存值或数据源值
+     */
+    @SuppressWarnings("unchecked")
+    public <T> T getOrLoad(String key, Supplier<T> loader, long ttl) {
+        try {
+            // 1. 尝试从缓存获取
+            Object cached = redisTemplate.opsForValue().get(key);
+            if (cached != null) {
+                if (NULL_VALUE.equals(cached)) {
+                    log.debug("缓存命中空值: key={}", key);
+                    return null;
+                }
+                log.debug("缓存命中: key={}", key);
+                return (T) cached;
+            }
+
+            // 2. 缓存未命中，从数据源加载
+            T value = loader.get();
+
+            // 3. 写入缓存（包括空值）
+            if (value == null) {
+                // 缓存空值，防止缓存穿透
+                redisTemplate.opsForValue().set(key, NULL_VALUE, NULL_CACHE_TTL, TimeUnit.SECONDS);
+                log.debug("缓存空值: key={}", key);
+            } else {
+                // 添加随机过期时间，防止缓存雪崩
+                long actualTtl = ttl + new Random().nextInt(RANDOM_TTL_RANGE);
+                redisTemplate.opsForValue().set(key, value, actualTtl, TimeUnit.SECONDS);
+                log.debug("写入缓存: key={}, ttl={}s", key, actualTtl);
+            }
+
+            return value;
+        } catch (Exception e) {
+            // Redis 不可用时降级到直接查库
+            log.warn("缓存操作失败，降级到数据源: key={}, error={}", key, e.getMessage());
+            return loader.get();
+        }
+    }
+
+    /**
+     * 获取缓存（使用默认过期时间）
+     */
+    public <T> T getOrLoad(String key, Supplier<T> loader) {
+        return getOrLoad(key, loader, DEFAULT_TTL);
+    }
+
+    // ==================== 批量缓存 ====================
+
+    /**
+     * 批量获取缓存，不存在的从数据源加载
+     *
+     * @param keyPrefix  缓存键前缀
+     * @param ids        ID 列表
+     * @param loader     批量数据加载器
+     * @param idExtractor ID 提取器
+     * @param ttl        过期时间（秒）
+     * @param <ID>       ID 类型
+     * @param <T>        返回类型
+     * @return Map<ID, T>
+     */
+    @SuppressWarnings("unchecked")
+    public <ID, T> Map<ID, T> batchGetOrLoad(
+            String keyPrefix,
+            Collection<ID> ids,
+            Function<List<ID>, List<T>> loader,
+            Function<T, ID> idExtractor,
+            long ttl) {
+
+        if (ids == null || ids.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        List<ID> idList = new ArrayList<>(ids);
+        Map<ID, T> result = new HashMap<>(idList.size());
+
+        try {
+            // 1. 构建缓存键
+            List<String> keys = idList.stream()
+                    .map(id -> keyPrefix + id)
+                    .collect(Collectors.toList());
+
+            // 2. 批量获取缓存
+            List<Object> cachedValues = redisTemplate.opsForValue().multiGet(keys);
+
+            // 3. 分离命中和未命中的 ID
+            List<ID> missedIds = new ArrayList<>();
+            if (cachedValues != null) {
+                for (int i = 0; i < idList.size(); i++) {
+                    Object cached = cachedValues.get(i);
+                    ID id = idList.get(i);
+                    if (cached == null) {
+                        missedIds.add(id);
+                    } else if (!NULL_VALUE.equals(cached)) {
+                        result.put(id, (T) cached);
+                    }
+                    // NULL_VALUE 表示空值缓存，不加入结果
+                }
+            } else {
+                missedIds.addAll(idList);
+            }
+
+            log.debug("批量缓存查询: total={}, hit={}, miss={}",
+                    idList.size(), result.size(), missedIds.size());
+
+            // 4. 加载未命中的数据
+            if (!missedIds.isEmpty()) {
+                List<T> loadedValues = loader.apply(missedIds);
+                Map<ID, T> loadedMap = loadedValues.stream()
+                        .collect(Collectors.toMap(idExtractor, v -> v, (a, b) -> a));
+
+                // 5. 写入缓存
+                Map<String, Object> toCache = new HashMap<>();
+                for (ID id : missedIds) {
+                    T value = loadedMap.get(id);
+                    String key = keyPrefix + id;
+                    if (value != null) {
+                        result.put(id, value);
+                        toCache.put(key, value);
+                    } else {
+                        // 缓存空值
+                        toCache.put(key, NULL_VALUE);
+                    }
+                }
+
+                if (!toCache.isEmpty()) {
+                    // 批量写入缓存
+                    redisTemplate.opsForValue().multiSet(toCache);
+                    // 设置过期时间
+                    long actualTtl = ttl + new Random().nextInt(RANDOM_TTL_RANGE);
+                    for (String key : toCache.keySet()) {
+                        redisTemplate.expire(key, actualTtl, TimeUnit.SECONDS);
+                    }
+                }
+            }
+
+            return result;
+        } catch (Exception e) {
+            // Redis 不可用时降级到直接查库
+            log.warn("批量缓存操作失败，降级到数据源: error={}", e.getMessage());
+            List<T> loadedValues = loader.apply(idList);
+            return loadedValues.stream()
+                    .collect(Collectors.toMap(idExtractor, v -> v, (a, b) -> a));
+        }
+    }
+
+    /**
+     * 批量获取缓存（使用默认过期时间）
+     */
+    public <ID, T> Map<ID, T> batchGetOrLoad(
+            String keyPrefix,
+            Collection<ID> ids,
+            Function<List<ID>, List<T>> loader,
+            Function<T, ID> idExtractor) {
+        return batchGetOrLoad(keyPrefix, ids, loader, idExtractor, DEFAULT_TTL);
+    }
+
+    // ==================== 缓存失效 ====================
+
+    /**
+     * 删除缓存
+     */
+    public void evict(String key) {
+        try {
+            redisTemplate.delete(key);
+            log.debug("删除缓存: key={}", key);
+        } catch (Exception e) {
+            log.warn("删除缓存失败: key={}, error={}", key, e.getMessage());
+        }
+    }
+
+    /**
+     * 批量删除缓存
+     */
+    public void batchEvict(String keyPrefix, Collection<?> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return;
+        }
+        try {
+            List<String> keys = ids.stream()
+                    .map(id -> keyPrefix + id)
+                    .collect(Collectors.toList());
+            redisTemplate.delete(keys);
+            log.debug("批量删除缓存: count={}", keys.size());
+        } catch (Exception e) {
+            log.warn("批量删除缓存失败: error={}", e.getMessage());
+        }
+    }
+
+    /**
+     * 按模式删除缓存
+     */
+    public void evictByPattern(String pattern) {
+        try {
+            Set<String> keys = redisTemplate.keys(pattern);
+            if (keys != null && !keys.isEmpty()) {
+                redisTemplate.delete(keys);
+                log.debug("按模式删除缓存: pattern={}, count={}", pattern, keys.size());
+            }
+        } catch (Exception e) {
+            log.warn("按模式删除缓存失败: pattern={}, error={}", pattern, e.getMessage());
+        }
+    }
+
+    // ==================== 列表缓存 ====================
+
+    /**
+     * 获取列表缓存
+     */
+    @SuppressWarnings("unchecked")
+    public <T> List<T> getListOrLoad(String key, Supplier<List<T>> loader, long ttl) {
+        try {
+            Object cached = redisTemplate.opsForValue().get(key);
+            if (cached != null) {
+                if (NULL_VALUE.equals(cached)) {
+                    return Collections.emptyList();
+                }
+                return (List<T>) cached;
+            }
+
+            List<T> value = loader.get();
+            if (value == null || value.isEmpty()) {
+                redisTemplate.opsForValue().set(key, NULL_VALUE, NULL_CACHE_TTL, TimeUnit.SECONDS);
+            } else {
+                long actualTtl = ttl + new Random().nextInt(RANDOM_TTL_RANGE);
+                redisTemplate.opsForValue().set(key, value, actualTtl, TimeUnit.SECONDS);
+            }
+            return value != null ? value : Collections.emptyList();
+        } catch (Exception e) {
+            log.warn("列表缓存操作失败，降级到数据源: key={}, error={}", key, e.getMessage());
+            List<T> value = loader.get();
+            return value != null ? value : Collections.emptyList();
+        }
+    }
+}
