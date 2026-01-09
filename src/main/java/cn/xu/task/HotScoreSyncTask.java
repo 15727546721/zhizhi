@@ -3,7 +3,7 @@ package cn.xu.task;
 import cn.xu.cache.RedisKeyManager;
 import cn.xu.integration.search.strategy.ElasticsearchSearchStrategy;
 import cn.xu.model.entity.Post;
-import cn.xu.service.post.PostService;
+import cn.xu.service.post.PostQueryService;
 import cn.xu.support.util.PostHotScoreCacheHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,7 +28,7 @@ import java.util.Set;
 public class HotScoreSyncTask {
 
     private final RedisTemplate<String, Object> redisTemplate;
-    private final PostService postService;
+    private final PostQueryService postQueryService;
     @Autowired(required = false) // 设置为非必需，允许Elasticsearch不可用
     private ElasticsearchSearchStrategy esStrategy;
     private final PostHotScoreCacheHelper hotScoreHelper;
@@ -76,7 +76,7 @@ public class HotScoreSyncTask {
                 int comment = parseIntSafe(map.get("comment"));
 
                 // 查询数据库帖子
-                Post post = postService.getPostById(postId).orElse(null);
+                Post post = postQueryService.getById(postId).orElse(null);
                     
                 if (post == null) {
                     log.warn("帖子不存在，跳过同步，postId={}", postId);

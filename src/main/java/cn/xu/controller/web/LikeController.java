@@ -11,10 +11,10 @@ import cn.xu.model.entity.Comment;
 import cn.xu.model.entity.Like;
 import cn.xu.model.entity.Post;
 import cn.xu.model.vo.user.UserLikeItemVO;
-import cn.xu.service.comment.CommentService;
+import cn.xu.service.comment.CommentQueryService;
 import cn.xu.service.like.LikeService;
 import cn.xu.service.like.LikeStatisticsService;
-import cn.xu.service.post.PostService;
+import cn.xu.service.post.PostQueryService;
 import cn.xu.support.exception.BusinessException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -44,8 +44,8 @@ public class LikeController {
 
     private final LikeService likeService;
     private final LikeStatisticsService likeStatisticsService;
-    private final PostService postService;
-    private final CommentService commentService;
+    private final PostQueryService postQueryService;
+    private final CommentQueryService commentQueryService;
 
     /**
      * 点赞
@@ -389,7 +389,7 @@ public class LikeController {
             switch (likeType) {
                 case POST:
                     // 获取帖子信息
-                    Optional<Post> postOpt = postService.getPostById(like.getTargetId());
+                    Optional<Post> postOpt = postQueryService.getById(like.getTargetId());
                     if (postOpt.isPresent()) {
                         Post post = postOpt.get();
                         vo.setTargetTitle(post.getTitle());
@@ -398,7 +398,7 @@ public class LikeController {
                     break;
                 case COMMENT:
                     // 获取评论信息
-                    Comment comment = commentService.getCommentById(like.getTargetId());
+                    Comment comment = commentQueryService.getById(like.getTargetId());
                     if (comment != null) {
                         String contentValue = comment.getContent();
                         vo.setTargetTitle(contentValue != null && contentValue.length() > 50 

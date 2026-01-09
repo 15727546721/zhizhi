@@ -9,7 +9,8 @@ import cn.xu.model.vo.search.AggregateSearchVO.PostSearchItem;
 import cn.xu.model.vo.search.AggregateSearchVO.SearchResultGroup;
 import cn.xu.model.vo.search.AggregateSearchVO.TagSearchItem;
 import cn.xu.model.vo.search.AggregateSearchVO.UserSearchItem;
-import cn.xu.service.post.PostService;
+import cn.xu.service.post.PostQueryService;
+import cn.xu.service.post.PostStatisticsService;
 import cn.xu.service.post.TagService;
 import cn.xu.service.user.UserService;
 import lombok.RequiredArgsConstructor;
@@ -35,8 +36,11 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AggregateSearchService {
     
-    @Resource(name = "postService")
-    private PostService postService;
+    @Resource
+    private PostQueryService postQueryService;
+    
+    @Resource
+    private PostStatisticsService postStatisticsService;
     
     @Resource(name = "tagService")
     private TagService tagService;
@@ -139,9 +143,9 @@ public class AggregateSearchService {
      */
     private SearchResultGroup<PostSearchItem> searchPosts(String keyword, int limit) {
         try {
-            // 使用PostService搜索帖子
-            List<Post> posts = postService.searchPosts(keyword, 0, limit);
-            long total = postService.countSearchPosts(keyword);
+            // 使用PostQueryService搜索帖子
+            List<Post> posts = postQueryService.search(keyword, 0, limit);
+            long total = postStatisticsService.countSearch(keyword);
 
             if (posts == null || posts.isEmpty()) {
                 return buildEmptyPostResult();

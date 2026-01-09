@@ -9,6 +9,8 @@ import cn.xu.repository.mapper.LikeMapper;
 import cn.xu.repository.mapper.PostMapper;
 import cn.xu.repository.mapper.UserMapper;
 import cn.xu.support.exception.BusinessException;
+import cn.xu.support.log.BizLogger;
+import cn.xu.support.log.LogConstants;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -51,40 +53,36 @@ public class LikeService {
             Like existingLike = likeMapper.findByUserIdAndTypeAndTargetId(userId, type, targetId);
 
             if (existingLike != null && existingLike.isLiked()) {
-                // 已点赞，幂等返回（不报错，不重复增加计数）
-                log.info("[点赞服务] 用户已点赞，幂等返回 - userId: {}, targetId: {}, type: {}", userId, targetId, type);
+                // 已点赞，幂等返回
+                BizLogger.of(log).module(LogConstants.MODULE_LIKE).op("点赞")
+                        .userId(userId).param("targetId", targetId).param("type", type)
+                        .info("用户已点赞，幂等返回");
                 return;
             }
 
             // 3. 保存或更新点赞记录
             if (existingLike == null) {
-                // 新增记录
                 Like likeRecord = Like.createLike(userId, targetId, type);
                 likeMapper.save(likeRecord);
             } else {
-                // 更新状态（从取消变为点赞）
                 existingLike.like();
                 likeMapper.update(existingLike);
             }
-            log.info("[点赞服务] 点赞记录保存成功 - userId: {}, targetId: {}, type: {}", userId, targetId, type);
 
-            // 4. 更新目标表的点赞数（Post或Comment）
+            // 4. 更新目标表的点赞数
             updateTargetLikeCount(type, targetId, 1L);
 
-            // 5. 在事务提交后更新Redis缓存（缓存失效策略）
+            // 5. 事务提交后更新Redis缓存
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override
                 public void afterCommit() {
                     try {
-                        // 5.1 删除点赞数缓存（下次查询时从 DB 重新加载）
                         likeCacheRepository.deleteLikeCount(targetId, LikeType.fromCode(type));
-
-                        // 5.2 更新用户点赞关系缓存
                         likeCacheRepository.addUserLikeRelation(userId, targetId, LikeType.fromCode(type));
-
-                        log.info("[点赞服务] 点赞缓存更新成功 - userId: {}, targetId: {}", userId, targetId);
                     } catch (Exception e) {
-                        log.error("[点赞服务] 点赞缓存更新失败 - userId: {}, targetId: {}", userId, targetId, e);
+                        BizLogger.of(log).module(LogConstants.MODULE_LIKE).op("缓存更新")
+                                .userId(userId).param("targetId", targetId)
+                                .error("点赞缓存更新失败", e);
                     }
                 }
             });
@@ -92,12 +90,18 @@ public class LikeService {
             // 6. 发布点赞事件
             publishLikeEvent(userId, targetId, type, true);
 
+            BizLogger.of(log).module(LogConstants.MODULE_LIKE).op("点赞")
+                    .userId(userId).param("targetId", targetId).param("type", type).success();
+
         } catch (BusinessException e) {
-            log.error("[点赞服务] 点赞操作失败 - userId: {}, targetId: {}, type: {}, error: {}",
-                    userId, targetId, type, e.getMessage());
+            BizLogger.of(log).module(LogConstants.MODULE_LIKE).op("点赞")
+                    .userId(userId).param("targetId", targetId).param("type", type)
+                    .fail(e.getMessage());
             throw e;
         } catch (Exception e) {
-            log.error("[点赞服务] 点赞操作失败 - userId: {}, targetId: {}, type: {}", userId, targetId, type, e);
+            BizLogger.of(log).module(LogConstants.MODULE_LIKE).op("点赞")
+                    .userId(userId).param("targetId", targetId).param("type", type)
+                    .error("点赞操作异常", e);
             throw new BusinessException("点赞操作失败，请稍后再试");
         }
     }
@@ -118,45 +122,50 @@ public class LikeService {
             // 2. 查询是否有点赞记录
             Like existingLike = likeMapper.findByUserIdAndTypeAndTargetId(userId, type, targetId);
 
-            // 如果没有点赞记录或已取消点赞
             if (existingLike == null || !existingLike.isLiked()) {
-                log.info("[点赞服务] 用户未点赞或已取消点赞，直接返回 - userId: {}, targetId: {}", userId, targetId);
+                BizLogger.of(log).module(LogConstants.MODULE_LIKE).op("取消点赞")
+                        .userId(userId).param("targetId", targetId)
+                        .info("用户未点赞或已取消，幂等返回");
                 return;
             }
 
             // 3. 执行取消点赞操作
-            existingLike.unlike(); // PO层取消点赞
+            existingLike.unlike();
             likeMapper.update(existingLike);
-            log.info("[点赞服务] 取消点赞成功 - userId: {}, targetId: {}, type: {}", userId, targetId, type);
 
             // 4. 更新目标的点赞数
             updateTargetLikeCount(type, targetId, -1L);
 
-            // 5. 事务提交后清除Redis缓存（所有缓存操作都在事务提交后执行，避免回滚不一致）
+            // 5. 事务提交后清除Redis缓存
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override
                 public void afterCommit() {
                     try {
-                        // 5.1 删除目标的点赞数缓存
                         likeCacheRepository.deleteLikeCount(targetId, LikeType.fromCode(type));
-                        // 5.2 移除用户点赞关系缓存
                         likeCacheRepository.removeUserLikeRelation(userId, targetId, LikeType.fromCode(type));
-                        log.info("[点赞服务] 取消点赞缓存清除成功 - userId: {}, targetId: {}", userId, targetId);
                     } catch (Exception e) {
-                        log.error("[点赞服务] 取消点赞缓存清除失败 - targetId: {}", targetId, e);
+                        BizLogger.of(log).module(LogConstants.MODULE_LIKE).op("缓存清除")
+                                .param("targetId", targetId)
+                                .error("取消点赞缓存清除失败", e);
                     }
                 }
             });
 
-            // 7. 发布取消点赞事件
+            // 6. 发布取消点赞事件
             publishLikeEvent(userId, targetId, type, false);
 
+            BizLogger.of(log).module(LogConstants.MODULE_LIKE).op("取消点赞")
+                    .userId(userId).param("targetId", targetId).param("type", type).success();
+
         } catch (BusinessException e) {
-            log.error("[点赞服务] 取消点赞操作失败 - userId: {}, targetId: {}, error: {}",
-                    userId, targetId, e.getMessage());
+            BizLogger.of(log).module(LogConstants.MODULE_LIKE).op("取消点赞")
+                    .userId(userId).param("targetId", targetId)
+                    .fail(e.getMessage());
             throw e;
         } catch (Exception e) {
-            log.error("[点赞服务] 取消点赞操作失败 - userId: {}, targetId: {}", userId, targetId, e);
+            BizLogger.of(log).module(LogConstants.MODULE_LIKE).op("取消点赞")
+                    .userId(userId).param("targetId", targetId)
+                    .error("取消点赞操作异常", e);
             throw new BusinessException("取消点赞操作失败，请稍后再试");
         }
     }
@@ -177,9 +186,7 @@ public class LikeService {
         try {
             // 1. 检查缓存中是否已有用户点赞记录
             boolean cachedResult = likeCacheRepository.checkUserLikeRelation(userId, targetId, LikeType.fromCode(type));
-
             if (cachedResult) {
-                log.debug("[点赞服务] 缓存中找到用户点赞记录，返回 true - userId: {}, targetId: {}", userId, targetId);
                 return true;
             }
 
@@ -190,15 +197,14 @@ public class LikeService {
             // 3. 更新缓存
             if (isLiked) {
                 likeCacheRepository.addUserLikeRelation(userId, targetId, LikeType.fromCode(type));
-                log.debug("[点赞服务] 用户点赞状态已同步到缓存 - userId: {}, targetId: {}", userId, targetId);
-            } else {
-                log.debug("[点赞服务] 用户未点赞，返回 false - userId: {}, targetId: {}", userId, targetId);
             }
 
             return isLiked;
 
         } catch (Exception e) {
-            log.error("[点赞服务] 获取用户点赞状态失败 - userId: {}, targetId: {}", userId, targetId, e);
+            BizLogger.of(log).module(LogConstants.MODULE_LIKE).op(LogConstants.OP_QUERY)
+                    .userId(userId).param("targetId", targetId)
+                    .error("获取点赞状态失败", e);
             return likeMapper.checkStatus(userId, type, targetId) == Like.STATUS_LIKED;
         }
     }
@@ -230,8 +236,9 @@ public class LikeService {
             
             return dbCount;
         } catch (Exception e) {
-            log.error("[点赞服务] 获取点赞数失败 - targetId: {}", targetId, e);
-            // 降级：直接查DB
+            BizLogger.of(log).module(LogConstants.MODULE_LIKE).op(LogConstants.OP_QUERY)
+                    .param("targetId", targetId)
+                    .error("获取点赞数失败", e);
             return getTargetLikeCountFromDB(type, targetId);
         }
     }
@@ -243,18 +250,18 @@ public class LikeService {
         try {
             switch (LikeType.fromCode(type)) {
                 case POST:
-                    // 从post表获取like_count字段
                     Long postCount = postMapper.getLikeCount(targetId);
                     return postCount != null ? postCount : 0L;
                 case COMMENT:
-                    // 从comment表获取like_count字段
                     Integer commentCount = commentMapper.getLikeCount(targetId);
                     return commentCount != null ? commentCount : 0L;
                 default:
                     return 0L;
             }
         } catch (Exception e) {
-            log.error("[点赞服务] 从目标表获取点赞数失败 - targetId: {}, type: {}", targetId, type, e);
+            BizLogger.of(log).module(LogConstants.MODULE_LIKE).op(LogConstants.OP_QUERY)
+                    .param("targetId", targetId).param("type", type)
+                    .error("从目标表获取点赞数失败", e);
             return 0L;
         }
     }
@@ -279,12 +286,10 @@ public class LikeService {
             switch (LikeType.fromCode(type)) {
                 case POST:
                     postMapper.updateLikeCount(targetId, countChange);
-                    // 获取帖子作者ID
                     authorId = postMapper.getAuthorId(targetId);
                     break;
                 case COMMENT:
                     commentMapper.updateLikeCount(targetId, countChange.intValue());
-                    // 获取评论作者ID
                     authorId = commentMapper.getAuthorId(targetId);
                     break;
                 default:
@@ -295,16 +300,14 @@ public class LikeService {
             if (authorId != null) {
                 if (countChange > 0) {
                     userMapper.increaseLikeCount(authorId);
-                    log.debug("[点赞服务] 增加作者获赞数 - authorId: {}", authorId);
                 } else {
                     userMapper.decreaseLikeCount(authorId);
-                    log.debug("[点赞服务] 减少作者获赞数 - authorId: {}", authorId);
                 }
             }
-            
-            log.debug("[点赞服务] 更新目标的点赞数成功 - targetId: {}, countChange: {}", targetId, countChange);
         } catch (Exception e) {
-            log.error("[点赞服务] 更新目标点赞数失败 - targetId: {}", targetId, e);
+            BizLogger.of(log).module(LogConstants.MODULE_LIKE).op(LogConstants.OP_UPDATE)
+                    .param("targetId", targetId).param("countChange", countChange)
+                    .error("更新目标点赞数失败", e);
         }
     }
 
@@ -315,7 +318,6 @@ public class LikeService {
         LikeEvent.LikeType likeType = (type == LikeType.POST.getCode()) ? LikeEvent.LikeType.POST : LikeEvent.LikeType.COMMENT;
         LikeEvent event = new LikeEvent(userId, targetId, likeType, isLike);
         eventPublisher.publishEvent(event);
-        log.debug("[点赞服务] 发布点赞事件成功 - userId: {}, targetId: {}, type: {}", userId, targetId, type);
     }
     
     // ==================== 批量查询方法 ====================
@@ -335,7 +337,9 @@ public class LikeService {
         try {
             return likeMapper.batchCheckStatus(userId, type, targetIds);
         } catch (Exception e) {
-            log.error("[点赞服务] 批量检查点赞状态失败 - userId: {}", userId, e);
+            BizLogger.of(log).module(LogConstants.MODULE_LIKE).op(LogConstants.OP_QUERY)
+                    .userId(userId)
+                    .error("批量检查点赞状态失败", e);
             return new java.util.HashSet<>();
         }
     }

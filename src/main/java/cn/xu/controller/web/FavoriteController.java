@@ -14,7 +14,7 @@ import cn.xu.model.enums.favorite.TargetType;
 import cn.xu.model.vo.post.PostItemVO;
 import cn.xu.model.vo.post.PostListVO;
 import cn.xu.service.favorite.FavoriteService;
-import cn.xu.service.post.PostService;
+import cn.xu.service.post.PostQueryService;
 import cn.xu.service.user.UserService;
 import cn.xu.support.exception.BusinessException;
 import io.swagger.v3.oas.annotations.Operation;
@@ -43,7 +43,7 @@ import java.util.stream.Collectors;
 public class FavoriteController {
 
     private final FavoriteService favoriteService;
-    private final PostService postService;
+    private final PostQueryService postQueryService;
     private final UserService userService;
 
     /**
@@ -243,7 +243,7 @@ public class FavoriteController {
     // ==================== 私有辅助方法 ====================
     
     private List<PostListVO> buildPostListVOs(List<Long> postIds) {
-        List<Post> posts = postService.getPostsByIds(postIds);
+        List<Post> posts = postQueryService.getByIds(postIds);
         Map<Long, Post> postMap = posts.stream()
                 .collect(Collectors.toMap(Post::getId, p -> p, (a, b) -> a));
         Map<Long, User> userMap = getUserMap(posts);

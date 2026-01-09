@@ -320,4 +320,19 @@ public class UserRepositoryImpl implements UserRepository {
         // findById已包含密码字段，直接复用
         return findById(userId);
     }
+    
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void batchUpdateStatus(List<Long> userIds, Integer status) {
+        if (userIds == null || userIds.isEmpty()) {
+            return;
+        }
+        try {
+            userMapper.batchUpdateStatus(userIds, status);
+            log.info("[用户仓储] 批量更新用户状态成功 - count: {}, status: {}", userIds.size(), status);
+        } catch (Exception e) {
+            log.error("[用户仓储] 批量更新用户状态失败 - userIds: {}, status: {}", userIds, status, e);
+            throw new BusinessException(ResponseCode.SYSTEM_ERROR.getCode(), "批量更新用户状态失败");
+        }
+    }
 }

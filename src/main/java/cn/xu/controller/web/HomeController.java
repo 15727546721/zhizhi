@@ -10,7 +10,8 @@ import cn.xu.model.entity.User;
 import cn.xu.model.vo.post.PostItemVO;
 import cn.xu.model.vo.post.PostListVO;
 import cn.xu.service.follow.FollowService;
-import cn.xu.service.post.PostService;
+import cn.xu.service.post.PostQueryService;
+import cn.xu.service.post.PostStatisticsService;
 import cn.xu.service.post.TagService;
 import cn.xu.service.user.UserService;
 import cn.xu.support.util.LoginUserUtil;
@@ -36,8 +37,10 @@ import java.util.stream.Collectors;
 @Tag(name = "首页接口", description = "首页相关API")
 public class HomeController {
 
-    @Resource(name = "postService")
-    private PostService postService;
+    @Resource
+    private PostQueryService postQueryService;
+    @Resource
+    private PostStatisticsService postStatisticsService;
     @Resource(name = "tagService")
     private TagService tagService;
     @Resource(name = "userService")
@@ -68,19 +71,19 @@ public class HomeController {
         long total;
         if (tagId != null) {
             if ("hot".equalsIgnoreCase(sort)) {
-                posts = postService.getHotPostsByTag(tagId, page, size);
-                total = postService.countHotPostsByTag(tagId);
+                posts = postQueryService.getHotPostsByTag(tagId, page, size);
+                total = postStatisticsService.countHotByTagId(tagId);
             } else {
-                posts = postService.getPostsByTag(tagId, page, size);
-                total = postService.countPostsByTag(tagId);
+                posts = postQueryService.getByTagId(tagId, page, size);
+                total = postStatisticsService.countByTagId(tagId);
             }
         } else {
             if ("hot".equalsIgnoreCase(sort)) {
-                posts = postService.getHotPosts(page, size);
-                total = postService.countHotPosts();
+                posts = postQueryService.getHotPosts(page, size);
+                total = postStatisticsService.countHot();
             } else {
-                posts = postService.getLatestPosts(page, size);
-                total = postService.countAllPosts();
+                posts = postQueryService.getAll(page, size);
+                total = postStatisticsService.countAll();
             }
         }
         List<PostListVO> result = convert(posts);
@@ -113,8 +116,8 @@ public class HomeController {
             return ResponseEntity.<PageResponse<List<PostListVO>>>builder()
                     .code(ResponseCode.SUCCESS.getCode()).data(empty).build();
         }
-        List<Post> posts = postService.getPostsByUserIds(followingUserIds, page, size);
-        long total = postService.countPostsByUserIds(followingUserIds);
+        List<Post> posts = postQueryService.getByUserIds(followingUserIds, page, size);
+        long total = postStatisticsService.countByUserIds(followingUserIds);
         List<PostListVO> result = convert(posts);
         PageResponse<List<PostListVO>> pageResponse = PageResponse.ofList(page, size, total, result);
         return ResponseEntity.<PageResponse<List<PostListVO>>>builder()
@@ -141,11 +144,11 @@ public class HomeController {
         List<Post> posts;
         long total;
         if (tagId != null) {
-            posts = postService.getFeaturedPostsByTag(tagId, page, size);
-            total = postService.countFeaturedPostsByTag(tagId);
+            posts = postQueryService.getFeaturedPostsByTag(tagId, page, size);
+            total = postStatisticsService.countFeaturedByTagId(tagId);
         } else {
-            posts = postService.getFeaturedPosts(page, size);
-            total = postService.countFeaturedPosts();
+            posts = postQueryService.getFeaturedPosts(page, size);
+            total = postStatisticsService.countFeatured();
         }
         List<PostListVO> result = convert(posts);
         PageResponse<List<PostListVO>> pageResponse = PageResponse.ofList(page, size, total, result);
@@ -174,11 +177,11 @@ public class HomeController {
         List<Post> posts;
         long total;
         if (tagId != null) {
-            posts = postService.getHotPostsByTag(tagId, page, size);
-            total = postService.countHotPostsByTag(tagId);
+            posts = postQueryService.getHotPostsByTag(tagId, page, size);
+            total = postStatisticsService.countHotByTagId(tagId);
         } else {
-            posts = postService.getHotPosts(page, size);
-            total = postService.countHotPosts();
+            posts = postQueryService.getHotPosts(page, size);
+            total = postStatisticsService.countHot();
         }
         List<PostListVO> result = convert(posts);
         PageResponse<List<PostListVO>> pageResponse = PageResponse.ofList(page, size, total, result);
@@ -203,13 +206,13 @@ public class HomeController {
             @Parameter(description = "excludeId") @RequestParam(required = false) Long excludeId,
             @Parameter(description = "page") @RequestParam(defaultValue = "1") Integer page,
             @Parameter(description = "size") @RequestParam(defaultValue = "5") Integer size) {
-        List<Post> posts = postService.getHotPosts(page, size + 1);
+        List<Post> posts = postQueryService.getHotPosts(page, size + 1);
         if (excludeId != null) {
             posts = posts.stream().filter(p -> !excludeId.equals(p.getId())).limit(size).collect(Collectors.toList());
         } else if (posts.size() > size) {
             posts = posts.subList(0, size);
         }
-        long total = postService.countHotPosts();
+        long total = postStatisticsService.countHot();
         List<PostListVO> result = convert(posts);
         PageResponse<List<PostListVO>> pageResponse = PageResponse.ofList(page, size, total, result);
         return ResponseEntity.<PageResponse<List<PostListVO>>>builder()

@@ -366,4 +366,14 @@ public interface UserMapper {
      * 获取活跃用户排行（用于仪表盘）
      */
     List<java.util.Map<String, Object>> selectActiveUsers(@Param("limit") int limit);
+    
+    // ==================== 批量操作方法（性能优化） ====================
+    
+    /**
+     * 批量更新用户状态（避免 N+1 问题）
+     *
+     * @param userIds 用户ID列表
+     * @param status 目标状态
+     */
+    void batchUpdateStatus(@Param("userIds") List<Long> userIds, @Param("status") Integer status);
 }

@@ -10,7 +10,6 @@ import cn.xu.model.enums.favorite.TargetType;
 import cn.xu.repository.FavoriteRepository;
 import cn.xu.repository.mapper.PostMapper;
 import cn.xu.service.like.LikeService;
-import cn.xu.service.post.PostService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -31,7 +30,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class RedisSyncTask {
 
-    private final PostService postService;
     private final PostMapper postMapper;
     private final FavoriteRepository favoriteRepository;
     private final RedisService redisService;

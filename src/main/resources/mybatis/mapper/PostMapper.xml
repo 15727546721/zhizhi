@@ -811,4 +811,57 @@
         LIMIT #{limit}
     </select>
 
+    <!-- ==================== 游标分页SQL（性能优化） ==================== -->
+    
+    <!-- 游标分页：按时间倒序（最新） -->
+    <select id="findByCursorLatest" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM post
+        WHERE status = 1
+        <if test="cursorId != null">
+            AND id &lt; #{cursorId}
+        </if>
+        <if test="tagId != null">
+            AND id IN (SELECT post_id FROM post_tag WHERE tag_id = #{tagId})
+        </if>
+        ORDER BY id DESC
+        LIMIT #{limit}
+    </select>
+    
+    <!-- 游标分页：按热度倒序（热门） -->
+    <select id="findByCursorHot" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>,
+               (like_count * 3 + comment_count * 5 + view_count * 0.5 + favorite_count * 4) AS hot_score
+        FROM post
+        WHERE status = 1
+        <if test="cursorScore != null and cursorId != null">
+            AND (
+                (like_count * 3 + comment_count * 5 + view_count * 0.5 + favorite_count * 4) &lt; #{cursorScore}
+                OR (
+                    (like_count * 3 + comment_count * 5 + view_count * 0.5 + favorite_count * 4) = #{cursorScore}
+                    AND id &lt; #{cursorId}
+                )
+            )
+        </if>
+        <if test="tagId != null">
+            AND id IN (SELECT post_id FROM post_tag WHERE tag_id = #{tagId})
+        </if>
+        ORDER BY hot_score DESC, id DESC
+        LIMIT #{limit}
+    </select>
+    
+    <!-- 游标分页：按标签筛选（最新） -->
+    <select id="findByTagCursorLatest" resultMap="BaseResultMap">
+        SELECT <include refid="Post_Column_List"/>
+        FROM post p
+        INNER JOIN post_tag pt ON p.id = pt.post_id
+        WHERE p.status = 1
+          AND pt.tag_id = #{tagId}
+        <if test="cursorId != null">
+            AND p.id &lt; #{cursorId}
+        </if>
+        ORDER BY p.id DESC
+        LIMIT #{limit}
+    </select>
+
 </mapper>

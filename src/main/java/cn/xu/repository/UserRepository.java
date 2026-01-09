@@ -139,4 +139,12 @@ public interface UserRepository {
      * 根据用户ID查找用户（包含密码字段）
      */
     Optional<User> findByIdWithPassword(Long userId);
+    
+    /**
+     * 批量更新用户状态（性能优化，避免 N+1 问题）
+     *
+     * @param userIds 用户ID列表
+     * @param status 目标状态
+     */
+    void batchUpdateStatus(List<Long> userIds, Integer status);
 }

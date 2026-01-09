@@ -14,7 +14,8 @@ import cn.xu.model.vo.post.SysPostListVO;
 import cn.xu.event.publisher.ContentEventPublisher;
 import cn.xu.model.entity.Post;
 import cn.xu.repository.mapper.PostMapper;
-import cn.xu.service.post.PostService;
+import cn.xu.service.post.PostCommandService;
+import cn.xu.service.post.PostQueryService;
 import cn.xu.service.post.TagService;
 import cn.xu.service.search.PostSearchService;
 import cn.xu.support.exception.BusinessException;
@@ -46,8 +47,10 @@ import java.util.List;
 @Tag(name = "帖子管理", description = "帖子管理相关接口")
 public class SysPostController {
 
-    @Resource(name = "postService")
-    private PostService postService;
+    @Resource
+    private PostCommandService postCommandService;
+    @Resource
+    private PostQueryService postQueryService;
     @Resource(name = "tagService")
     private TagService tagService;
     @Resource
@@ -73,7 +76,7 @@ public class SysPostController {
     @SaCheckLogin
     @ApiOperationLog(description = "上传帖子封面")
     public ResponseEntity<String> uploadPostCover(@Parameter(description = "封面文件") @RequestPart("files") MultipartFile file) {
-        String coverUrl = postService.uploadCover(file);
+        String coverUrl = postCommandService.uploadCover(file);
         return ResponseEntity.<String>builder()
                 .data(coverUrl)
                 .code(ResponseCode.SUCCESS.getCode())
@@ -110,7 +113,7 @@ public class SysPostController {
                 Long userId = LoginUserUtil.getLoginUserId();
                 Long postId;
                 if ("DRAFT".equals(postStatus)) {
-                    postId = postService.createDraft(
+                    postId = postCommandService.createDraft(
                             userId,
                             createPostRequest.getTitle(),
                             createPostRequest.getContent(),
@@ -119,7 +122,7 @@ public class SysPostController {
                             createPostRequest.getTagIds()
                     );
                 } else {
-                    postId = postService.publishPost(
+                    postId = postCommandService.publishPost(
                             null,
                             userId,
                             createPostRequest.getTitle(),
@@ -175,7 +178,7 @@ public class SysPostController {
                 String postStatus = "DRAFT".equals(updatePostRequest.getStatus()) ? "DRAFT" : "PUBLISHED";
 
                 if ("DRAFT".equals(postStatus)) {
-                    postService.updateDraft(
+                    postCommandService.updateDraft(
                             updatePostRequest.getId(),
                             userId,
                             updatePostRequest.getTitle(),
@@ -185,7 +188,7 @@ public class SysPostController {
                             updatePostRequest.getTagIds()
                     );
                 } else {
-                    postService.publishPost(
+                    postCommandService.publishPost(
                             updatePostRequest.getId(),
                             userId,
                             updatePostRequest.getTitle(),
@@ -234,7 +237,7 @@ public class SysPostController {
     public ResponseEntity deletePosts(@Parameter(description = "帖子ID列表") @RequestBody List<Long> postIds) {
         try {
             // 批量删除帖子
-            postService.batchDeletePosts(postIds);
+            postCommandService.batchDelete(postIds);
 
             // 为每一个删除的帖子发布事件
             Long currentUserId = LoginUserUtil.getLoginUserId();
@@ -334,7 +337,7 @@ public class SysPostController {
         if (id == null) {
             throw new BusinessException(ResponseCode.NULL_PARAMETER.getCode(), "帖子ID不能为空");
         }
-        Post post = postService.getPostById(id).orElse(null);
+        Post post = postQueryService.getById(id).orElse(null);
         if (post == null) {
             throw new BusinessException(ResponseCode.NOT_FOUND.getCode(), "帖子不存在");
         }
@@ -437,7 +440,7 @@ public class SysPostController {
 
                 //1. 发布帖子
                 if ("DRAFT".equals(postStatus)) {
-                    postId[0] = postService.createDraft(
+                    postId[0] = postCommandService.createDraft(
                             userId,
                             publishPostRequest.getTitle(),
                             publishPostRequest.getContent(),
@@ -446,7 +449,7 @@ public class SysPostController {
                             publishPostRequest.getTagIds()
                     );
                 } else {
-                    postId[0] = postService.publishPost(
+                    postId[0] = postCommandService.publishPost(
                             null,
                             userId,
                             publishPostRequest.getTitle(),
@@ -505,7 +508,7 @@ public class SysPostController {
                     .info("帖子ID不能为空")
                     .build();
         }
-        postService.toggleFeatured(postId);
+        postCommandService.toggleFeatured(postId);
         return ResponseEntity.builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .info("操作成功")
@@ -534,7 +537,7 @@ public class SysPostController {
                     .info("帖子ID不能为空")
                     .build();
         }
-        postService.togglePublish(postId);
+        postCommandService.togglePublish(postId);
         return ResponseEntity.builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .info("操作成功")
@@ -563,7 +566,7 @@ public class SysPostController {
                     .info("帖子ID不能为空")
                     .build();
         }
-        postService.toggleFeatured(postId);
+        postCommandService.toggleFeatured(postId);
         return ResponseEntity.builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .info("操作成功")
@@ -592,7 +595,7 @@ public class SysPostController {
                     .info("帖子ID不能为空")
                     .build();
         }
-        postService.togglePublish(postId);
+        postCommandService.togglePublish(postId);
         return ResponseEntity.builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .info("操作成功")

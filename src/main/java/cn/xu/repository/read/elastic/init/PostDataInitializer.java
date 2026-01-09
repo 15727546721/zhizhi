@@ -4,7 +4,7 @@ import cn.xu.integration.search.strategy.ElasticsearchSearchStrategy;
 import cn.xu.model.entity.Post;
 import cn.xu.repository.mapper.PostMapper;
 import cn.xu.repository.read.elastic.repository.PostElasticRepository;
-import cn.xu.service.post.PostService;
+import cn.xu.service.post.PostStatisticsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit;
 @Order(100) // 在CommentDataInitializer之后执行
 public class PostDataInitializer implements ApplicationRunner {
 
-    private final PostService postService;
+    private final PostStatisticsService postStatisticsService;
     private final PostMapper postMapper;
     private final ElasticsearchSearchStrategy esStrategy;
     private final PostElasticRepository postElasticRepository;
@@ -62,7 +62,7 @@ public class PostDataInitializer implements ApplicationRunner {
             long mysqlCount = 0;
             try {
                 log.info("正在查询MySQL中已发布文章的数量...");
-                mysqlCount = postService.countPublishedPosts();
+                mysqlCount = postStatisticsService.countPublished();
                 log.info("MySQL中已发布文章数量: {}", mysqlCount);
             } catch (Exception e) {
                 log.error("获取MySQL已发布文章数量失败，可能触发ES索引初始化，错误信息: {}", e.getMessage(), e);
