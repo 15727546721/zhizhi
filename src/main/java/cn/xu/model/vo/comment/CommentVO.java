@@ -83,6 +83,9 @@ public class CommentVO {
     @Schema(description = "当前用户是否点赞", example = "false")
     private Boolean isLiked;
 
+    @Schema(description = "作者是否点赞", example = "false")
+    private Boolean isAuthorLiked;
+
     // ========== 评论状态 ==========
 
     @Schema(description = "是否置顶", example = "false")

@@ -9,16 +9,17 @@ import cn.xu.common.response.ResponseEntity;
 import cn.xu.model.vo.comment.SysCommentVO;
 import cn.xu.model.dto.comment.FindReplyRequest;
 import cn.xu.model.entity.Comment;
-import cn.xu.service.comment.CommentService;
+import cn.xu.service.comment.CommentApplicationService;
+import cn.xu.service.comment.CommentQueryService;
 import cn.xu.support.exception.BusinessException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
-import javax.annotation.Resource;
 import javax.validation.constraints.NotNull;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -28,16 +29,16 @@ import java.util.stream.Collectors;
  *
  * <p>提供后台评论管理功能，包括查看、删除等</p>
  * <p>需要登录并拥有相应权限</p>
-
  */
 @Slf4j
 @RestController
 @RequestMapping("/api/system/comment")
 @Tag(name = "评论管理", description = "评论管理相关接口")
+@RequiredArgsConstructor
 public class SysCommentController {
 
-    @Resource
-    private CommentService commentService;
+    private final CommentApplicationService commentService;
+    private final CommentQueryService commentQueryService;
 
     /**
      * 管理员删除评论
@@ -91,8 +92,8 @@ public class SysCommentController {
             @RequestParam(defaultValue = "10") Integer pageSize) {
         log.info("分页获取一级评论列表: type: {}, userId: {}, pageNo: {}, pageSize: {}", type, userId, pageNo, pageSize);
 
-        List<Comment> comments = commentService.findAllRootComments(type, userId, pageNo, pageSize);
-        long total = commentService.countAllRootComments(type, userId);
+        List<Comment> comments = commentQueryService.findAllRootComments(type, userId, pageNo, pageSize);
+        long total = commentQueryService.countAllRootComments(type, userId);
 
         // 转换成VO
         List<SysCommentVO> voList = comments.stream()
@@ -136,7 +137,7 @@ public class SysCommentController {
         log.info("获取二级评论列表 - 父评论ID: {}, 页码: {}, 每页数量: {}", parentId, pageNum, pageSize);
 
         // 校验父评论是否存在
-        Comment parentComment = commentService.getCommentById(parentId);
+        Comment parentComment = commentQueryService.getById(parentId);
         if (parentComment == null) {
             log.warn("父评论不存在 - ID: {}", parentId);
             throw new BusinessException(ResponseCode.NOT_FOUND.getCode(), "父评论不存在");
@@ -155,7 +156,7 @@ public class SysCommentController {
         request.setPageSize(pageSize);
         request.setSortType("NEW");
 
-        List<Comment> replies = commentService.findChildCommentList(request);
+        List<Comment> replies = commentQueryService.findChildCommentList(request);
 
         // 转换成VO
         List<SysCommentVO> voList = replies.stream()
