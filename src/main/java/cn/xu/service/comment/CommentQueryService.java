@@ -1,5 +1,6 @@
 package cn.xu.service.comment;
 
+import cn.xu.cache.CacheService;
 import cn.xu.model.dto.comment.FindCommentRequest;
 import cn.xu.model.dto.comment.FindReplyRequest;
 import cn.xu.model.entity.Comment;
@@ -29,9 +30,11 @@ public class CommentQueryService {
     private final CommentRepository commentRepository;
     private final UserService userService;
     private final RedisTemplate<String, Object> redisTemplate;
+    private final CacheService cacheService;
 
     private static final String COMMENT_HOT_PAGE_KEY = "comment:hot:page:";
     private static final long CACHE_EXPIRE_MINUTES = 10;
+    private static final long CACHE_EXPIRE_SECONDS = CACHE_EXPIRE_MINUTES * 60;
 
     // ==================== 评论列表查询 ====================
 
@@ -180,6 +183,9 @@ public class CommentQueryService {
                 request.getPageNo(), request.getPageSize());
     }
 
+    /**
+     * 热门评论查询（带分布式锁防止缓存击穿）
+     */
     @SuppressWarnings("unchecked")
     private List<Comment> findCommentsByHotSort(FindCommentRequest request) {
         String cacheKey = String.format("%s%d:%d:%d:%d",
@@ -190,37 +196,48 @@ public class CommentQueryService {
                 request.getPageSize()
         );
 
-        try {
-            List<Comment> cached = (List<Comment>) redisTemplate.opsForValue().get(cacheKey);
-            if (cached != null) {
-                return cached;
-            }
-
-            List<Comment> comments = commentRepository.findRootCommentsByHot(
-                    request.getTargetType(), request.getTargetId(),
-                    request.getPageNo(), request.getPageSize());
-
-            if (!comments.isEmpty()) {
-                redisTemplate.opsForValue().set(cacheKey, comments, CACHE_EXPIRE_MINUTES, TimeUnit.MINUTES);
-            }
-            return comments;
-        } catch (Exception e) {
-            log.error("[评论查询] 缓存操作失败，回退查询数据库", e);
-            return commentRepository.findRootCommentsByHot(
-                    request.getTargetType(), request.getTargetId(),
-                    request.getPageNo(), request.getPageSize());
-        }
+        // 使用带锁的缓存方法，防止缓存击穿
+        return cacheService.getOrLoadWithLock(cacheKey, () -> 
+            commentRepository.findRootCommentsByHot(
+                request.getTargetType(), request.getTargetId(),
+                request.getPageNo(), request.getPageSize()),
+            CACHE_EXPIRE_SECONDS
+        );
     }
 
+    /**
+     * 批量加载子评论（修复 N+1 问题）
+     * 原来：每个根评论执行一次查询
+     * 现在：一次批量查询所有子评论
+     */
     private void enrichCommentsWithChildren(List<Comment> rootComments, CommentSortType sortType) {
+        if (rootComments == null || rootComments.isEmpty()) {
+            return;
+        }
+
+        // 收集所有根评论ID
+        List<Long> parentIds = rootComments.stream()
+                .map(Comment::getId)
+                .collect(Collectors.toList());
+
+        // 一次批量查询所有子评论（每个父评论最多3条预览）
+        List<Comment> allChildren = (sortType == CommentSortType.HOT)
+                ? commentRepository.findRepliesByParentIdsByHot(parentIds, 3)
+                : commentRepository.findRepliesByParentIdsByTime(parentIds, 3);
+
+        // 批量填充用户信息
+        if (allChildren != null && !allChildren.isEmpty()) {
+            fillUserInfo(allChildren);
+        }
+
+        // 按父评论ID分组
+        Map<Long, List<Comment>> childrenMap = (allChildren == null) 
+                ? Collections.emptyMap()
+                : allChildren.stream().collect(Collectors.groupingBy(Comment::getParentId));
+
+        // 设置子评论
         rootComments.forEach(comment -> {
-            List<Comment> childComments = (sortType == CommentSortType.HOT)
-                    ? commentRepository.findRepliesByParentIdByHot(comment.getId())
-                    : commentRepository.findRepliesByParentIdByTime(comment.getId());
-            if (childComments != null && !childComments.isEmpty()) {
-                fillUserInfo(childComments);
-            }
-            comment.setChildren(childComments);
+            comment.setChildren(childrenMap.getOrDefault(comment.getId(), Collections.emptyList()));
         });
     }
 

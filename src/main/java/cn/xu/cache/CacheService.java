@@ -37,6 +37,14 @@ public class CacheService {
     private static final long DEFAULT_TTL = 300;
     // 随机过期时间范围（秒）
     private static final int RANDOM_TTL_RANGE = 60;
+    // 分布式锁前缀
+    private static final String LOCK_PREFIX = "lock:";
+    // 锁超时时间（秒）
+    private static final long LOCK_TIMEOUT = 10;
+    // 锁等待重试次数
+    private static final int LOCK_RETRY_COUNT = 3;
+    // 锁等待间隔（毫秒）
+    private static final long LOCK_RETRY_INTERVAL = 100;
 
     // ==================== 单值缓存 ====================
 
@@ -91,6 +99,106 @@ public class CacheService {
      */
     public <T> T getOrLoad(String key, Supplier<T> loader) {
         return getOrLoad(key, loader, DEFAULT_TTL);
+    }
+
+    /**
+     * 获取缓存，带分布式锁防止缓存击穿
+     * <p>
+     * 适用于热点数据，防止缓存失效时大量请求同时查询数据库
+     * </p>
+     *
+     * @param key      缓存键
+     * @param loader   数据加载器
+     * @param ttl      过期时间（秒）
+     * @param <T>      返回类型
+     * @return 缓存值或数据源值
+     */
+    @SuppressWarnings("unchecked")
+    public <T> T getOrLoadWithLock(String key, Supplier<T> loader, long ttl) {
+        try {
+            // 1. 尝试从缓存获取
+            Object cached = redisTemplate.opsForValue().get(key);
+            if (cached != null) {
+                if (NULL_VALUE.equals(cached)) {
+                    return null;
+                }
+                return (T) cached;
+            }
+
+            // 2. 缓存未命中，尝试获取分布式锁
+            String lockKey = LOCK_PREFIX + key;
+            String lockValue = UUID.randomUUID().toString();
+
+            for (int i = 0; i < LOCK_RETRY_COUNT; i++) {
+                // 尝试获取锁
+                Boolean locked = redisTemplate.opsForValue()
+                        .setIfAbsent(lockKey, lockValue, LOCK_TIMEOUT, TimeUnit.SECONDS);
+
+                if (Boolean.TRUE.equals(locked)) {
+                    try {
+                        // 双重检查：获取锁后再次检查缓存
+                        cached = redisTemplate.opsForValue().get(key);
+                        if (cached != null) {
+                            if (NULL_VALUE.equals(cached)) {
+                                return null;
+                            }
+                            return (T) cached;
+                        }
+
+                        // 从数据源加载
+                        T value = loader.get();
+
+                        // 写入缓存
+                        if (value == null) {
+                            redisTemplate.opsForValue().set(key, NULL_VALUE, NULL_CACHE_TTL, TimeUnit.SECONDS);
+                        } else {
+                            long actualTtl = ttl + new Random().nextInt(RANDOM_TTL_RANGE);
+                            redisTemplate.opsForValue().set(key, value, actualTtl, TimeUnit.SECONDS);
+                        }
+
+                        return value;
+                    } finally {
+                        // 释放锁（只释放自己的锁）
+                        Object currentLockValue = redisTemplate.opsForValue().get(lockKey);
+                        if (lockValue.equals(currentLockValue)) {
+                            redisTemplate.delete(lockKey);
+                        }
+                    }
+                }
+
+                // 未获取到锁，等待后重试
+                try {
+                    Thread.sleep(LOCK_RETRY_INTERVAL);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+
+                // 重试前再次检查缓存（可能其他线程已加载完成）
+                cached = redisTemplate.opsForValue().get(key);
+                if (cached != null) {
+                    if (NULL_VALUE.equals(cached)) {
+                        return null;
+                    }
+                    return (T) cached;
+                }
+            }
+
+            // 获取锁失败，降级到直接查库
+            log.warn("获取分布式锁失败，降级到数据源: key={}", key);
+            return loader.get();
+
+        } catch (Exception e) {
+            log.warn("缓存操作失败，降级到数据源: key={}, error={}", key, e.getMessage());
+            return loader.get();
+        }
+    }
+
+    /**
+     * 获取缓存，带分布式锁（使用默认过期时间）
+     */
+    public <T> T getOrLoadWithLock(String key, Supplier<T> loader) {
+        return getOrLoadWithLock(key, loader, DEFAULT_TTL);
     }
 
     // ==================== 批量缓存 ====================
