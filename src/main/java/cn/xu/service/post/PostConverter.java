@@ -1,0 +1,191 @@
+package cn.xu.service.post;
+
+import cn.xu.model.dto.post.PostTagRelation;
+import cn.xu.model.entity.Post;
+import cn.xu.model.entity.Tag;
+import cn.xu.model.entity.User;
+import cn.xu.model.vo.post.PostItemVO;
+import cn.xu.model.vo.post.PostListVO;
+import cn.xu.model.vo.post.PostDetailVO;
+import cn.xu.model.vo.tag.TagVO;
+import cn.xu.model.vo.user.UserVO;
+import cn.xu.service.user.UserService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+
+import java.util.*;
+import java.util.stream.Collectors;
+
+/**
+ * 帖子对象转换器
+ * 负责 Post 实体到各种 VO 的转换
+ */
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class PostConverter {
+
+    private final UserService userService;
+    private final TagService tagService;
+
+    /**
+     * 批量转换 Post 列表为 PostListVO 列表
+     * 包含用户信息和标签信息的批量获取优化
+     */
+    public List<PostListVO> toListVOs(List<Post> posts) {
+        if (posts == null || posts.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // 1. 批量获取用户信息
+        Map<Long, User> userMap = batchGetUsers(posts);
+
+        // 2. 批量获取标签信息
+        Map<Long, String[]> tagMap = batchGetTags(posts);
+
+        // 3. 转换为 VO
+        return posts.stream()
+                .map(post -> toListVO(post, userMap, tagMap))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 单个 Post 转换为 PostListVO
+     */
+    private PostListVO toListVO(Post post, Map<Long, User> userMap, Map<Long, String[]> tagMap) {
+        User user = post.getUserId() != null ? userMap.get(post.getUserId()) : null;
+        String[] tagNames = tagMap.getOrDefault(post.getId(), new String[]{});
+
+        PostItemVO postItem = PostItemVO.builder()
+                .id(post.getId())
+                .title(post.getTitle())
+                .description(post.getDescription())
+                .content(post.getContent())
+                .coverUrl(post.getCoverUrl())
+                .status(post.getStatus())
+                .userId(post.getUserId())
+                .nickname(user != null ? user.getNickname() : null)
+                .avatar(user != null ? user.getAvatar() : null)
+                .viewCount(post.getViewCount())
+                .likeCount(post.getLikeCount())
+                .commentCount(post.getCommentCount())
+                .favoriteCount(post.getFavoriteCount())
+                .createTime(post.getCreateTime())
+                .updateTime(post.getUpdateTime())
+                .tagNameList(tagNames)
+                .build();
+
+        return PostListVO.builder()
+                .postItem(postItem)
+                .build();
+    }
+
+    /**
+     * User 转换为 UserVO
+     */
+    public UserVO toUserVO(User user) {
+        if (user == null) {
+            return null;
+        }
+        return UserVO.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .nickname(user.getNickname())
+                .avatar(user.getAvatar())
+                .description(user.getDescription())
+                .followCount(user.getFollowCount())
+                .fansCount(user.getFansCount())
+                .likeCount(user.getLikeCount())
+                .createTime(user.getCreateTime())
+                .build();
+    }
+
+    /**
+     * Tag 列表转换为 TagVO 列表
+     */
+    public List<TagVO> toTagVOs(List<Tag> tags) {
+        if (tags == null || tags.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return tags.stream()
+                .map(tag -> TagVO.builder()
+                        .id(tag.getId())
+                        .name(tag.getName())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    // ==================== 私有方法 ====================
+
+    /**
+     * 批量获取用户信息（带降级处理）
+     */
+    private Map<Long, User> batchGetUsers(List<Post> posts) {
+        Set<Long> userIds = posts.stream()
+                .map(Post::getUserId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        if (userIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        try {
+            return userService.batchGetUserInfo(new ArrayList<>(userIds));
+        } catch (Exception e) {
+            log.error("【降级】批量获取用户信息失败，帖子将不显示作者信息 - userIds: {}", userIds, e);
+            return Collections.emptyMap();
+        }
+    }
+
+    /**
+     * 批量获取标签信息（带降级处理）
+     */
+    private Map<Long, String[]> batchGetTags(List<Post> posts) {
+        List<Long> postIds = posts.stream()
+                .map(Post::getId)
+                .collect(Collectors.toList());
+
+        if (postIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        try {
+            // 批量获取帖子标签关系
+            List<PostTagRelation> tagRelations = tagService.batchGetTagIdsByPostIds(postIds);
+
+            // 收集所有标签ID
+            Set<Long> allTagIds = tagRelations.stream()
+                    .filter(r -> r.getTagIds() != null)
+                    .flatMap(r -> r.getTagIds().stream())
+                    .collect(Collectors.toSet());
+
+            // 批量获取标签名称
+            Map<Long, String> tagNameMap = new HashMap<>();
+            if (!allTagIds.isEmpty()) {
+                Map<Long, Tag> tagObjMap = tagService.batchGetTags(allTagIds);
+                tagObjMap.forEach((id, tag) -> tagNameMap.put(id, tag.getName()));
+            }
+
+            // 构建帖子ID到标签名称数组的映射
+            Map<Long, String[]> result = new HashMap<>();
+            for (PostTagRelation relation : tagRelations) {
+                if (relation.getTagIds() != null && !relation.getTagIds().isEmpty()) {
+                    String[] names = relation.getTagIds().stream()
+                            .map(tagId -> tagNameMap.getOrDefault(tagId, ""))
+                            .filter(name -> !name.isEmpty())
+                            .toArray(String[]::new);
+                    if (names.length > 0) {
+                        result.put(relation.getPostId(), names);
+                    }
+                }
+            }
+            return result;
+
+        } catch (Exception e) {
+            log.error("【降级】批量获取帖子标签失败，帖子将不显示标签 - postIds: {}", postIds, e);
+            return Collections.emptyMap();
+        }
+    }
+}
