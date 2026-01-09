@@ -15,7 +15,6 @@ import cn.xu.service.security.PasswordResetService;
 import cn.xu.service.security.VerificationCodeService;
 import cn.xu.service.user.UserService;
 import cn.xu.service.user.UserProfileService;
-import cn.xu.service.user.UserServiceImpl;
 import cn.xu.service.user.UserSettingsService;
 import cn.xu.support.exception.BusinessException;
 import cn.xu.support.util.IpUtils;
@@ -101,7 +100,7 @@ public class UserController {
             throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "密码不能为空");
         }
         String clientIp = IpUtils.getClientIp(request);
-        User user = ((UserServiceImpl) userService).loginWithIp(loginRequest, clientIp);
+        User user = userService.loginWithIp(loginRequest, clientIp);
         if (user == null) {
             throw new BusinessException("登录失败");
         }
@@ -127,7 +126,7 @@ public class UserController {
             throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "验证码不能为空");
         }
         String clientIp = IpUtils.getClientIp(request);
-        User user = ((UserServiceImpl) userService).loginWithCode(loginRequest.getEmail(), loginRequest.getVerifyCode(), clientIp);
+        User user = userService.loginWithCode(loginRequest.getEmail(), loginRequest.getVerifyCode(), clientIp);
         if (user == null) {
             throw new BusinessException("登录失败");
         }

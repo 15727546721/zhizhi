@@ -34,6 +34,16 @@ public interface UserService {
     User login(UserLoginRequest request);
 
     /**
+     * 用户登录（带IP检查）
+     */
+    User loginWithIp(UserLoginRequest request, String clientIp);
+
+    /**
+     * 验证码登录
+     */
+    User loginWithCode(String email, String code, String clientIp);
+
+    /**
      * 用户名登录（管理员登录）
      */
     User loginByUsername(String username, String password);
