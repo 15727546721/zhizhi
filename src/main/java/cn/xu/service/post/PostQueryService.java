@@ -116,6 +116,44 @@ public class PostQueryService {
         }
     }
 
+    // ==================== 游标分页查询（性能优化） ====================
+
+    /**
+     * 游标分页：按时间倒序（最新）
+     *
+     * @param cursorId 游标ID（首次请求为null）
+     * @param tagId    标签ID（可选）
+     * @param limit    每页数量
+     * @return 帖子列表
+     */
+    public List<Post> getByCursorLatest(Long cursorId, Long tagId, int limit) {
+        try {
+            return postMapper.findByCursorLatest(cursorId, tagId, limit);
+        } catch (Exception e) {
+            log.error("游标分页查询失败: cursorId={}, tagId={}", cursorId, tagId, e);
+            return Collections.emptyList();
+        }
+    }
+
+    /**
+     * 游标分页：按热度倒序（热门）
+     *
+     * @param cursorScore 游标分数
+     * @param cursorId    游标ID
+     * @param tagId       标签ID（可选）
+     * @param limit       每页数量
+     * @return 帖子列表
+     */
+    public List<Post> getByCursorHot(Double cursorScore, Long cursorId, Long tagId, int limit) {
+        try {
+            return postMapper.findByCursorHot(cursorScore, cursorId, tagId, limit);
+        } catch (Exception e) {
+            log.error("游标分页查询热门失败: cursorScore={}, cursorId={}, tagId={}", 
+                    cursorScore, cursorId, tagId, e);
+            return Collections.emptyList();
+        }
+    }
+
     // ==================== 私有方法 ====================
 
     private int calcOffset(int pageNo, int pageSize) {

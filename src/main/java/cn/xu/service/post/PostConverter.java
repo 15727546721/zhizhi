@@ -1,5 +1,6 @@
 package cn.xu.service.post;
 
+import cn.xu.cache.CacheService;
 import cn.xu.model.dto.post.PostTagRelation;
 import cn.xu.model.entity.Post;
 import cn.xu.model.entity.Tag;
@@ -20,6 +21,11 @@ import java.util.stream.Collectors;
 /**
  * 帖子对象转换器
  * 负责 Post 实体到各种 VO 的转换
+ * 
+ * 优化：
+ * - 批量获取用户信息（避免 N+1）
+ * - 批量获取标签信息（避免 N+1）
+ * - 支持缓存降级
  */
 @Slf4j
 @Component
@@ -28,6 +34,10 @@ public class PostConverter {
 
     private final UserService userService;
     private final TagService tagService;
+    private final CacheService cacheService;
+    
+    private static final String USER_CACHE_PREFIX = "user:info:";
+    private static final long USER_CACHE_TTL = 300; // 5分钟
 
     /**
      * 批量转换 Post 列表为 PostListVO 列表
@@ -119,7 +129,7 @@ public class PostConverter {
     // ==================== 私有方法 ====================
 
     /**
-     * 批量获取用户信息（带降级处理）
+     * 批量获取用户信息（带缓存和降级处理）
      */
     private Map<Long, User> batchGetUsers(List<Post> posts) {
         Set<Long> userIds = posts.stream()
@@ -132,7 +142,17 @@ public class PostConverter {
         }
 
         try {
-            return userService.batchGetUserInfo(new ArrayList<>(userIds));
+            // 使用缓存服务批量获取
+            return cacheService.batchGetOrLoad(
+                    USER_CACHE_PREFIX,
+                    userIds,
+                    ids -> {
+                        Map<Long, User> userMap = userService.batchGetUserInfo(ids);
+                        return new ArrayList<>(userMap.values());
+                    },
+                    User::getId,
+                    USER_CACHE_TTL
+            );
         } catch (Exception e) {
             log.error("【降级】批量获取用户信息失败，帖子将不显示作者信息 - userIds: {}", userIds, e);
             return Collections.emptyMap();
@@ -140,7 +160,8 @@ public class PostConverter {
     }
 
     /**
-     * 批量获取标签信息（带降级处理）
+     * 批量获取标签信息（带降级处理和缓存）
+     * 优化：直接调用 TagService 的优化方法，减少中间转换
      */
     private Map<Long, String[]> batchGetTags(List<Post> posts) {
         List<Long> postIds = posts.stream()
@@ -152,36 +173,8 @@ public class PostConverter {
         }
 
         try {
-            // 批量获取帖子标签关系
-            List<PostTagRelation> tagRelations = tagService.batchGetTagIdsByPostIds(postIds);
-
-            // 收集所有标签ID
-            Set<Long> allTagIds = tagRelations.stream()
-                    .filter(r -> r.getTagIds() != null)
-                    .flatMap(r -> r.getTagIds().stream())
-                    .collect(Collectors.toSet());
-
-            // 批量获取标签名称
-            Map<Long, String> tagNameMap = new HashMap<>();
-            if (!allTagIds.isEmpty()) {
-                Map<Long, Tag> tagObjMap = tagService.batchGetTags(allTagIds);
-                tagObjMap.forEach((id, tag) -> tagNameMap.put(id, tag.getName()));
-            }
-
-            // 构建帖子ID到标签名称数组的映射
-            Map<Long, String[]> result = new HashMap<>();
-            for (PostTagRelation relation : tagRelations) {
-                if (relation.getTagIds() != null && !relation.getTagIds().isEmpty()) {
-                    String[] names = relation.getTagIds().stream()
-                            .map(tagId -> tagNameMap.getOrDefault(tagId, ""))
-                            .filter(name -> !name.isEmpty())
-                            .toArray(String[]::new);
-                    if (names.length > 0) {
-                        result.put(relation.getPostId(), names);
-                    }
-                }
-            }
-            return result;
+            // 直接调用优化后的方法，一次性获取所有标签名称
+            return tagService.batchGetPostTagNames(postIds);
 
         } catch (Exception e) {
             log.error("【降级】批量获取帖子标签失败，帖子将不显示标签 - postIds: {}", postIds, e);

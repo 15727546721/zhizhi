@@ -11,6 +11,8 @@ import cn.xu.repository.PostRepository;
 import cn.xu.repository.mapper.PostMapper;
 import cn.xu.repository.mapper.UserMapper;
 import cn.xu.support.exception.BusinessException;
+import cn.xu.support.log.BizLogger;
+import cn.xu.support.log.LogConstants;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -48,7 +50,13 @@ public class PostCommandService {
         Post post = Post.createDraft(userId, title, content, description);
         post.setCoverUrl(coverUrl);
         Long postId = postRepository.save(post, tagIds);
-        log.info("[帖子] 创建草稿成功, userId: {}, postId: {}", userId, postId);
+        
+        BizLogger.of(log)
+                .module(LogConstants.MODULE_POST)
+                .op("创建草稿")
+                .userId(userId)
+                .param("postId", postId)
+                .success();
         return postId;
     }
 
@@ -65,7 +73,13 @@ public class PostCommandService {
             post.setCoverUrl(coverUrl);
         }
         postRepository.update(post, tagIds);
-        log.info("[帖子] 更新草稿成功, postId: {}, userId: {}", postId, userId);
+        
+        BizLogger.of(log)
+                .module(LogConstants.MODULE_POST)
+                .op("更新草稿")
+                .userId(userId)
+                .param("postId", postId)
+                .success();
     }
 
     /**
@@ -102,7 +116,11 @@ public class PostCommandService {
         // 更新用户帖子数（仅新发布时）
         if (isNewPublish) {
             userMapper.increasePostCount(userId);
-            log.info("增加用户帖子数, userId: {}", userId);
+            BizLogger.of(log)
+                    .module(LogConstants.MODULE_USER)
+                    .op("增加帖子数")
+                    .userId(userId)
+                    .success();
         }
 
         // 事务提交后发布事件
@@ -114,12 +132,22 @@ public class PostCommandService {
                 try {
                     contentEventPublisher.publishPostCreated(userId, finalPostId, finalTitle);
                 } catch (Exception e) {
-                    log.error("发布帖子事件失败, postId: {}", finalPostId, e);
+                    BizLogger.of(log)
+                            .module(LogConstants.MODULE_POST)
+                            .op("发布事件")
+                            .param("postId", finalPostId)
+                            .error("发布帖子事件失败", e);
                 }
             }
         });
 
-        log.info("发布帖子成功, postId: {}, userId: {}, isNewPublish: {}", postId, userId, isNewPublish);
+        BizLogger.of(log)
+                .module(LogConstants.MODULE_POST)
+                .op(LogConstants.OP_PUBLISH)
+                .userId(userId)
+                .param("postId", postId)
+                .param("isNew", isNewPublish)
+                .success();
         return postId;
     }
 
@@ -137,10 +165,15 @@ public class PostCommandService {
 
         if (wasPublished) {
             userMapper.decreasePostCount(userId);
-            log.info("撤回帖子，减少用户帖子数, userId: {}", userId);
         }
 
-        log.info("撤回帖子成功, postId: {}, userId: {}", postId, userId);
+        BizLogger.of(log)
+                .module(LogConstants.MODULE_POST)
+                .op(LogConstants.OP_WITHDRAW)
+                .userId(userId)
+                .param("postId", postId)
+                .param("wasPublished", wasPublished)
+                .success();
     }
 
     /**
@@ -159,7 +192,6 @@ public class PostCommandService {
 
         if (wasPublished) {
             userMapper.decreasePostCount(authorId);
-            log.info("减少用户帖子数, userId: {}", authorId);
         }
 
         // 事务提交后发布删除事件
@@ -169,12 +201,22 @@ public class PostCommandService {
                 try {
                     contentEventPublisher.publishPostDeleted(authorId, postId);
                 } catch (Exception e) {
-                    log.error("发布帖子删除事件失败, postId: {}", postId, e);
+                    BizLogger.of(log)
+                            .module(LogConstants.MODULE_POST)
+                            .op("删除事件")
+                            .param("postId", postId)
+                            .error("发布帖子删除事件失败", e);
                 }
             }
         });
 
-        log.info("删除帖子成功, postId: {}, userId: {}, isAdmin: {}", postId, userId, isAdmin);
+        BizLogger.of(log)
+                .module(LogConstants.MODULE_POST)
+                .op(LogConstants.OP_DELETE)
+                .userId(userId)
+                .param("postId", postId)
+                .param("isAdmin", isAdmin)
+                .success();
     }
 
     /**
@@ -188,7 +230,12 @@ public class PostCommandService {
         for (Long postId : postIds) {
             deletePost(postId, null, true);
         }
-        log.info("[帖子服务] 管理员批量删除帖子完成 - count: {}", postIds.size());
+        BizLogger.of(log)
+                .module(LogConstants.MODULE_POST)
+                .op("批量删除")
+                .param("count", postIds.size())
+                .param("isAdmin", true)
+                .success();
     }
 
     /**
@@ -202,7 +249,12 @@ public class PostCommandService {
         for (Long postId : postIds) {
             deletePost(postId, userId, false);
         }
-        log.info("[帖子服务] 用户批量删除帖子完成 - userId: {}, count: {}", userId, postIds.size());
+        BizLogger.of(log)
+                .module(LogConstants.MODULE_POST)
+                .op("批量删除")
+                .userId(userId)
+                .param("count", postIds.size())
+                .success();
     }
 
     // ==================== 管理操作 ====================
@@ -215,7 +267,13 @@ public class PostCommandService {
         Post post = getPostOrThrow(postId);
         int newFeatured = BooleanConstants.toggle(post.getIsFeatured());
         postMapper.updateFeatured(newFeatured, postId);
-        log.info("切换帖子加精状态, postId: {}, isFeatured: {}", postId, newFeatured);
+        
+        BizLogger.of(log)
+                .module(LogConstants.MODULE_POST)
+                .op("切换加精")
+                .param("postId", postId)
+                .param("isFeatured", newFeatured)
+                .success();
     }
 
     /**
@@ -236,7 +294,14 @@ public class PostCommandService {
         }
 
         postMapper.updateStatus(newStatus, postId);
-        log.info("切换帖子发布状态, postId: {}, oldStatus: {}, newStatus: {}", postId, oldStatus, newStatus);
+        
+        BizLogger.of(log)
+                .module(LogConstants.MODULE_POST)
+                .op("切换状态")
+                .param("postId", postId)
+                .param("oldStatus", oldStatus)
+                .param("newStatus", newStatus)
+                .success();
     }
 
     // ==================== 互动操作 ====================
@@ -275,7 +340,12 @@ public class PostCommandService {
         post.increaseShareCount();
         postRepository.update(post, null);
         postRepository.updateHotScore(postId);
-        log.info("增加帖子分享数成功, postId: {}", postId);
+        
+        BizLogger.of(log)
+                .module(LogConstants.MODULE_POST)
+                .op("增加分享数")
+                .param("postId", postId)
+                .success();
     }
 
     public void increaseCommentCount(Long postId) {
@@ -345,10 +415,19 @@ public class PostCommandService {
                     imageFile.getOriginalFilename());
             String storedFileName = fileStorageService.uploadFile(imageFile, fileName);
             String fileUrl = fileStorageService.getFileUrl(storedFileName);
-            log.info("上传帖子封面成功, storedFileName: {}, fileUrl: {}", storedFileName, fileUrl);
+            
+            BizLogger.of(log)
+                    .module(LogConstants.MODULE_FILE)
+                    .op(LogConstants.OP_UPLOAD)
+                    .param("fileName", storedFileName)
+                    .param("url", fileUrl)
+                    .success();
             return fileUrl;
         } catch (Exception e) {
-            log.error("上传帖子封面失败", e);
+            BizLogger.of(log)
+                    .module(LogConstants.MODULE_FILE)
+                    .op(LogConstants.OP_UPLOAD)
+                    .error("上传帖子封面失败", e);
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "上传封面失败: " + e.getMessage());
         }
     }

@@ -34,7 +34,7 @@ import java.util.Set;
 public class PostSearchCacheService {
 
     // 私有成员变量 - 使用@RequiredArgsConstructor自动处理final成员变量
-    private final PostService postService;
+    private final PostQueryService postQueryService;
     private final RedisTemplate<String, Object> redisTemplate;
 
     // 注入的组件 - setter注入
@@ -101,7 +101,7 @@ public class PostSearchCacheService {
                     return;
                 }
 
-                Optional<Post> postOpt = postService.getPostById(postId);
+                Optional<Post> postOpt = postQueryService.getById(postId);
                 if (postOpt.isPresent()) {
                     Post post = postOpt.get();
                     if (post != null && Integer.valueOf(Post.STATUS_PUBLISHED).equals(post.getStatus())) {
