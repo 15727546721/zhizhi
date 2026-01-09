@@ -32,7 +32,7 @@ public interface FavoriteRepository {
     /**
      * 分页获取用户收藏的内容ID列表
      */
-    List<Long> findFavoritedTargetIdsByUserIdWithPage(Long userId, String targetType, Long folderId, int offset, int limit);
+    List<Long> findFavoritedTargetIdsByUserIdWithPage(Long userId, String targetType, int offset, int limit);
 
     /**
      * 统计用户收藏的内容数量
@@ -43,29 +43,6 @@ public interface FavoriteRepository {
      * 统计特定目标的收藏数量
      */
     int countFavoritedItemsByTarget(Long targetId, String targetType);
-
-    /**
-     * 将内容添加到收藏夹
-     */
-    void addTargetToFolder(Long userId, Long targetId, String targetType, Long folderId);
-
-    /**
-     * 从收藏夹中移除内容
-     */
-    void removeTargetFromFolder(Long userId, Long targetId, String targetType, Long folderId);
-
-    /**
-     * 查询收藏夹中的所有内容
-     */
-    List<Favorite> findTargetsInFolder(Long userId, Long folderId);
-    
-    /**
-     * 批量更新收藏夹ID
-     * @param userId 用户ID
-     * @param oldFolderId 旧收藏夹ID
-     * @param newFolderId 新收藏夹ID（null表示移除）
-     */
-    void batchUpdateFolderId(Long userId, Long oldFolderId, Long newFolderId);
 
     /**
      * 获取收藏某个目标的用户ID列表

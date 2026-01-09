@@ -40,8 +40,8 @@ public class FavoriteRepositoryImpl implements FavoriteRepository {
     }
 
     @Override
-    public List<Long> findFavoritedTargetIdsByUserIdWithPage(Long userId, String targetType, Long folderId, int offset, int limit) {
-        return favoriteMapper.selectFavoritedTargetIdsByUserIdWithPage(userId, targetType, folderId, offset, limit);
+    public List<Long> findFavoritedTargetIdsByUserIdWithPage(Long userId, String targetType, int offset, int limit) {
+        return favoriteMapper.selectFavoritedTargetIdsByUserIdWithPage(userId, targetType, offset, limit);
     }
 
     @Override
@@ -52,32 +52,6 @@ public class FavoriteRepositoryImpl implements FavoriteRepository {
     @Override
     public int countFavoritedItemsByTarget(Long targetId, String targetType) {
         return favoriteMapper.countFavoritedItemsByTarget(targetId, targetType);
-    }
-
-    @Override
-    public void addTargetToFolder(Long userId, Long targetId, String targetType, Long folderId) {
-        Favorite favorite = favoriteMapper.selectByUserIdAndTargetId(userId, targetId, targetType);
-        if (favorite != null) {
-            favoriteMapper.updateFolderId(favorite.getId(), folderId);
-        }
-    }
-
-    @Override
-    public void removeTargetFromFolder(Long userId, Long targetId, String targetType, Long folderId) {
-        Favorite favorite = favoriteMapper.selectByUserIdAndTargetId(userId, targetId, targetType);
-        if (favorite != null && favorite.getFolderId() != null && favorite.getFolderId().equals(folderId)) {
-            favoriteMapper.updateFolderId(favorite.getId(), null);
-        }
-    }
-
-    @Override
-    public List<Favorite> findTargetsInFolder(Long userId, Long folderId) {
-        return favoriteMapper.selectByFolderId(userId, folderId);
-    }
-    
-    @Override
-    public void batchUpdateFolderId(Long userId, Long oldFolderId, Long newFolderId) {
-        favoriteMapper.batchUpdateFolderId(userId, oldFolderId, newFolderId);
     }
     
     @Override

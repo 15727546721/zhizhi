@@ -61,7 +61,7 @@ public class FavoriteService {
             // 3. 创建新收藏记录
             if (existingFavorite == null) {
                 // 新增记录
-                Favorite newFavorite = Favorite.createFavorite(userId, targetId, targetType, null);
+                Favorite newFavorite = Favorite.createFavorite(userId, targetId, targetType);
                 favoriteRepository.save(newFavorite);
                 log.info("[收藏服务] 创建收藏记录成功");
             } else {
@@ -276,7 +276,7 @@ public class FavoriteService {
         if (page < 1) page = 1;
         if (size < 1) size = 10;
         int offset = (page - 1) * size;
-        return favoriteRepository.findFavoritedTargetIdsByUserIdWithPage(userId, targetType, null, offset, size);
+        return favoriteRepository.findFavoritedTargetIdsByUserIdWithPage(userId, targetType, offset, size);
     }
     
     /**

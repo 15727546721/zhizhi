@@ -40,7 +40,6 @@ public interface FavoriteMapper {
     List<Long> selectFavoritedTargetIdsByUserIdWithPage(
             @Param("userId") Long userId, 
             @Param("targetType") String targetType,
-            @Param("folderId") Long folderId,
             @Param("offset") int offset,
             @Param("limit") int limit);
 
@@ -53,23 +52,6 @@ public interface FavoriteMapper {
      * 统计特定目标的收藏数量
      */
     int countFavoritedItemsByTarget(@Param("targetId") Long targetId, @Param("targetType") String targetType);
-
-    /**
-     * 更新收藏夹ID
-     */
-    void updateFolderId(@Param("id") Long id, @Param("folderId") Long folderId);
-
-    /**
-     * 根据收藏夹ID查询收藏记录
-     */
-    List<Favorite> selectByFolderId(@Param("userId") Long userId, @Param("folderId") Long folderId);
-    
-    /**
-     * 批量更新收藏夹ID
-     */
-    void batchUpdateFolderId(@Param("userId") Long userId, 
-                            @Param("oldFolderId") Long oldFolderId, 
-                            @Param("newFolderId") Long newFolderId);
     
     /**
      * 获取收藏某个目标的用户ID列表

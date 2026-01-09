@@ -41,9 +41,6 @@ public class Favorite implements Serializable {
     /** 被收藏内容ID */
     private Long targetId;
     
-    /** 所属收藏夹ID，如果为空，表示是普通收藏 */
-    private Long folderId;
-    
     /** 收藏内容类型：post-帖子 */
     private String targetType;
     
@@ -95,12 +92,11 @@ public class Favorite implements Serializable {
     /**
      * 创建新收藏
      */
-    public static Favorite createFavorite(Long userId, Long targetId, String targetType, Long folderId) {
+    public static Favorite createFavorite(Long userId, Long targetId, String targetType) {
         return Favorite.builder()
                 .userId(userId)
                 .targetId(targetId)
                 .targetType(targetType)
-                .folderId(folderId)
                 .status(STATUS_FAVORITED)
                 .createTime(LocalDateTime.now())
                 .updateTime(LocalDateTime.now())
