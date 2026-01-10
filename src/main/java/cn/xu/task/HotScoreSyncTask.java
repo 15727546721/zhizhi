@@ -1,6 +1,7 @@
 package cn.xu.task;
 
 import cn.xu.cache.RedisKeyManager;
+import cn.xu.cache.core.RedisOperations;
 import cn.xu.integration.search.strategy.ElasticsearchSearchStrategy;
 import cn.xu.model.entity.Post;
 import cn.xu.service.post.PostQueryService;
@@ -8,11 +9,14 @@ import cn.xu.support.util.PostHotScoreCacheHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.Cursor;
+import org.springframework.data.redis.core.RedisCallback;
+import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -27,21 +31,19 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class HotScoreSyncTask {
 
-    private final RedisTemplate<String, Object> redisTemplate;
+    private final RedisOperations redisOps;
     private final PostQueryService postQueryService;
-    @Autowired(required = false) // 设置为非必需，允许Elasticsearch不可用
+    @Autowired(required = false)
     private ElasticsearchSearchStrategy esStrategy;
     private final PostHotScoreCacheHelper hotScoreHelper;
 
-    @Scheduled(cron = "0 */5 * * * ?") // 每5分钟执行一次
+    @Scheduled(cron = "0 */5 * * * ?")
     public void syncToElastic() {
-        // 检查Elasticsearch是否可用
         if (esStrategy == null) {
             log.debug("Elasticsearch服务不可用，跳过热度同步任务");
             return;
         }
 
-        // 使用 SCAN 替代 KEYS，避免阻塞Redis
         String pattern = RedisKeyManager.postHotCacheKey(0L).replace("0", "*");
         Set<String> keys = scanKeys(pattern);
         if (keys.isEmpty()) {
@@ -50,22 +52,19 @@ public class HotScoreSyncTask {
 
         for (String key : keys) {
             try {
-                // 解析帖子ID，避免数组越界异常
-                // key格式为: post:hot:{postId}
                 String[] parts = key.split(":");
                 if (parts.length < 3) {
                     log.warn("Redis key格式异常: {}", key);
                     continue;
                 }
                 
-                // 跳过非数字ID的key（如 post:hot:ranking）
                 String idPart = parts[2];
                 if (!idPart.matches("\\d+")) {
                     continue;
                 }
                 Long postId = Long.parseLong(idPart);
 
-                Map<Object, Object> map = redisTemplate.opsForHash().entries(key);
+                Map<Object, Object> map = redisOps.hGetAll(key);
                 if (map.isEmpty()) {
                     log.warn("热度缓存为空，跳过同步，key={}", key);
                     continue;
@@ -75,7 +74,6 @@ public class HotScoreSyncTask {
                 int collect = parseIntSafe(map.get("collect"));
                 int comment = parseIntSafe(map.get("comment"));
 
-                // 查询数据库帖子
                 Post post = postQueryService.getById(postId).orElse(null);
                     
                 if (post == null) {
@@ -83,10 +81,7 @@ public class HotScoreSyncTask {
                     continue;
                 }
 
-                // 同步到ES
                 esStrategy.indexPost(post);
-
-                // 清理缓存，避免重复同步
                 hotScoreHelper.clearHotData(postId);
 
                 log.info("帖子[{}]热度已同步至Elasticsearch", postId);
@@ -97,36 +92,27 @@ public class HotScoreSyncTask {
         }
     }
 
-    /**
-     * 衰减热度 & 清理低评评论
-     */
     @Scheduled(cron = "0 0 * * * ?")
     public void decayHotComments() {
-        // 使用 SCAN 替代 KEYS，避免阻塞Redis
         String pattern = RedisKeyManager.commentHotDecayKey() + ":*";
         Set<String> keys = scanKeys(pattern);
         for (String zsetKey : keys) {
-            Set<ZSetOperations.TypedTuple<Object>> hotComments = redisTemplate.opsForZSet()
-                    .rangeWithScores(zsetKey, 0, -1);
+            Set<ZSetOperations.TypedTuple<Object>> hotComments = redisOps.zRangeWithScores(zsetKey, 0, -1);
 
             if (hotComments != null) {
                 for (ZSetOperations.TypedTuple<Object> tuple : hotComments) {
                     double oldScore = tuple.getScore();
-                    double newScore = oldScore * 0.98; // 衰减 2%
-                    redisTemplate.opsForZSet().add(zsetKey, Objects.requireNonNull(tuple.getValue()), newScore);
+                    double newScore = oldScore * 0.98;
+                    redisOps.zAdd(zsetKey, Objects.requireNonNull(tuple.getValue()), newScore);
 
-                    // 清理过低的
                     if (newScore < 5) {
-                        redisTemplate.opsForZSet().remove(zsetKey, tuple.getValue());
+                        redisOps.zRemove(zsetKey, tuple.getValue());
                     }
                 }
             }
         }
     }
 
-    /**
-     * 安全转换整数，防止空指针和格式异常
-     */
     private int parseIntSafe(Object obj) {
         if (obj == null) {
             return 0;
@@ -139,14 +125,11 @@ public class HotScoreSyncTask {
         }
     }
     
-    /**
-     * 使用 SCAN 命令扫描 Redis 键，避免 KEYS 命令阻塞
-     */
     private Set<String> scanKeys(String pattern) {
-        Set<String> keys = new java.util.HashSet<>();
-        redisTemplate.execute((org.springframework.data.redis.core.RedisCallback<Object>) connection -> {
-            org.springframework.data.redis.core.Cursor<byte[]> cursor = connection.scan(
-                org.springframework.data.redis.core.ScanOptions.scanOptions()
+        Set<String> keys = new HashSet<>();
+        redisOps.getRedisTemplate().execute((RedisCallback<Object>) connection -> {
+            Cursor<byte[]> cursor = connection.scan(
+                ScanOptions.scanOptions()
                     .match(pattern)
                     .count(100)
                     .build()

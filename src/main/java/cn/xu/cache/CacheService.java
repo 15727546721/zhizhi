@@ -1,11 +1,13 @@
 package cn.xu.cache;
 
+import cn.xu.cache.core.DistributedLock;
+import cn.xu.cache.core.RedisOperations;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -27,7 +29,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class CacheService {
 
-    private final RedisTemplate<String, Object> redisTemplate;
+    private final RedisOperations redisOps;
+    private final DistributedLock distributedLock;
 
     // 空值缓存标记
     private static final String NULL_VALUE = "NULL";
@@ -37,10 +40,6 @@ public class CacheService {
     private static final long DEFAULT_TTL = 300;
     // 随机过期时间范围（秒）
     private static final int RANDOM_TTL_RANGE = 60;
-    // 分布式锁前缀
-    private static final String LOCK_PREFIX = "lock:";
-    // 锁超时时间（秒）
-    private static final long LOCK_TIMEOUT = 10;
     // 锁等待重试次数
     private static final int LOCK_RETRY_COUNT = 3;
     // 锁等待间隔（毫秒）
@@ -61,7 +60,7 @@ public class CacheService {
     public <T> T getOrLoad(String key, Supplier<T> loader, long ttl) {
         try {
             // 1. 尝试从缓存获取
-            Object cached = redisTemplate.opsForValue().get(key);
+            Object cached = redisOps.get(key);
             if (cached != null) {
                 if (NULL_VALUE.equals(cached)) {
                     log.debug("缓存命中空值: key={}", key);
@@ -77,12 +76,12 @@ public class CacheService {
             // 3. 写入缓存（包括空值）
             if (value == null) {
                 // 缓存空值，防止缓存穿透
-                redisTemplate.opsForValue().set(key, NULL_VALUE, NULL_CACHE_TTL, TimeUnit.SECONDS);
+                redisOps.set(key, NULL_VALUE, NULL_CACHE_TTL);
                 log.debug("缓存空值: key={}", key);
             } else {
                 // 添加随机过期时间，防止缓存雪崩
-                long actualTtl = ttl + new Random().nextInt(RANDOM_TTL_RANGE);
-                redisTemplate.opsForValue().set(key, value, actualTtl, TimeUnit.SECONDS);
+                long actualTtl = ttl + ThreadLocalRandom.current().nextInt(RANDOM_TTL_RANGE);
+                redisOps.set(key, value, actualTtl);
                 log.debug("写入缓存: key={}, ttl={}s", key, actualTtl);
             }
 
@@ -117,7 +116,7 @@ public class CacheService {
     public <T> T getOrLoadWithLock(String key, Supplier<T> loader, long ttl) {
         try {
             // 1. 尝试从缓存获取
-            Object cached = redisTemplate.opsForValue().get(key);
+            Object cached = redisOps.get(key);
             if (cached != null) {
                 if (NULL_VALUE.equals(cached)) {
                     return null;
@@ -126,18 +125,13 @@ public class CacheService {
             }
 
             // 2. 缓存未命中，尝试获取分布式锁
-            String lockKey = LOCK_PREFIX + key;
-            String lockValue = UUID.randomUUID().toString();
+            String lockKey = "cache:" + key;
 
             for (int i = 0; i < LOCK_RETRY_COUNT; i++) {
-                // 尝试获取锁
-                Boolean locked = redisTemplate.opsForValue()
-                        .setIfAbsent(lockKey, lockValue, LOCK_TIMEOUT, TimeUnit.SECONDS);
-
-                if (Boolean.TRUE.equals(locked)) {
+                if (distributedLock.tryLock(lockKey)) {
                     try {
                         // 双重检查：获取锁后再次检查缓存
-                        cached = redisTemplate.opsForValue().get(key);
+                        cached = redisOps.get(key);
                         if (cached != null) {
                             if (NULL_VALUE.equals(cached)) {
                                 return null;
@@ -150,19 +144,15 @@ public class CacheService {
 
                         // 写入缓存
                         if (value == null) {
-                            redisTemplate.opsForValue().set(key, NULL_VALUE, NULL_CACHE_TTL, TimeUnit.SECONDS);
+                            redisOps.set(key, NULL_VALUE, NULL_CACHE_TTL);
                         } else {
-                            long actualTtl = ttl + new Random().nextInt(RANDOM_TTL_RANGE);
-                            redisTemplate.opsForValue().set(key, value, actualTtl, TimeUnit.SECONDS);
+                            long actualTtl = ttl + ThreadLocalRandom.current().nextInt(RANDOM_TTL_RANGE);
+                            redisOps.set(key, value, actualTtl);
                         }
 
                         return value;
                     } finally {
-                        // 释放锁（只释放自己的锁）
-                        Object currentLockValue = redisTemplate.opsForValue().get(lockKey);
-                        if (lockValue.equals(currentLockValue)) {
-                            redisTemplate.delete(lockKey);
-                        }
+                        distributedLock.unlock(lockKey);
                     }
                 }
 
@@ -175,7 +165,7 @@ public class CacheService {
                 }
 
                 // 重试前再次检查缓存（可能其他线程已加载完成）
-                cached = redisTemplate.opsForValue().get(key);
+                cached = redisOps.get(key);
                 if (cached != null) {
                     if (NULL_VALUE.equals(cached)) {
                         return null;
@@ -237,7 +227,7 @@ public class CacheService {
                     .collect(Collectors.toList());
 
             // 2. 批量获取缓存
-            List<Object> cachedValues = redisTemplate.opsForValue().multiGet(keys);
+            List<Object> cachedValues = redisOps.multiGet(keys);
 
             // 3. 分离命中和未命中的 ID
             List<ID> missedIds = new ArrayList<>();
@@ -281,11 +271,11 @@ public class CacheService {
 
                 if (!toCache.isEmpty()) {
                     // 批量写入缓存
-                    redisTemplate.opsForValue().multiSet(toCache);
+                    redisOps.multiSet(toCache);
                     // 设置过期时间
-                    long actualTtl = ttl + new Random().nextInt(RANDOM_TTL_RANGE);
+                    long actualTtl = ttl + ThreadLocalRandom.current().nextInt(RANDOM_TTL_RANGE);
                     for (String key : toCache.keySet()) {
-                        redisTemplate.expire(key, actualTtl, TimeUnit.SECONDS);
+                        redisOps.expire(key, actualTtl);
                     }
                 }
             }
@@ -317,12 +307,8 @@ public class CacheService {
      * 删除缓存
      */
     public void evict(String key) {
-        try {
-            redisTemplate.delete(key);
-            log.debug("删除缓存: key={}", key);
-        } catch (Exception e) {
-            log.warn("删除缓存失败: key={}, error={}", key, e.getMessage());
-        }
+        redisOps.delete(key);
+        log.debug("删除缓存: key={}", key);
     }
 
     /**
@@ -332,29 +318,25 @@ public class CacheService {
         if (ids == null || ids.isEmpty()) {
             return;
         }
-        try {
-            List<String> keys = ids.stream()
-                    .map(id -> keyPrefix + id)
-                    .collect(Collectors.toList());
-            redisTemplate.delete(keys);
-            log.debug("批量删除缓存: count={}", keys.size());
-        } catch (Exception e) {
-            log.warn("批量删除缓存失败: error={}", e.getMessage());
-        }
+        List<String> keys = ids.stream()
+                .map(id -> keyPrefix + id)
+                .collect(Collectors.toList());
+        redisOps.delete(keys);
+        log.debug("批量删除缓存: count={}", keys.size());
     }
 
     /**
      * 按模式删除缓存
+     * @deprecated 生产环境慎用keys命令，可能阻塞Redis
      */
+    @Deprecated
     public void evictByPattern(String pattern) {
-        try {
-            Set<String> keys = redisTemplate.keys(pattern);
-            if (keys != null && !keys.isEmpty()) {
-                redisTemplate.delete(keys);
-                log.debug("按模式删除缓存: pattern={}, count={}", pattern, keys.size());
-            }
-        } catch (Exception e) {
-            log.warn("按模式删除缓存失败: pattern={}, error={}", pattern, e.getMessage());
+        log.warn("evictByPattern已废弃，生产环境慎用: pattern={}", pattern);
+        // 保留实现但标记为废弃
+        Set<String> keys = redisOps.getRedisTemplate().keys(pattern);
+        if (keys != null && !keys.isEmpty()) {
+            redisOps.delete(keys);
+            log.debug("按模式删除缓存: pattern={}, count={}", pattern, keys.size());
         }
     }
 
@@ -366,7 +348,7 @@ public class CacheService {
     @SuppressWarnings("unchecked")
     public <T> List<T> getListOrLoad(String key, Supplier<List<T>> loader, long ttl) {
         try {
-            Object cached = redisTemplate.opsForValue().get(key);
+            Object cached = redisOps.get(key);
             if (cached != null) {
                 if (NULL_VALUE.equals(cached)) {
                     return Collections.emptyList();
@@ -376,10 +358,10 @@ public class CacheService {
 
             List<T> value = loader.get();
             if (value == null || value.isEmpty()) {
-                redisTemplate.opsForValue().set(key, NULL_VALUE, NULL_CACHE_TTL, TimeUnit.SECONDS);
+                redisOps.set(key, NULL_VALUE, NULL_CACHE_TTL);
             } else {
-                long actualTtl = ttl + new Random().nextInt(RANDOM_TTL_RANGE);
-                redisTemplate.opsForValue().set(key, value, actualTtl, TimeUnit.SECONDS);
+                long actualTtl = ttl + ThreadLocalRandom.current().nextInt(RANDOM_TTL_RANGE);
+                redisOps.set(key, value, actualTtl);
             }
             return value != null ? value : Collections.emptyList();
         } catch (Exception e) {

@@ -1,29 +1,28 @@
 package cn.xu.integration.search.service;
 
 import cn.xu.cache.RedisKeyManager;
+import cn.xu.cache.core.RedisOperations;
 import cn.xu.service.search.SearchStatisticsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 /**
  * 搜索统计服务实现
  * <p>记录搜索行为、统计热门关键词、提供搜索建议</p>
- 
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class SearchStatisticsServiceImpl implements SearchStatisticsService {
 
-    private final RedisTemplate<String, Object> redisTemplate;
+    private final RedisOperations redisOps;
     private static final int ANTI_SPAM_WINDOW_SECONDS = 60;
 
     @Override
@@ -36,31 +35,30 @@ public class SearchStatisticsServiceImpl implements SearchStatisticsService {
             String normalizedKeyword = keyword.trim().toLowerCase();
 
             String antiSpamKey = "post:search:antispam:" + normalizedKeyword;
-            Boolean setSuccess = redisTemplate.opsForValue().setIfAbsent(antiSpamKey, "1",
-                    ANTI_SPAM_WINDOW_SECONDS, TimeUnit.SECONDS);
+            boolean setSuccess = redisOps.setIfAbsent(antiSpamKey, "1", ANTI_SPAM_WINDOW_SECONDS);
 
-            if (Boolean.FALSE.equals(setSuccess)) {
+            if (!setSuccess) {
                 log.debug("[搜索] 搜索统计已记录（防刷）- keyword: {}", normalizedKeyword);
                 return;
             }
 
             String hotKeywordsKey = RedisKeyManager.postSearchHotKeywordsKey();
-            redisTemplate.opsForZSet().incrementScore(hotKeywordsKey, normalizedKeyword, 1);
-            redisTemplate.expire(hotKeywordsKey, 7, TimeUnit.DAYS);
+            redisOps.zIncrementScore(hotKeywordsKey, normalizedKeyword, 1);
+            redisOps.expire(hotKeywordsKey, 7 * 24 * 3600);
 
             String today = LocalDateTime.now().toLocalDate().toString();
             String searchStatsKey = "post:search:stats:" + today;
 
-            redisTemplate.opsForValue().increment(searchStatsKey + ":total");
+            redisOps.increment(searchStatsKey + ":total", 1);
             if (hasResults) {
-                redisTemplate.opsForValue().increment(searchStatsKey + ":success");
+                redisOps.increment(searchStatsKey + ":success", 1);
             } else {
-                redisTemplate.opsForValue().increment(searchStatsKey + ":empty");
+                redisOps.increment(searchStatsKey + ":empty", 1);
             }
 
-            redisTemplate.expire(searchStatsKey + ":total", 30, TimeUnit.DAYS);
-            redisTemplate.expire(searchStatsKey + ":success", 30, TimeUnit.DAYS);
-            redisTemplate.expire(searchStatsKey + ":empty", 30, TimeUnit.DAYS);
+            redisOps.expire(searchStatsKey + ":total", 30 * 24 * 3600);
+            redisOps.expire(searchStatsKey + ":success", 30 * 24 * 3600);
+            redisOps.expire(searchStatsKey + ":empty", 30 * 24 * 3600);
         } catch (Exception e) {
             log.warn("[搜索] 记录搜索统计失败 - keyword: {}", keyword, e);
         }
@@ -75,9 +73,9 @@ public class SearchStatisticsServiceImpl implements SearchStatisticsService {
         try {
             String searchStatsKey = "post:search:stats:" + date;
 
-            Object totalObj = redisTemplate.opsForValue().get(searchStatsKey + ":total");
-            Object successObj = redisTemplate.opsForValue().get(searchStatsKey + ":success");
-            Object emptyObj = redisTemplate.opsForValue().get(searchStatsKey + ":empty");
+            Object totalObj = redisOps.get(searchStatsKey + ":total");
+            Object successObj = redisOps.get(searchStatsKey + ":success");
+            Object emptyObj = redisOps.get(searchStatsKey + ":empty");
 
             long total = totalObj != null ? Long.parseLong(totalObj.toString()) : 0;
             long success = successObj != null ? Long.parseLong(successObj.toString()) : 0;
@@ -94,12 +92,12 @@ public class SearchStatisticsServiceImpl implements SearchStatisticsService {
     public List<HotKeyword> getHotKeywordsWithCount(int limit) {
         try {
             String hotKeywordsKey = RedisKeyManager.postSearchHotKeywordsKey();
-            Set<org.springframework.data.redis.core.ZSetOperations.TypedTuple<Object>> hotKeywords =
-                    redisTemplate.opsForZSet().reverseRangeWithScores(hotKeywordsKey, 0, limit - 1);
+            Set<ZSetOperations.TypedTuple<Object>> hotKeywords =
+                    redisOps.getRedisTemplate().opsForZSet().reverseRangeWithScores(hotKeywordsKey, 0, limit - 1);
 
             List<HotKeyword> result = new ArrayList<>();
             if (hotKeywords != null && !hotKeywords.isEmpty()) {
-                for (org.springframework.data.redis.core.ZSetOperations.TypedTuple<Object> tuple : hotKeywords) {
+                for (ZSetOperations.TypedTuple<Object> tuple : hotKeywords) {
                     if (tuple != null && tuple.getValue() != null) {
                         String keyword = tuple.getValue().toString();
                         if (keyword != null && !keyword.trim().isEmpty()) {
@@ -127,13 +125,8 @@ public class SearchStatisticsServiceImpl implements SearchStatisticsService {
                 limit = 100;
             }
 
-            if (redisTemplate == null) {
-                log.warn("[搜索] RedisTemplate不可用，返回空列表");
-                return new ArrayList<>();
-            }
-
             String hotKeywordsKey = RedisKeyManager.postSearchHotKeywordsKey();
-            Set<Object> hotKeywords = redisTemplate.opsForZSet().reverseRange(hotKeywordsKey, 0, limit - 1);
+            Set<Object> hotKeywords = redisOps.zReverseRange(hotKeywordsKey, 0, limit - 1);
 
             List<String> result = new ArrayList<>();
             if (hotKeywords != null && !hotKeywords.isEmpty()) {
@@ -169,7 +162,7 @@ public class SearchStatisticsServiceImpl implements SearchStatisticsService {
             if (keyword != null && !keyword.trim().isEmpty()) {
                 String keywordTrimmed = keyword.trim().toLowerCase();
                 String hotKeywordsKey = RedisKeyManager.postSearchHotKeywordsKey();
-                Set<Object> hotKeywords = redisTemplate.opsForZSet().reverseRange(hotKeywordsKey, 0, 100);
+                Set<Object> hotKeywords = redisOps.zReverseRange(hotKeywordsKey, 0, 100);
 
                 if (hotKeywords != null && !hotKeywords.isEmpty()) {
                     for (Object hotKeywordObj : hotKeywords) {

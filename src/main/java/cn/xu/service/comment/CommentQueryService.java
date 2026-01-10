@@ -11,11 +11,9 @@ import cn.xu.service.user.UserService;
 import cn.xu.support.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -29,12 +27,10 @@ public class CommentQueryService {
 
     private final CommentRepository commentRepository;
     private final UserService userService;
-    private final RedisTemplate<String, Object> redisTemplate;
     private final CacheService cacheService;
 
     private static final String COMMENT_HOT_PAGE_KEY = "comment:hot:page:";
-    private static final long CACHE_EXPIRE_MINUTES = 10;
-    private static final long CACHE_EXPIRE_SECONDS = CACHE_EXPIRE_MINUTES * 60;
+    private static final long CACHE_EXPIRE_SECONDS = 600;
 
     // ==================== 评论列表查询 ====================
 

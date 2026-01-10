@@ -24,20 +24,14 @@ public class PostCacheRepository extends BaseCacheRepository {
      */
     public List<Long> getHotPostIds(int start, int end) {
         String redisKey = RedisKeyManager.postHotRankKey();
+        Set<Object> postIds = redisOps.zReverseRange(redisKey, start, end);
         
-        try {
-            Set<Object> postIds = redisTemplate.opsForZSet().reverseRange(redisKey, start, end);
-            
-            if (postIds != null && !postIds.isEmpty()) {
-                return postIds.stream()
-                        .map(this::convertToLong)
-                        .filter(Objects::nonNull)
-                        .collect(Collectors.toList());
-            }
-        } catch (Exception e) {
-            log.error("[缓存] 获取热门帖子ID失败 - key: {}", redisKey, e);
+        if (!postIds.isEmpty()) {
+            return postIds.stream()
+                    .map(this::convertToLong)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
         }
-        
         return Collections.emptyList();
     }
 
@@ -52,23 +46,17 @@ public class PostCacheRepository extends BaseCacheRepository {
         }
 
         String redisKey = RedisKeyManager.postHotRankKey();
+        deleteCache(redisKey); // 先清空旧数据
         
-        try {
-            deleteCache(redisKey); // 先清空旧数据
-            
-            // 批量插入新数据
-            postScores.forEach((postId, score) -> {
-                if (score != null && postId != null) {
-                    redisTemplate.opsForZSet().add(redisKey, postId.toString(), score);
-                }
-            });
-            
-            expire(redisKey, RedisKeyManager.POST_HOT_RANK_TTL);
-            
-            log.debug("缓存热门帖子排行成功: key={}, size={}", redisKey, postScores.size());
-        } catch (Exception e) {
-            log.error("[缓存] 缓存热门帖子排行失败 - key: {}", redisKey, e);
-        }
+        // 批量插入新数据
+        postScores.forEach((postId, score) -> {
+            if (score != null && postId != null) {
+                redisOps.zAdd(redisKey, postId.toString(), score);
+            }
+        });
+        
+        expire(redisKey, RedisKeyManager.POST_HOT_RANK_TTL);
+        log.debug("缓存热门帖子排行: key={}, size={}", redisKey, postScores.size());
     }
 
     /**
@@ -98,17 +86,10 @@ public class PostCacheRepository extends BaseCacheRepository {
         }
         
         String redisKey = RedisKeyManager.postHotRankKey();
-        
-        try {
-            // 批量删除无效的ID
-            for (Long invalidId : invalidIds) {
-                redisTemplate.opsForZSet().remove(redisKey, invalidId.toString());
-            }
-            
-            log.info("[缓存] 清理无效数据成功 - key: {}, count: {}", redisKey, invalidIds.size());
-        } catch (Exception e) {
-            log.error("[缓存] 清理无效数据失败 - key: {}", redisKey, e);
-        }
+        // 批量删除无效的ID
+        Object[] values = invalidIds.stream().map(String::valueOf).toArray();
+        redisOps.zRemove(redisKey, values);
+        log.info("[缓存] 清理无效数据: key={}, count={}", redisKey, invalidIds.size());
     }
 
     /**
@@ -118,13 +99,7 @@ public class PostCacheRepository extends BaseCacheRepository {
      */
     public Double getHotScore(Long postId) {
         String redisKey = RedisKeyManager.postHotRankKey();
-        
-        try {
-            return redisTemplate.opsForZSet().score(redisKey, postId.toString());
-        } catch (Exception e) {
-            log.error("[缓存] 获取热度分数失败 - key: {}, postId: {}", redisKey, postId, e);
-            return null;
-        }
+        return redisOps.zScore(redisKey, postId.toString());
     }
 
     /**
@@ -133,12 +108,6 @@ public class PostCacheRepository extends BaseCacheRepository {
      */
     public Long getHotRankSize() {
         String redisKey = RedisKeyManager.postHotRankKey();
-        
-        try {
-            return redisTemplate.opsForZSet().size(redisKey);
-        } catch (Exception e) {
-            log.error("[缓存] 获取热度排行总数量失败 - key: {}", redisKey, e);
-            return 0L;
-        }
+        return redisOps.zSize(redisKey);
     }
 }

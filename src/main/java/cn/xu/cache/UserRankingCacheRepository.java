@@ -10,7 +10,6 @@ import java.util.stream.Collectors;
  * 用户排行榜缓存仓储
  * <p>使用Redis ZSet实现用户排行榜，支持多种排序维度</p>
  * <p>继承BaseCacheRepository复用通用方法，减少重复代码</p>
- 
  */
 @Slf4j
 @Repository
@@ -28,7 +27,7 @@ public class UserRankingCacheRepository extends BaseCacheRepository {
         
         try {
             // 使用ZREVRANGE获取降序排列的用户ID（分数高的在前）
-            Set<Object> userIds = redisTemplate.opsForZSet().reverseRange(redisKey, start, end);
+            Set<Object> userIds = redisOps.zReverseRange(redisKey, start, end);
             
             if (userIds != null && !userIds.isEmpty()) {
                 return userIds.stream()
@@ -62,7 +61,7 @@ public class UserRankingCacheRepository extends BaseCacheRepository {
             // 批量插入新数据
             userScores.forEach((userId, score) -> {
                 if (score != null && userId != null) {
-                    redisTemplate.opsForZSet().add(redisKey, userId.toString(), score);
+                    redisOps.zAdd(redisKey, userId.toString(), score);
                 }
             });
             
@@ -84,7 +83,7 @@ public class UserRankingCacheRepository extends BaseCacheRepository {
         String redisKey = RedisKeyManager.userRankingKey(sortType);
         
         try {
-            redisTemplate.opsForZSet().add(redisKey, userId.toString(), score);
+            redisOps.zAdd(redisKey, userId.toString(), score);
             log.debug("更新用户排行榜分数成功: key={}, userId={}, score={}", redisKey, userId, score);
         } catch (Exception e) {
             log.error("[缓存] 更新排行榜分数失败 - key: {}, userId: {}", redisKey, userId, e);
@@ -107,7 +106,7 @@ public class UserRankingCacheRepository extends BaseCacheRepository {
             // 批量更新排行榜分数
             userScores.forEach((userId, score) -> {
                 if (score != null && userId != null) {
-                    redisTemplate.opsForZSet().add(redisKey, userId.toString(), score);
+                    redisOps.zAdd(redisKey, userId.toString(), score);
                 }
             });
             
@@ -126,7 +125,7 @@ public class UserRankingCacheRepository extends BaseCacheRepository {
         String redisKey = RedisKeyManager.userRankingKey(sortType);
         
         try {
-            redisTemplate.opsForZSet().remove(redisKey, userId.toString());
+            redisOps.zRemove(redisKey, userId.toString());
             log.debug("从排行榜移除用户成功: key={}, userId={}", redisKey, userId);
         } catch (Exception e) {
             log.error("[缓存] 移除排行榜用户失败 - key: {}, userId: {}", redisKey, userId, e);
@@ -143,7 +142,7 @@ public class UserRankingCacheRepository extends BaseCacheRepository {
         String redisKey = RedisKeyManager.userRankingKey(sortType);
         
         try {
-            return redisTemplate.opsForZSet().score(redisKey, userId.toString());
+            return redisOps.zScore(redisKey, userId.toString());
         } catch (Exception e) {
             log.error("[缓存] 获取排行榜分数失败 - key: {}, userId: {}", redisKey, userId, e);
             return null;
@@ -161,7 +160,7 @@ public class UserRankingCacheRepository extends BaseCacheRepository {
         
         try {
             // ZREVRANK返回的是从0开始的排名，需要+1
-            Long rank = redisTemplate.opsForZSet().reverseRank(redisKey, userId.toString());
+            Long rank = redisOps.getRedisTemplate().opsForZSet().reverseRank(redisKey, userId.toString());
             return rank != null ? rank + 1 : -1L;
         } catch (Exception e) {
             log.error("[缓存] 获取用户排名失败 - key: {}, userId: {}", redisKey, userId, e);
@@ -178,7 +177,7 @@ public class UserRankingCacheRepository extends BaseCacheRepository {
         String redisKey = RedisKeyManager.userRankingKey(sortType);
         
         try {
-            return redisTemplate.opsForZSet().size(redisKey);
+            return redisOps.zSize(redisKey);
         } catch (Exception e) {
             log.error("[缓存] 获取排行榜总数量失败 - key: {}", redisKey, e);
             return 0L;
@@ -229,7 +228,7 @@ public class UserRankingCacheRepository extends BaseCacheRepository {
         try {
             // 批量删除无效的ID
             for (Long invalidId : invalidIds) {
-                redisTemplate.opsForZSet().remove(redisKey, invalidId.toString());
+                redisOps.zRemove(redisKey, invalidId.toString());
             }
             
             log.info("[缓存] 清理无效数据成功 - key: {}, count: {}", redisKey, invalidIds.size());

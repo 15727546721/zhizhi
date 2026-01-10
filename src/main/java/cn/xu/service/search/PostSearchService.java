@@ -1,5 +1,6 @@
 package cn.xu.service.search;
 
+import cn.xu.cache.core.RedisOperations;
 import cn.xu.common.ResponseCode;
 import cn.xu.integration.search.strategy.ElasticsearchSearchStrategy;
 import cn.xu.integration.search.strategy.MysqlSearchStrategy;
@@ -16,13 +17,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /**
  * 帖子搜索服务（支持ES/MySQL自动降级）
@@ -40,7 +39,7 @@ public class PostSearchService {
     // 可选依赖 - setter 注入
     private ElasticsearchSearchStrategy esStrategy;
     private SearchStatisticsService statisticsService;
-    private RedisTemplate<String, Object> redisTemplate;
+    private RedisOperations redisOps;
 
     @Value("${app.post.query.strategy:auto}")
     private String preferredStrategy; // auto/elasticsearch/mysql
@@ -77,8 +76,8 @@ public class PostSearchService {
     }
 
     @Autowired(required = false)
-    public void setRedisTemplate(RedisTemplate<String, Object> redisTemplate) {
-        this.redisTemplate = redisTemplate;
+    public void setRedisOps(RedisOperations redisOps) {
+        this.redisOps = redisOps;
     }
 
     // ==================== 初始化方法 ====================
@@ -139,7 +138,7 @@ public class PostSearchService {
         String normalizedKeyword = normalizeKeyword(keyword);
 
         // 1. 检查缓存
-        if (cacheEnabled && redisTemplate != null) {
+        if (cacheEnabled && redisOps != null) {
             Page<Post> cached = getFromCache(normalizedKeyword, filter, pageable);
             if (cached != null) {
                 log.debug("使用缓存查询: keyword={}", normalizedKeyword);
@@ -151,7 +150,7 @@ public class PostSearchService {
         Page<Post> result = searchWithFallback(normalizedKeyword, filter, pageable);
 
         // 3. 保存缓存
-        if (cacheEnabled && redisTemplate != null && result != null) {
+        if (cacheEnabled && redisOps != null && result != null) {
             saveToCache(normalizedKeyword, filter, pageable, result);
         }
 
@@ -202,7 +201,7 @@ public class PostSearchService {
     private Page<Post> getFromCache(String keyword, SearchFilter filter, Pageable pageable) {
         try {
             String cacheKey = buildCacheKey(keyword, filter, pageable);
-            return (Page<Post>) redisTemplate.opsForValue().get(cacheKey);
+            return (Page<Post>) redisOps.get(cacheKey);
         } catch (Exception e) {
             log.warn("获取缓存失败: keyword={}", keyword, e);
             return null;
@@ -212,7 +211,7 @@ public class PostSearchService {
     private void saveToCache(String keyword, SearchFilter filter, Pageable pageable, Page<Post> result) {
         try {
             String cacheKey = buildCacheKey(keyword, filter, pageable);
-            redisTemplate.opsForValue().set(cacheKey, result, cacheTtlSeconds, TimeUnit.SECONDS);
+            redisOps.set(cacheKey, result, cacheTtlSeconds);
         } catch (Exception e) {
             log.warn("保存缓存失败: keyword={}", keyword, e);
         }

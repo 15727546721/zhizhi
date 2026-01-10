@@ -27,20 +27,14 @@ public class CommentCacheRepository extends BaseCacheRepository {
      */
     public List<Long> getHotCommentIds(CommentType commentType, Long targetId, int start, int end) {
         String redisKey = RedisKeyManager.commentHotRankKey(commentType, targetId);
+        Set<Object> commentIds = redisOps.zReverseRange(redisKey, start, end);
         
-        try {
-            Set<Object> commentIds = redisTemplate.opsForZSet().reverseRange(redisKey, start, end);
-            
-            if (commentIds != null && !commentIds.isEmpty()) {
-                return commentIds.stream()
-                        .map(this::convertToLong)
-                        .filter(Objects::nonNull)
-                        .collect(Collectors.toList());
-            }
-        } catch (Exception e) {
-            log.error("[缓存] 获取热门评论ID失败 - key: {}", redisKey, e);
+        if (!commentIds.isEmpty()) {
+            return commentIds.stream()
+                    .map(this::convertToLong)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
         }
-        
         return Collections.emptyList();
     }
 
@@ -57,20 +51,15 @@ public class CommentCacheRepository extends BaseCacheRepository {
         }
 
         String redisKey = RedisKeyManager.commentHotRankKey(commentType, targetId);
+        // 批量插入新数据（增量更新）
+        commentScores.forEach((commentId, score) -> {
+            if (score != null && commentId != null) {
+                redisOps.zAdd(redisKey, commentId.toString(), score);
+            }
+        });
         
-        try {
-            // 批量插入新数据（增量更新）
-            commentScores.forEach((commentId, score) -> {
-                if (score != null && commentId != null) {
-                    redisTemplate.opsForZSet().add(redisKey, commentId.toString(), score);
-                }
-            });
-            
-            expire(redisKey, RedisKeyManager.COMMENT_TTL);
-            log.debug("缓存热门评论排行成功: key={}, size={}", redisKey, commentScores.size());
-        } catch (Exception e) {
-            log.error("[缓存] 缓存热门评论排行失败 - key: {}", redisKey, e);
-        }
+        expire(redisKey, RedisKeyManager.COMMENT_TTL);
+        log.debug("缓存热门评论排行: key={}, size={}", redisKey, commentScores.size());
     }
 
     /**
@@ -106,17 +95,9 @@ public class CommentCacheRepository extends BaseCacheRepository {
         }
         
         String redisKey = RedisKeyManager.commentHotRankKey(commentType, targetId);
-        
-        try {
-            // 批量删除无效的ID
-            for (Long invalidId : invalidIds) {
-                redisTemplate.opsForZSet().remove(redisKey, invalidId.toString());
-            }
-            
-            log.info("[缓存] 清理无效数据成功 - key: {}, count: {}", redisKey, invalidIds.size());
-        } catch (Exception e) {
-            log.error("[缓存] 清理无效数据失败 - key: {}", redisKey, e);
-        }
+        Object[] values = invalidIds.stream().map(String::valueOf).toArray();
+        redisOps.zRemove(redisKey, values);
+        log.info("[缓存] 清理无效数据: key={}, count={}", redisKey, invalidIds.size());
     }
 
     /**
@@ -139,13 +120,8 @@ public class CommentCacheRepository extends BaseCacheRepository {
      */
     public void updateHotRank(CommentType commentType, Long targetId, Long commentId, double hotScore) {
         String redisKey = RedisKeyManager.commentHotRankKey(commentType, targetId);
-        
-        try {
-            redisTemplate.opsForZSet().add(redisKey, commentId, hotScore);
-            log.debug("更新热度排行成功: key={}, commentId={}, score={}", redisKey, commentId, hotScore);
-        } catch (Exception e) {
-            log.error("[缓存] 更新热度排行失败 - key: {}, commentId: {}", redisKey, commentId, e);
-        }
+        redisOps.zAdd(redisKey, commentId, hotScore);
+        log.debug("更新热度排行: key={}, commentId={}, score={}", redisKey, commentId, hotScore);
     }
 
     /**
@@ -156,12 +132,7 @@ public class CommentCacheRepository extends BaseCacheRepository {
      */
     public void removeHotRank(CommentType commentType, Long targetId, Long commentId) {
         String redisKey = RedisKeyManager.commentHotRankKey(commentType, targetId);
-        
-        try {
-            redisTemplate.opsForZSet().remove(redisKey, commentId.toString());
-            log.debug("从热度排行移除评论成功: key={}, commentId={}", redisKey, commentId);
-        } catch (Exception e) {
-            log.error("[缓存] 移除热度排行失败 - key: {}, commentId: {}", redisKey, commentId, e);
-        }
+        redisOps.zRemove(redisKey, commentId.toString());
+        log.debug("从热度排行移除评论: key={}, commentId={}", redisKey, commentId);
     }
 }

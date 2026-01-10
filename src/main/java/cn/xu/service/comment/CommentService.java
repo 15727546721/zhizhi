@@ -1,5 +1,6 @@
 package cn.xu.service.comment;
 
+import cn.xu.cache.core.RedisOperations;
 import cn.xu.model.enums.CommentSortType;
 import cn.xu.model.enums.CommentType;
 import cn.xu.event.publisher.SocialEventPublisher;
@@ -19,13 +20,11 @@ import cn.xu.service.user.UserService;
 import cn.xu.support.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -40,7 +39,7 @@ public class CommentService {
     private final CommentRepository commentRepository;
     private final SocialEventPublisher socialEventPublisher;
     private final UserService userService;
-    private final RedisTemplate<String, Object> redisTemplate;
+    private final RedisOperations redisOps;
     private final FileManagementService fileManagementService;
     private final PostMapper postMapper;
     private final UserMapper userMapper;
@@ -48,7 +47,7 @@ public class CommentService {
     private final FollowService followService;
 
     private static final String COMMENT_HOT_PAGE_KEY = "comment:hot:page:";
-    private static final long CACHE_EXPIRE_MINUTES = 10;
+    private static final long CACHE_EXPIRE_SECONDS = 600;
 
     // ==================== 接口实现 ====================
     @Transactional(rollbackFor = Exception.class)
@@ -322,7 +321,7 @@ public class CommentService {
         );
 
         try {
-            List<Comment> cached = (List<Comment>) redisTemplate.opsForValue().get(cacheKey);
+            List<Comment> cached = (List<Comment>) redisOps.get(cacheKey);
             if (cached != null) {
                 return cached;
             }
@@ -332,7 +331,7 @@ public class CommentService {
                     request.getPageNo(), request.getPageSize());
 
             if (!comments.isEmpty()) {
-                redisTemplate.opsForValue().set(cacheKey, comments, CACHE_EXPIRE_MINUTES, TimeUnit.MINUTES);
+                redisOps.set(cacheKey, comments, CACHE_EXPIRE_SECONDS);
             }
             return comments;
         } catch (Exception e) {

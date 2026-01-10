@@ -16,9 +16,11 @@ import java.util.concurrent.TimeUnit;
 /**
  * Redis操作服务类
  * <p>提供连接检查、数据存取、过期时间设置等常用的Redis操作</p>
-
+ * 
+ * @deprecated 建议使用 {@link cn.xu.cache.core.RedisOperations} 替代
  */
 @Component
+@Deprecated
 public class RedisService {
 
     private static final Logger log = LoggerFactory.getLogger(RedisService.class);
@@ -181,7 +183,7 @@ public class RedisService {
             } else {
                 set(key, value);
             }
-            log.info(LogConstants.CACHE_UPDATE, key, time);
+            log.debug(LogConstants.CACHE_UPDATE, key, time);
         } catch (Exception e) {
             log.error(LogConstants.REDIS_OPERATION_FAILED, "设置缓存失败", key, e.getMessage());
             throw e;
@@ -192,14 +194,26 @@ public class RedisService {
      * 增加指定键的值
      */
     public long incr(String key, long delta) {
-        return redisTemplate.opsForValue().increment(key, delta);
+        try {
+            Long result = redisTemplate.opsForValue().increment(key, delta);
+            return result != null ? result : 0L;
+        } catch (Exception e) {
+            log.error(LogConstants.REDIS_OPERATION_FAILED, "增加计数失败", key, e.getMessage());
+            throw e;
+        }
     }
 
     /**
      * 减少指定键的值
      */
     public long decr(String key, long delta) {
-        return redisTemplate.opsForValue().increment(key, -delta);
+        try {
+            Long result = redisTemplate.opsForValue().increment(key, -delta);
+            return result != null ? result : 0L;
+        } catch (Exception e) {
+            log.error(LogConstants.REDIS_OPERATION_FAILED, "减少计数失败", key, e.getMessage());
+            throw e;
+        }
     }
 
     // ================================Hash=================================
@@ -208,21 +222,36 @@ public class RedisService {
      * 获取Hash类型缓存中的值
      */
     public Object hget(String key, String item) {
-        return redisTemplate.opsForHash().get(key, item);
+        try {
+            return redisTemplate.opsForHash().get(key, item);
+        } catch (Exception e) {
+            log.error(LogConstants.REDIS_OPERATION_FAILED, "获取Hash值失败", key, e.getMessage());
+            throw e;
+        }
     }
 
     /**
      * 获取整个Hash的数据
      */
     public Map<Object, Object> hmget(String key) {
-        return redisTemplate.opsForHash().entries(key);
+        try {
+            return redisTemplate.opsForHash().entries(key);
+        } catch (Exception e) {
+            log.error(LogConstants.REDIS_OPERATION_FAILED, "获取Hash数据失败", key, e.getMessage());
+            throw e;
+        }
     }
 
     /**
      * 设置Hash类型缓存的数据
      */
     public void hmset(String key, Map<String, Object> map) {
-        redisTemplate.opsForHash().putAll(key, map);
+        try {
+            redisTemplate.opsForHash().putAll(key, map);
+        } catch (Exception e) {
+            log.error(LogConstants.REDIS_OPERATION_FAILED, "设置Hash数据失败", key, e.getMessage());
+            throw e;
+        }
     }
 
     // ============================Set=============================
@@ -231,7 +260,12 @@ public class RedisService {
      * 获取Set类型缓存的数据
      */
     public Set<Object> sGet(String key) {
-        return redisTemplate.opsForSet().members(key);
+        try {
+            return redisTemplate.opsForSet().members(key);
+        } catch (Exception e) {
+            log.error(LogConstants.REDIS_OPERATION_FAILED, "获取Set数据失败", key, e.getMessage());
+            throw e;
+        }
     }
 
     /**
@@ -239,7 +273,12 @@ public class RedisService {
      */
     @SafeVarargs
     public final <T> void sSet(String key, T... values) {
-        redisTemplate.opsForSet().add(key, values);
+        try {
+            redisTemplate.opsForSet().add(key, values);
+        } catch (Exception e) {
+            log.error(LogConstants.REDIS_OPERATION_FAILED, "设置Set数据失败", key, e.getMessage());
+            throw e;
+        }
     }
 
     /**
@@ -247,7 +286,12 @@ public class RedisService {
      */
     @SafeVarargs
     public final <T> void setRemove(String key, T... values) {
-        redisTemplate.opsForSet().remove(key, values);
+        try {
+            redisTemplate.opsForSet().remove(key, values);
+        } catch (Exception e) {
+            log.error(LogConstants.REDIS_OPERATION_FAILED, "删除Set元素失败", key, e.getMessage());
+            throw e;
+        }
     }
 
     // ===============================ZSet=================================
@@ -256,56 +300,96 @@ public class RedisService {
      * 添加元素到ZSet
      */
     public void zAdd(String key, Object value, double score) {
-        redisTemplate.opsForZSet().add(key, value, score);
+        try {
+            redisTemplate.opsForZSet().add(key, value, score);
+        } catch (Exception e) {
+            log.error(LogConstants.REDIS_OPERATION_FAILED, "添加ZSet元素失败", key, e.getMessage());
+            throw e;
+        }
     }
     
     /**
      * 添加元素到ZSet（别名方法）
      */
     public void zSetAdd(String key, String value, double score) {
-        redisTemplate.opsForZSet().add(key, value, score);
+        try {
+            redisTemplate.opsForZSet().add(key, value, score);
+        } catch (Exception e) {
+            log.error(LogConstants.REDIS_OPERATION_FAILED, "添加ZSet元素失败", key, e.getMessage());
+            throw e;
+        }
     }
 
     /**
      * 获取ZSet中的指定范围元素
      */
     public Set<Object> zRange(String key, long start, long end) {
-        return redisTemplate.opsForZSet().range(key, start, end);
+        try {
+            return redisTemplate.opsForZSet().range(key, start, end);
+        } catch (Exception e) {
+            log.error(LogConstants.REDIS_OPERATION_FAILED, "获取ZSet范围元素失败", key, e.getMessage());
+            throw e;
+        }
     }
 
     /**
      * 获取ZSet中指定范围元素及其score
      */
     public Set<ZSetOperations.TypedTuple<Object>> zRangeWithScores(String key, long start, long end) {
-        return redisTemplate.opsForZSet().rangeWithScores(key, start, end);
+        try {
+            return redisTemplate.opsForZSet().rangeWithScores(key, start, end);
+        } catch (Exception e) {
+            log.error(LogConstants.REDIS_OPERATION_FAILED, "获取ZSet范围元素失败", key, e.getMessage());
+            throw e;
+        }
     }
 
     /**
      * 根据score获取ZSet中的元素
      */
     public Set<Object> zRangeByScore(String key, double min, double max) {
-        return redisTemplate.opsForZSet().rangeByScore(key, min, max);
+        try {
+            return redisTemplate.opsForZSet().rangeByScore(key, min, max);
+        } catch (Exception e) {
+            log.error(LogConstants.REDIS_OPERATION_FAILED, "按分数获取ZSet元素失败", key, e.getMessage());
+            throw e;
+        }
     }
 
     /**
      * 获取ZSet的元素分数
      */
     public Double zSetScore(String key, String value) {
-        return redisTemplate.opsForZSet().score(key, value);
+        try {
+            return redisTemplate.opsForZSet().score(key, value);
+        } catch (Exception e) {
+            log.error(LogConstants.REDIS_OPERATION_FAILED, "获取ZSet元素分数失败", key, e.getMessage());
+            throw e;
+        }
     }
 
     /**
      * 获取ZSet的元素个数
      */
     public Long zSetSize(String key) {
-        return redisTemplate.opsForZSet().size(key);
+        try {
+            return redisTemplate.opsForZSet().size(key);
+        } catch (Exception e) {
+            log.error(LogConstants.REDIS_OPERATION_FAILED, "获取ZSet大小失败", key, e.getMessage());
+            throw e;
+        }
     }
 
     /**
      * 删除ZSet中的元素
      */
     public void zSetRemove(String key, String value) {
-        redisTemplate.opsForZSet().remove(key, value);
+        try {
+            redisTemplate.opsForZSet().remove(key, value);
+        } catch (Exception e) {
+            log.error(LogConstants.REDIS_OPERATION_FAILED, "删除ZSet元素失败", key, e.getMessage());
+            throw e;
+        }
     }
 
     // ===============================List=================================
@@ -314,21 +398,36 @@ public class RedisService {
      * 获取List类型缓存的指定范围数据
      */
     public List<Object> lGet(String key, long start, long end) {
-        return redisTemplate.opsForList().range(key, start, end);
+        try {
+            return redisTemplate.opsForList().range(key, start, end);
+        } catch (Exception e) {
+            log.error(LogConstants.REDIS_OPERATION_FAILED, "获取List数据失败", key, e.getMessage());
+            throw e;
+        }
     }
 
     /**
      * 向List添加元素
      */
     public void lSet(String key, Object value) {
-        redisTemplate.opsForList().rightPush(key, value);
+        try {
+            redisTemplate.opsForList().rightPush(key, value);
+        } catch (Exception e) {
+            log.error(LogConstants.REDIS_OPERATION_FAILED, "添加List元素失败", key, e.getMessage());
+            throw e;
+        }
     }
 
     /**
      * 向List添加多个元素
      */
     public void lSet(String key, List<Object> value) {
-        redisTemplate.opsForList().rightPushAll(key, value);
+        try {
+            redisTemplate.opsForList().rightPushAll(key, value);
+        } catch (Exception e) {
+            log.error(LogConstants.REDIS_OPERATION_FAILED, "批量添加List元素失败", key, e.getMessage());
+            throw e;
+        }
     }
 
     // ===============================HyperLogLog=================================
@@ -337,14 +436,25 @@ public class RedisService {
      * 向HyperLogLog添加元素
      */
     public void pfAdd(String key, String... values) {
-        redisTemplate.opsForHyperLogLog().add(key, (Object[]) values);
+        try {
+            redisTemplate.opsForHyperLogLog().add(key, (Object[]) values);
+        } catch (Exception e) {
+            log.error(LogConstants.REDIS_OPERATION_FAILED, "添加HyperLogLog元素失败", key, e.getMessage());
+            throw e;
+        }
     }
 
     /**
      * 获取HyperLogLog的基数
      */
     public long pfCount(String key) {
-        return redisTemplate.opsForHyperLogLog().size(key);
+        try {
+            Long count = redisTemplate.opsForHyperLogLog().size(key);
+            return count != null ? count : 0L;
+        } catch (Exception e) {
+            log.error(LogConstants.REDIS_OPERATION_FAILED, "获取HyperLogLog基数失败", key, e.getMessage());
+            throw e;
+        }
     }
 
     // ===============================Post View Count=================================
@@ -357,11 +467,15 @@ public class RedisService {
             return;
         }
 
-        String key = RedisKeyManager.postViewCountKey(postId);
-        redisTemplate.opsForValue().increment(key, 1);
-
-        // 设置过期时间为24小时
-        redisTemplate.expire(key, 24, TimeUnit.HOURS);
+        try {
+            String key = RedisKeyManager.postViewCountKey(postId);
+            redisTemplate.opsForValue().increment(key, 1);
+            // 设置过期时间为24小时
+            redisTemplate.expire(key, 24, TimeUnit.HOURS);
+        } catch (Exception e) {
+            log.warn("增加帖子阅读计数失败: postId={}, error={}", postId, e.getMessage());
+            // 阅读计数失败不抛异常，降级处理
+        }
     }
 
     /**
@@ -372,8 +486,13 @@ public class RedisService {
             return 0L;
         }
 
-        String key = RedisKeyManager.postViewCountKey(postId);
-        Object count = redisTemplate.opsForValue().get(key);
-        return count != null ? Long.valueOf(count.toString()) : 0L;
+        try {
+            String key = RedisKeyManager.postViewCountKey(postId);
+            Object count = redisTemplate.opsForValue().get(key);
+            return count != null ? Long.valueOf(count.toString()) : 0L;
+        } catch (Exception e) {
+            log.warn("获取帖子阅读计数失败: postId={}, error={}", postId, e.getMessage());
+            return 0L;
+        }
     }
 }

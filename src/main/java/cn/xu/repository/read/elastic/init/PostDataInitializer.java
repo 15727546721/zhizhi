@@ -1,5 +1,6 @@
 package cn.xu.repository.read.elastic.init;
 
+import cn.xu.cache.core.RedisOperations;
 import cn.xu.integration.search.strategy.ElasticsearchSearchStrategy;
 import cn.xu.model.entity.Post;
 import cn.xu.repository.mapper.PostMapper;
@@ -13,11 +14,10 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.annotation.Order;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * 文章数据ES索引初始化类
@@ -39,7 +39,7 @@ public class PostDataInitializer implements ApplicationRunner {
     private final PostElasticRepository postElasticRepository;
 
     @Autowired(required = false)
-    private RedisTemplate<String, Object> redisTemplate;
+    private RedisOperations redisOps;
 
     @javax.annotation.PostConstruct
     public void onInit() {
@@ -199,13 +199,13 @@ public class PostDataInitializer implements ApplicationRunner {
      * 记录失败的索引任务
      */
     private void recordFailedIndexTask(Long postId) {
-        if (redisTemplate == null || postId == null) {
+        if (redisOps == null || postId == null) {
             return;
         }
         try {
             String failedTasksKey = "es:index:failed:tasks";
-            redisTemplate.opsForSet().add(failedTasksKey, postId.toString());
-            redisTemplate.expire(failedTasksKey, 24, TimeUnit.HOURS);
+            redisOps.sAdd(failedTasksKey, postId.toString());
+            redisOps.expire(failedTasksKey, 24 * 3600);
             log.debug("记录失败的ES索引任务: postId={}", postId);
         } catch (Exception e) {
             log.warn("记录失败的ES索引任务时发生异常: postId={}", postId, e);
