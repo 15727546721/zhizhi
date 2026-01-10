@@ -6,6 +6,9 @@ import cn.xu.common.ResponseCode;
 import cn.xu.common.annotation.ApiOperationLog;
 import cn.xu.common.response.ResponseEntity;
 import cn.xu.repository.mapper.*;
+import cn.xu.service.statistics.OnlineUserStatisticsService;
+import cn.xu.service.statistics.PostViewStatisticsService;
+import cn.xu.service.statistics.StatisticsCacheService;
 import cn.xu.service.statistics.VisitStatisticsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -26,6 +29,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * 数据统计控制器
@@ -63,6 +67,12 @@ public class SysStatisticsController {
     
     @Resource
     private VisitStatisticsService visitStatisticsService;
+    @Resource
+    private PostViewStatisticsService postViewStatisticsService;
+    @Resource
+    private OnlineUserStatisticsService onlineUserStatisticsService;
+    @Resource
+    private StatisticsCacheService statisticsCacheService;
 
     /**
      * 获取数据统计概览
@@ -80,7 +90,8 @@ public class SysStatisticsController {
     public ResponseEntity<StatisticsOverview> getOverview() {
         log.info("获取数据统计概览");
         
-        StatisticsOverview overview = StatisticsOverview.builder()
+        StatisticsOverview overview = statisticsCacheService.getOrCompute("overview", StatisticsOverview.class, () ->
+            StatisticsOverview.builder()
                 .postCount(safeCount(() -> postMapper.countAll()))
                 .userCount(safeCount(() -> userMapper.countAll()))
                 .commentCount(safeCount(() -> commentMapper.countAll()))
@@ -88,7 +99,8 @@ public class SysStatisticsController {
                 .likeCount(safeCount(() -> likeMapper.countAll()))
                 .favoriteCount(safeCount(() -> favoriteMapper != null ? favoriteMapper.countAll() : 0L))
                 .followCount(safeCount(() -> followMapper != null ? followMapper.countAll() : 0L))
-                .build();
+                .build()
+        );
         
         return ResponseEntity.<StatisticsOverview>builder()
                 .code(ResponseCode.SUCCESS.getCode())
@@ -111,11 +123,14 @@ public class SysStatisticsController {
     @SaCheckPermission("system:statistics:view")
     @ApiOperationLog(description = "获取帖子统计")
     public ResponseEntity<Map<String, Object>> getPostStatistics() {
-        Map<String, Object> stats = new HashMap<>();
-        stats.put("total", safeCount(() -> postMapper.countAll()));
-        stats.put("published", safeCount(() -> postMapper.countByStatus(1)));
-        stats.put("draft", safeCount(() -> postMapper.countByStatus(0)));
-        stats.put("featured", safeCount(() -> postMapper.countFeatured()));
+        Map<String, Object> stats = statisticsCacheService.getOrCompute("posts", Map.class, () -> {
+            Map<String, Object> data = new HashMap<>();
+            data.put("total", safeCount(() -> postMapper.countAll()));
+            data.put("published", safeCount(() -> postMapper.countByStatus(1)));
+            data.put("draft", safeCount(() -> postMapper.countByStatus(0)));
+            data.put("featured", safeCount(() -> postMapper.countFeatured()));
+            return data;
+        });
         return ResponseEntity.<Map<String, Object>>builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .data(stats)
@@ -136,10 +151,13 @@ public class SysStatisticsController {
     @SaCheckPermission("system:statistics:view")
     @ApiOperationLog(description = "获取用户统计")
     public ResponseEntity<Map<String, Object>> getUserStatistics() {
-        Map<String, Object> stats = new HashMap<>();
-        stats.put("total", safeCount(() -> userMapper.countAll()));
-        stats.put("active", safeCount(() -> userMapper.countByStatus(1)));
-        stats.put("disabled", safeCount(() -> userMapper.countByStatus(0)));
+        Map<String, Object> stats = statisticsCacheService.getOrCompute("users", Map.class, () -> {
+            Map<String, Object> data = new HashMap<>();
+            data.put("total", safeCount(() -> userMapper.countAll()));
+            data.put("active", safeCount(() -> userMapper.countByStatus(1)));
+            data.put("disabled", safeCount(() -> userMapper.countByStatus(0)));
+            return data;
+        });
         return ResponseEntity.<Map<String, Object>>builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .data(stats)
@@ -160,14 +178,16 @@ public class SysStatisticsController {
     @SaCheckPermission("system:statistics:view")
     @ApiOperationLog(description = "获取互动统计")
     public ResponseEntity<Map<String, Object>> getInteractionStatistics() {
-        Map<String, Object> stats = new HashMap<>();
-        stats.put("comments", safeCount(() -> commentMapper.countAll()));
-        stats.put("likes", safeCount(() -> likeMapper.countAll()));
-        stats.put("favorites", safeCount(() -> favoriteMapper != null ? favoriteMapper.countAll() : 0L));
-        stats.put("follows", safeCount(() -> followMapper != null ? followMapper.countAll() : 0L));
-        // 按类型统计点赞
-        stats.put("postLikes", safeCount(() -> likeMapper.countByType(1)));
-        stats.put("commentLikes", safeCount(() -> likeMapper.countByType(3)));
+        Map<String, Object> stats = statisticsCacheService.getOrCompute("interactions", Map.class, () -> {
+            Map<String, Object> data = new HashMap<>();
+            data.put("comments", safeCount(() -> commentMapper.countAll()));
+            data.put("likes", safeCount(() -> likeMapper.countAll()));
+            data.put("favorites", safeCount(() -> favoriteMapper != null ? favoriteMapper.countAll() : 0L));
+            data.put("follows", safeCount(() -> followMapper != null ? followMapper.countAll() : 0L));
+            data.put("postLikes", safeCount(() -> likeMapper.countByType(1)));
+            data.put("commentLikes", safeCount(() -> likeMapper.countByType(3)));
+            return data;
+        });
         return ResponseEntity.<Map<String, Object>>builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .data(stats)
@@ -190,41 +210,48 @@ public class SysStatisticsController {
     public ResponseEntity<DashboardStats> getDashboardStats() {
         log.info("获取仪表盘统计数据");
         
-        // 总数统计
-        long totalPosts = safeCount(() -> postMapper.countAll());
-        long totalUsers = safeCount(() -> userMapper.countAll());
-        long totalComments = safeCount(() -> commentMapper.countAll());
-        long totalTags = safeCount(() -> tagMapper.countAll());
-        
-        // 今日统计
-        LocalDateTime todayStart = LocalDate.now().atStartOfDay();
-        long todayPosts = safeCount(() -> postMapper.countByCreateTimeAfter(todayStart));
-        long todayUsers = safeCount(() -> userMapper.countByCreateTimeAfter(todayStart));
-        long todayComments = safeCount(() -> commentMapper.countByCreateTimeAfter(todayStart));
-        
-        // 昨日统计（用于计算环比）
-        LocalDateTime yesterdayStart = LocalDate.now().minusDays(1).atStartOfDay();
-        LocalDateTime yesterdayEnd = todayStart;
-        long yesterdayPosts = safeCount(() -> postMapper.countByCreateTimeBetween(yesterdayStart, yesterdayEnd));
-        long yesterdayComments = safeCount(() -> commentMapper.countByCreateTimeBetween(yesterdayStart, yesterdayEnd));
-        
-        // 待处理事项
-        long pendingReports = safeCount(() -> reportMapper != null ? reportMapper.countByStatusValue(0) : 0L);
-        long pendingFeedbacks = safeCount(() -> feedbackMapper != null ? feedbackMapper.countByStatus(0) : 0L);
-        
-        DashboardStats stats = DashboardStats.builder()
-                .totalPosts(totalPosts)
-                .totalUsers(totalUsers)
-                .totalComments(totalComments)
-                .totalTags(totalTags)
-                .todayPosts(todayPosts)
-                .todayUsers(todayUsers)
-                .todayComments(todayComments)
-                .yesterdayPosts(yesterdayPosts)
-                .yesterdayComments(yesterdayComments)
-                .pendingReports(pendingReports)
-                .pendingFeedbacks(pendingFeedbacks)
-                .build();
+        // 使用60秒缓存（因为包含实时在线用户数）
+        DashboardStats stats = statisticsCacheService.getOrCompute("dashboard", DashboardStats.class, () -> {
+            // 总数统计
+            long totalPosts = safeCount(() -> postMapper.countAll());
+            long totalUsers = safeCount(() -> userMapper.countAll());
+            long totalComments = safeCount(() -> commentMapper.countAll());
+            long totalTags = safeCount(() -> tagMapper.countAll());
+            
+            // 今日统计
+            LocalDateTime todayStart = LocalDate.now().atStartOfDay();
+            long todayPosts = safeCount(() -> postMapper.countByCreateTimeAfter(todayStart));
+            long todayUsers = safeCount(() -> userMapper.countByCreateTimeAfter(todayStart));
+            long todayComments = safeCount(() -> commentMapper.countByCreateTimeAfter(todayStart));
+            
+            // 昨日统计（用于计算环比）
+            LocalDateTime yesterdayStart = LocalDate.now().minusDays(1).atStartOfDay();
+            LocalDateTime yesterdayEnd = todayStart;
+            long yesterdayPosts = safeCount(() -> postMapper.countByCreateTimeBetween(yesterdayStart, yesterdayEnd));
+            long yesterdayComments = safeCount(() -> commentMapper.countByCreateTimeBetween(yesterdayStart, yesterdayEnd));
+            
+            // 待处理事项
+            long pendingReports = safeCount(() -> reportMapper != null ? reportMapper.countByStatusValue(0) : 0L);
+            long pendingFeedbacks = safeCount(() -> feedbackMapper != null ? feedbackMapper.countByStatus(0) : 0L);
+            
+            // 在线用户数
+            int onlineUserCount = onlineUserStatisticsService.getOnlineUserCount();
+            
+            return DashboardStats.builder()
+                    .totalPosts(totalPosts)
+                    .totalUsers(totalUsers)
+                    .totalComments(totalComments)
+                    .totalTags(totalTags)
+                    .todayPosts(todayPosts)
+                    .todayUsers(todayUsers)
+                    .todayComments(todayComments)
+                    .yesterdayPosts(yesterdayPosts)
+                    .yesterdayComments(yesterdayComments)
+                    .pendingReports(pendingReports)
+                    .pendingFeedbacks(pendingFeedbacks)
+                    .onlineUserCount(onlineUserCount)
+                    .build();
+        }, 60); // 60秒缓存
         
         return ResponseEntity.<DashboardStats>builder()
                 .code(ResponseCode.SUCCESS.getCode())
@@ -248,30 +275,32 @@ public class SysStatisticsController {
             @Parameter(description = "天数") @RequestParam(defaultValue = "7") Integer days) {
         log.info("获取数据趋势: days={}", days);
         
-        List<String> dates = new ArrayList<>();
-        List<Long> postCounts = new ArrayList<>();
-        List<Long> userCounts = new ArrayList<>();
-        List<Long> commentCounts = new ArrayList<>();
-        
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-dd");
-        
-        for (int i = days - 1; i >= 0; i--) {
-            LocalDate date = LocalDate.now().minusDays(i);
-            LocalDateTime dayStart = date.atStartOfDay();
-            LocalDateTime dayEnd = date.plusDays(1).atStartOfDay();
+        TrendData trendData = statisticsCacheService.getOrCompute("trend_" + days, TrendData.class, () -> {
+            List<String> dates = new ArrayList<>();
+            List<Long> postCounts = new ArrayList<>();
+            List<Long> userCounts = new ArrayList<>();
+            List<Long> commentCounts = new ArrayList<>();
             
-            dates.add(date.format(formatter));
-            postCounts.add(safeCount(() -> postMapper.countByCreateTimeBetween(dayStart, dayEnd)));
-            userCounts.add(safeCount(() -> userMapper.countByCreateTimeBetween(dayStart, dayEnd)));
-            commentCounts.add(safeCount(() -> commentMapper.countByCreateTimeBetween(dayStart, dayEnd)));
-        }
-        
-        TrendData trendData = TrendData.builder()
-                .dates(dates)
-                .postCounts(postCounts)
-                .userCounts(userCounts)
-                .commentCounts(commentCounts)
-                .build();
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-dd");
+            
+            for (int i = days - 1; i >= 0; i--) {
+                LocalDate date = LocalDate.now().minusDays(i);
+                LocalDateTime dayStart = date.atStartOfDay();
+                LocalDateTime dayEnd = date.plusDays(1).atStartOfDay();
+                
+                dates.add(date.format(formatter));
+                postCounts.add(safeCount(() -> postMapper.countByCreateTimeBetween(dayStart, dayEnd)));
+                userCounts.add(safeCount(() -> userMapper.countByCreateTimeBetween(dayStart, dayEnd)));
+                commentCounts.add(safeCount(() -> commentMapper.countByCreateTimeBetween(dayStart, dayEnd)));
+            }
+            
+            return TrendData.builder()
+                    .dates(dates)
+                    .postCounts(postCounts)
+                    .userCounts(userCounts)
+                    .commentCounts(commentCounts)
+                    .build();
+        });
         
         return ResponseEntity.<TrendData>builder()
                 .code(ResponseCode.SUCCESS.getCode())
@@ -283,21 +312,54 @@ public class SysStatisticsController {
      * 获取热门帖子排行
      * 
      * @param limit 数量限制
-     * @return 热门帖子列表
+     * @return 热门帖子列表（含环比数据）
      */
     @Operation(summary = "获取热门帖子排行")
     @GetMapping("/hot-posts")
     @SaCheckLogin
     @ApiOperationLog(description = "获取热门帖子排行")
-    public ResponseEntity<List<Map<String, Object>>> getHotPosts(
+    public ResponseEntity<List<HotPostVO>> getHotPosts(
             @Parameter(description = "数量") @RequestParam(defaultValue = "10") Integer limit) {
         log.info("获取热门帖子排行: limit={}", limit);
         
         List<Map<String, Object>> hotPosts = postMapper.selectHotPosts(limit);
+        if (hotPosts == null || hotPosts.isEmpty()) {
+            return ResponseEntity.<List<HotPostVO>>builder()
+                    .code(ResponseCode.SUCCESS.getCode())
+                    .data(new ArrayList<>())
+                    .build();
+        }
         
-        return ResponseEntity.<List<Map<String, Object>>>builder()
+        // 获取帖子ID列表
+        List<Long> postIds = hotPosts.stream()
+                .map(p -> ((Number) p.get("id")).longValue())
+                .collect(Collectors.toList());
+        
+        // 批量获取昨日浏览量
+        Map<Long, Long> yesterdayViews = postViewStatisticsService.getYesterdayViewCounts(postIds);
+        
+        // 构建返回数据
+        List<HotPostVO> result = hotPosts.stream().map(post -> {
+            Long postId = ((Number) post.get("id")).longValue();
+            long todayViewCount = post.get("viewCount") != null ? ((Number) post.get("viewCount")).longValue() : 0;
+            long yesterdayViewCount = yesterdayViews.getOrDefault(postId, 0L);
+            double growthRate = postViewStatisticsService.calculateGrowthRate(todayViewCount, yesterdayViewCount);
+            
+            return HotPostVO.builder()
+                    .id(postId)
+                    .title((String) post.get("title"))
+                    .viewCount(todayViewCount)
+                    .likeCount(post.get("likeCount") != null ? ((Number) post.get("likeCount")).longValue() : 0)
+                    .commentCount(post.get("commentCount") != null ? ((Number) post.get("commentCount")).longValue() : 0)
+                    .authorName((String) post.get("authorName"))
+                    .yesterdayViewCount(yesterdayViewCount)
+                    .growthRate(Math.round(growthRate * 10) / 10.0) // 保留一位小数
+                    .build();
+        }).collect(Collectors.toList());
+        
+        return ResponseEntity.<List<HotPostVO>>builder()
                 .code(ResponseCode.SUCCESS.getCode())
-                .data(hotPosts != null ? hotPosts : new ArrayList<>())
+                .data(result)
                 .build();
     }
 
@@ -482,6 +544,22 @@ public class SysStatisticsController {
         private Long yesterdayComments;
         private Long pendingReports;
         private Long pendingFeedbacks;
+        private Integer onlineUserCount;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class HotPostVO {
+        private Long id;
+        private String title;
+        private Long viewCount;
+        private Long likeCount;
+        private Long commentCount;
+        private String authorName;
+        private Long yesterdayViewCount;
+        private Double growthRate; // 环比增长率
     }
 
     @Data
