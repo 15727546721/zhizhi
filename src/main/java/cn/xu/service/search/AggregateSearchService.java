@@ -17,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PreDestroy;
 import javax.annotation.Resource;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -67,6 +68,28 @@ public class AggregateSearchService {
      * 搜索超时时间
      */
     private static final int SEARCH_TIMEOUT_SECONDS = 5;
+
+    /**
+     * 关闭线程池（应用关闭时调用）
+     */
+    @PreDestroy
+    public void shutdown() {
+        log.info("正在关闭聚合搜索线程池...");
+        if (searchExecutor != null && !searchExecutor.isShutdown()) {
+            searchExecutor.shutdown();
+            try {
+                if (!searchExecutor.awaitTermination(10, TimeUnit.SECONDS)) {
+                    log.warn("线程池未能在10秒内正常关闭，强制关闭");
+                    searchExecutor.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                log.warn("等待线程池关闭时被中断，强制关闭");
+                searchExecutor.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
+        }
+        log.info("聚合搜索线程池已关闭");
+    }
 
     /**
      * 聚合搜索

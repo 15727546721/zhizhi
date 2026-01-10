@@ -77,10 +77,10 @@ public class SecureRateLimitService {
 
     /**
      * 内存降级频控（Redis不可用时使用）
+     * 已优化：使用 synchronized 保证计数器操作的原子性，避免竞态条件
      */
-    private RateLimitResult checkMemoryFallback(String key, int limit, int windowSeconds) {
+    private synchronized RateLimitResult checkMemoryFallback(String key, int limit, int windowSeconds) {
         long currentTime = System.currentTimeMillis();
-        long windowStartTime = currentTime - windowSeconds * 1000L;
         
         // 清理过期的计数器
         cleanupExpiredCounters(currentTime);
