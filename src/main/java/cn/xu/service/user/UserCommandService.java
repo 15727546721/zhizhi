@@ -89,7 +89,7 @@ public class UserCommandService {
             return avatarUrl;
         } catch (Exception e) {
             log.error("上传用户头像失败", e);
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "上传头像失败: " + e.getMessage());
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "上传头像失败，请稍后重试");
         }
     }
 

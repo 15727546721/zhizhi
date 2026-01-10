@@ -13,8 +13,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 系统配置管理控制器
@@ -28,9 +28,9 @@ import java.util.Map;
 @Tag(name = "系统配置管理", description = "系统配置管理相关接口")
 public class SysConfigController {
 
-    // 模拟系统配置数据（后续可接入数据库）
-    private static Map<String, Object> systemConfig = new HashMap<>();
-    private static Map<String, Object> webConfig = new HashMap<>();
+    // 使用 ConcurrentHashMap 保证线程安全
+    private static final Map<String, Object> systemConfig = new ConcurrentHashMap<>();
+    private static final Map<String, Object> webConfig = new ConcurrentHashMap<>();
 
     static {
         // 初始化系统配置

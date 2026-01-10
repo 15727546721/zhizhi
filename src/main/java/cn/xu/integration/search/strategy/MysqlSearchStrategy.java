@@ -81,7 +81,7 @@ public class MysqlSearchStrategy implements SearchStrategy {
             
         } catch (Exception e) {
             log.error("[搜索] MySQL搜索失败 - keyword: {}", keyword, e);
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "MySQL搜索失败: " + e.getMessage());
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "搜索失败，请稍后重试");
         }
     }
 

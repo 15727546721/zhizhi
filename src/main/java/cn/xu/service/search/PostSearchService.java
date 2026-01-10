@@ -193,7 +193,7 @@ public class PostSearchService {
                 }
             }
 
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "搜索失败: " + e.getMessage());
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "搜索失败，请稍后重试");
         }
     }
 

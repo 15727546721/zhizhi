@@ -163,7 +163,7 @@ public class ElasticsearchSearchStrategy implements SearchStrategy, Elasticsearc
             } catch (Exception fallbackException) {
                 log.error("[ES] Elasticsearch简单搜索也失败 - keyword: {}", keyword, fallbackException);
                 available = false;
-                throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "Elasticsearch搜索失败: " + e.getMessage());
+                throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "搜索失败，请稍后重试");
             }
         }
     }

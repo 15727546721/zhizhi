@@ -82,7 +82,7 @@ public class UserProfileService {
             throw e;
         } catch (Exception e) {
             log.error("[用户个人资料服务] 获取用户个人资料失败 - userId: {}", userId, e);
-            throw new BusinessException(ResponseCode.SYSTEM_ERROR.getCode(), "获取用户个人资料失败: " + e.getMessage());
+            throw new BusinessException(ResponseCode.SYSTEM_ERROR.getCode(), "获取用户个人资料失败，请稍后重试");
         }
     }
 

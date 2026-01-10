@@ -204,7 +204,7 @@ public class UserAdminService {
             return admin;
         } catch (Exception e) {
             log.error("初始化管理员账号失败", e);
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "初始化管理员账号失败: " + e.getMessage());
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "初始化管理员账号失败，请稍后重试");
         }
     }
 }

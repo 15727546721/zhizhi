@@ -48,6 +48,10 @@ public class PermissionRepositoryImpl implements PermissionRepository {
 
     @Override
     public PageResponse<List<Role>> findRolePage(String name, int offset, int size) {
+        // 防止除零
+        if (size <= 0) {
+            size = 10;
+        }
         List<Role> roleList = roleMapper.selectRolePage(name, offset, size);
         long total = roleMapper.countRole(name);
         return PageResponse.ofList(offset / size + 1, size, total, roleList);

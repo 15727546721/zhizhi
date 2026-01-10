@@ -185,7 +185,7 @@ public class TagRepositoryImpl implements TagRepository {
             throw e;
         } catch (Exception e) {
             log.error("更新标签失败 - id: {}, name: {}", id, name, e);
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "更新标签失败: " + e.getMessage());
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "更新标签失败，请稍后重试");
         }
     }
 
@@ -200,7 +200,7 @@ public class TagRepositoryImpl implements TagRepository {
             log.info("更新标签成功 - id: {}", tag.getId());
         } catch (Exception e) {
             log.error("更新标签失败 - id: {}", tag.getId(), e);
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "更新标签失败: " + e.getMessage());
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "更新标签失败，请稍后重试");
         }
     }
 
@@ -225,7 +225,7 @@ public class TagRepositoryImpl implements TagRepository {
             throw e;
         } catch (Exception e) {
             log.error("删除标签失败 - id: {}", id, e);
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "删除标签失败: " + e.getMessage());
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "删除标签失败，请稍后重试");
         }
     }
 

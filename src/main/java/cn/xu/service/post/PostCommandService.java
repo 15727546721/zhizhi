@@ -428,7 +428,7 @@ public class PostCommandService {
                     .module(LogConstants.MODULE_FILE)
                     .op(LogConstants.OP_UPLOAD)
                     .error("上传帖子封面失败", e);
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "上传封面失败: " + e.getMessage());
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "上传封面失败，请稍后重试");
         }
     }
 

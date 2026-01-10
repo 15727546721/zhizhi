@@ -102,7 +102,7 @@ public class PostTagService {
             throw e;
         } catch (Exception e) {
             log.error("更新标签时发生错误, id: {}, name: {}", id, name, e);
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "更新标签时发生错误: " + e.getMessage());
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "更新标签失败，请稍后重试");
         }
     }
 
@@ -119,7 +119,7 @@ public class PostTagService {
             throw e;
         } catch (Exception e) {
             log.error("删除标签时发生错误, id: {}", id, e);
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "删除标签时发生错误: " + e.getMessage());
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "删除标签失败，请稍后重试");
         }
     }
 

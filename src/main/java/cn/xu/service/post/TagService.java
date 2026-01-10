@@ -59,7 +59,7 @@ public class TagService {
             throw e;
         } catch (Exception e) {
             log.error("根据ID获取标签出错, id: {}", id, e);
-            throw new BusinessException("获取标签出错: " + e.getMessage());
+            throw new BusinessException("获取标签失败，请稍后重试");
         }
     }
 
@@ -99,7 +99,7 @@ public class TagService {
             throw e;
         } catch (Exception e) {
             log.error("创建标签出错, name: {}", name, e);
-            throw new BusinessException("创建标签出错: " + e.getMessage());
+            throw new BusinessException("创建标签失败，请稍后重试");
         }
     }
 
@@ -146,7 +146,7 @@ public class TagService {
             throw e;
         } catch (Exception e) {
             log.error("更新标签出错, id: {}, name: {}", id, name, e);
-            throw new BusinessException("更新标签出错: " + e.getMessage());
+            throw new BusinessException("更新标签失败，请稍后重试");
         }
     }
 
@@ -192,7 +192,7 @@ public class TagService {
             throw e;
         } catch (Exception e) {
             log.error("更新标签出错, id: {}", tag.getId(), e);
-            throw new BusinessException("更新标签出错: " + e.getMessage());
+            throw new BusinessException("更新标签失败，请稍后重试");
         }
     }
 
@@ -220,7 +220,7 @@ public class TagService {
             throw e;
         } catch (Exception e) {
             log.error("删除标签出错, id: {}", id, e);
-            throw new BusinessException("删除标签出错: " + e.getMessage());
+            throw new BusinessException("删除标签失败，请稍后重试");
         }
     }
 
@@ -250,7 +250,7 @@ public class TagService {
             throw e;
         } catch (Exception e) {
             log.error("切换标签推荐状态出错, id: {}", id, e);
-            throw new BusinessException("操作出错: " + e.getMessage());
+            throw new BusinessException("操作失败，请稍后重试");
         }
     }
 
@@ -315,7 +315,7 @@ public class TagService {
             throw e;
         } catch (Exception e) {
             log.error("保存帖子标签关系出错, postId: {}, tagIds: {}", postId, tagIds, e);
-            throw new BusinessException("保存帖子标签关系出错: " + e.getMessage());
+            throw new BusinessException("保存帖子标签关系失败，请稍后重试");
         }
     }
 
@@ -349,7 +349,7 @@ public class TagService {
             log.info("删除帖子标签关系成功, postId: {}", postId);
         } catch (Exception e) {
             log.error("删除帖子标签关系出错, postId: {}", postId, e);
-            throw new BusinessException("删除帖子标签关系出错: " + e.getMessage());
+            throw new BusinessException("删除帖子标签关系失败，请稍后重试");
         }
     }
 
