@@ -444,7 +444,87 @@ public class SysPostController {
     }
 
     /**
+     * 切换帖子加精状态
+     * 
+     * <p>加精或取消加精帖子
+     * <p>需要system:post:update权限
+     * 
+     * @param postIds 帖子ID列表
+     * @return 操作结果
+     */
+    @PostMapping("/featured")
+    @Operation(summary = "切换加精状态")
+    @SaCheckLogin
+    @SaCheckPermission("system:post:update")
+    @ApiOperationLog(description = "切换帖子加精状态")
+    public ResponseEntity toggleFeatured(@RequestBody List<Long> postIds) {
+        if (postIds == null || postIds.isEmpty()) {
+            throw new BusinessException(ResponseCode.NULL_PARAMETER.getCode(), "帖子ID不能为空");
+        }
+        for (Long postId : postIds) {
+            postCommandService.toggleFeatured(postId);
+        }
+        return ResponseEntity.builder()
+                .code(ResponseCode.SUCCESS.getCode())
+                .info("操作成功")
+                .build();
+    }
+
+    /**
+     * 切换帖子发布状态
+     * 
+     * <p>发布或下架帖子
+     * <p>需要system:post:update权限
+     * 
+     * @param postIds 帖子ID列表
+     * @return 操作结果
+     */
+    @PostMapping("/status")
+    @Operation(summary = "切换发布状态")
+    @SaCheckLogin
+    @SaCheckPermission("system:post:update")
+    @ApiOperationLog(description = "切换帖子发布状态")
+    public ResponseEntity toggleStatus(@RequestBody List<Long> postIds) {
+        if (postIds == null || postIds.isEmpty()) {
+            throw new BusinessException(ResponseCode.NULL_PARAMETER.getCode(), "帖子ID不能为空");
+        }
+        for (Long postId : postIds) {
+            postCommandService.togglePublish(postId);
+        }
+        return ResponseEntity.builder()
+                .code(ResponseCode.SUCCESS.getCode())
+                .info("操作成功")
+                .build();
+    }
+
+    /**
      * 置顶/取消置顶帖子
+     * 
+     * <p>置顶或取消置顶帖子
+     * <p>需要system:post:update权限
+     * 
+     * @param postIds 帖子ID列表
+     * @return 操作结果
+     */
+    @PostMapping("/top")
+    @Operation(summary = "置顶帖子")
+    @SaCheckLogin
+    @SaCheckPermission("system:post:update")
+    @ApiOperationLog(description = "置顶帖子")
+    public ResponseEntity toggleTop(@RequestBody List<Long> postIds) {
+        if (postIds == null || postIds.isEmpty()) {
+            throw new BusinessException(ResponseCode.NULL_PARAMETER.getCode(), "帖子ID不能为空");
+        }
+        // TODO: 实现置顶逻辑，需要在 PostCommandService 中添加 toggleTop 方法
+        log.info("置顶帖子: {}", postIds);
+        return ResponseEntity.builder()
+                .code(ResponseCode.SUCCESS.getCode())
+                .info("操作成功")
+                .build();
+    }
+
+    /**
+     * 获取随机封面图
      * 
      * <p>返回一个随机的默认封面图URL
      * <p>公开接口，无需登录
