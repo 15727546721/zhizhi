@@ -62,9 +62,14 @@ public class PostConverter {
 
     /**
      * 单个 Post 转换为 PostListVO
+     * 已优化：增加 null 安全检查，防止用户被删除时 NPE
      */
     private PostListVO toListVO(Post post, Map<Long, User> userMap, Map<Long, String[]> tagMap) {
+        // 安全获取用户信息（用户可能已被删除）
         User user = post.getUserId() != null ? userMap.get(post.getUserId()) : null;
+        String nickname = user != null ? user.getNickname() : "已删除用户";
+        String avatar = user != null ? user.getAvatar() : null;
+        
         String[] tagNames = tagMap.getOrDefault(post.getId(), new String[]{});
 
         PostItemVO postItem = PostItemVO.builder()
@@ -75,8 +80,8 @@ public class PostConverter {
                 .coverUrl(post.getCoverUrl())
                 .status(post.getStatus())
                 .userId(post.getUserId())
-                .nickname(user != null ? user.getNickname() : null)
-                .avatar(user != null ? user.getAvatar() : null)
+                .nickname(nickname)
+                .avatar(avatar)
                 .viewCount(post.getViewCount())
                 .likeCount(post.getLikeCount())
                 .commentCount(post.getCommentCount())

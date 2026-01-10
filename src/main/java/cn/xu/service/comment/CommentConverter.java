@@ -40,6 +40,7 @@ public class CommentConverter {
 
     /**
      * 单个评论转换为 VO
+     * 已优化：增加 null 安全检查，防止用户被删除时 NPE
      */
     public CommentVO toVO(Comment comment,
                           Set<Long> userLikeSet,
@@ -56,6 +57,16 @@ public class CommentConverter {
                     .collect(Collectors.toList());
         }
 
+        // 安全获取用户信息（用户可能已被删除）
+        User user = comment.getUser();
+        String nickname = user != null ? user.getNickname() : "已删除用户";
+        String avatar = user != null ? user.getAvatar() : null;
+        Integer userType = user != null ? user.getUserType() : 0;
+
+        // 安全获取被回复用户信息
+        User replyUser = comment.getReplyUser();
+        String replyToNickname = replyUser != null ? replyUser.getNickname() : null;
+
         return CommentVO.builder()
                 .id(comment.getId())
                 .postId(comment.getTargetId())
@@ -63,12 +74,12 @@ public class CommentConverter {
                 .imageUrls(comment.getImageUrls())
                 .parentId(comment.getParentId())
                 .replyToUserId(comment.getReplyUserId())
-                .replyToNickname(comment.getReplyUser() != null ? comment.getReplyUser().getNickname() : null)
+                .replyToNickname(replyToNickname)
                 .level(calculateLevel(comment))
                 .userId(comment.getUserId())
-                .nickname(comment.getUser() != null ? comment.getUser().getNickname() : null)
-                .avatar(comment.getUser() != null ? comment.getUser().getAvatar() : null)
-                .userType(comment.getUser() != null ? comment.getUser().getUserType() : 0)
+                .nickname(nickname)
+                .avatar(avatar)
+                .userType(userType)
                 .likeCount(comment.getLikeCount())
                 .replyCount(comment.getReplyCount())
                 .isLiked(userLikeSet != null && userLikeSet.contains(comment.getId()))
@@ -76,7 +87,6 @@ public class CommentConverter {
                 .isTop(false)
                 .isHot(comment.getLikeCount() != null && comment.getLikeCount() > 10)
                 .isAuthor(authorId != null && authorId.equals(comment.getUserId()))
-                .isAuthorLiked(authorLikeSet != null && authorLikeSet.contains(comment.getId()))
                 .status(1)
                 .createTime(comment.getCreateTime())
                 .updateTime(comment.getUpdateTime())
