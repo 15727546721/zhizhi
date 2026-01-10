@@ -325,21 +325,6 @@ public class CacheService {
         log.debug("批量删除缓存: count={}", keys.size());
     }
 
-    /**
-     * 按模式删除缓存
-     * @deprecated 生产环境慎用keys命令，可能阻塞Redis
-     */
-    @Deprecated
-    public void evictByPattern(String pattern) {
-        log.warn("evictByPattern已废弃，生产环境慎用: pattern={}", pattern);
-        // 保留实现但标记为废弃
-        Set<String> keys = redisOps.getRedisTemplate().keys(pattern);
-        if (keys != null && !keys.isEmpty()) {
-            redisOps.delete(keys);
-            log.debug("按模式删除缓存: pattern={}, count={}", pattern, keys.size());
-        }
-    }
-
     // ==================== 列表缓存 ====================
 
     /**

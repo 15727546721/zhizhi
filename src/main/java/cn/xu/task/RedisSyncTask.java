@@ -3,7 +3,7 @@ package cn.xu.task;
 import cn.xu.cache.FavoriteCacheRepository;
 import cn.xu.cache.LikeCacheRepository;
 import cn.xu.cache.RedisKeyManager;
-import cn.xu.cache.RedisService;
+import cn.xu.cache.core.RedisOperations;
 import cn.xu.model.entity.Like;
 import cn.xu.model.entity.Post;
 import cn.xu.model.enums.favorite.TargetType;
@@ -32,7 +32,7 @@ public class RedisSyncTask {
 
     private final PostMapper postMapper;
     private final FavoriteRepository favoriteRepository;
-    private final RedisService redisService;
+    private final RedisOperations redisOperations;
     private final LikeCacheRepository likeCacheRepository;
     private final FavoriteCacheRepository favoriteCacheRepository;
     private final LikeService likeDomainService;
@@ -165,11 +165,11 @@ public class RedisSyncTask {
     private long syncViewCount(Long postId, long currentDbValue) {
         try {
             String key = RedisKeyManager.postViewCountKey(postId);
-            Long redisValue = convertToLong(redisService.get(key));
+            Long redisValue = convertToLong(redisOperations.get(key));
             
             if (redisValue != null && redisValue > 0) {
                 long newValue = currentDbValue + redisValue;
-                redisService.set(key, 0L);
+                redisOperations.set(key, 0L);
                 log.debug("同步浏览数成功 - postId: {}, dbValue: {}, redisIncrement: {}, newValue: {}", 
                         postId, currentDbValue, redisValue, newValue);
                 return newValue;
@@ -189,11 +189,11 @@ public class RedisSyncTask {
     private long syncCommentCount(Long postId, long currentDbValue) {
         try {
             String key = RedisKeyManager.postCommentCountKey(postId);
-            Long redisValue = convertToLong(redisService.get(key));
+            Long redisValue = convertToLong(redisOperations.get(key));
             
             if (redisValue != null && redisValue > 0) {
                 long newValue = currentDbValue + redisValue;
-                redisService.set(key, 0L);
+                redisOperations.set(key, 0L);
                 log.debug("同步评论数成功 - postId: {}, dbValue: {}, redisIncrement: {}, newValue: {}", 
                         postId, currentDbValue, redisValue, newValue);
                 return newValue;

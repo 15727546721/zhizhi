@@ -1,6 +1,6 @@
 package cn.xu.service.security;
 
-import cn.xu.cache.RedisService;
+import cn.xu.cache.core.RedisOperations;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class IpBlockService {
 
-    private final RedisService redisService;
+    private final RedisOperations redisOperations;
 
     /** Redis Key前缀 */
     private static final String KEY_PREFIX_BLOCKED = "ip:blocked:";
@@ -66,7 +66,7 @@ public class IpBlockService {
         
         // 检查临时封禁
         String blockedKey = KEY_PREFIX_BLOCKED + ip;
-        return redisService.hasKey(blockedKey);
+        return redisOperations.hasKey(blockedKey);
     }
 
     /**
@@ -93,7 +93,7 @@ public class IpBlockService {
                 reason,
                 durationSeconds);
         
-        redisService.set(blockedKey, blockInfo, durationSeconds);
+        redisOperations.set(blockedKey, blockInfo, durationSeconds);
         log.warn("[IP封禁] 封禁IP - ip: {}, duration: {}s, reason: {}", ip, durationSeconds, reason);
     }
 
@@ -118,10 +118,10 @@ public class IpBlockService {
         }
         
         String blockedKey = KEY_PREFIX_BLOCKED + ip;
-        redisService.del(blockedKey);
+        redisOperations.delete(blockedKey);
         
         // 同时从永久封禁列表移除
-        redisService.setRemove(KEY_PREFIX_PERMANENT_BLOCK, ip);
+        redisOperations.sRemove(KEY_PREFIX_PERMANENT_BLOCK, ip);
         
         log.info("[IP封禁] 解封IP - ip: {}", ip);
     }
@@ -143,7 +143,7 @@ public class IpBlockService {
             return;
         }
         
-        redisService.sSet(KEY_PREFIX_PERMANENT_BLOCK, ip);
+        redisOperations.sAdd(KEY_PREFIX_PERMANENT_BLOCK, ip);
         log.warn("[IP封禁] 永久封禁IP - ip: {}, reason: {}", ip, reason);
     }
 
@@ -157,8 +157,7 @@ public class IpBlockService {
         if (ip == null || ip.isEmpty()) {
             return false;
         }
-        Set<Object> blockedIps = redisService.sGet(KEY_PREFIX_PERMANENT_BLOCK);
-        return blockedIps != null && blockedIps.contains(ip);
+        return redisOperations.sIsMember(KEY_PREFIX_PERMANENT_BLOCK, ip);
     }
 
     /**
@@ -183,12 +182,12 @@ public class IpBlockService {
         
         // 增加可疑行为计数
         long currentCount;
-        Object countObj = redisService.get(suspiciousKey);
+        Object countObj = redisOperations.get(suspiciousKey);
         if (countObj == null) {
-            redisService.set(suspiciousKey, "1", suspiciousExpireSeconds);
+            redisOperations.set(suspiciousKey, "1", suspiciousExpireSeconds);
             currentCount = 1;
         } else {
-            currentCount = redisService.incr(suspiciousKey, 1);
+            currentCount = redisOperations.increment(suspiciousKey, 1);
         }
         
         log.debug("[IP封禁] 记录可疑行为 - ip: {}, type: {}, count: {}/{}", 
@@ -198,7 +197,7 @@ public class IpBlockService {
         if (currentCount >= suspiciousThreshold) {
             blockIp(ip, "auto_block_suspicious_activity:" + activityType);
             // 清除计数
-            redisService.del(suspiciousKey);
+            redisOperations.delete(suspiciousKey);
         }
     }
 
@@ -211,7 +210,7 @@ public class IpBlockService {
         if (ip == null || ip.isEmpty()) {
             return;
         }
-        redisService.sSet(KEY_PREFIX_WHITELIST, ip);
+        redisOperations.sAdd(KEY_PREFIX_WHITELIST, ip);
         log.info("[IP封禁] 添加IP到白名单 - ip: {}", ip);
     }
 
@@ -224,7 +223,7 @@ public class IpBlockService {
         if (ip == null || ip.isEmpty()) {
             return;
         }
-        redisService.setRemove(KEY_PREFIX_WHITELIST, ip);
+        redisOperations.sRemove(KEY_PREFIX_WHITELIST, ip);
         log.info("[IP封禁] 从白名单移除IP - ip: {}", ip);
     }
 
@@ -242,8 +241,7 @@ public class IpBlockService {
         if ("127.0.0.1".equals(ip) || "0:0:0:0:0:0:0:1".equals(ip) || ip.startsWith("192.168.") || ip.startsWith("10.")) {
             return true;
         }
-        Set<Object> whitelist = redisService.sGet(KEY_PREFIX_WHITELIST);
-        return whitelist != null && whitelist.contains(ip);
+        return redisOperations.sIsMember(KEY_PREFIX_WHITELIST, ip);
     }
 
     /**
@@ -252,8 +250,8 @@ public class IpBlockService {
      * @return 封禁的IP列表
      */
     public Set<String> getBlockedIps() {
-        Set<Object> permanentBlocked = redisService.sGet(KEY_PREFIX_PERMANENT_BLOCK);
-        if (permanentBlocked == null) {
+        Set<Object> permanentBlocked = redisOperations.sMembers(KEY_PREFIX_PERMANENT_BLOCK);
+        if (permanentBlocked == null || permanentBlocked.isEmpty()) {
             return Collections.emptySet();
         }
         return permanentBlocked.stream()
@@ -272,7 +270,7 @@ public class IpBlockService {
             return null;
         }
         String blockedKey = KEY_PREFIX_BLOCKED + ip;
-        Object info = redisService.get(blockedKey);
+        Object info = redisOperations.get(blockedKey);
         return info != null ? info.toString() : null;
     }
 }

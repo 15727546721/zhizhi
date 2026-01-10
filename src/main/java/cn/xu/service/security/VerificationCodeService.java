@@ -1,6 +1,6 @@
 package cn.xu.service.security;
 
-import cn.xu.cache.RedisService;
+import cn.xu.cache.core.RedisOperations;
 import cn.xu.integration.mail.EmailService;
 import cn.xu.support.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +22,7 @@ import java.util.Random;
 @RequiredArgsConstructor
 public class VerificationCodeService {
 
-    private final RedisService redisService;
+    private final RedisOperations redisOperations;
     private final EmailService emailService;
 
     /** 验证码长度 */
@@ -88,8 +88,8 @@ public class VerificationCodeService {
 
         // 1. 检查发送间隔限制
         String intervalKey = KEY_PREFIX_INTERVAL + sceneCode + ":" + trimmedEmail;
-        if (redisService.hasKey(intervalKey)) {
-            long ttl = redisService.getExpire(intervalKey);
+        if (redisOperations.hasKey(intervalKey)) {
+            long ttl = redisOperations.getExpire(intervalKey);
             throw new BusinessException(40002, "发送过于频繁，" + ttl + "秒后再试");
         }
 
@@ -97,13 +97,13 @@ public class VerificationCodeService {
         String dailyCountKey = KEY_PREFIX_DAILY_COUNT + sceneCode + ":" + trimmedEmail;
         int currentCount = 0;
         try {
-            Object countObj = redisService.get(dailyCountKey);
+            Object countObj = redisOperations.get(dailyCountKey);
             if (countObj != null) {
                 currentCount = Integer.parseInt(countObj.toString());
             }
         } catch (NumberFormatException e) {
             // 旧数据格式不对，删除重新计数
-            redisService.del(dailyCountKey);
+            redisOperations.delete(dailyCountKey);
             currentCount = 0;
         }
         if (currentCount >= DAILY_SEND_LIMIT) {
@@ -115,16 +115,16 @@ public class VerificationCodeService {
 
         // 4. 存储验证码到Redis
         String codeKey = KEY_PREFIX_CODE + sceneCode + ":" + trimmedEmail;
-        redisService.set(codeKey, code, CODE_EXPIRE_SECONDS);
+        redisOperations.set(codeKey, code, CODE_EXPIRE_SECONDS);
 
         // 5. 设置发送间隔限制
-        redisService.set(intervalKey, "1", SEND_INTERVAL_SECONDS);
+        redisOperations.set(intervalKey, "1", SEND_INTERVAL_SECONDS);
 
         // 6. 增加每日发送计数
-        long newCount = redisService.incr(dailyCountKey, 1);
+        long newCount = redisOperations.increment(dailyCountKey, 1);
         if (newCount == 1) {
             // 第一次发送，设置24小时过期
-            redisService.expire(dailyCountKey, 86400);
+            redisOperations.expire(dailyCountKey, 86400);
         }
 
         // 7. 发送邮件
@@ -133,7 +133,7 @@ public class VerificationCodeService {
             log.info("[验证码服务] 发送验证码成功 - email: {}, scene: {}", maskEmail(trimmedEmail), sceneCode);
         } catch (Exception e) {
             // 发送失败，清除已存储的验证码
-            redisService.del(codeKey);
+            redisOperations.delete(codeKey);
             log.error("[验证码服务] 发送验证码失败 - email: {}, scene: {}", maskEmail(trimmedEmail), sceneCode, e);
             throw new BusinessException(50001, "验证码发送失败，请稍后重试");
         }
@@ -163,7 +163,7 @@ public class VerificationCodeService {
         String sceneCode = scene.getCode();
 
         String codeKey = KEY_PREFIX_CODE + sceneCode + ":" + trimmedEmail;
-        Object storedCodeObj = redisService.get(codeKey);
+        Object storedCodeObj = redisOperations.get(codeKey);
 
         if (storedCodeObj == null) {
             log.warn("[验证码服务] 验证码不存在或已过期 - email: {}, scene: {}", maskEmail(trimmedEmail), sceneCode);
@@ -175,7 +175,7 @@ public class VerificationCodeService {
 
         if (isValid) {
             // 验证成功后删除验证码（一次性使用）
-            redisService.del(codeKey);
+            redisOperations.delete(codeKey);
             log.info("[验证码服务] 验证码验证成功 - email: {}, scene: {}", maskEmail(trimmedEmail), sceneCode);
         } else {
             log.warn("[验证码服务] 验证码验证失败 - email: {}, scene: {}", maskEmail(trimmedEmail), sceneCode);

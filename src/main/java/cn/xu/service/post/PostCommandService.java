@@ -1,6 +1,6 @@
 package cn.xu.service.post;
 
-import cn.xu.cache.RedisService;
+import cn.xu.cache.core.RedisOperations;
 import cn.xu.common.ResponseCode;
 import cn.xu.common.constants.BooleanConstants;
 import cn.xu.common.constants.FilePathConstants;
@@ -35,7 +35,7 @@ public class PostCommandService {
     private final PostRepository postRepository;
     private final PostMapper postMapper;
     private final UserMapper userMapper;
-    private final RedisService redisService;
+    private final RedisOperations redisOperations;
     private final FileStorageService fileStorageService;
     private final ContentEventPublisher contentEventPublisher;
 
@@ -317,15 +317,15 @@ public class PostCommandService {
         boolean shouldIncrement = false;
         if (userId == null) {
             String ipKey = "post:view:ip:" + postId + ":" + clientIp;
-            if (!redisService.hasKey(ipKey)) {
+            if (!redisOperations.hasKey(ipKey)) {
                 shouldIncrement = true;
-                redisService.set(ipKey, "1", 600);
+                redisOperations.set(ipKey, "1", 600);
             }
         } else {
             String userKey = "post:view:user:" + postId + ":" + userId;
-            if (!redisService.hasKey(userKey)) {
+            if (!redisOperations.hasKey(userKey)) {
                 shouldIncrement = true;
-                redisService.set(userKey, "1", 600);
+                redisOperations.set(userKey, "1", 600);
             }
         }
 

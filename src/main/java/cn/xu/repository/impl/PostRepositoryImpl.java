@@ -1,6 +1,6 @@
 package cn.xu.repository.impl;
 
-import cn.xu.cache.RedisService;
+import cn.xu.cache.core.RedisOperations;
 import cn.xu.common.ResponseCode;
 import cn.xu.model.entity.Post;
 import cn.xu.model.entity.PostTag;
@@ -29,7 +29,7 @@ public class PostRepositoryImpl implements PostRepository {
 
     private final PostMapper postMapper;
     private final PostTagMapper postTagMapper;
-    private final RedisService redisService;
+    private final RedisOperations redisOperations;
 
     private static final String HOT_SCORE_KEY_PREFIX = "post:hot:score:";
 
@@ -332,7 +332,7 @@ public class PostRepositoryImpl implements PostRepository {
         double hotScore = calculateHotScore(post);
 
         try {
-            redisService.zSetAdd("post:hot:ranking", postId.toString(), hotScore);
+            redisOperations.zAdd("post:hot:ranking", postId.toString(), hotScore);
         } catch (Exception e) {
             log.warn("更新Redis热度排名失败 - postId: {}", postId, e);
         }

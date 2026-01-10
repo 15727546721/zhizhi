@@ -1,6 +1,6 @@
 package cn.xu.integration.business;
 
-import cn.xu.cache.RedisService;
+import cn.xu.cache.core.RedisOperations;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -16,7 +16,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class DataConsistencyChecker {
 
-    private final RedisService redisService;
+    private final RedisOperations redisOperations;
 
     /**
      * 定时检查数据一致性（每小时执行一次）

@@ -1,6 +1,6 @@
 package cn.xu.service.security;
 
-import cn.xu.cache.RedisService;
+import cn.xu.cache.core.RedisOperations;
 import cn.xu.integration.mail.EmailService;
 import cn.xu.model.entity.User;
 import cn.xu.repository.UserRepository;
@@ -24,7 +24,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class PasswordResetService {
 
-    private final RedisService redisService;
+    private final RedisOperations redisOperations;
     private final EmailService emailService;
     private final UserRepository userRepository;
     private final VerificationCodeService verificationCodeService;
@@ -67,7 +67,7 @@ public class PasswordResetService {
 
         // 2. 检查每日重置次数
         String dailyKey = KEY_PREFIX_DAILY_RESET + trimmedEmail;
-        Object countObj = redisService.get(dailyKey);
+        Object countObj = redisOperations.get(dailyKey);
         int currentCount = countObj != null ? Integer.parseInt(countObj.toString()) : 0;
         if (currentCount >= DAILY_RESET_LIMIT) {
             throw new BusinessException(40003, "今日密码重置次数已达上限，请明天再试");
@@ -78,13 +78,13 @@ public class PasswordResetService {
 
         // 4. 存储令牌（token -> email 映射）
         String tokenKey = KEY_PREFIX_RESET_TOKEN + token;
-        redisService.set(tokenKey, trimmedEmail, TOKEN_EXPIRE_SECONDS);
+        redisOperations.set(tokenKey, trimmedEmail, TOKEN_EXPIRE_SECONDS);
 
         // 5. 增加每日重置计数
         if (currentCount == 0) {
-            redisService.set(dailyKey, "1", 86400); // 设置24小时过期
+            redisOperations.set(dailyKey, "1", 86400); // 设置24小时过期
         } else {
-            redisService.incr(dailyKey, 1);
+            redisOperations.increment(dailyKey, 1);
         }
 
         // 6. 发送重置邮件
@@ -93,7 +93,7 @@ public class PasswordResetService {
             log.info("[密码重置] 发送重置邮件成功 - email: {}", maskEmail(trimmedEmail));
         } catch (Exception e) {
             // 发送失败，清除令牌
-            redisService.del(tokenKey);
+            redisOperations.delete(tokenKey);
             log.error("[密码重置] 发送重置邮件失败 - email: {}", maskEmail(trimmedEmail), e);
             throw new BusinessException(50001, "邮件发送失败，请稍后重试");
         }
@@ -144,7 +144,7 @@ public class PasswordResetService {
 
         // 1. 验证令牌
         String tokenKey = KEY_PREFIX_RESET_TOKEN + trimmedToken;
-        Object emailObj = redisService.get(tokenKey);
+        Object emailObj = redisOperations.get(tokenKey);
         if (emailObj == null) {
             throw new BusinessException(40004, "重置链接无效或已过期");
         }
@@ -162,7 +162,7 @@ public class PasswordResetService {
         userRepository.save(user);
 
         // 4. 删除令牌（一次性使用）
-        redisService.del(tokenKey);
+        redisOperations.delete(tokenKey);
 
         log.info("[密码重置] 密码重置成功 - email: {}", maskEmail(email));
     }
@@ -216,7 +216,7 @@ public class PasswordResetService {
             return false;
         }
         String tokenKey = KEY_PREFIX_RESET_TOKEN + token.trim();
-        return redisService.hasKey(tokenKey);
+        return redisOperations.hasKey(tokenKey);
     }
 
     /**
