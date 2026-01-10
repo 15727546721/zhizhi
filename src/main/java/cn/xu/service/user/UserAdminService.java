@@ -3,6 +3,7 @@ package cn.xu.service.user;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.common.ResponseCode;
 import cn.xu.common.constants.RoleConstants;
+import cn.xu.config.AdminConfig;
 import cn.xu.model.dto.user.SysUserRequest;
 import cn.xu.model.entity.User;
 import cn.xu.model.enums.UserType;
@@ -28,6 +29,7 @@ public class UserAdminService {
 
     private final UserRepository userRepository;
     private final UserQueryService queryService;
+    private final AdminConfig adminConfig;
 
     /**
      * 添加用户
@@ -168,33 +170,35 @@ public class UserAdminService {
 
     /**
      * 初始化/重置管理员账号
+     * 已优化：从配置文件读取管理员凭证，避免硬编码
      */
     @Transactional(rollbackFor = Exception.class)
     public User initAdminUser() {
         try {
-            User admin = userRepository.findByUsername(RoleConstants.DEFAULT_ADMIN_USERNAME).orElse(null);
+            String adminUsername = adminConfig.getUsername();
+            User admin = userRepository.findByUsername(adminUsername).orElse(null);
 
             if (admin == null) {
                 admin = new User();
-                admin.setUsername(RoleConstants.DEFAULT_ADMIN_USERNAME);
-                admin.setNickname(RoleConstants.DEFAULT_ADMIN_NICKNAME);
-                admin.setEmail(RoleConstants.DEFAULT_ADMIN_EMAIL);
+                admin.setUsername(adminUsername);
+                admin.setNickname(adminConfig.getNickname());
+                admin.setEmail(adminConfig.getEmail());
                 admin.setUserType(UserType.ADMIN.getCode());
                 admin.setStatus(User.STATUS_NORMAL);
-                admin.setPassword(RoleConstants.DEFAULT_ADMIN_PASSWORD);
+                admin.setPassword(adminConfig.getPassword());
                 admin.encryptPassword();
                 admin.setCreateTime(LocalDateTime.now());
                 admin.setUpdateTime(LocalDateTime.now());
                 userRepository.save(admin);
-                log.info("创建管理员账号成功: {}", RoleConstants.DEFAULT_ADMIN_USERNAME);
+                log.info("创建管理员账号成功: {}", adminUsername);
             } else {
-                admin.setPassword(RoleConstants.DEFAULT_ADMIN_PASSWORD);
+                admin.setPassword(adminConfig.getPassword());
                 admin.encryptPassword();
                 admin.setUserType(UserType.ADMIN.getCode());
                 admin.setStatus(User.STATUS_NORMAL);
                 admin.setUpdateTime(LocalDateTime.now());
                 userRepository.save(admin);
-                log.info("重置管理员账号密码成功: {}", RoleConstants.DEFAULT_ADMIN_USERNAME);
+                log.info("重置管理员账号密码成功: {}", adminUsername);
             }
 
             return admin;
