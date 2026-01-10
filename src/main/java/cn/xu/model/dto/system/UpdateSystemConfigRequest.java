@@ -2,7 +2,7 @@ package cn.xu.model.dto.system;
 
 import lombok.Data;
 
-import javax.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotBlank;
 
 /**
  * 更新系统配置请求

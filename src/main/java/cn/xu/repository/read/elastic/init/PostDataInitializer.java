@@ -41,7 +41,7 @@ public class PostDataInitializer implements ApplicationRunner {
     @Autowired(required = false)
     private RedisOperations redisOps;
 
-    @javax.annotation.PostConstruct
+    @jakarta.annotation.PostConstruct
     public void onInit() {
         log.info("PostDataInitializer Bean已初始化，等待ApplicationRunner执行...");
     }

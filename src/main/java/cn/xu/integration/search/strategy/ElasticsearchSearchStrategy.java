@@ -8,37 +8,27 @@ import cn.xu.repository.read.elastic.repository.PostElasticRepository;
 import cn.xu.service.search.ElasticsearchIndexManager;
 import cn.xu.service.search.SearchStrategy;
 import cn.xu.support.exception.BusinessException;
+import co.elastic.clients.elasticsearch._types.SortOrder;
+import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
+import co.elastic.clients.elasticsearch._types.query_dsl.Query;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.RangeQueryBuilder;
-import org.elasticsearch.search.sort.SortBuilders;
-import org.elasticsearch.search.sort.SortOrder;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.elasticsearch.client.elc.NativeQuery;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHits;
-import org.springframework.data.elasticsearch.core.query.NativeSearchQuery;
-import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Elasticsearch搜索策略实现
- * <p>职责:</p>
- * <ul>
- *   <li>ES全文检索（搜索）</li>
- *   <li>帖子索引管理（增删改）</li>
- *   <li>热度排行查询</li>
- * </ul>
- 
+ * Elasticsearch搜索策略实现（Spring Boot 3.x 版本）
  */
 @Slf4j
 @Component
@@ -82,67 +72,50 @@ public class ElasticsearchSearchStrategy implements SearchStrategy, Elasticsearc
             if (keyword == null || keyword.trim().isEmpty()) {
                 return new PageImpl<>(new java.util.ArrayList<>(), pageable, 0);
             }
-            
-            BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
-            BoolQueryBuilder shouldQuery = QueryBuilders.boolQuery();
-            
-            shouldQuery.should(QueryBuilders.multiMatchQuery(keyword, "title", "description")
-                    .field("title", 2.0f)
-                    .field("description", 1.0f)
-                    .type(org.elasticsearch.index.query.MultiMatchQueryBuilder.Type.BEST_FIELDS)
-                    .operator(org.elasticsearch.index.query.Operator.OR));
-            
-            String trimmedKeyword = keyword.trim();
-            if (trimmedKeyword.length() > 0 && trimmedKeyword.length() <= 20) {
-                shouldQuery.should(QueryBuilders.wildcardQuery("title", "*" + trimmedKeyword + "*").boost(0.5f));
-                shouldQuery.should(QueryBuilders.wildcardQuery("description", "*" + trimmedKeyword + "*").boost(0.3f));
-            }
-            
-            shouldQuery.minimumShouldMatch(1);
-            boolQuery.must(shouldQuery);
-            
-            if (filter != null) {
-                if (filter.getStartTime() != null || filter.getEndTime() != null) {
-                    RangeQueryBuilder rangeQuery = QueryBuilders.rangeQuery("publishTime");
-                    if (filter.getStartTime() != null) {
-                        rangeQuery.gte(filter.getStartTime());
+
+            // 构建查询
+            Query query = Query.of(q -> q
+                .bool(b -> {
+                    // 多字段匹配
+                    b.must(m -> m
+                        .multiMatch(mm -> mm
+                            .query(keyword)
+                            .fields("title^2", "description")
+                        )
+                    );
+                    
+                    // 时间范围过滤
+                    if (filter != null) {
+                        if (filter.getStartTime() != null) {
+                            b.filter(f -> f.range(r -> r.field("publishTime").gte(co.elastic.clients.json.JsonData.of(filter.getStartTime()))));
+                        }
+                        if (filter.getEndTime() != null) {
+                            b.filter(f -> f.range(r -> r.field("publishTime").lte(co.elastic.clients.json.JsonData.of(filter.getEndTime()))));
+                        }
                     }
-                    if (filter.getEndTime() != null) {
-                        rangeQuery.lte(filter.getEndTime());
-                    }
-                    boolQuery.filter(rangeQuery);
-                }
-            }
-            
-            NativeSearchQueryBuilder queryBuilder = new NativeSearchQueryBuilder()
-                    .withQuery(boolQuery)
-                    .withPageable(pageable);
-            
-            org.elasticsearch.search.sort.SortBuilder<?> sortBuilder;
+                    return b;
+                })
+            );
+
+            // 确定排序字段
+            String sortField = "publishTime";
             if (filter != null && filter.getSortOption() != null) {
                 switch (filter.getSortOption()) {
-                    case TIME:
-                        sortBuilder = SortBuilders.fieldSort("publishTime").order(SortOrder.DESC);
-                        break;
-                    case HOT:
-                        sortBuilder = SortBuilders.fieldSort("hotScore").order(SortOrder.DESC);
-                        break;
-                    case COMMENT:
-                        sortBuilder = SortBuilders.fieldSort("commentCount").order(SortOrder.DESC);
-                        break;
-                    case LIKE:
-                        sortBuilder = SortBuilders.fieldSort("likeCount").order(SortOrder.DESC);
-                        break;
-                    default:
-                        sortBuilder = SortBuilders.fieldSort("publishTime").order(SortOrder.DESC);
-                        break;
+                    case TIME: sortField = "publishTime"; break;
+                    case HOT: sortField = "hotScore"; break;
+                    case COMMENT: sortField = "commentCount"; break;
+                    case LIKE: sortField = "likeCount"; break;
+                    default: sortField = "publishTime";
                 }
-            } else {
-                sortBuilder = SortBuilders.fieldSort("publishTime").order(SortOrder.DESC);
             }
-            queryBuilder.withSorts(sortBuilder);
             
-            NativeSearchQuery searchQuery = queryBuilder.build();
+            final String finalSortField = sortField;
+            NativeQuery searchQuery = NativeQuery.builder()
+                    .withQuery(query)
+                    .withPageable(pageable)
+                    .withSort(s -> s.field(f -> f.field(finalSortField).order(SortOrder.Desc)))
+                    .build();
+            
             SearchHits<PostIndex> searchHits = elasticsearchOperations.search(searchQuery, PostIndex.class);
             
             List<Post> postEntities = searchHits.getSearchHits().stream()
@@ -154,6 +127,7 @@ public class ElasticsearchSearchStrategy implements SearchStrategy, Elasticsearc
             
         } catch (Exception e) {
             log.error("[ES] Elasticsearch搜索失败 - keyword: {}", keyword, e);
+            // 降级到 Repository 查询
             try {
                 Page<PostIndex> indexPage = postElasticRepository.searchByTitleAndDescription(keyword, pageable);
                 List<Post> postEntities = indexPage.getContent().stream()
@@ -197,16 +171,12 @@ public class ElasticsearchSearchStrategy implements SearchStrategy, Elasticsearc
                 .build();
     }
 
-    // ==================== 索引管理功能（原PostElasticService） ====================
+    // ==================== 索引管理功能 ====================
 
-    /**
-     * 索引帖子
-     */
     public void indexPost(Post post) {
         if (post == null || !Integer.valueOf(Post.STATUS_PUBLISHED).equals(post.getStatus())) {
             return;
         }
-        
         try {
             PostIndex index = cn.xu.repository.read.elastic.service.PostIndexConverter.from(post);
             postElasticRepository.save(index);
@@ -216,9 +186,6 @@ public class ElasticsearchSearchStrategy implements SearchStrategy, Elasticsearc
         }
     }
     
-    /**
-     * 索引帖子（带重试）
-     */
     public boolean indexPostWithRetry(Post post) {
         return indexPostWithRetry(post, 3);
     }
@@ -227,9 +194,7 @@ public class ElasticsearchSearchStrategy implements SearchStrategy, Elasticsearc
         if (post == null || !Integer.valueOf(Post.STATUS_PUBLISHED).equals(post.getStatus())) {
             return false;
         }
-        
         long retryDelayMs = 500;
-        
         for (int attempt = 1; attempt <= maxRetries; attempt++) {
             try {
                 PostIndex index = cn.xu.repository.read.elastic.service.PostIndexConverter.from(post);
@@ -238,7 +203,6 @@ public class ElasticsearchSearchStrategy implements SearchStrategy, Elasticsearc
                 return true;
             } catch (Exception e) {
                 if (attempt < maxRetries) {
-                    // 指数退避重试策略
                     long delayNanos = retryDelayMs * attempt * 1_000_000L;
                     java.util.concurrent.locks.LockSupport.parkNanos(delayNanos);
                     if (Thread.interrupted()) {
@@ -254,70 +218,39 @@ public class ElasticsearchSearchStrategy implements SearchStrategy, Elasticsearc
         return false;
     }
 
-    /**
-     * 更新索引（未发布的帖子会被删除）
-     */
     public void updateIndexedPost(Post post) {
         try {
-            if (post == null) {
-                return;
-            }
-            
-            // 如果帖子未发布，从索引中删除
+            if (post == null) return;
             if (!Integer.valueOf(Post.STATUS_PUBLISHED).equals(post.getStatus())) {
                 removeIndexedPost(post.getId());
-                log.debug("[ES] 帖子未发布，从索引中删除 - postId: {}", post.getId());
                 return;
             }
-            
-            // 更新索引
             PostIndex index = cn.xu.repository.read.elastic.service.PostIndexConverter.from(post);
             postElasticRepository.save(index);
-            log.debug("[ES] 更新帖子索引成功 - postId: {}", post.getId());
         } catch (Exception e) {
             log.warn("[ES] 更新帖子索引失败 - postId: {}", post != null ? post.getId() : null, e);
         }
     }
 
-    /**
-     * 删除索引
-     */
     public void removeIndexedPost(Long postId) {
         try {
             postElasticRepository.deleteById(postId);
-            log.debug("[ES] 删除索引成功 - postId: {}", postId);
         } catch (Exception e) {
             log.warn("[ES] 删除索引失败 - postId: {}", postId, e);
         }
     }
 
-    /**
-     * 获取热度排行（日榜、周榜、月榜）
-     */
     public Page<Post> getHotRank(String rankType, Pageable pageable) {
         try {
             java.time.LocalDateTime now = java.time.LocalDateTime.now();
-            java.time.LocalDateTime start;
-            switch (rankType) {
-                case "day":
-                    start = now.minusDays(1);
-                    break;
-                case "week":
-                    start = now.minusWeeks(1);
-                    break;
-                case "month":
-                    start = now.minusMonths(1);
-                    break;
-                default:
-                    start = now.minusDays(1);
-            }
-            Page<PostIndex> indexPage = postElasticRepository.findByPublishTimeBetweenOrderByHotScoreDesc(
-                start, now, pageable);
-            
-            List<Post> posts = indexPage.getContent().stream()
-                .map(this::toPost)
-                .collect(Collectors.toList());
-            
+            java.time.LocalDateTime start = switch (rankType) {
+                case "day" -> now.minusDays(1);
+                case "week" -> now.minusWeeks(1);
+                case "month" -> now.minusMonths(1);
+                default -> now.minusDays(1);
+            };
+            Page<PostIndex> indexPage = postElasticRepository.findByPublishTimeBetweenOrderByHotScoreDesc(start, now, pageable);
+            List<Post> posts = indexPage.getContent().stream().map(this::toPost).collect(Collectors.toList());
             return new PageImpl<>(posts, pageable, indexPage.getTotalElements());
         } catch (Exception e) {
             log.error("[ES] 获取热度排行失败 - rankType: {}", rankType, e);
@@ -325,9 +258,6 @@ public class ElasticsearchSearchStrategy implements SearchStrategy, Elasticsearc
         }
     }
     
-    /**
-     * 获取索引总数
-     */
     public long count() {
         try {
             return postElasticRepository.count();

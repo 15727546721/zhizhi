@@ -1,6 +1,6 @@
 package cn.xu.support.util;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * IP地址工具类

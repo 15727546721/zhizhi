@@ -12,7 +12,7 @@ import org.springframework.data.elasticsearch.repository.config.EnableElasticsea
  */
 @Configuration
 @ConditionalOnProperty(name = "spring.elasticsearch.enabled", havingValue = "true", matchIfMissing = false)
-@Profile("!test") // 在测试环境中不加载此配置
+@Profile("!test")
 @EnableElasticsearchRepositories(basePackages = "cn.xu.repository.read.elastic.repository")
 public class ElasticsearchRepositoryConfig {
 }
