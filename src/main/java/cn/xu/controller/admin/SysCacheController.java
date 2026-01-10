@@ -89,6 +89,7 @@ public class SysCacheController {
      *
      * <p>分页查询缓存Key，支持模糊匹配
      * <p>需要system:cache:list权限
+     * <p>使用SCAN命令替代KEYS，避免阻塞Redis
      *
      * @param pageNo 页码
      * @param pageSize 每页数量
@@ -112,19 +113,37 @@ public class SysCacheController {
         if (redisTemplate != null) {
             try {
                 String searchPattern = (pattern != null && !pattern.isEmpty()) ? "*" + pattern + "*" : "*";
-                Set<String> redisKeys = redisTemplate.keys(searchPattern);
-
-                if (redisKeys != null) {
-                    total = redisKeys.size();
-                    keys = redisKeys.stream()
-                            .skip((long) (pageNo - 1) * pageSize)
-                            .limit(pageSize)
-                            .map(key -> CacheKeyVO.builder()
-                                    .key(key)
-                                    .type(getKeyType(key))
-                                    .build())
-                            .collect(Collectors.toList());
+                
+                // 使用 SCAN 命令替代 KEYS，避免阻塞 Redis
+                Set<String> redisKeys = new java.util.LinkedHashSet<>();
+                org.springframework.data.redis.core.Cursor<String> cursor = redisTemplate.scan(
+                        org.springframework.data.redis.core.ScanOptions.scanOptions()
+                                .match(searchPattern)
+                                .count(1000)  // 每次扫描的数量
+                                .build()
+                );
+                
+                try {
+                    while (cursor.hasNext()) {
+                        redisKeys.add(cursor.next());
+                        // 限制最大扫描数量，防止内存溢出
+                        if (redisKeys.size() >= 10000) {
+                            break;
+                        }
+                    }
+                } finally {
+                    cursor.close();
                 }
+
+                total = redisKeys.size();
+                keys = redisKeys.stream()
+                        .skip((long) (pageNo - 1) * pageSize)
+                        .limit(pageSize)
+                        .map(key -> CacheKeyVO.builder()
+                                .key(key)
+                                .type(getKeyType(key))
+                                .build())
+                        .collect(Collectors.toList());
             } catch (Exception e) {
                 log.warn("获取缓存Key列表失败: {}", e.getMessage());
             }

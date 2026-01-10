@@ -101,53 +101,18 @@ public class SysPostController {
     @ApiOperationLog(description = "创建帖子")
     public ResponseEntity savePost(@RequestBody @Valid CreatePostRequest createPostRequest) {
         log.info("帖子创建参数: {}", createPostRequest);
-        transactionTemplate.execute(status -> {
-            try {
-                // 根据请求中的状态字段确定帖子状态，默认为已发布
-                String postStatus = "PUBLISHED";
-                if ("DRAFT".equals(createPostRequest.getStatus())) {
-                    postStatus = "DRAFT";
-                }
-
-                //1. 保存帖子
-                Long userId = LoginUserUtil.getLoginUserId();
-                Long postId;
-                if ("DRAFT".equals(postStatus)) {
-                    postId = postCommandService.createDraft(
-                            userId,
-                            createPostRequest.getTitle(),
-                            createPostRequest.getContent(),
-                            createPostRequest.getDescription(),
-                            createPostRequest.getCoverUrl(),
-                            createPostRequest.getTagIds()
-                    );
-                } else {
-                    postId = postCommandService.publishPost(
-                            null,
-                            userId,
-                            createPostRequest.getTitle(),
-                            createPostRequest.getContent(),
-                            createPostRequest.getDescription(),
-                            createPostRequest.getCoverUrl(),
-                            createPostRequest.getTagIds()
-                    );
-                }
-
-                // 标签已在publishPost/createDraft中处理
-                if (createPostRequest.getTagIds() != null && createPostRequest.getTagIds().size() > 5) {
-                    throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "标签不能超过5个");
-                }
-
-                //4. 发布帖子创建事件
-                contentEventPublisher.publishPostCreated(userId, postId, createPostRequest.getTitle());
-
-                return 1;
-            } catch (Exception e) {
-                status.setRollbackOnly();
-                log.error("帖子创建失败", e);
-                throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "帖子创建失败");
-            }
-        });
+        
+        // 前置校验
+        validateTagIds(createPostRequest.getTagIds(), false);
+        
+        Long userId = LoginUserUtil.getLoginUserId();
+        boolean isDraft = "DRAFT".equals(createPostRequest.getStatus());
+        
+        Long postId = executePostOperation(userId, null, createPostRequest, isDraft);
+        
+        // 发布帖子创建事件
+        contentEventPublisher.publishPostCreated(userId, postId, createPostRequest.getTitle());
+        
         return ResponseEntity.builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .info("帖子创建成功")
@@ -171,53 +136,78 @@ public class SysPostController {
     @ApiOperationLog(description = "更新帖子")
     public ResponseEntity updatePost(@RequestBody @Valid CreatePostRequest updatePostRequest) {
         log.info("帖子更新参数: {}", updatePostRequest);
-        transactionTemplate.execute(status -> {
-            try {
-                //1. 更新帖子
-                Long userId = LoginUserUtil.getLoginUserId();
-                String postStatus = "DRAFT".equals(updatePostRequest.getStatus()) ? "DRAFT" : "PUBLISHED";
-
-                if ("DRAFT".equals(postStatus)) {
-                    postCommandService.updateDraft(
-                            updatePostRequest.getId(),
-                            userId,
-                            updatePostRequest.getTitle(),
-                            updatePostRequest.getContent(),
-                            updatePostRequest.getDescription(),
-                            updatePostRequest.getCoverUrl(),
-                            updatePostRequest.getTagIds()
-                    );
-                } else {
-                    postCommandService.publishPost(
-                            updatePostRequest.getId(),
-                            userId,
-                            updatePostRequest.getTitle(),
-                            updatePostRequest.getContent(),
-                            updatePostRequest.getDescription(),
-                            updatePostRequest.getCoverUrl(),
-                            updatePostRequest.getTagIds()
-                    );
-                }
-
-                // 标签已在publishPost/updateDraft中处理
-                if (updatePostRequest.getTagIds() != null && updatePostRequest.getTagIds().size() > 5) {
-                    throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "标签不能超过5个");
-                }
-
-                //4. 发布帖子更新事件
-                contentEventPublisher.publishPostUpdated(userId, updatePostRequest.getId(), updatePostRequest.getTitle());
-
-                return 1;
-            } catch (Exception e) {
-                status.setRollbackOnly();
-                log.error("帖子更新失败", e);
-                throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "帖子更新失败");
-            }
-        });
+        
+        // 前置校验
+        validateTagIds(updatePostRequest.getTagIds(), false);
+        
+        Long userId = LoginUserUtil.getLoginUserId();
+        boolean isDraft = "DRAFT".equals(updatePostRequest.getStatus());
+        
+        executePostOperation(userId, updatePostRequest.getId(), updatePostRequest, isDraft);
+        
+        // 发布帖子更新事件
+        contentEventPublisher.publishPostUpdated(userId, updatePostRequest.getId(), updatePostRequest.getTitle());
+        
         return ResponseEntity.builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .info("帖子更新成功")
                 .build();
+    }
+    
+    /**
+     * 校验标签ID列表
+     */
+    private void validateTagIds(List<Long> tagIds, boolean required) {
+        if (required && (tagIds == null || tagIds.isEmpty())) {
+            throw new BusinessException(ResponseCode.NULL_PARAMETER.getCode(), "标签不能为空");
+        }
+        if (tagIds != null && tagIds.size() > 5) {
+            throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "标签不能超过5个");
+        }
+    }
+    
+    /**
+     * 执行帖子创建/更新操作
+     */
+    private Long executePostOperation(Long userId, Long postId, CreatePostRequest request, boolean isDraft) {
+        final Long[] resultId = new Long[1];
+        transactionTemplate.execute(status -> {
+            try {
+                if (postId == null) {
+                    // 创建
+                    if (isDraft) {
+                        resultId[0] = postCommandService.createDraft(userId, request.getTitle(), 
+                                request.getContent(), request.getDescription(), 
+                                request.getCoverUrl(), request.getTagIds());
+                    } else {
+                        resultId[0] = postCommandService.publishPost(null, userId, request.getTitle(), 
+                                request.getContent(), request.getDescription(), 
+                                request.getCoverUrl(), request.getTagIds());
+                    }
+                } else {
+                    // 更新
+                    resultId[0] = postId;
+                    if (isDraft) {
+                        postCommandService.updateDraft(postId, userId, request.getTitle(), 
+                                request.getContent(), request.getDescription(), 
+                                request.getCoverUrl(), request.getTagIds());
+                    } else {
+                        postCommandService.publishPost(postId, userId, request.getTitle(), 
+                                request.getContent(), request.getDescription(), 
+                                request.getCoverUrl(), request.getTagIds());
+                    }
+                }
+                return 1;
+            } catch (BusinessException e) {
+                status.setRollbackOnly();
+                throw e;
+            } catch (Exception e) {
+                status.setRollbackOnly();
+                log.warn("帖子操作失败: {}", e.getMessage());
+                throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "帖子操作失败");
+            }
+        });
+        return resultId[0];
     }
 
     /**
@@ -426,60 +416,27 @@ public class SysPostController {
     @ApiOperationLog(description = "发布帖子")
     public ResponseEntity pushPost(@RequestBody PublishPostRequest publishPostRequest) {
         log.info("发布帖子，帖子内容：{}", publishPostRequest);
-        Long userId = LoginUserUtil.getLoginUserId();
-
-        final Long[] postId = new Long[1];
-
-        transactionTemplate.execute(status -> {
-            try {
-                // 根据请求中的状态字段确定帖子状态，默认为已发布
-                String postStatus = "PUBLISHED";
-                if ("DRAFT".equals(publishPostRequest.getStatus())) {
-                    postStatus = "DRAFT";
-                }
-
-                //1. 发布帖子
-                if ("DRAFT".equals(postStatus)) {
-                    postId[0] = postCommandService.createDraft(
-                            userId,
-                            publishPostRequest.getTitle(),
-                            publishPostRequest.getContent(),
-                            publishPostRequest.getDescription(),
-                            publishPostRequest.getCoverUrl(),
-                            publishPostRequest.getTagIds()
-                    );
-                } else {
-                    postId[0] = postCommandService.publishPost(
-                            null,
-                            userId,
-                            publishPostRequest.getTitle(),
-                            publishPostRequest.getContent(),
-                            publishPostRequest.getDescription(),
-                            publishPostRequest.getCoverUrl(),
-                            publishPostRequest.getTagIds()
-                    );
-                }
-
-                //2. 验证标签
-                if (publishPostRequest.getTagIds() == null || publishPostRequest.getTagIds().isEmpty()) {
-                    throw new BusinessException(ResponseCode.NULL_PARAMETER.getCode(), "标签不能为空");
-                }
-                if (publishPostRequest.getTagIds().size() > 5) {
-                    throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "标签不能超过5个");
-                }
-
-                // 4. 发布帖子创建事件
-                contentEventPublisher.publishPostCreated(userId, postId[0], publishPostRequest.getTitle());
-
-                return 1;
-            } catch (Exception e) {
-                status.setRollbackOnly();
-                log.error("帖子发布失败", e);
-                throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "帖子发布失败");
-            }
-        });
         
-        log.info("帖子发布成功");
+        // 前置校验（发布时标签必填）
+        validateTagIds(publishPostRequest.getTagIds(), true);
+        
+        Long userId = LoginUserUtil.getLoginUserId();
+        boolean isDraft = "DRAFT".equals(publishPostRequest.getStatus());
+        
+        // 转换为 CreatePostRequest 复用逻辑
+        CreatePostRequest request = new CreatePostRequest();
+        request.setTitle(publishPostRequest.getTitle());
+        request.setContent(publishPostRequest.getContent());
+        request.setDescription(publishPostRequest.getDescription());
+        request.setCoverUrl(publishPostRequest.getCoverUrl());
+        request.setTagIds(publishPostRequest.getTagIds());
+        request.setStatus(publishPostRequest.getStatus());
+        
+        Long postId = executePostOperation(userId, null, request, isDraft);
+        
+        // 发布帖子创建事件
+        contentEventPublisher.publishPostCreated(userId, postId, publishPostRequest.getTitle());
+        
         return ResponseEntity.builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .info("帖子发布成功")
@@ -488,122 +445,6 @@ public class SysPostController {
 
     /**
      * 置顶/取消置顶帖子
-     * 
-     * <p>切换帖子的置顶状态
-     * <p>需要system:post:top权限
-     * 
-     * @param request 包含帖子ID的请求体
-     * @return 操作结果
-     */
-    @PostMapping("/top")
-    @Operation(summary = "置顶/取消置顶帖子")
-    @SaCheckLogin
-    @SaCheckPermission("system:post:top")
-    @ApiOperationLog(description = "置顶/取消置顶帖子")
-    public ResponseEntity toggleTop(@RequestBody java.util.Map<String, Long> request) {
-        Long postId = request.get("id");
-        if (postId == null) {
-            return ResponseEntity.builder()
-                    .code(ResponseCode.NULL_PARAMETER.getCode())
-                    .info("帖子ID不能为空")
-                    .build();
-        }
-        postCommandService.toggleFeatured(postId);
-        return ResponseEntity.builder()
-                .code(ResponseCode.SUCCESS.getCode())
-                .info("操作成功")
-                .build();
-    }
-
-    /**
-     * 发布/下架帖子
-     * 
-     * <p>切换帖子的发布状态（发布→下架）
-     * <p>需要system:post:publish权限
-     * 
-     * @param request 包含帖子ID的请求体
-     * @return 操作结果
-     */
-    @PostMapping("/toggleArticlePublication")
-    @Operation(summary = "发布/下架帖子")
-    @SaCheckLogin
-    @SaCheckPermission("system:post:publish")
-    @ApiOperationLog(description = "发布/下架帖子")
-    public ResponseEntity togglePublication(@RequestBody java.util.Map<String, Long> request) {
-        Long postId = request.get("id");
-        if (postId == null) {
-            return ResponseEntity.builder()
-                    .code(ResponseCode.NULL_PARAMETER.getCode())
-                    .info("帖子ID不能为空")
-                    .build();
-        }
-        postCommandService.togglePublish(postId);
-        return ResponseEntity.builder()
-                .code(ResponseCode.SUCCESS.getCode())
-                .info("操作成功")
-                .build();
-    }
-
-    /**
-     * 加精/取消加精帖子
-     * 
-     * <p>切换帖子的加精状态
-     * <p>需要system:post:update权限
-     * 
-     * @param request 包含帖子ID的请求体
-     * @return 操作结果
-     */
-    @PostMapping("/featured")
-    @Operation(summary = "加精/取消加精帖子")
-    @SaCheckLogin
-    @SaCheckPermission("system:post:update")
-    @ApiOperationLog(description = "加精/取消加精帖子")
-    public ResponseEntity toggleFeatured(@RequestBody java.util.Map<String, Long> request) {
-        Long postId = request.get("id");
-        if (postId == null) {
-            return ResponseEntity.builder()
-                    .code(ResponseCode.NULL_PARAMETER.getCode())
-                    .info("帖子ID不能为空")
-                    .build();
-        }
-        postCommandService.toggleFeatured(postId);
-        return ResponseEntity.builder()
-                .code(ResponseCode.SUCCESS.getCode())
-                .info("操作成功")
-                .build();
-    }
-
-    /**
-     * 发布/下架帖子
-     * 
-     * <p>切换帖子的发布状态
-     * <p>需要system:post:update权限
-     * 
-     * @param request 包含帖子ID的请求体
-     * @return 操作结果
-     */
-    @PostMapping("/status")
-    @Operation(summary = "发布/下架帖子")
-    @SaCheckLogin
-    @SaCheckPermission("system:post:update")
-    @ApiOperationLog(description = "发布/下架帖子")
-    public ResponseEntity toggleStatus(@RequestBody java.util.Map<String, Long> request) {
-        Long postId = request.get("id");
-        if (postId == null) {
-            return ResponseEntity.builder()
-                    .code(ResponseCode.NULL_PARAMETER.getCode())
-                    .info("帖子ID不能为空")
-                    .build();
-        }
-        postCommandService.togglePublish(postId);
-        return ResponseEntity.builder()
-                .code(ResponseCode.SUCCESS.getCode())
-                .info("操作成功")
-                .build();
-    }
-
-    /**
-     * 获取随机封面图
      * 
      * <p>返回一个随机的默认封面图URL
      * <p>公开接口，无需登录
