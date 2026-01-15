@@ -335,19 +335,6 @@ public class PostCommandService {
         }
     }
 
-    public void increaseShareCount(Long postId) {
-        Post post = getPostOrThrow(postId);
-        post.increaseShareCount();
-        postRepository.update(post, null);
-        postRepository.updateHotScore(postId);
-        
-        BizLogger.of(log)
-                .module(LogConstants.MODULE_POST)
-                .op("增加分享数")
-                .param("postId", postId)
-                .success();
-    }
-
     public void increaseCommentCount(Long postId) {
         if (postId != null) {
             Post post = getPostOrThrow(postId);

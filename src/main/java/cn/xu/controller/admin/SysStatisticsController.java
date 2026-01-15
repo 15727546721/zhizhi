@@ -10,6 +10,7 @@ import cn.xu.service.statistics.OnlineUserStatisticsService;
 import cn.xu.service.statistics.PostViewStatisticsService;
 import cn.xu.service.statistics.StatisticsCacheService;
 import cn.xu.service.statistics.VisitStatisticsService;
+import cn.xu.service.share.ShareService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -73,6 +74,9 @@ public class SysStatisticsController {
     private OnlineUserStatisticsService onlineUserStatisticsService;
     @Resource
     private StatisticsCacheService statisticsCacheService;
+    
+    @Autowired(required = false)
+    private ShareService shareService;
 
     /**
      * 获取数据统计概览
@@ -497,6 +501,51 @@ public class SysStatisticsController {
     }
 
     /**
+     * 获取分享统计数据
+     * 
+     * @param days 统计天数
+     * @param limit 排行榜数量
+     * @return 分享统计数据
+     */
+    @Operation(summary = "获取分享统计数据")
+    @GetMapping("/shares")
+    @SaCheckLogin
+    @ApiOperationLog(description = "获取分享统计数据")
+    public ResponseEntity<ShareStats> getShareStats(
+            @Parameter(description = "统计天数") @RequestParam(defaultValue = "7") Integer days,
+            @Parameter(description = "排行榜数量") @RequestParam(defaultValue = "10") Integer limit) {
+        log.info("获取分享统计数据: days={}, limit={}", days, limit);
+        
+        if (shareService == null) {
+            return ResponseEntity.<ShareStats>builder()
+                    .code(ResponseCode.SUCCESS.getCode())
+                    .data(ShareStats.builder()
+                            .todayShares(0L)
+                            .totalShares(0L)
+                            .shareRanking(new ArrayList<>())
+                            .build())
+                    .build();
+        }
+        
+        LocalDateTime todayStart = LocalDate.now().atStartOfDay();
+        LocalDateTime now = LocalDateTime.now();
+        
+        long todayShares = shareService.countSharesInRange(todayStart, now);
+        List<Map<String, Object>> shareRanking = shareService.getShareRanking(days, limit);
+        
+        ShareStats stats = ShareStats.builder()
+                .todayShares(todayShares)
+                .totalShares(0L) // 可以从数据库统计总数
+                .shareRanking(shareRanking)
+                .build();
+        
+        return ResponseEntity.<ShareStats>builder()
+                .code(ResponseCode.SUCCESS.getCode())
+                .data(stats)
+                .build();
+    }
+
+    /**
      * 安全执行统计查询
      */
     private Long safeCount(CountSupplier supplier) {
@@ -594,5 +643,15 @@ public class SysStatisticsController {
         private List<String> dates;
         private List<Long> uvCounts;
         private List<Long> pvCounts;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ShareStats {
+        private Long todayShares;
+        private Long totalShares;
+        private List<Map<String, Object>> shareRanking;
     }
 }

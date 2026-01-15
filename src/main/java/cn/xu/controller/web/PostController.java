@@ -460,33 +460,6 @@ public class PostController {
     // ==================== 交互接口 ====================
 
     /**
-     * 分享帖子（增加分享数）
-     */
-    @GetMapping("/share/{id}")
-    @Operation(summary = "增加分享数")
-    @ApiOperationLog(description = "增加帖子分享数")
-    public ResponseEntity<?> sharePost(@PathVariable Long id) {
-        try {
-            postApplicationService.sharePost(id);
-            return ResponseEntity.builder()
-                    .code(ResponseCode.SUCCESS.getCode())
-                    .info("分享成功")
-                    .build();
-        } catch (BusinessException e) {
-            return ResponseEntity.builder()
-                    .code(e.getCode())
-                    .info(e.getMessage())
-                    .build();
-        } catch (Exception e) {
-            log.error("分享帖子失败，postId={}", id, e);
-            return ResponseEntity.builder()
-                    .code(ResponseCode.UN_ERROR.getCode())
-                    .info("分享失败")
-                    .build();
-        }
-    }
-
-    /**
      * 增加帖子浏览数
      */
     @GetMapping("/view")

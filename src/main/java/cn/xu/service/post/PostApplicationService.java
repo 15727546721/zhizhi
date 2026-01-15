@@ -334,15 +334,6 @@ public class PostApplicationService {
         postCommandService.deletePost(postId, userId, false);
     }
 
-    /**
-     * 分享帖子
-     */
-    public void sharePost(Long postId) {
-        postQueryService.getById(postId)
-                .orElseThrow(() -> new BusinessException(ResponseCode.UN_ERROR.getCode(), "帖子不存在"));
-        postCommandService.increaseShareCount(postId);
-    }
-
     // ==================== 私有方法 ====================
 
     /**

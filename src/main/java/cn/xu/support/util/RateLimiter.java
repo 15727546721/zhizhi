@@ -96,8 +96,9 @@ public class RateLimiter {
             
             return result != null && result == 1;
         } catch (Exception e) {
-            log.error("限流检查失败: identifier={}", identifier, e);
-            return true;
+            log.error("限流检查失败，拒绝请求以防止滥用: identifier={}", identifier, e);
+            // 当 Redis 不可用时，拒绝请求以防止滥用
+            return false;
         }
     }
     

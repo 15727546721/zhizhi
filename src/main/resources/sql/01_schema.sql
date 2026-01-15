@@ -9,7 +9,7 @@
 -- 
 -- ⚠️ 警告：此脚本会删除并重建所有表，请先备份数据！
 -- 
--- 表结构概览（共22个表）：
+-- 表结构概览（共24个表）：
 -- ┌─────────────────────────────────────────────────────────────┐
 -- │ 用户模块（4个）                                              │
 -- │   user, user_settings, user_interested_tag, user_block     │
@@ -17,8 +17,8 @@
 -- │ 内容模块（4个）                                              │
 -- │   post, tag, post_tag, comment                             │
 -- ├─────────────────────────────────────────────────────────────┤
--- │ 互动模块（3个）                                              │
--- │   `like`, favorite, follow                                 │
+-- │ 互动模块（4个）                                              │
+-- │   `like`, favorite, follow, share                          │
 -- ├─────────────────────────────────────────────────────────────┤
 -- │ 消息模块（5个）                                              │
 -- │   notification, user_conversation, private_message,        │
@@ -55,6 +55,7 @@ DROP TABLE IF EXISTS `user_conversation`;
 DROP TABLE IF EXISTS `private_message`;
 DROP TABLE IF EXISTS `notification`;
 DROP TABLE IF EXISTS `feedback`;
+DROP TABLE IF EXISTS `share`;
 DROP TABLE IF EXISTS `follow`;
 DROP TABLE IF EXISTS `favorite`;
 DROP TABLE IF EXISTS `like`;
@@ -265,7 +266,7 @@ CREATE TABLE `comment` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='评论表';
 
 -- ============================================================================
--- 第三部分：互动模块（3个表）
+-- 第三部分：互动模块（4个表）
 -- ============================================================================
 
 -- 3.1 点赞表
@@ -313,6 +314,23 @@ CREATE TABLE `follow` (
   KEY `idx_follower_id` (`follower_id`),
   KEY `idx_followed_id` (`followed_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='关注表';
+
+-- 3.4 分享记录表
+CREATE TABLE `share` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '分享ID',
+  `post_id` BIGINT UNSIGNED NOT NULL COMMENT '帖子ID',
+  `user_id` BIGINT UNSIGNED DEFAULT NULL COMMENT '分享用户ID（可为空，未登录用户）',
+  `platform` VARCHAR(20) NOT NULL DEFAULT 'other' COMMENT '分享平台: copy/weibo/qq/wechat/other',
+  `ip` VARCHAR(50) DEFAULT NULL COMMENT '分享者IP',
+  `user_agent` VARCHAR(500) DEFAULT NULL COMMENT '用户代理',
+  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_post_id` (`post_id`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_platform` (`platform`),
+  KEY `idx_create_time` (`create_time`),
+  KEY `idx_post_platform` (`post_id`, `platform`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='分享记录表';
 
 -- ============================================================================
 -- 第四部分：消息通知模块（4个表）
@@ -589,10 +607,10 @@ SELECT '
 ✅ 表结构创建完成！
 ============================================
 
-📊 表结构统计（共23个表）：
+📊 表结构统计（共24个表）：
    - 用户模块：4个表 (user, user_settings, user_interested_tag, user_block)
    - 内容模块：4个表 (post, tag, post_tag, comment)
-   - 互动模块：3个表 (like, favorite, follow)
+   - 互动模块：4个表 (like, favorite, follow, share)
    - 消息模块：5个表 (notification, user_conversation, private_message, greeting_record, feedback)
    - 权限模块：4个表 (role, menu, user_role, role_menu)
    - 文件模块：1个表 (file_record)
