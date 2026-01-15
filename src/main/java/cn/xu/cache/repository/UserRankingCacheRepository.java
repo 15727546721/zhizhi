@@ -1,5 +1,7 @@
-package cn.xu.cache;
+package cn.xu.cache.repository;
 
+import cn.xu.cache.core.BaseCacheRepository;
+import cn.xu.cache.core.RedisKeyManager;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 
@@ -160,7 +162,7 @@ public class UserRankingCacheRepository extends BaseCacheRepository {
         
         try {
             // ZREVRANK返回的是从0开始的排名，需要+1
-            Long rank = redisOps.getRedisTemplate().opsForZSet().reverseRank(redisKey, userId.toString());
+            Long rank = redisOps.zReverseRank(redisKey, userId.toString());
             return rank != null ? rank + 1 : -1L;
         } catch (Exception e) {
             log.error("[缓存] 获取用户排名失败 - key: {}, userId: {}", redisKey, userId, e);

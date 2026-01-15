@@ -1,4 +1,4 @@
-package cn.xu.cache;
+package cn.xu.cache.core;
 
 import cn.xu.model.enums.CommentType;
 import cn.xu.model.entity.Like;

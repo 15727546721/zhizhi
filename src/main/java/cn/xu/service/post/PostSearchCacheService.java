@@ -1,6 +1,6 @@
 package cn.xu.service.post;
 
-import cn.xu.cache.RedisKeyManager;
+import cn.xu.cache.core.RedisKeyManager;
 import cn.xu.cache.core.DistributedLock;
 import cn.xu.cache.core.RedisOperations;
 import cn.xu.common.ResponseCode;
@@ -234,26 +234,11 @@ public class PostSearchCacheService {
 
     private Set<String> scanKeys(String pattern) {
         try {
-            return redisOps.getRedisTemplate().execute((RedisCallback<Set<String>>) connection -> {
-                Set<String> keys = new HashSet<>();
-                try (Cursor<byte[]> cursor = connection.scan(
-                        ScanOptions.scanOptions()
-                                .match(pattern)
-                                .count(100)
-                                .build())) {
-                    while (cursor.hasNext()) {
-                        byte[] keyBytes = cursor.next();
-                        if (keyBytes != null) {
-                            keys.add(new String(keyBytes, StandardCharsets.UTF_8));
-                        }
-                    }
-                }
-                return keys;
-            });
+            return redisOps.scan(pattern, 100);
         } catch (Exception e) {
             log.warn("SCAN操作失败，尝试使用KEYS操作: pattern={}", pattern, e);
             try {
-                return redisOps.getRedisTemplate().keys(pattern);
+                return redisOps.keys(pattern);
             } catch (Exception fallbackException) {
                 log.error("KEYS操作失败: pattern={}", pattern, fallbackException);
                 return new HashSet<>();

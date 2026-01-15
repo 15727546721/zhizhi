@@ -1,6 +1,6 @@
 package cn.xu.integration.search.service;
 
-import cn.xu.cache.RedisKeyManager;
+import cn.xu.cache.core.RedisKeyManager;
 import cn.xu.cache.core.RedisOperations;
 import cn.xu.service.search.SearchStatisticsService;
 import lombok.RequiredArgsConstructor;
@@ -93,7 +93,7 @@ public class SearchStatisticsServiceImpl implements SearchStatisticsService {
         try {
             String hotKeywordsKey = RedisKeyManager.postSearchHotKeywordsKey();
             Set<ZSetOperations.TypedTuple<Object>> hotKeywords =
-                    redisOps.getRedisTemplate().opsForZSet().reverseRangeWithScores(hotKeywordsKey, 0, limit - 1);
+                    redisOps.zReverseRangeWithScores(hotKeywordsKey, 0, limit - 1);
 
             List<HotKeyword> result = new ArrayList<>();
             if (hotKeywords != null && !hotKeywords.isEmpty()) {

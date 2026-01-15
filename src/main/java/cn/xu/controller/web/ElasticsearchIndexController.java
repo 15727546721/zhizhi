@@ -1,5 +1,6 @@
 package cn.xu.controller.web;
 
+import cn.xu.cache.core.RedisOperations;
 import cn.xu.common.ResponseCode;
 import cn.xu.common.response.ResponseEntity;
 import cn.xu.model.entity.Post;
@@ -14,7 +15,6 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -40,7 +40,7 @@ public class ElasticsearchIndexController {
     private final PostStatisticsService postStatisticsService;
     
     @org.springframework.beans.factory.annotation.Autowired(required = false)
-    private RedisTemplate<String, Object> redisTemplate;
+    private RedisOperations redisOps;
     
     /**
      * 构造器注入
@@ -255,9 +255,9 @@ public class ElasticsearchIndexController {
             
             // 从Redis获取失败的索引任务
             String failedTasksKey = "es:index:failed:tasks";
-            Set<Object> failedPostIds = redisTemplate.opsForSet().members(failedTasksKey);
+            Set<Object> failedPostIds = redisOps.sMembers(failedTasksKey);
             
-            if (failedPostIds == null || failedPostIds.isEmpty()) {
+            if (failedPostIds.isEmpty()) {
                 ReindexResponse response = new ReindexResponse();
                 response.setMessage("没有失败的索引任务");
                 return ResponseEntity.<ReindexResponse>builder()
@@ -281,18 +281,18 @@ public class ElasticsearchIndexController {
                             if (success) {
                                 totalIndexed++;
                                 // 从失败列表中移除
-                                redisTemplate.opsForSet().remove(failedTasksKey, postIdObj);
+                                redisOps.sRemove(failedTasksKey, postIdObj);
                             } else {
                                 log.warn("重试索引帖子失败: postId={}", postId);
                                 totalFailed++;
                             }
                         } else {
                             // 帖子未发布，从失败列表中移除
-                            redisTemplate.opsForSet().remove(failedTasksKey, postIdObj);
+                            redisOps.sRemove(failedTasksKey, postIdObj);
                         }
                     } else {
                         // 帖子不存在，从失败列表中移除
-                        redisTemplate.opsForSet().remove(failedTasksKey, postIdObj);
+                        redisOps.sRemove(failedTasksKey, postIdObj);
                     }
                 } catch (Exception e) {
                     log.warn("处理失败的索引任务失败: postId={}", postIdObj, e);

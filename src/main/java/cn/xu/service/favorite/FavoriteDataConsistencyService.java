@@ -1,6 +1,6 @@
 package cn.xu.service.favorite;
 
-import cn.xu.cache.FavoriteCacheRepository;
+import cn.xu.cache.repository.FavoriteCacheRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;

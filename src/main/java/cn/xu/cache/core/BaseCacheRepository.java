@@ -1,4 +1,4 @@
-package cn.xu.cache;
+package cn.xu.cache.core;
 
 import cn.xu.cache.core.RedisOperations;
 import lombok.extern.slf4j.Slf4j;

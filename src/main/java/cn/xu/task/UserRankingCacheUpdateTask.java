@@ -1,6 +1,6 @@
 package cn.xu.task;
 
-import cn.xu.cache.UserRankingCacheRepository;
+import cn.xu.cache.repository.UserRankingCacheRepository;
 import cn.xu.model.entity.User;
 import cn.xu.repository.UserRepository;
 import cn.xu.repository.PostRepository;

@@ -1,6 +1,6 @@
 package cn.xu.service.post;
 
-import cn.xu.cache.CacheService;
+import cn.xu.cache.service.CacheService;
 import cn.xu.model.dto.post.PostTagRelation;
 import cn.xu.model.entity.Post;
 import cn.xu.model.entity.Tag;
@@ -156,7 +156,8 @@ public class PostConverter {
                         return new ArrayList<>(userMap.values());
                     },
                     User::getId,
-                    USER_CACHE_TTL
+                    USER_CACHE_TTL,
+                    User.class
             );
         } catch (Exception e) {
             log.error("【降级】批量获取用户信息失败，帖子将不显示作者信息 - userIds: {}", userIds, e);

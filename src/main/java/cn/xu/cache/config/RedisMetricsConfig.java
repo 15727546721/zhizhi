@@ -1,4 +1,4 @@
-package cn.xu.cache;
+package cn.xu.cache.config;
 
 import cn.xu.common.constants.LogConstants;
 import io.micrometer.core.instrument.MeterRegistry;

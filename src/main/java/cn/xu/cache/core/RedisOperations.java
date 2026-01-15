@@ -431,6 +431,57 @@ public class RedisOperations {
         }
     }
 
+    /**
+     * 按排名范围删除ZSet成员（保留start到end之间的，删除其他）
+     */
+    public long zRemoveRange(String key, long start, long end) {
+        try {
+            Long count = redisTemplate.opsForZSet().removeRange(key, start, end);
+            return count != null ? count : 0;
+        } catch (Exception e) {
+            log.error("按排名删除ZSet成员失败: key={}, error={}", key, e.getMessage());
+            return 0;
+        }
+    }
+
+    /**
+     * 按分数范围删除ZSet成员
+     */
+    public long zRemoveRangeByScore(String key, double min, double max) {
+        try {
+            Long count = redisTemplate.opsForZSet().removeRangeByScore(key, min, max);
+            return count != null ? count : 0;
+        } catch (Exception e) {
+            log.error("按分数删除ZSet成员失败: key={}, error={}", key, e.getMessage());
+            return 0;
+        }
+    }
+
+    /**
+     * 获取ZSet指定范围及分数（倒序）
+     */
+    public Set<ZSetOperations.TypedTuple<Object>> zReverseRangeWithScores(String key, long start, long end) {
+        try {
+            Set<ZSetOperations.TypedTuple<Object>> result = redisTemplate.opsForZSet().reverseRangeWithScores(key, start, end);
+            return result != null ? result : Collections.emptySet();
+        } catch (Exception e) {
+            log.error("获取ZSet倒序范围失败: key={}, error={}", key, e.getMessage());
+            return Collections.emptySet();
+        }
+    }
+
+    /**
+     * 获取ZSet成员的倒序排名（从高到低，0开始）
+     */
+    public Long zReverseRank(String key, Object value) {
+        try {
+            return redisTemplate.opsForZSet().reverseRank(key, value);
+        } catch (Exception e) {
+            log.error("获取ZSet倒序排名失败: key={}, error={}", key, e.getMessage());
+            return null;
+        }
+    }
+
     // ==================== List操作 ====================
 
     /**
@@ -469,6 +520,50 @@ public class RedisOperations {
         } catch (Exception e) {
             log.error("List右侧批量添加失败: key={}, error={}", key, e.getMessage());
             return 0;
+        }
+    }
+
+    /**
+     * 左侧添加元素
+     */
+    public long lPush(String key, Object value) {
+        try {
+            Long count = redisTemplate.opsForList().leftPush(key, value);
+            return count != null ? count : 0;
+        } catch (Exception e) {
+            log.error("List左侧添加失败: key={}, error={}", key, e.getMessage());
+            return 0;
+        }
+    }
+
+    /**
+     * 移除List中的元素
+     * 
+     * @param key List的key
+     * @param count 移除数量：count > 0 从头到尾移除count个；count < 0 从尾到头移除|count|个；count = 0 移除所有
+     * @param value 要移除的值
+     * @return 移除的数量
+     */
+    public long lRemove(String key, long count, Object value) {
+        try {
+            Long removed = redisTemplate.opsForList().remove(key, count, value);
+            return removed != null ? removed : 0;
+        } catch (Exception e) {
+            log.error("List移除元素失败: key={}, error={}", key, e.getMessage());
+            return 0;
+        }
+    }
+
+    /**
+     * 裁剪List，只保留指定范围内的元素
+     */
+    public boolean lTrim(String key, long start, long end) {
+        try {
+            redisTemplate.opsForList().trim(key, start, end);
+            return true;
+        } catch (Exception e) {
+            log.error("List裁剪失败: key={}, error={}", key, e.getMessage());
+            return false;
         }
     }
 
@@ -514,8 +609,64 @@ public class RedisOperations {
         }
     }
 
+    // ==================== 高级操作 ====================
+
+    /**
+     * SCAN 扫描key（推荐使用，不会阻塞Redis）
+     * 
+     * @param pattern 匹配模式，如 "user:*"
+     * @param count 每次扫描的数量建议值
+     * @return 匹配的key集合
+     */
+    public Set<String> scan(String pattern, int count) {
+        try {
+            Set<String> keys = new java.util.LinkedHashSet<>();
+            org.springframework.data.redis.core.Cursor<String> cursor = redisTemplate.scan(
+                    org.springframework.data.redis.core.ScanOptions.scanOptions()
+                            .match(pattern)
+                            .count(count)
+                            .build()
+            );
+            
+            try {
+                while (cursor.hasNext()) {
+                    keys.add(cursor.next());
+                }
+            } finally {
+                cursor.close();
+            }
+            
+            return keys;
+        } catch (Exception e) {
+            log.error("SCAN扫描失败: pattern={}, error={}", pattern, e.getMessage());
+            return Collections.emptySet();
+        }
+    }
+
+    /**
+     * KEYS 命令（不推荐在生产环境使用，会阻塞Redis）
+     * 
+     * @param pattern 匹配模式
+     * @return 匹配的key集合
+     */
+    public Set<String> keys(String pattern) {
+        try {
+            Set<String> keys = redisTemplate.keys(pattern);
+            return keys != null ? keys : Collections.emptySet();
+        } catch (Exception e) {
+            log.error("KEYS命令失败: pattern={}, error={}", pattern, e.getMessage());
+            return Collections.emptySet();
+        }
+    }
+
     /**
      * 获取底层RedisTemplate（仅供特殊场景使用）
+     * <p>特殊场景包括：</p>
+     * <ul>
+     *   <li>获取Redis连接信息（健康检查、监控）</li>
+     *   <li>执行复杂的Redis命令组合</li>
+     *   <li>使用RedisCallback进行底层操作</li>
+     * </ul>
      */
     public RedisTemplate<String, Object> getRedisTemplate() {
         return redisTemplate;

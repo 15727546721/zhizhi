@@ -1,6 +1,6 @@
 package cn.xu.service.favorite;
 
-import cn.xu.cache.FavoriteCacheRepository;
+import cn.xu.cache.repository.FavoriteCacheRepository;
 import cn.xu.event.publisher.SocialEventPublisher;
 import cn.xu.model.entity.Favorite;
 import cn.xu.model.entity.Favorite.FavoriteType;

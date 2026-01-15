@@ -1,6 +1,6 @@
 package cn.xu.task;
 
-import cn.xu.cache.RedisKeyManager;
+import cn.xu.cache.core.RedisKeyManager;
 import cn.xu.cache.core.RedisOperations;
 import cn.xu.integration.search.strategy.ElasticsearchSearchStrategy;
 import cn.xu.model.entity.Post;
@@ -126,20 +126,6 @@ public class HotScoreSyncTask {
     }
     
     private Set<String> scanKeys(String pattern) {
-        Set<String> keys = new HashSet<>();
-        redisOps.getRedisTemplate().execute((RedisCallback<Object>) connection -> {
-            Cursor<byte[]> cursor = connection.scan(
-                ScanOptions.scanOptions()
-                    .match(pattern)
-                    .count(100)
-                    .build()
-            );
-            while (cursor.hasNext()) {
-                keys.add(new String(cursor.next()));
-            }
-            cursor.close();
-            return null;
-        });
-        return keys;
+        return redisOps.scan(pattern, 100);
     }
 }

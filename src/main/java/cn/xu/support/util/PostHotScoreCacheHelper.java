@@ -1,6 +1,6 @@
 package cn.xu.support.util;
 
-import cn.xu.cache.RedisKeyManager;
+import cn.xu.cache.core.RedisKeyManager;
 import cn.xu.cache.core.RedisOperations;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

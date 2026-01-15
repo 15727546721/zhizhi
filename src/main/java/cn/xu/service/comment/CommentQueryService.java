@@ -1,6 +1,6 @@
 package cn.xu.service.comment;
 
-import cn.xu.cache.CacheService;
+import cn.xu.cache.service.CacheService;
 import cn.xu.model.dto.comment.FindCommentRequest;
 import cn.xu.model.dto.comment.FindReplyRequest;
 import cn.xu.model.entity.Comment;
@@ -182,7 +182,6 @@ public class CommentQueryService {
     /**
      * 热门评论查询（带分布式锁防止缓存击穿）
      */
-    @SuppressWarnings("unchecked")
     private List<Comment> findCommentsByHotSort(FindCommentRequest request) {
         String cacheKey = String.format("%s%d:%d:%d:%d",
                 COMMENT_HOT_PAGE_KEY,
@@ -192,8 +191,8 @@ public class CommentQueryService {
                 request.getPageSize()
         );
 
-        // 使用带锁的缓存方法，防止缓存击穿
-        return cacheService.getOrLoadWithLock(cacheKey, () -> 
+        // 使用带锁的列表缓存方法，防止缓存击穿
+        return cacheService.getListOrLoadWithLock(cacheKey, () -> 
             commentRepository.findRootCommentsByHot(
                 request.getTargetType(), request.getTargetId(),
                 request.getPageNo(), request.getPageSize()),

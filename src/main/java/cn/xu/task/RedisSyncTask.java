@@ -1,8 +1,8 @@
 package cn.xu.task;
 
-import cn.xu.cache.FavoriteCacheRepository;
-import cn.xu.cache.LikeCacheRepository;
-import cn.xu.cache.RedisKeyManager;
+import cn.xu.cache.repository.FavoriteCacheRepository;
+import cn.xu.cache.repository.LikeCacheRepository;
+import cn.xu.cache.core.RedisKeyManager;
 import cn.xu.cache.core.RedisOperations;
 import cn.xu.model.entity.Like;
 import cn.xu.model.entity.Post;

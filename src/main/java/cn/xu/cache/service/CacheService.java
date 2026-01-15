@@ -1,14 +1,14 @@
-package cn.xu.cache;
+package cn.xu.cache.service;
 
 import cn.xu.cache.core.DistributedLock;
 import cn.xu.cache.core.RedisOperations;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -31,6 +31,7 @@ public class CacheService {
 
     private final RedisOperations redisOps;
     private final DistributedLock distributedLock;
+    private final ObjectMapper objectMapper;
 
     // 空值缓存标记
     private static final String NULL_VALUE = "NULL";
@@ -53,11 +54,11 @@ public class CacheService {
      * @param key      缓存键
      * @param loader   数据加载器
      * @param ttl      过期时间（秒）
+     * @param valueType 值类型
      * @param <T>      返回类型
      * @return 缓存值或数据源值
      */
-    @SuppressWarnings("unchecked")
-    public <T> T getOrLoad(String key, Supplier<T> loader, long ttl) {
+    public <T> T getOrLoad(String key, Supplier<T> loader, long ttl, Class<T> valueType) {
         try {
             // 1. 尝试从缓存获取
             Object cached = redisOps.get(key);
@@ -67,7 +68,7 @@ public class CacheService {
                     return null;
                 }
                 log.debug("缓存命中: key={}", key);
-                return (T) cached;
+                return convertValue(cached, valueType);
             }
 
             // 2. 缓存未命中，从数据源加载
@@ -96,8 +97,8 @@ public class CacheService {
     /**
      * 获取缓存（使用默认过期时间）
      */
-    public <T> T getOrLoad(String key, Supplier<T> loader) {
-        return getOrLoad(key, loader, DEFAULT_TTL);
+    public <T> T getOrLoad(String key, Supplier<T> loader, Class<T> valueType) {
+        return getOrLoad(key, loader, DEFAULT_TTL, valueType);
     }
 
     /**
@@ -109,11 +110,11 @@ public class CacheService {
      * @param key      缓存键
      * @param loader   数据加载器
      * @param ttl      过期时间（秒）
+     * @param valueType 值类型
      * @param <T>      返回类型
      * @return 缓存值或数据源值
      */
-    @SuppressWarnings("unchecked")
-    public <T> T getOrLoadWithLock(String key, Supplier<T> loader, long ttl) {
+    public <T> T getOrLoadWithLock(String key, Supplier<T> loader, long ttl, Class<T> valueType) {
         try {
             // 1. 尝试从缓存获取
             Object cached = redisOps.get(key);
@@ -121,7 +122,7 @@ public class CacheService {
                 if (NULL_VALUE.equals(cached)) {
                     return null;
                 }
-                return (T) cached;
+                return convertValue(cached, valueType);
             }
 
             // 2. 缓存未命中，尝试获取分布式锁
@@ -136,7 +137,7 @@ public class CacheService {
                             if (NULL_VALUE.equals(cached)) {
                                 return null;
                             }
-                            return (T) cached;
+                            return convertValue(cached, valueType);
                         }
 
                         // 从数据源加载
@@ -170,7 +171,7 @@ public class CacheService {
                     if (NULL_VALUE.equals(cached)) {
                         return null;
                     }
-                    return (T) cached;
+                    return convertValue(cached, valueType);
                 }
             }
 
@@ -187,8 +188,8 @@ public class CacheService {
     /**
      * 获取缓存，带分布式锁（使用默认过期时间）
      */
-    public <T> T getOrLoadWithLock(String key, Supplier<T> loader) {
-        return getOrLoadWithLock(key, loader, DEFAULT_TTL);
+    public <T> T getOrLoadWithLock(String key, Supplier<T> loader, Class<T> valueType) {
+        return getOrLoadWithLock(key, loader, DEFAULT_TTL, valueType);
     }
 
     // ==================== 批量缓存 ====================
@@ -201,17 +202,18 @@ public class CacheService {
      * @param loader     批量数据加载器
      * @param idExtractor ID 提取器
      * @param ttl        过期时间（秒）
+     * @param valueType  值类型
      * @param <ID>       ID 类型
      * @param <T>        返回类型
      * @return Map<ID, T>
      */
-    @SuppressWarnings("unchecked")
     public <ID, T> Map<ID, T> batchGetOrLoad(
             String keyPrefix,
             Collection<ID> ids,
             Function<List<ID>, List<T>> loader,
             Function<T, ID> idExtractor,
-            long ttl) {
+            long ttl,
+            Class<T> valueType) {
 
         if (ids == null || ids.isEmpty()) {
             return Collections.emptyMap();
@@ -238,7 +240,10 @@ public class CacheService {
                     if (cached == null) {
                         missedIds.add(id);
                     } else if (!NULL_VALUE.equals(cached)) {
-                        result.put(id, (T) cached);
+                        T value = convertValue(cached, valueType);
+                        if (value != null) {
+                            result.put(id, value);
+                        }
                     }
                     // NULL_VALUE 表示空值缓存，不加入结果
                 }
@@ -297,8 +302,9 @@ public class CacheService {
             String keyPrefix,
             Collection<ID> ids,
             Function<List<ID>, List<T>> loader,
-            Function<T, ID> idExtractor) {
-        return batchGetOrLoad(keyPrefix, ids, loader, idExtractor, DEFAULT_TTL);
+            Function<T, ID> idExtractor,
+            Class<T> valueType) {
+        return batchGetOrLoad(keyPrefix, ids, loader, idExtractor, DEFAULT_TTL, valueType);
     }
 
     // ==================== 缓存失效 ====================
@@ -353,6 +359,120 @@ public class CacheService {
             log.warn("列表缓存操作失败，降级到数据源: key={}, error={}", key, e.getMessage());
             List<T> value = loader.get();
             return value != null ? value : Collections.emptyList();
+        }
+    }
+    
+    /**
+     * 获取列表缓存，带分布式锁防止缓存击穿
+     * <p>适用于热点列表数据</p>
+     */
+    @SuppressWarnings("unchecked")
+    public <T> List<T> getListOrLoadWithLock(String key, Supplier<List<T>> loader, long ttl) {
+        try {
+            // 1. 尝试从缓存获取
+            Object cached = redisOps.get(key);
+            if (cached != null) {
+                if (NULL_VALUE.equals(cached)) {
+                    return Collections.emptyList();
+                }
+                return (List<T>) cached;
+            }
+
+            // 2. 缓存未命中，尝试获取分布式锁
+            String lockKey = "cache:" + key;
+
+            for (int i = 0; i < LOCK_RETRY_COUNT; i++) {
+                if (distributedLock.tryLock(lockKey)) {
+                    try {
+                        // 双重检查：获取锁后再次检查缓存
+                        cached = redisOps.get(key);
+                        if (cached != null) {
+                            if (NULL_VALUE.equals(cached)) {
+                                return Collections.emptyList();
+                            }
+                            return (List<T>) cached;
+                        }
+
+                        // 从数据源加载
+                        List<T> value = loader.get();
+
+                        // 写入缓存
+                        if (value == null || value.isEmpty()) {
+                            redisOps.set(key, NULL_VALUE, NULL_CACHE_TTL);
+                        } else {
+                            long actualTtl = ttl + ThreadLocalRandom.current().nextInt(RANDOM_TTL_RANGE);
+                            redisOps.set(key, value, actualTtl);
+                        }
+
+                        return value != null ? value : Collections.emptyList();
+                    } finally {
+                        distributedLock.unlock(lockKey);
+                    }
+                }
+
+                // 未获取到锁，等待后重试
+                try {
+                    Thread.sleep(LOCK_RETRY_INTERVAL);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+
+                // 重试前再次检查缓存（可能其他线程已加载完成）
+                cached = redisOps.get(key);
+                if (cached != null) {
+                    if (NULL_VALUE.equals(cached)) {
+                        return Collections.emptyList();
+                    }
+                    return (List<T>) cached;
+                }
+            }
+
+            // 获取锁失败，降级到直接查库
+            log.warn("获取分布式锁失败，降级到数据源: key={}", key);
+            List<T> value = loader.get();
+            return value != null ? value : Collections.emptyList();
+
+        } catch (Exception e) {
+            log.warn("列表缓存操作失败，降级到数据源: key={}, error={}", key, e.getMessage());
+            List<T> value = loader.get();
+            return value != null ? value : Collections.emptyList();
+        }
+    }
+    
+    // ==================== 类型转换工具 ====================
+    
+    /**
+     * 将缓存值转换为指定类型
+     * <p>处理 GenericJackson2JsonRedisSerializer 反序列化为 LinkedHashMap 的问题</p>
+     */
+    @SuppressWarnings("unchecked")
+    private <T> T convertValue(Object value, Class<T> targetType) {
+        if (value == null) {
+            return null;
+        }
+        
+        // 如果已经是目标类型，直接返回
+        if (targetType.isInstance(value)) {
+            return (T) value;
+        }
+        
+        // 如果是 LinkedHashMap，使用 ObjectMapper 转换
+        if (value instanceof Map) {
+            try {
+                return objectMapper.convertValue(value, targetType);
+            } catch (Exception e) {
+                log.error("类型转换失败: value={}, targetType={}", value.getClass(), targetType, e);
+                throw new RuntimeException("缓存值类型转换失败", e);
+            }
+        }
+        
+        // 其他情况尝试强制转换
+        try {
+            return (T) value;
+        } catch (ClassCastException e) {
+            log.error("类型转换失败: value={}, targetType={}", value.getClass(), targetType, e);
+            throw new RuntimeException("缓存值类型转换失败", e);
         }
     }
 }

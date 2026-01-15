@@ -1,12 +1,12 @@
-package cn.xu.cache;
+package cn.xu.cache.monitor;
 
+import cn.xu.cache.core.RedisOperations;
 import cn.xu.common.constants.LogConstants;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.data.redis.connection.RedisConnection;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
 import java.util.Properties;
@@ -21,14 +21,14 @@ import java.util.Properties;
 @RequiredArgsConstructor
 public class RedisHealthIndicator implements HealthIndicator {
 
-    private final RedisTemplate<String, Object> redisTemplate;
+    private final RedisOperations redisOps;
 
     @Override
     public Health health() {
         log.info(LogConstants.REDIS_HEALTH_CHECK_START);
         long startTime = System.currentTimeMillis();
         
-        try (RedisConnection connection = redisTemplate.getConnectionFactory().getConnection()) {
+        try (RedisConnection connection = redisOps.getRedisTemplate().getConnectionFactory().getConnection()) {
             String pong = connection.ping();
             if ("PONG".equals(pong)) {
                 Properties info = connection.info();

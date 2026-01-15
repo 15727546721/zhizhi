@@ -1,6 +1,6 @@
 package cn.xu.repository.impl;
 
-import cn.xu.cache.TagCacheRepository;
+import cn.xu.cache.repository.TagCacheRepository;
 import cn.xu.common.ResponseCode;
 import cn.xu.model.dto.post.PostAndTagAgg;
 import cn.xu.model.entity.Tag;

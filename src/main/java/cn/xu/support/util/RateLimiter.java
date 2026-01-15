@@ -115,7 +115,7 @@ public class RateLimiter {
         long windowStart = currentTime - (windowSeconds * 1000L);
         
         try {
-            redisOps.getRedisTemplate().opsForZSet().removeRangeByScore(key, 0, windowStart);
+            redisOps.zRemoveRangeByScore(key, 0, windowStart);
             long count = redisOps.zSize(key);
             int remaining = maxRequests - (int) count;
             return Math.max(0, remaining);

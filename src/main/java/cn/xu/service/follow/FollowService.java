@@ -1,6 +1,6 @@
 package cn.xu.service.follow;
 
-import cn.xu.cache.FollowCacheRepository;
+import cn.xu.cache.repository.FollowCacheRepository;
 import cn.xu.event.publisher.SocialEventPublisher;
 import cn.xu.model.entity.Follow;
 import cn.xu.model.entity.User;

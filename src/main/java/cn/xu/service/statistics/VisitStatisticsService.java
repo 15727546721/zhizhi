@@ -1,16 +1,15 @@
 package cn.xu.service.statistics;
 
+import cn.xu.cache.core.RedisOperations;
 import cn.xu.common.constants.RedisKeyConstants;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /**
  * 访问统计服务
@@ -23,7 +22,7 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 public class VisitStatisticsService {
 
-    private final StringRedisTemplate redisTemplate;
+    private final RedisOperations redisOps;
     
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
     
@@ -41,19 +40,19 @@ public class VisitStatisticsService {
             
             // 记录每日UV（HyperLogLog）
             String uvKey = RedisKeyConstants.STATS_UV_DAILY + today;
-            redisTemplate.opsForHyperLogLog().add(uvKey, visitorId);
-            redisTemplate.expire(uvKey, DAILY_STATS_EXPIRE_DAYS, TimeUnit.DAYS);
+            redisOps.pfAdd(uvKey, visitorId);
+            redisOps.expire(uvKey, DAILY_STATS_EXPIRE_DAYS * 86400); // 转换为秒
             
             // 记录总UV（HyperLogLog）
-            redisTemplate.opsForHyperLogLog().add(RedisKeyConstants.STATS_UV_TOTAL, visitorId);
+            redisOps.pfAdd(RedisKeyConstants.STATS_UV_TOTAL, visitorId);
             
             // 记录每日PV
             String pvKey = RedisKeyConstants.STATS_PV_DAILY + today;
-            redisTemplate.opsForValue().increment(pvKey);
-            redisTemplate.expire(pvKey, DAILY_STATS_EXPIRE_DAYS, TimeUnit.DAYS);
+            redisOps.increment(pvKey, 1);
+            redisOps.expire(pvKey, DAILY_STATS_EXPIRE_DAYS * 86400); // 转换为秒
             
             // 记录总PV
-            redisTemplate.opsForValue().increment(RedisKeyConstants.STATS_PV_TOTAL);
+            redisOps.increment(RedisKeyConstants.STATS_PV_TOTAL, 1);
             
         } catch (Exception e) {
             log.warn("记录访问统计失败: visitorId={}", visitorId, e);
@@ -67,8 +66,7 @@ public class VisitStatisticsService {
         try {
             String today = LocalDate.now().format(DATE_FORMATTER);
             String key = RedisKeyConstants.STATS_UV_DAILY + today;
-            Long count = redisTemplate.opsForHyperLogLog().size(key);
-            return count != null ? count : 0L;
+            return redisOps.pfCount(key);
         } catch (Exception e) {
             log.warn("获取今日UV失败", e);
             return 0L;
@@ -82,8 +80,7 @@ public class VisitStatisticsService {
         try {
             String yesterday = LocalDate.now().minusDays(1).format(DATE_FORMATTER);
             String key = RedisKeyConstants.STATS_UV_DAILY + yesterday;
-            Long count = redisTemplate.opsForHyperLogLog().size(key);
-            return count != null ? count : 0L;
+            return redisOps.pfCount(key);
         } catch (Exception e) {
             log.warn("获取昨日UV失败", e);
             return 0L;
@@ -97,8 +94,7 @@ public class VisitStatisticsService {
         try {
             String dateStr = date.format(DATE_FORMATTER);
             String key = RedisKeyConstants.STATS_UV_DAILY + dateStr;
-            Long count = redisTemplate.opsForHyperLogLog().size(key);
-            return count != null ? count : 0L;
+            return redisOps.pfCount(key);
         } catch (Exception e) {
             log.warn("获取指定日期UV失败: date={}", date, e);
             return 0L;
@@ -110,8 +106,7 @@ public class VisitStatisticsService {
      */
     public long getTotalUV() {
         try {
-            Long count = redisTemplate.opsForHyperLogLog().size(RedisKeyConstants.STATS_UV_TOTAL);
-            return count != null ? count : 0L;
+            return redisOps.pfCount(RedisKeyConstants.STATS_UV_TOTAL);
         } catch (Exception e) {
             log.warn("获取总UV失败", e);
             return 0L;
@@ -125,8 +120,8 @@ public class VisitStatisticsService {
         try {
             String today = LocalDate.now().format(DATE_FORMATTER);
             String key = RedisKeyConstants.STATS_PV_DAILY + today;
-            String value = redisTemplate.opsForValue().get(key);
-            return value != null ? Long.parseLong(value) : 0L;
+            Object value = redisOps.get(key);
+            return value != null ? Long.parseLong(value.toString()) : 0L;
         } catch (Exception e) {
             log.warn("获取今日PV失败", e);
             return 0L;
@@ -140,8 +135,8 @@ public class VisitStatisticsService {
         try {
             String yesterday = LocalDate.now().minusDays(1).format(DATE_FORMATTER);
             String key = RedisKeyConstants.STATS_PV_DAILY + yesterday;
-            String value = redisTemplate.opsForValue().get(key);
-            return value != null ? Long.parseLong(value) : 0L;
+            Object value = redisOps.get(key);
+            return value != null ? Long.parseLong(value.toString()) : 0L;
         } catch (Exception e) {
             log.warn("获取昨日PV失败", e);
             return 0L;
@@ -155,8 +150,8 @@ public class VisitStatisticsService {
         try {
             String dateStr = date.format(DATE_FORMATTER);
             String key = RedisKeyConstants.STATS_PV_DAILY + dateStr;
-            String value = redisTemplate.opsForValue().get(key);
-            return value != null ? Long.parseLong(value) : 0L;
+            Object value = redisOps.get(key);
+            return value != null ? Long.parseLong(value.toString()) : 0L;
         } catch (Exception e) {
             log.warn("获取指定日期PV失败: date={}", date, e);
             return 0L;
@@ -168,8 +163,8 @@ public class VisitStatisticsService {
      */
     public long getTotalPV() {
         try {
-            String value = redisTemplate.opsForValue().get(RedisKeyConstants.STATS_PV_TOTAL);
-            return value != null ? Long.parseLong(value) : 0L;
+            Object value = redisOps.get(RedisKeyConstants.STATS_PV_TOTAL);
+            return value != null ? Long.parseLong(value.toString()) : 0L;
         } catch (Exception e) {
             log.warn("获取总PV失败", e);
             return 0L;

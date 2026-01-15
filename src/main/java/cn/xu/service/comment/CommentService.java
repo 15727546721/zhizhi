@@ -321,9 +321,23 @@ public class CommentService {
         );
 
         try {
-            List<Comment> cached = (List<Comment>) redisOps.get(cacheKey);
+            Object cached = redisOps.get(cacheKey);
             if (cached != null) {
-                return cached;
+                // 处理 LinkedHashMap 反序列化问题
+                if (cached instanceof List) {
+                    @SuppressWarnings("unchecked")
+                    List<Object> list = (List<Object>) cached;
+                    if (!list.isEmpty() && list.get(0) instanceof java.util.Map) {
+                        // 需要转换 LinkedHashMap 为 Comment
+                        log.warn("检测到缓存反序列化为 LinkedHashMap，建议使用 CacheService 或 CommentQueryService");
+                        // 暂时清除缓存，让其重新加载
+                        redisOps.delete(cacheKey);
+                    } else {
+                        @SuppressWarnings("unchecked")
+                        List<Comment> comments = (List<Comment>) cached;
+                        return comments;
+                    }
+                }
             }
 
             List<Comment> comments = commentRepository.findRootCommentsByHot(

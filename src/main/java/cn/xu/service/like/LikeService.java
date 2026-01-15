@@ -1,6 +1,6 @@
 package cn.xu.service.like;
 
-import cn.xu.cache.LikeCacheRepository;
+import cn.xu.cache.repository.LikeCacheRepository;
 import cn.xu.event.events.LikeEvent;
 import cn.xu.model.entity.Like;
 import cn.xu.model.entity.Like.LikeType;

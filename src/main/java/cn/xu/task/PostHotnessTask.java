@@ -1,6 +1,6 @@
 package cn.xu.task;
 
-import cn.xu.cache.RedisKeyManager;
+import cn.xu.cache.core.RedisKeyManager;
 import cn.xu.cache.core.RedisOperations;
 import cn.xu.model.entity.Post;
 import cn.xu.repository.mapper.PostMapper;
@@ -95,7 +95,7 @@ public class PostHotnessTask {
             }
 
             // 5. 保证 Redis 中只保存前1000名帖子的热度数据
-            redisOps.getRedisTemplate().opsForZSet().removeRange(RedisKeyManager.postHotRankKey(), 1000, -1);
+            redisOps.zRemoveRange(RedisKeyManager.postHotRankKey(), 1000, -1);
 
             log.info("帖子热度更新成功，更新数量 {}/{}，保留前1000篇帖子热度", updateCount, postIds.size());
         } catch (Exception e) {

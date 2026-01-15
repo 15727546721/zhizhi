@@ -1,6 +1,6 @@
 package cn.xu.service.user;
 
-import cn.xu.cache.UserRankingCacheRepository;
+import cn.xu.cache.repository.UserRankingCacheRepository;
 import cn.xu.model.entity.User;
 import cn.xu.model.enums.UserRankingSortType;
 import cn.xu.repository.UserRepository;

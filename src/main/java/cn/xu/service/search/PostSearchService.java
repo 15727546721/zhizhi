@@ -201,7 +201,22 @@ public class PostSearchService {
     private Page<Post> getFromCache(String keyword, SearchFilter filter, Pageable pageable) {
         try {
             String cacheKey = buildCacheKey(keyword, filter, pageable);
-            return (Page<Post>) redisOps.get(cacheKey);
+            Object cached = redisOps.get(cacheKey);
+            if (cached != null) {
+                // 处理 LinkedHashMap 反序列化问题
+                if (cached instanceof org.springframework.data.domain.Page) {
+                    @SuppressWarnings("unchecked")
+                    Page<Post> page = (Page<Post>) cached;
+                    // 检查内容是否为 LinkedHashMap
+                    if (!page.isEmpty() && page.getContent().get(0) instanceof java.util.Map) {
+                        log.warn("检测到缓存反序列化为 LinkedHashMap，清除缓存: keyword={}", keyword);
+                        redisOps.delete(cacheKey);
+                        return null;
+                    }
+                    return page;
+                }
+            }
+            return null;
         } catch (Exception e) {
             log.warn("获取缓存失败: keyword={}", keyword, e);
             return null;

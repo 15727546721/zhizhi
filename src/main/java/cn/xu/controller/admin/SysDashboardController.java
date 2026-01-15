@@ -1,6 +1,7 @@
 package cn.xu.controller.admin;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
+import cn.xu.cache.core.RedisOperations;
 import cn.xu.common.ResponseCode;
 import cn.xu.common.annotation.ApiOperationLog;
 import cn.xu.common.response.ResponseEntity;
@@ -16,7 +17,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -51,7 +51,7 @@ public class SysDashboardController {
     @Resource
     private TagMapper tagMapper;
     @Autowired(required = false)
-    private RedisTemplate<String, Object> redisTemplate;
+    private RedisOperations redisOps;
 
     /**
      * 获取首页顶部统计数据
@@ -261,9 +261,9 @@ public class SysDashboardController {
                 .uptimeInDays(0)
                 .build();
 
-        if (redisTemplate != null) {
+        if (redisOps != null) {
             try {
-                Properties info = redisTemplate.getRequiredConnectionFactory()
+                Properties info = redisOps.getRedisTemplate().getRequiredConnectionFactory()
                         .getConnection().info();
                 if (info != null) {
                     cacheInfo.setRedisVersion(info.getProperty("redis_version", "N/A"));

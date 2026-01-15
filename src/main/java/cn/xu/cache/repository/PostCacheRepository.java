@@ -1,5 +1,7 @@
-package cn.xu.cache;
+package cn.xu.cache.repository;
 
+import cn.xu.cache.core.BaseCacheRepository;
+import cn.xu.cache.core.RedisKeyManager;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 

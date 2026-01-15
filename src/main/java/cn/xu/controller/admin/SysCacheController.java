@@ -2,6 +2,7 @@ package cn.xu.controller.admin;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.annotation.SaCheckPermission;
+import cn.xu.cache.core.RedisOperations;
 import cn.xu.common.ResponseCode;
 import cn.xu.common.annotation.ApiOperationLog;
 import cn.xu.common.response.PageResponse;
@@ -14,7 +15,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
 public class SysCacheController {
 
     @Autowired(required = false)
-    private RedisTemplate<String, Object> redisTemplate;
+    private RedisOperations redisOps;
 
     /**
      * 获取缓存信息
@@ -58,9 +58,9 @@ public class SysCacheController {
         info.put("uptimeInDays", 0);
         info.put("dbSize", 0);
 
-        if (redisTemplate != null) {
+        if (redisOps != null) {
             try {
-                Properties redisInfo = redisTemplate.getRequiredConnectionFactory()
+                Properties redisInfo = redisOps.getRedisTemplate().getRequiredConnectionFactory()
                         .getConnection().info();
                 if (redisInfo != null) {
                     info.put("redisVersion", redisInfo.getProperty("redis_version", "N/A"));
@@ -69,7 +69,7 @@ public class SysCacheController {
                     info.put("uptimeInDays", redisInfo.getProperty("uptime_in_days", "0"));
                 }
 
-                Long dbSize = redisTemplate.getRequiredConnectionFactory()
+                Long dbSize = redisOps.getRedisTemplate().getRequiredConnectionFactory()
                         .getConnection().dbSize();
                 info.put("dbSize", dbSize != null ? dbSize : 0);
             } catch (Exception e) {
@@ -110,30 +110,12 @@ public class SysCacheController {
         List<CacheKeyVO> keys = new ArrayList<>();
         long total = 0;
 
-        if (redisTemplate != null) {
+        if (redisOps != null) {
             try {
                 String searchPattern = (pattern != null && !pattern.isEmpty()) ? "*" + pattern + "*" : "*";
                 
                 // 使用 SCAN 命令替代 KEYS，避免阻塞 Redis
-                Set<String> redisKeys = new java.util.LinkedHashSet<>();
-                org.springframework.data.redis.core.Cursor<String> cursor = redisTemplate.scan(
-                        org.springframework.data.redis.core.ScanOptions.scanOptions()
-                                .match(searchPattern)
-                                .count(1000)  // 每次扫描的数量
-                                .build()
-                );
-                
-                try {
-                    while (cursor.hasNext()) {
-                        redisKeys.add(cursor.next());
-                        // 限制最大扫描数量，防止内存溢出
-                        if (redisKeys.size() >= 10000) {
-                            break;
-                        }
-                    }
-                } finally {
-                    cursor.close();
-                }
+                Set<String> redisKeys = redisOps.scan(searchPattern, 1000);
 
                 total = redisKeys.size();
                 keys = redisKeys.stream()
@@ -176,9 +158,9 @@ public class SysCacheController {
         log.info("获取缓存值: key={}", key);
 
         Object value = null;
-        if (redisTemplate != null) {
+        if (redisOps != null) {
             try {
-                value = redisTemplate.opsForValue().get(key);
+                value = redisOps.get(key);
             } catch (Exception e) {
                 log.warn("获取缓存值失败: {}", e.getMessage());
             }
@@ -208,9 +190,9 @@ public class SysCacheController {
     public ResponseEntity<Void> deleteCache(@PathVariable String key) {
         log.info("删除缓存: key={}", key);
 
-        if (redisTemplate != null) {
+        if (redisOps != null) {
             try {
-                redisTemplate.delete(key);
+                redisOps.delete(key);
             } catch (Exception e) {
                 log.warn("删除缓存失败: {}", e.getMessage());
             }
