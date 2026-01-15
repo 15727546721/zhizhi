@@ -1,4 +1,4 @@
-package cn.xu.repository.read.elastic.model;
+package cn.xu.elasticsearch.model;
 
 import lombok.Data;
 import org.springframework.data.annotation.Id;
@@ -12,7 +12,6 @@ import java.util.List;
 
 @Data
 @Document(indexName = "comments")
-//@Setting(settingPath = "/es-config/comments-settings.json")
 public class CommentIndex {
     @Id
     private Long id;
@@ -47,14 +46,12 @@ public class CommentIndex {
     @Field(type = FieldType.Double)
     private Double hotScore;
 
-    // 嵌套字段用于存储用户信息
     @Field(type = FieldType.Nested)
     private UserInfo user;
 
     @Field(type = FieldType.Nested)
     private UserInfo replyUser;
 
-    // 嵌套字段用于存储子评论
     @Field(type = FieldType.Nested)
     private List<SubComment> topReplies;
 

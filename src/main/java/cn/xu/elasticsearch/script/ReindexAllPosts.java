@@ -1,6 +1,6 @@
-package cn.xu.repository.read.elastic.script;
+package cn.xu.elasticsearch.script;
 
-import cn.xu.integration.search.strategy.ElasticsearchSearchStrategy;
+import cn.xu.elasticsearch.service.ElasticsearchPostIndexService;
 import cn.xu.model.entity.Post;
 import cn.xu.repository.mapper.PostMapper;
 import lombok.RequiredArgsConstructor;
@@ -12,11 +12,10 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 /**
- * 重新索引所有帖子到Elasticsearch
- * 使用方法：在application.yml中设置 app.elasticsearch.reindex=true
- * 或者在启动时添加参数：--app.elasticsearch.reindex=true
- *
- * 注意：此脚本会重新索引所有已发布的帖子，可能需要较长时间
+ * 重新索引所有帖子到 Elasticsearch
+ * <p>使用方法：在 application.yml 中设置 app.elasticsearch.reindex=true</p>
+ * <p>或者在启动时添加参数：--app.elasticsearch.reindex=true</p>
+ * <p>注意：此脚本会重新索引所有已发布的帖子，可能需要较长时间</p>
  */
 @Slf4j
 @Component
@@ -25,7 +24,7 @@ import java.util.List;
 public class ReindexAllPosts implements CommandLineRunner {
 
     private final PostMapper postMapper;
-    private final ElasticsearchSearchStrategy esStrategy;
+    private final ElasticsearchPostIndexService postIndexService;
 
     @Override
     public void run(String... args) throws Exception {
@@ -37,19 +36,16 @@ public class ReindexAllPosts implements CommandLineRunner {
             int totalIndexed = 0;
 
             while (true) {
-                // 分批获取所有帖子
                 List<Post> posts = postMapper.findAllWithPagination(offset, batchSize);
 
                 if (posts == null || posts.isEmpty()) {
                     break;
                 }
 
-                // 索引每批帖子（只索引已发布的帖子）
                 for (Post post : posts) {
                     try {
-                        // 只索引已发布的帖子
                         if (Integer.valueOf(Post.STATUS_PUBLISHED).equals(post.getStatus())) {
-                            esStrategy.indexPost(post);
+                            postIndexService.indexPost(post);
                             totalIndexed++;
                         }
                     } catch (Exception e) {

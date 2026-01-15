@@ -1,10 +1,10 @@
-package cn.xu.repository.read.elastic.init;
+package cn.xu.elasticsearch.init;
 
 import cn.xu.cache.core.RedisOperations;
-import cn.xu.integration.search.strategy.ElasticsearchSearchStrategy;
+import cn.xu.elasticsearch.repository.PostElasticRepository;
+import cn.xu.elasticsearch.service.ElasticsearchPostIndexService;
 import cn.xu.model.entity.Post;
 import cn.xu.repository.mapper.PostMapper;
-import cn.xu.repository.read.elastic.repository.PostElasticRepository;
 import cn.xu.service.post.PostStatisticsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,32 +16,29 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
+import jakarta.annotation.PostConstruct;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
- * 文章数据ES索引初始化类
- * 主要在应用启动时同步ES索引，如果数据不一致或为空则触发ES索引初始化。
- * 配置项说明：
- * - app.elasticsearch.auto-init.enabled: 是否启用自动初始化（默认true）
- * - app.elasticsearch.auto-init.sync-threshold: 数据同步阈值，当MySQL数据与ES数据同步率低于该值时触发初始化（默认0.5，表示50%）
+ * 帖子数据 ES 索引初始化
+ * <p>应用启动时同步 ES 索引，如果数据不一致或为空则触发初始化</p>
  */
 @Slf4j
 @Component
 @RequiredArgsConstructor
 @ConditionalOnProperty(name = "spring.elasticsearch.enabled", havingValue = "true", matchIfMissing = false)
-@Order(100) // 在CommentDataInitializer之后执行
+@Order(100)
 public class PostDataInitializer implements ApplicationRunner {
 
     private final PostStatisticsService postStatisticsService;
     private final PostMapper postMapper;
-    private final ElasticsearchSearchStrategy esStrategy;
+    private final ElasticsearchPostIndexService postIndexService;
     private final PostElasticRepository postElasticRepository;
 
     @Autowired(required = false)
     private RedisOperations redisOps;
 
-    @jakarta.annotation.PostConstruct
+    @PostConstruct
     public void onInit() {
         log.info("PostDataInitializer Bean已初始化，等待ApplicationRunner执行...");
     }
@@ -58,18 +55,16 @@ public class PostDataInitializer implements ApplicationRunner {
         log.info("自动初始化是否启用: enabled={}, 同步阈值={}", autoInitEnabled, syncThreshold);
 
         try {
-            // 获取MySQL中已发布文章的数量
             long mysqlCount = 0;
             try {
                 log.info("正在查询MySQL中已发布文章的数量...");
                 mysqlCount = postStatisticsService.countPublished();
                 log.info("MySQL中已发布文章数量: {}", mysqlCount);
             } catch (Exception e) {
-                log.error("获取MySQL已发布文章数量失败，可能触发ES索引初始化，错误信息: {}", e.getMessage(), e);
+                log.error("获取MySQL已发布文章数量失败，错误信息: {}", e.getMessage(), e);
                 return;
             }
 
-            // 获取ES中文章索引的数量
             long esCount = 0;
             try {
                 log.info("正在查询ES中文章索引的数量...");
@@ -80,26 +75,21 @@ public class PostDataInitializer implements ApplicationRunner {
                 return;
             }
 
-            // 计算同步率
             double syncRate = mysqlCount > 0 ? (double) esCount / mysqlCount : 0;
+            log.info("MySQL中已发布文章数量: {}, ES中文章索引数量: {}, 同步率: {}%", 
+                    mysqlCount, esCount, String.format("%.2f", syncRate * 100));
 
-            log.info("MySQL中已发布文章数量: {}, ES中文章索引数量: {}, 同步率: {}%", mysqlCount, esCount, String.format("%.2f", syncRate * 100));
-
-            // 判断是否需要初始化
             boolean needInit = false;
             String reason = "";
 
             if (mysqlCount > 0 && esCount == 0) {
-                // 如果ES中没有索引数据，需初始化
                 needInit = true;
                 reason = "ES中没有文章索引数据";
             } else if (mysqlCount > 0 && syncRate < syncThreshold) {
-                // 如果同步率低于阈值，需初始化
                 needInit = true;
                 reason = String.format("同步率低于阈值（%.2f%% < %.2f%%）", syncRate * 100, syncThreshold * 100);
             }
 
-            // 如果需要初始化
             if (needInit) {
                 if (autoInitEnabled) {
                     log.warn("ES索引数据不一致，正在初始化... 原因: {}", reason);
@@ -119,9 +109,6 @@ public class PostDataInitializer implements ApplicationRunner {
         }
     }
 
-    /**
-     * 初始化ES索引数据
-     */
     private void initializeIndex() {
         try {
             log.info("开始初始化ES文章索引...");
@@ -134,26 +121,22 @@ public class PostDataInitializer implements ApplicationRunner {
             List<Long> failedPostIds = new java.util.ArrayList<>();
 
             while (true) {
-                // 分页查询文章数据
                 List<Post> posts = postMapper.findAllWithPagination(offset, batchSize);
 
                 if (posts == null || posts.isEmpty()) {
                     break;
                 }
 
-                // 遍历并索引文章
                 for (Post post : posts) {
                     try {
-                        // 仅索引已发布的文章
                         if (Integer.valueOf(Post.STATUS_PUBLISHED).equals(post.getStatus())) {
-                            boolean success = esStrategy.indexPostWithRetry(post);
+                            boolean success = postIndexService.indexPostWithRetry(post);
                             if (success) {
                                 totalIndexed++;
                             } else {
                                 log.warn("文章索引失败: postId={}", post.getId());
                                 totalFailed++;
                                 failedPostIds.add(post.getId());
-                                // 将失败的任务记录到Redis中
                                 recordFailedIndexTask(post.getId());
                             }
                         } else {
@@ -163,7 +146,6 @@ public class PostDataInitializer implements ApplicationRunner {
                         log.warn("处理文章索引时发生异常: postId={}", post.getId(), e);
                         totalFailed++;
                         failedPostIds.add(post.getId());
-                        // 记录失败任务
                         recordFailedIndexTask(post.getId());
                     }
                 }
@@ -181,9 +163,10 @@ public class PostDataInitializer implements ApplicationRunner {
             log.info("ES文章索引初始化完成，总共处理文章: {}，跳过: {}，失败: {}",
                     totalIndexed, totalSkipped, totalFailed);
 
-            // 如果有失败的任务，打印失败的文章ID，并提示手动重试
             if (!failedPostIds.isEmpty()) {
-                log.warn("初始化过程中有 {} 条文章索引失败，具体失败ID: {}", failedPostIds.size(), failedPostIds.stream().limit(10).collect(java.util.stream.Collectors.toList()));
+                log.warn("初始化过程中有 {} 条文章索引失败，具体失败ID: {}", 
+                        failedPostIds.size(), 
+                        failedPostIds.stream().limit(10).collect(java.util.stream.Collectors.toList()));
                 log.warn("1. 调用接口: POST /api/admin/elasticsearch/reindex");
                 log.warn("2. 调用接口: POST /api/admin/elasticsearch/reindex/failed");
             }
@@ -195,9 +178,6 @@ public class PostDataInitializer implements ApplicationRunner {
         }
     }
 
-    /**
-     * 记录失败的索引任务
-     */
     private void recordFailedIndexTask(Long postId) {
         if (redisOps == null || postId == null) {
             return;

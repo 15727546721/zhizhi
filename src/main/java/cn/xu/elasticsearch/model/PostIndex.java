@@ -1,4 +1,4 @@
-package cn.xu.repository.read.elastic.model;
+package cn.xu.elasticsearch.model;
 
 import lombok.Data;
 import org.springframework.data.annotation.Id;
@@ -11,7 +11,6 @@ import java.time.LocalDateTime;
 
 @Data
 @Document(indexName = "posts")
-//@Setting(settingPath = "/es-config/posts-settings.json")
 public class PostIndex {
     @Id
     private Long id;
@@ -32,10 +31,10 @@ public class PostIndex {
     private Long viewCount;
     
     @Field(type = FieldType.Long)
-    private Long shareCount; // 分享数
+    private Long shareCount;
     
     @Field(type = FieldType.Boolean)
-    private Boolean isFeatured; // 是否加精
+    private Boolean isFeatured;
 
     @Field(type = FieldType.Long)
     private Long favoriteCount;
@@ -52,7 +51,6 @@ public class PostIndex {
     @Field(type = FieldType.Date, format = DateFormat.date_hour_minute_second)
     private LocalDateTime updateTime;
 
-    // 热度分，结合点赞 收藏 评论和时间衰减得出
     @Field(type = FieldType.Double)
     private Double hotScore;
 }

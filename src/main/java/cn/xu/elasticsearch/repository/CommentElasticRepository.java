@@ -1,6 +1,6 @@
-package cn.xu.repository.read.elastic.repository;
+package cn.xu.elasticsearch.repository;
 
-import cn.xu.repository.read.elastic.model.CommentIndex;
+import cn.xu.elasticsearch.model.CommentIndex;
 import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
 
 import java.util.List;

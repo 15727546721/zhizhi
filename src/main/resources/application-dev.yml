@@ -36,7 +36,7 @@ spring:
       connection-timeout: 30000 #数据库连接超时时间,默认30秒，即30000
       connection-test-query: SELECT 1
   elasticsearch:
-    enabled: ${ES_ENABLED:true}
+    enabled: true  # 开发环境启用 ES
     uris: ${ES_URIS:127.0.0.1:9200}
     connection-timeout: 5s
     read-timeout: 30s
