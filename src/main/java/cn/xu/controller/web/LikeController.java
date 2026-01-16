@@ -339,11 +339,11 @@ public class LikeController {
     @ApiOperationLog(description = "获取用户点赞列表")
     public ResponseEntity<PageResponse<List<UserLikeItemVO>>> getUserLikes(
             @PathVariable("userId") Long userId,
-            @RequestParam(value = "pageNo", defaultValue = "1") Integer pageNo,
-            @RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize) {
+            @RequestParam(value = "page", defaultValue = "1") Integer page,
+            @RequestParam(value = "size", defaultValue = "10") Integer size) {
         try {
             // 获取用户点赞列表
-            List<Like> likes = likeService.getUserLikes(userId, pageNo, pageSize);
+            List<Like> likes = likeService.getUserLikes(userId, page, size);
             
             // 获取总数
             long total = likeService.countUserLikes(userId);
@@ -354,7 +354,7 @@ public class LikeController {
                     .collect(Collectors.toList());
             
             PageResponse<List<UserLikeItemVO>> pageResponse = 
-                    PageResponse.ofList(pageNo, pageSize, total, voList);
+                    PageResponse.ofList(page, size, total, voList);
             
             return ResponseEntity.<PageResponse<List<UserLikeItemVO>>>builder()
                     .code(ResponseCode.SUCCESS.getCode())

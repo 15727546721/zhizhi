@@ -481,8 +481,13 @@ public class PostController {
         }
     }
 
+    /**
+     * 帖子点赞
+     * @deprecated 请使用统一点赞接口 POST /api/likes/like，传入 targetId 和 type="POST"
+     */
+    @Deprecated
     @GetMapping("/like/{id}")
-    @Operation(summary = "帖子点赞")
+    @Operation(summary = "帖子点赞（已废弃，请使用 /api/likes/like）", deprecated = true)
     @ApiOperationLog(description = "帖子点赞")
     public ResponseEntity<?> likePost(@PathVariable("id") Long id) {
         Long userId = LoginUserUtil.getLoginUserId();
@@ -493,8 +498,13 @@ public class PostController {
                 .build();
     }
 
+    /**
+     * 取消帖子点赞
+     * @deprecated 请使用统一点赞接口 POST /api/likes/unlike，传入 targetId 和 type="POST"
+     */
+    @Deprecated
     @GetMapping("/unlike/{id}")
-    @Operation(summary = "取消帖子点赞")
+    @Operation(summary = "取消帖子点赞（已废弃，请使用 /api/likes/unlike）", deprecated = true)
     @ApiOperationLog(description = "取消帖子点赞")
     public ResponseEntity<?> unlikePost(@PathVariable("id") Long postId) {
         Long userId = LoginUserUtil.getLoginUserId();

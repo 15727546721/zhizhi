@@ -71,18 +71,18 @@ public class LikeService {
             // 4. 更新目标表的点赞数（Post或Comment）
             updateTargetLikeCount(type, targetId, 1L);
 
-            // 5. 在事务提交后更新Redis缓存（缓存失效策略）
+            // 5. 在事务提交后更新Redis缓存（直接更新策略，避免缓存击穿）
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override
                 public void afterCommit() {
                     try {
-                        // 5.1 删除点赞数缓存（下次查询时从 DB 重新加载）
-                        likeCacheRepository.deleteLikeCount(targetId, LikeType.fromCode(type));
+                        LikeType likeType = LikeType.fromCode(type);
+                        
+                        // 5.1 直接增加点赞数缓存（而非删除后重建，减少DB查询）
+                        likeCacheRepository.incrementLikeCount(targetId, likeType, 1);
 
                         // 5.2 更新用户点赞关系缓存
-                        likeCacheRepository.addUserLikeRelation(userId, targetId, LikeType.fromCode(type));
-
-                        log.info("[点赞服务] 点赞缓存更新成功 - userId: {}, targetId: {}", userId, targetId);
+                        likeCacheRepository.addUserLikeRelation(userId, targetId, likeType);
                     } catch (Exception e) {
                         log.error("[点赞服务] 点赞缓存更新失败 - userId: {}, targetId: {}", userId, targetId, e);
                     }

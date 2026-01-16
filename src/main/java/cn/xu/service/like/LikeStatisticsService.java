@@ -50,13 +50,10 @@ public class LikeStatisticsService {
         }
         
         try {
-            // 分别统计各类型的点赞数
-            long postLikeCount = likeMapper.countByUserId(userId);
-            
-            // 统计各类型的点赞（使用selectLikedTargetIdsByUserId统计各类型数量）
-            long postCount = likeMapper.selectLikedTargetIdsByUserId(userId, Like.LikeType.POST.getCode()).size();
-            long essayCount = likeMapper.selectLikedTargetIdsByUserId(userId, Like.LikeType.ESSAY.getCode()).size();
-            long commentCount = likeMapper.selectLikedTargetIdsByUserId(userId, Like.LikeType.COMMENT.getCode()).size();
+            // 使用 COUNT 查询统计各类型的点赞数（优化：避免加载全部数据再计算 size）
+            long postCount = likeMapper.countByUserIdAndType(userId, Like.LikeType.POST.getCode());
+            long essayCount = likeMapper.countByUserIdAndType(userId, Like.LikeType.ESSAY.getCode());
+            long commentCount = likeMapper.countByUserIdAndType(userId, Like.LikeType.COMMENT.getCode());
             
             long totalCount = postCount + essayCount + commentCount;
             

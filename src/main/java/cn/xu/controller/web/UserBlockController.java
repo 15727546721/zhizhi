@@ -114,11 +114,11 @@ public class UserBlockController {
     @Operation(summary = "获取拉黑列表")
     @ApiOperationLog(description = "获取拉黑列表")
     public ResponseEntity<List<UserBlock>> getBlockList(
-            @Parameter(description = "页码") @RequestParam(defaultValue = "1") int pageNo,
-            @Parameter(description = "每页数量") @RequestParam(defaultValue = "20") int pageSize) {
+            @Parameter(description = "页码") @RequestParam(defaultValue = "1") int page,
+            @Parameter(description = "每页数量") @RequestParam(defaultValue = "20") int size) {
         try {
             Long currentUserId = LoginUserUtil.getLoginUserId();
-            List<UserBlock> list = userBlockService.getBlockList(currentUserId, pageNo, pageSize);
+            List<UserBlock> list = userBlockService.getBlockList(currentUserId, page, size);
 
             return ResponseEntity.<List<UserBlock>>builder()
                     .code(ResponseCode.SUCCESS.getCode())

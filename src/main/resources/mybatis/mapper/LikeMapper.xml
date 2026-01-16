@@ -126,6 +126,15 @@
         AND status = 1
     </select>
     
+    <!-- 统计用户对指定类型的点赞数 -->
+    <select id="countByUserIdAndType" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM `like`
+        WHERE user_id = #{userId}
+        AND type = #{type}
+        AND status = 1
+    </select>
+    
     <select id="findByUserIdAndTargetIds" resultType="cn.xu.model.entity.Like">
         SELECT
         <include refid="Base_Column_List"/>

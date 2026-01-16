@@ -34,15 +34,15 @@ public class AnnouncementController {
     @Operation(summary = "获取公告列表")
     @ApiOperationLog(description = "获取公告列表")
     public ResponseEntity<PageResponse<List<Announcement>>> getAnnouncementList(
-            @Parameter(description = "页码") @RequestParam(defaultValue = "1") Integer pageNo,
-            @Parameter(description = "每页数量") @RequestParam(defaultValue = "10") Integer pageSize) {
-        int offset = (pageNo - 1) * pageSize;
-        List<Announcement> list = announcementMapper.selectPublishedList(offset, pageSize);
+            @Parameter(description = "页码") @RequestParam(defaultValue = "1") Integer page,
+            @Parameter(description = "每页数量") @RequestParam(defaultValue = "10") Integer size) {
+        int offset = (page - 1) * size;
+        List<Announcement> list = announcementMapper.selectPublishedList(offset, size);
         long total = announcementMapper.countPublished();
         
         return ResponseEntity.<PageResponse<List<Announcement>>>builder()
                 .code(ResponseCode.SUCCESS.getCode())
-                .data(PageResponse.of(pageNo, pageSize, total, list))
+                .data(PageResponse.of(page, size, total, list))
                 .build();
     }
 

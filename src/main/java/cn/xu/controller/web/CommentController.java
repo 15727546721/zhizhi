@@ -72,10 +72,10 @@ public class CommentController {
     @Operation(summary = "获取用户评论列表")
     public ResponseEntity<PageResponse<List<CommentVO>>> getUserComments(
             @PathVariable("userId") Long userId,
-            @RequestParam(value = "pageNo", defaultValue = "1") Integer pageNo,
-            @RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize) {
+            @RequestParam(value = "page", defaultValue = "1") Integer page,
+            @RequestParam(value = "size", defaultValue = "10") Integer size) {
         
-        List<Comment> comments = commentService.getUserComments(userId, pageNo, pageSize);
+        List<Comment> comments = commentService.getUserComments(userId, page, size);
         Long total = commentService.countUserComments(userId);
         
         // 简单转换（用户评论列表不需要点赞状态）
@@ -83,10 +83,10 @@ public class CommentController {
                 .map(this::simpleConvert)
                 .collect(java.util.stream.Collectors.toList());
         
-        PageResponse<List<CommentVO>> page = PageResponse.ofList(pageNo, pageSize, total != null ? total : 0L, result);
+        PageResponse<List<CommentVO>> pageResponse = PageResponse.ofList(page, size, total != null ? total : 0L, result);
         return ResponseEntity.<PageResponse<List<CommentVO>>>builder()
                 .code(ResponseCode.SUCCESS.getCode())
-                .data(page)
+                .data(pageResponse)
                 .build();
     }
 
