@@ -42,10 +42,10 @@ public class CommentController {
      */
     @PostMapping("/list")
     @Operation(summary = "获取评论列表")
-    public ResponseEntity<List<CommentVO>> getCommentList(@RequestBody FindCommentRequest req) {
+    public ResponseEntity<PageResponse<List<CommentVO>>> getCommentList(@RequestBody FindCommentRequest req) {
         Long currentUserId = getLoginUserIdOrNull();
-        List<CommentVO> result = commentService.getCommentList(req, currentUserId);
-        return ResponseEntity.<List<CommentVO>>builder()
+        PageResponse<List<CommentVO>> result = commentService.getCommentListWithPage(req, currentUserId);
+        return ResponseEntity.<PageResponse<List<CommentVO>>>builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .data(result)
                 .build();

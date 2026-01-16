@@ -1,5 +1,6 @@
 package cn.xu.service.comment;
 
+import cn.xu.common.response.PageResponse;
 import cn.xu.model.dto.comment.FindCommentRequest;
 import cn.xu.model.dto.comment.FindReplyRequest;
 import cn.xu.model.dto.comment.SaveCommentRequest;
@@ -34,7 +35,42 @@ public class CommentApplicationService {
     // ==================== 查询操作 ====================
 
     /**
-     * 获取评论列表（带点赞状态）
+     * 获取评论列表（带点赞状态）- 返回分页结构
+     *
+     * @param request       查询请求
+     * @param currentUserId 当前用户ID（可为null）
+     */
+    public PageResponse<List<CommentVO>> getCommentListWithPage(FindCommentRequest request, Long currentUserId) {
+        validatePageParams(request.getPageNo(), request.getPageSize());
+        
+        // 查询总数
+        long total = queryService.countRootComments(request.getTargetType(), request.getTargetId());
+        
+        if (total == 0) {
+            return PageResponse.emptyList(request.getPageNo(), request.getPageSize());
+        }
+        
+        List<Comment> comments = queryService.findCommentListWithPreview(request);
+        if (comments.isEmpty()) {
+            return PageResponse.emptyList(request.getPageNo(), request.getPageSize());
+        }
+
+        // 获取帖子作者ID
+        Long authorId = getPostAuthorId(request.getTargetId());
+
+        // 收集所有评论ID
+        List<Long> allIds = converter.collectAllIds(comments);
+
+        // 批量查询点赞状态
+        Set<Long> userLikeSet = getUserLikeSet(currentUserId, allIds);
+        Set<Long> authorLikeSet = getAuthorLikeSet(authorId, currentUserId, allIds, userLikeSet);
+
+        List<CommentVO> result = converter.toVOList(comments, userLikeSet, authorLikeSet, authorId);
+        return PageResponse.ofList(request.getPageNo(), request.getPageSize(), total, result);
+    }
+
+    /**
+     * 获取评论列表（带点赞状态）- 返回列表（兼容旧接口）
      *
      * @param request       查询请求
      * @param currentUserId 当前用户ID（可为null）
@@ -99,6 +135,24 @@ public class CommentApplicationService {
     public List<CommentVO> getConversationChain(Long replyId) {
         List<Comment> chain = queryService.getConversationChain(replyId);
         return converter.toVOList(chain, null, null, null);
+    }
+
+    /**
+     * 根据ID获取评论（供外部服务调用）
+     */
+    public Comment getById(Long commentId) {
+        return queryService.getById(commentId);
+    }
+
+    /**
+     * 根据ID获取评论（返回null而非抛异常）
+     */
+    public Comment findById(Long commentId) {
+        try {
+            return queryService.getById(commentId);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     // ==================== 写操作 ====================

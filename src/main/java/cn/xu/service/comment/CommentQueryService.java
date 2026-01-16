@@ -171,6 +171,14 @@ public class CommentQueryService {
         return commentRepository.countAllRootComments(targetType, targetId);
     }
 
+    /**
+     * 统计根评论数量（前台用）
+     */
+    public long countRootComments(Integer targetType, Long targetId) {
+        Long count = commentRepository.countRootComments(targetType, targetId, null);
+        return count != null ? count : 0L;
+    }
+
     // ==================== 私有方法 ====================
 
     private List<Comment> findCommentsByTimeSort(FindCommentRequest request) {

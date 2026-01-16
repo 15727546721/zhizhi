@@ -11,7 +11,7 @@ import cn.xu.model.entity.Comment;
 import cn.xu.model.entity.Like;
 import cn.xu.model.entity.Post;
 import cn.xu.model.vo.user.UserLikeItemVO;
-import cn.xu.service.comment.CommentQueryService;
+import cn.xu.service.comment.CommentApplicationService;
 import cn.xu.service.like.LikeService;
 import cn.xu.service.like.LikeStatisticsService;
 import cn.xu.service.post.PostQueryService;
@@ -45,7 +45,7 @@ public class LikeController {
     private final LikeService likeService;
     private final LikeStatisticsService likeStatisticsService;
     private final PostQueryService postQueryService;
-    private final CommentQueryService commentQueryService;
+    private final CommentApplicationService commentService;
 
     /**
      * 点赞
@@ -398,7 +398,7 @@ public class LikeController {
                     break;
                 case COMMENT:
                     // 获取评论信息
-                    Comment comment = commentQueryService.getById(like.getTargetId());
+                    Comment comment = commentService.findById(like.getTargetId());
                     if (comment != null) {
                         String contentValue = comment.getContent();
                         vo.setTargetTitle(contentValue != null && contentValue.length() > 50 

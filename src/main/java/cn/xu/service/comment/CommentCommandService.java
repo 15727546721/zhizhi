@@ -199,6 +199,7 @@ public class CommentCommandService {
         comment.setReplyUserId(request.getReplyUserId());
         comment.setLikeCount(0L);
         comment.setReplyCount(0L);
+        comment.setHotScore(java.math.BigDecimal.ZERO);  // 初始化热度分数
         comment.setCreateTime(LocalDateTime.now());
         return comment;
     }
