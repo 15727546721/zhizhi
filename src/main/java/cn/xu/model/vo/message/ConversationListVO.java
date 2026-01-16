@@ -60,6 +60,9 @@ public class ConversationListVO {
 
     /** 是否屏蔽 */
     private Boolean isBlocked;
+    
+    /** 是否是消息请求（陌生人发来的首条消息，未互关且未回复） */
+    private Boolean isMessageRequest;
 
     /**
      * 从 Entity 转换成 VO
@@ -68,6 +71,12 @@ public class ConversationListVO {
         if (entity == null) return null;
 
         ConversationRelationType relationType = ConversationRelationType.fromCode(entity.getRelationType());
+        
+        // 判断是否是消息请求：非互关 + 不是发起人 + 会话状态为待回复或陌生人关系
+        boolean isMessageRequest = entity.getRelationType() != cn.xu.model.entity.UserConversation.RELATION_MUTUAL
+                && !BooleanConstants.isTrue(entity.getIsInitiator())
+                && (entity.getConversationStatus() == cn.xu.model.entity.UserConversation.STATUS_PENDING
+                    || entity.getRelationType() == cn.xu.model.entity.UserConversation.RELATION_STRANGER);
 
         return ConversationListVO.builder()
                 .id(entity.getId())
@@ -83,6 +92,7 @@ public class ConversationListVO {
                 .isPinned(BooleanConstants.isTrue(entity.getIsPinned()))
                 .isMuted(BooleanConstants.isTrue(entity.getIsMuted()))
                 .isBlocked(BooleanConstants.isTrue(entity.getIsBlocked()))
+                .isMessageRequest(isMessageRequest)
                 .build();
     }
 }

@@ -131,6 +131,14 @@ public class CommentRepositoryImpl implements CommentRepository {
     }
 
     @Override
+    public Comment findByParentIdAndUserId(Long parentId, Long userId) {
+        if (parentId == null || userId == null) {
+            return null;
+        }
+        return commentMapper.findByParentIdAndUserId(parentId, userId);
+    }
+
+    @Override
     public List<Comment> findRepliesByPage(Long parentId, int offset, int limit) {
         return commentMapper.findRepliesByPage(parentId, offset, limit);
     }

@@ -1,27 +1,24 @@
 package cn.xu.service.comment;
 
+import cn.xu.cache.service.CacheService;
+import cn.xu.event.events.CommentCreatedInternalEvent;
 import cn.xu.event.publisher.SocialEventPublisher;
 import cn.xu.model.dto.comment.SaveCommentRequest;
 import cn.xu.model.entity.Comment;
-import cn.xu.model.entity.Notification;
 import cn.xu.model.enums.CommentType;
 import cn.xu.repository.CommentRepository;
 import cn.xu.repository.mapper.PostMapper;
 import cn.xu.repository.mapper.UserMapper;
 import cn.xu.service.file.FileManagementService;
-import cn.xu.service.follow.FollowService;
-import cn.xu.service.notification.NotificationService;
 import cn.xu.support.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * 评论命令服务
@@ -37,18 +34,19 @@ public class CommentCommandService {
     private final FileManagementService fileManagementService;
     private final PostMapper postMapper;
     private final UserMapper userMapper;
-    private final NotificationService notificationService;
-    private final FollowService followService;
+    private final ApplicationEventPublisher applicationEventPublisher;
+    private final CacheService cacheService;
+
+    private static final String COMMENT_HOT_PAGE_KEY_PREFIX = "comment:hot:page:";
 
     // ==================== 创建评论 ====================
 
     /**
      * 保存评论
+     * <p>事务内只做数据库操作，通知等异步操作在事务提交后执行</p>
      */
     @Transactional(rollbackFor = Exception.class)
     public Long saveComment(SaveCommentRequest request) {
-        validateCommentParams(request);
-
         Comment comment = buildComment(request);
         Long commentId = commentRepository.save(comment);
         comment.setId(commentId);
@@ -78,8 +76,8 @@ public class CommentCommandService {
         // 更新用户评论数
         userMapper.increaseCommentCount(request.getUserId());
 
-        // 发布评论事件
-        publishCommentEvent(request, commentId);
+        // 发布内部事件（事务提交后处理通知、缓存等）
+        applicationEventPublisher.publishEvent(new CommentCreatedInternalEvent(this, request, commentId));
 
         return commentId;
     }
@@ -128,9 +126,12 @@ public class CommentCommandService {
 
     /**
      * 执行删除操作
+     * <p>先删除再统计，使用实际删除数量更新计数</p>
      */
     private void doDelete(Comment comment) {
         Long commentId = comment.getId();
+        Integer targetType = comment.getTargetType();
+        Long targetId = comment.getTargetId();
 
         // 更新父评论的回复数
         if (comment.getParentId() != null && comment.getParentId() > 0) {
@@ -140,53 +141,54 @@ public class CommentCommandService {
         // 清理评论图片
         cleanupCommentImages(comment);
 
-        // 统计子评论数量
-        Long childCount = commentRepository.countByParentId(commentId);
-        int deleteCount = 1 + childCount.intValue();
-
-        // 清理子评论图片
-        if (childCount > 0) {
-            List<Comment> children = commentRepository.findByParentId(commentId);
-            for (Comment child : children) {
-                cleanupCommentImages(child);
-                userMapper.decreaseCommentCount(child.getUserId());
-            }
+        // 清理子评论图片并更新用户评论数
+        List<Comment> children = commentRepository.findByParentId(commentId);
+        for (Comment child : children) {
+            cleanupCommentImages(child);
+            userMapper.decreaseCommentCount(child.getUserId());
         }
 
-        // 更新帖子评论数
-        if (comment.getTargetType() == CommentType.POST.getValue()) {
-            postMapper.updateCommentCount(comment.getTargetId(), -deleteCount);
+        // 先删除子评论，获取实际删除数量
+        int childDeleteCount = commentRepository.deleteByParentId(commentId);
+        
+        // 再删除主评论
+        commentRepository.deleteById(commentId);
+        
+        // 用实际删除数量更新帖子评论数
+        int totalDeleted = 1 + childDeleteCount;
+        if (targetType != null && targetType == CommentType.POST.getValue()) {
+            postMapper.updateCommentCount(targetId, -totalDeleted);
         }
 
         // 更新用户评论数
         userMapper.decreaseCommentCount(comment.getUserId());
 
         // 发布删除事件
-        socialEventPublisher.publishCommentDeleted(comment.getUserId(), comment.getTargetId(), commentId);
+        socialEventPublisher.publishCommentDeleted(comment.getUserId(), targetId, commentId);
 
-        // 执行删除
-        commentRepository.deleteById(commentId);
-        commentRepository.deleteByParentId(commentId);
+        // 清除缓存
+        clearCommentCache(targetType, targetId);
 
-        log.info("[评论] 删除完成 - commentId: {}, 共删除: {}条", commentId, deleteCount);
+        log.info("[评论] 删除完成 - commentId: {}, 共删除: {}条", commentId, totalDeleted);
+    }
+
+    /**
+     * 清除评论缓存
+     */
+    private void clearCommentCache(Integer targetType, Long targetId) {
+        if (targetType == null || targetId == null) {
+            return;
+        }
+        try {
+            String pattern = String.format("%s%d:%d:*", COMMENT_HOT_PAGE_KEY_PREFIX, targetType, targetId);
+            cacheService.evictByPattern(pattern);
+            log.debug("[评论缓存] 清除缓存 - pattern: {}", pattern);
+        } catch (Exception e) {
+            log.warn("[评论缓存] 清除缓存失败 - targetType: {}, targetId: {}", targetType, targetId, e);
+        }
     }
 
     // ==================== 私有方法 ====================
-
-    private void validateCommentParams(SaveCommentRequest request) {
-        if (request.getTargetType() == null) {
-            throw new BusinessException("评论目标类型不能为空");
-        }
-        if (request.getTargetId() == null) {
-            throw new BusinessException("评论目标ID不能为空");
-        }
-        if (request.getContent() == null || request.getContent().trim().isEmpty()) {
-            throw new BusinessException("评论内容不能为空");
-        }
-        if (request.getContent().length() > 1000) {
-            throw new BusinessException("评论内容不能超过1000字");
-        }
-    }
 
     private Comment buildComment(SaveCommentRequest request) {
         Comment comment = new Comment();
@@ -213,80 +215,6 @@ public class CommentCommandService {
         if (comment.getImageUrls() != null && !comment.getImageUrls().isEmpty()) {
             fileManagementService.deleteFiles(comment.getImageUrls());
             log.info("[评论] 删除图片文件 - commentId: {}", comment.getId());
-        }
-    }
-
-    private void publishCommentEvent(SaveCommentRequest request, Long commentId) {
-        try {
-            if (request.getTargetType() == null || !request.getTargetType().equals(CommentType.POST.getValue())) {
-                return;
-            }
-
-            if (request.getParentId() != null && request.getParentId() > 0) {
-                // 回复评论
-                socialEventPublisher.publishReplyCreated(
-                        request.getUserId(),
-                        request.getTargetId(),
-                        commentId,
-                        request.getParentId(),
-                        request.getReplyUserId(),
-                        request.getContent()
-                );
-            } else {
-                // 一级评论
-                socialEventPublisher.publishCommentCreated(
-                        request.getUserId(),
-                        request.getTargetId(),
-                        commentId,
-                        request.getContent()
-                );
-            }
-        } catch (Exception e) {
-            log.error("[评论] 发布评论事件失败 - commentId: {}", commentId, e);
-        }
-
-        // 发送@提及通知
-        sendMentionNotifications(request);
-    }
-
-    private void sendMentionNotifications(SaveCommentRequest request) {
-        List<Long> mentionedUserIds = request.getMentionedUserIds();
-        if (mentionedUserIds == null || mentionedUserIds.isEmpty()) {
-            return;
-        }
-
-        try {
-            Long senderId = request.getUserId();
-            Long postId = request.getTargetId();
-            String content = request.getContent();
-
-            Set<Long> uniqueUserIds = new LinkedHashSet<>(mentionedUserIds);
-            int maxMentions = 10;
-            int count = 0;
-
-            List<Long> followingUserIds = followService.getFollowingUserIds(senderId, 500);
-            Set<Long> followingSet = new HashSet<>(followingUserIds);
-
-            for (Long receiverId : uniqueUserIds) {
-                if (senderId.equals(receiverId)) {
-                    continue;
-                }
-                if (!followingSet.contains(receiverId)) {
-                    log.warn("[评论] @校验失败：用户{}未关注用户{}", senderId, receiverId);
-                    continue;
-                }
-                if (count >= maxMentions) {
-                    log.warn("[评论] @数量超限，最多{}个", maxMentions);
-                    break;
-                }
-
-                Notification notification = Notification.createMentionNotification(
-                        senderId, receiverId, postId, content);
-                notificationService.sendNotification(notification);
-                count++;
-            }
-        } catch (Exception e) {
-            log.error("[评论] 发送@提及通知失败", e);
         }
     }
 }

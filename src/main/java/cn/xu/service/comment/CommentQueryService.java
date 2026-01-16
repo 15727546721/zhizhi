@@ -113,6 +113,7 @@ public class CommentQueryService {
 
     /**
      * 获取对话链
+     * <p>从当前回复向上追溯对话，找到完整的对话上下文</p>
      */
     public List<Comment> getConversationChain(Long replyId) {
         Comment current = commentRepository.findById(replyId);
@@ -122,35 +123,55 @@ public class CommentQueryService {
 
         List<Comment> chain = new ArrayList<>();
         chain.add(current);
-        fillUserInfo(chain);
 
         Long parentId = current.getParentId();
         if (parentId == null || parentId == 0) {
+            // 当前评论是根评论，没有对话链
+            fillUserInfo(chain);
             return chain;
         }
 
+        // 获取同一父评论下的所有兄弟评论
         List<Comment> siblings = commentRepository.findByParentId(parentId);
-        fillUserInfo(siblings);
+        if (siblings == null || siblings.isEmpty()) {
+            fillUserInfo(chain);
+            return chain;
+        }
 
+        // 构建 ID -> Comment 的映射，避免重复遍历
+        Map<Long, Comment> siblingMap = siblings.stream()
+                .collect(Collectors.toMap(Comment::getId, c -> c, (a, b) -> a));
+
+        // 向上追溯对话链，最多10条
         Set<Long> visited = new HashSet<>();
         visited.add(current.getId());
 
         Long targetUserId = current.getReplyUserId();
-        while (targetUserId != null) {
+        int maxDepth = 10;
+
+        while (targetUserId != null && chain.size() < maxDepth) {
+            // 在兄弟评论中找到被回复用户发表的最近一条评论
             Comment parent = null;
             for (Comment c : siblings) {
                 if (!visited.contains(c.getId()) && c.getUserId().equals(targetUserId)) {
-                    parent = c;
-                    break;
+                    // 找到被回复用户的评论
+                    if (parent == null || c.getCreateTime().isAfter(parent.getCreateTime())) {
+                        // 如果有多条，取最新的（或者可以取时间最接近当前评论的）
+                        parent = c;
+                    }
                 }
             }
-            if (parent == null) break;
+
+            if (parent == null) {
+                break;
+            }
 
             visited.add(parent.getId());
             chain.add(0, parent);
             targetUserId = parent.getReplyUserId();
         }
 
+        fillUserInfo(chain);
         return chain;
     }
 

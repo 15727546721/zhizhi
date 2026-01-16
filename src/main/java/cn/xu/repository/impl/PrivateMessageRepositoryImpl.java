@@ -86,4 +86,14 @@ public class PrivateMessageRepositoryImpl implements PrivateMessageRepository {
             }
         }
     }
+    
+    @Override
+    public void updatePendingToDelivered(Long senderId, Long receiverId) {
+        mapper.updatePendingToDelivered(senderId, receiverId);
+    }
+    
+    @Override
+    public List<PrivateMessage> searchMessages(Long userId, String keyword, int offset, int limit) {
+        return mapper.searchMessages(userId, keyword, offset, limit);
+    }
 }

@@ -39,6 +39,46 @@ public class CommentConverter {
     }
 
     /**
+     * 批量转换评论为简单 VO（不含点赞状态）
+     * <p>用于用户评论列表等场景</p>
+     */
+    public List<CommentVO> toSimpleVOList(List<Comment> comments) {
+        if (comments == null || comments.isEmpty()) {
+            return new ArrayList<>();
+        }
+        return comments.stream()
+                .map(this::toSimpleVO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 单个评论转换为简单 VO（不含点赞状态和子评论）
+     */
+    public CommentVO toSimpleVO(Comment comment) {
+        if (comment == null) {
+            return null;
+        }
+
+        User user = comment.getUser();
+        String nickname = user != null ? user.getNickname() : "已删除用户";
+        String avatar = user != null ? user.getAvatar() : null;
+
+        return CommentVO.builder()
+                .id(comment.getId())
+                .postId(comment.getTargetId())
+                .content(comment.getContent())
+                .imageUrls(comment.getImageUrls())
+                .parentId(comment.getParentId())
+                .userId(comment.getUserId())
+                .nickname(nickname)
+                .avatar(avatar)
+                .likeCount(comment.getLikeCount())
+                .replyCount(comment.getReplyCount())
+                .createTime(comment.getCreateTime())
+                .build();
+    }
+
+    /**
      * 单个评论转换为 VO
      * 已优化：增加 null 安全检查，防止用户被删除时 NPE
      */

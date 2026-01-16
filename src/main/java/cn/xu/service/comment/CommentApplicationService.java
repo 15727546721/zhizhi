@@ -114,12 +114,19 @@ public class CommentApplicationService {
     }
 
     /**
-     * 获取用户评论列表
+     * 获取用户评论列表（返回 VO）
      */
-    public List<Comment> getUserComments(Long userId, Integer pageNo, Integer pageSize) {
+    public PageResponse<List<CommentVO>> getUserCommentsWithPage(Long userId, Integer pageNo, Integer pageSize) {
         validatePageParams(pageNo, pageSize);
         int offset = (pageNo - 1) * pageSize;
-        return queryService.findByUserId(userId, offset, pageSize);
+        
+        List<Comment> comments = queryService.findByUserId(userId, offset, pageSize);
+        Long total = queryService.countByUserId(userId);
+        
+        // 转换为简单 VO（用户评论列表不需要点赞状态）
+        List<CommentVO> voList = converter.toSimpleVOList(comments);
+        
+        return PageResponse.ofList(pageNo, pageSize, total != null ? total : 0L, voList);
     }
 
     /**
@@ -161,7 +168,7 @@ public class CommentApplicationService {
      * 发表评论
      */
     public Long addComment(SaveCommentRequest request) {
-        validateCommentCreateParams(request.getTargetType(), request.getTargetId(), request.getContent());
+        validateCommentCreateParams(request);
         return commandService.saveComment(request);
     }
 
@@ -198,23 +205,26 @@ public class CommentApplicationService {
         }
     }
 
-    private void validateCommentCreateParams(Integer targetType, Long targetId, String content) {
-        if (targetType == null) {
+    private void validateCommentCreateParams(SaveCommentRequest request) {
+        if (request.getTargetType() == null) {
             throw new BusinessException("评论目标类型不能为空");
         }
-        if (targetId == null) {
+        if (request.getTargetId() == null) {
             throw new BusinessException("评论目标ID不能为空");
         }
-        if (content == null || content.trim().isEmpty()) {
+        // 内容和图片至少有一个
+        boolean hasContent = request.getContent() != null && !request.getContent().trim().isEmpty();
+        boolean hasImages = request.getImageUrls() != null && !request.getImageUrls().isEmpty();
+        if (!hasContent && !hasImages) {
             throw new BusinessException("评论内容不能为空");
         }
-        if (content.length() > 1000) {
+        if (hasContent && request.getContent().length() > 1000) {
             throw new BusinessException("评论内容不能超过1000字");
         }
     }
 
     private void validateCommentReplyParams(SaveCommentRequest request) {
-        validateCommentCreateParams(request.getTargetType(), request.getTargetId(), request.getContent());
+        validateCommentCreateParams(request);
         if (request.getParentId() == null) {
             throw new BusinessException("父评论ID不能为空");
         }

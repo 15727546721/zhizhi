@@ -95,6 +95,15 @@ public interface CommentMapper {
     List<Comment> findByParentIds(@Param("parentIds") List<Long> parentIds);
 
     /**
+     * 根据父评论ID和用户ID查询评论（用于对话链查询）
+     *
+     * @param parentId 父评论ID
+     * @param userId 用户ID
+     * @return 评论
+     */
+    Comment findByParentIdAndUserId(@Param("parentId") Long parentId, @Param("userId") Long userId);
+
+    /**
      * 分页查询二级评论列表
      *
      * @param parentId 父评论ID

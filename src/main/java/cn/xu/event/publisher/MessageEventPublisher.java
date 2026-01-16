@@ -43,4 +43,15 @@ public class MessageEventPublisher {
     public void publishRead(Long readerId, Long otherUserId) {
         eventBus.publish(DMEvent.read(readerId, otherUserId));
     }
+    
+    /**
+     * 发布私信撤回事件
+     * 
+     * @param senderId 发送者ID
+     * @param receiverId 接收者ID
+     * @param messageId 消息ID
+     */
+    public void publishWithdrawn(Long senderId, Long receiverId, Long messageId) {
+        eventBus.publish(DMEvent.withdrawn(senderId, receiverId, messageId));
+    }
 }

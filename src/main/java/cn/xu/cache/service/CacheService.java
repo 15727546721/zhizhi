@@ -331,6 +331,23 @@ public class CacheService {
         log.debug("批量删除缓存: count={}", keys.size());
     }
 
+    /**
+     * 按模式删除缓存（使用 SCAN 避免阻塞）
+     * 
+     * @param pattern 匹配模式，如 "comment:hot:page:1:100:*"
+     */
+    public void evictByPattern(String pattern) {
+        try {
+            Set<String> keys = redisOps.scan(pattern, 100);
+            if (!keys.isEmpty()) {
+                redisOps.delete(keys);
+                log.debug("按模式删除缓存: pattern={}, count={}", pattern, keys.size());
+            }
+        } catch (Exception e) {
+            log.warn("按模式删除缓存失败: pattern={}, error={}", pattern, e.getMessage());
+        }
+    }
+
     // ==================== 列表缓存 ====================
 
     /**

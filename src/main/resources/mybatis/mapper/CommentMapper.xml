@@ -223,7 +223,7 @@
   <!-- 按热度查询每个parent的前N条回复（使用窗口函数） -->
   <select id="findRepliesByParentIdsByHot" resultMap="BaseResultMap">
     SELECT id, target_type, target_id, parent_id, user_id, reply_user_id, 
-           content, like_count, reply_count, hot_score, create_time, update_time
+           content, image_url, like_count, reply_count, hot_score, create_time, update_time
     FROM (
       SELECT c.*, ROW_NUMBER() OVER (PARTITION BY c.parent_id ORDER BY c.hot_score DESC, c.create_time DESC) AS rn
       FROM comment c
@@ -237,7 +237,7 @@
   <!-- 按时间查询每个parent的前N条回复（使用窗口函数） -->
   <select id="findRepliesByParentIdsByTime" resultMap="BaseResultMap">
     SELECT id, target_type, target_id, parent_id, user_id, reply_user_id,
-           content, like_count, reply_count, hot_score, create_time, update_time
+           content, image_url, like_count, reply_count, hot_score, create_time, update_time
     FROM (
       SELECT c.*, ROW_NUMBER() OVER (PARTITION BY c.parent_id ORDER BY c.create_time DESC) AS rn
       FROM comment c
@@ -344,6 +344,16 @@
     FROM comment
     WHERE parent_id = #{parentId}
     ORDER BY create_time ASC
+  </select>
+  
+  <!-- 根据父评论ID和用户ID查询评论（用于对话链查询） -->
+  <select id="findByParentIdAndUserId" resultMap="BaseResultMap">
+    SELECT
+    <include refid="Base_Column_List"/>
+    FROM comment
+    WHERE parent_id = #{parentId} AND user_id = #{userId}
+    ORDER BY create_time DESC
+    LIMIT 1
   </select>
   
   <!-- 批量查询评论（用于缓存预热） -->

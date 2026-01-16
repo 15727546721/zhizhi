@@ -51,7 +51,7 @@ ON DUPLICATE KEY UPDATE
 
 -- 官方运营账号
 INSERT INTO `user` (`id`, `username`, `email`, `password`, `nickname`, `user_type`, `status`, `avatar`, `description`) VALUES
-(2, 'zhizhi_official', 'official@zhizhi.com', SHA2('AdminPassword123!', 256), '知知小助手', 2, 1, 'https://cdn.zhizhi.com/avatars/official.png', '知知社区官方运营账号')
+(2, 'zhizhi_official', 'official@zhizhi.com', SHA2('AdminPassword123!', 256), '知知小助手', 2, 1, 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png', '知知社区官方运营账号')
 ON DUPLICATE KEY UPDATE 
     `password` = SHA2('AdminPassword123!', 256),
     `nickname` = '知知小助手',

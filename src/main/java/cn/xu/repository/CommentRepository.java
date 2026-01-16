@@ -42,6 +42,11 @@ public interface CommentRepository {
     
     List<Comment> findByParentIds(List<Long> parentIds);
     
+    /**
+     * 根据父评论ID和用户ID查询评论（用于对话链查询）
+     */
+    Comment findByParentIdAndUserId(Long parentId, Long userId);
+    
     List<Comment> findRepliesByPage(Long parentId, int offset, int limit);
     
     List<Comment> findRepliesByParentIdsByHot(List<Long> parentIds, int size);

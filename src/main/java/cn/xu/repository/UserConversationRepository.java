@@ -86,6 +86,11 @@ public interface UserConversationRepository {
     void updateRelationType(Long ownerId, Long otherUserId, int relationType);
     
     /**
+     * 统计用户的活跃会话数量
+     */
+    int countActiveByOwnerId(Long ownerId);
+    
+    /**
      * 获取用户总未读数
      */
     int getTotalUnreadCount(Long userId);

@@ -75,18 +75,10 @@ public class CommentController {
             @RequestParam(value = "page", defaultValue = "1") Integer page,
             @RequestParam(value = "size", defaultValue = "10") Integer size) {
         
-        List<Comment> comments = commentService.getUserComments(userId, page, size);
-        Long total = commentService.countUserComments(userId);
-        
-        // 简单转换（用户评论列表不需要点赞状态）
-        List<CommentVO> result = comments.stream()
-                .map(this::simpleConvert)
-                .collect(java.util.stream.Collectors.toList());
-        
-        PageResponse<List<CommentVO>> pageResponse = PageResponse.ofList(page, size, total != null ? total : 0L, result);
+        PageResponse<List<CommentVO>> result = commentService.getUserCommentsWithPage(userId, page, size);
         return ResponseEntity.<PageResponse<List<CommentVO>>>builder()
                 .code(ResponseCode.SUCCESS.getCode())
-                .data(pageResponse)
+                .data(result)
                 .build();
     }
 
@@ -202,23 +194,6 @@ public class CommentController {
                 .content(req.getContent())
                 .imageUrls(req.getImageUrls() != null ? req.getImageUrls() : Collections.emptyList())
                 .mentionedUserIds(req.getMentionUserIds())
-                .build();
-    }
-
-    private CommentVO simpleConvert(Comment c) {
-        if (c == null) return null;
-        return CommentVO.builder()
-                .id(c.getId())
-                .postId(c.getTargetId())
-                .content(c.getContent())
-                .imageUrls(c.getImageUrls())
-                .parentId(c.getParentId())
-                .userId(c.getUserId())
-                .nickname(c.getUser() != null ? c.getUser().getNickname() : null)
-                .avatar(c.getUser() != null ? c.getUser().getAvatar() : null)
-                .likeCount(c.getLikeCount())
-                .replyCount(c.getReplyCount())
-                .createTime(c.getCreateTime())
                 .build();
     }
 }

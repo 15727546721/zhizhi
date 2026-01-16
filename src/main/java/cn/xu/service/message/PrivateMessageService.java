@@ -113,10 +113,11 @@ public class PrivateMessageService {
             throw new BusinessException(permission.getReason());
         }
 
-        // 3. 创建消息
-        PrivateMessage message = createMessage(senderId, receiverId, content);
+        // 3. 创建消息（打招呼消息使用 PENDING 状态）
+        int messageStatus = permission.isGreeting() ? PrivateMessage.STATUS_PENDING : PrivateMessage.STATUS_DELIVERED;
+        PrivateMessage message = createMessage(senderId, receiverId, content, messageStatus);
         Long messageId = messageRepository.save(message);
-        log.info("[发送私信] 消息已保存 messageId:{}", messageId);
+        log.info("[发送私信] 消息已保存 messageId:{} status:{}", messageId, messageStatus);
 
         // 4. 更新双方会话（关键步骤）
         String preview = getPreview(content);
@@ -129,21 +130,21 @@ public class PrivateMessageService {
         publishMessageSentEvent(senderId, receiverId, messageId, preview, permission.isGreeting());
 
         log.info("[发送私信] ========== 完成 messageId:{} ==========", messageId);
-        return new SendResult(messageId, PrivateMessage.STATUS_DELIVERED, permission.isGreeting() ? "打招呼消息" : "");
+        return new SendResult(messageId, messageStatus, permission.isGreeting() ? "打招呼消息" : "");
     }
 
     /**
      * 创建消息实体
      */
-    private PrivateMessage createMessage(Long senderId, Long receiverId, String content) {
+    private PrivateMessage createMessage(Long senderId, Long receiverId, String content, int status) {
         // 检测是否为图片消息
         if (isImageMessage(content)) {
             String imageUrl = extractImageUrl(content);
-            PrivateMessage msg = PrivateMessage.createImage(senderId, receiverId, imageUrl, PrivateMessage.STATUS_DELIVERED);
+            PrivateMessage msg = PrivateMessage.createImage(senderId, receiverId, imageUrl, status);
             msg.setContent(content);
             return msg;
         }
-        return PrivateMessage.createText(senderId, receiverId, content, PrivateMessage.STATUS_DELIVERED);
+        return PrivateMessage.createText(senderId, receiverId, content, status);
     }
 
     /**
@@ -241,10 +242,12 @@ public class PrivateMessageService {
             log.info("[打招呼] 记录已保存 sender:{} → receiver:{}", senderId, receiverId);
         }
         
-        // 如果对方之前发过打招呼消息，现在回复了，清理记录
+        // 如果对方之前发过打招呼消息，现在回复了，清理记录并更新消息状态
         if (greetingRecordRepository.hasSentGreeting(receiverId, senderId)) {
             greetingRecordRepository.deleteGreeting(receiverId, senderId);
-            log.info("[打招呼] 清理对方的打招呼记录 {} → {}", receiverId, senderId);
+            // 将对方的打招呼消息状态从 PENDING 更新为 DELIVERED
+            messageRepository.updatePendingToDelivered(receiverId, senderId);
+            log.info("[打招呼] 清理对方的打招呼记录并更新消息状态 {} → {}", receiverId, senderId);
         }
     }
 
@@ -269,6 +272,25 @@ public class PrivateMessageService {
     }
 
     // ==================== 会话查询 ====================
+
+    /**
+     * 获取会话列表（带分页信息）
+     */
+    public ConversationPageResult getConversationListWithTotal(Long userId, int page, int size) {
+        int offset = Math.max(0, (page - 1) * size);
+        log.info("[会话列表] 查询 userId:{} page:{} size:{}", userId, page, size);
+        
+        List<UserConversation> conversations = conversationRepository.findActiveByOwnerId(userId, offset, size);
+        int total = conversationRepository.countActiveByOwnerId(userId);
+        
+        log.info("[会话列表] 查询到 {} 条会话，总数 {}", conversations.size(), total);
+        
+        List<ConversationListVO> list = conversations.stream()
+                .map(this::toConversationVO)
+                .collect(Collectors.toList());
+        
+        return new ConversationPageResult(list, total, page, size);
+    }
 
     /**
      * 获取会话列表
@@ -379,6 +401,58 @@ public class PrivateMessageService {
         messageRepository.softDeleteForUser(messageId, currentUserId);
         log.info("[消息删除] user:{} messageId:{}", currentUserId, messageId);
     }
+    
+    /**
+     * 撤回消息（2分钟内可撤回）
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void withdrawMessage(Long currentUserId, Long messageId) {
+        log.info("[消息撤回] user:{} messageId:{}", currentUserId, messageId);
+        
+        // 1. 查询消息
+        PrivateMessage message = messageRepository.findById(messageId)
+                .orElseThrow(() -> new BusinessException("消息不存在"));
+        
+        // 2. 验证是否是发送者
+        if (!message.getSenderId().equals(currentUserId)) {
+            throw new BusinessException("只能撤回自己发送的消息");
+        }
+        
+        // 3. 验证消息状态
+        if (message.getStatus() == PrivateMessage.STATUS_WITHDRAWN) {
+            throw new BusinessException("消息已撤回");
+        }
+        
+        // 4. 验证时间（2分钟内）
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime createTime = message.getCreateTime();
+        if (createTime.plusMinutes(2).isBefore(now)) {
+            throw new BusinessException("消息发送超过2分钟，无法撤回");
+        }
+        
+        // 5. 执行撤回
+        messageRepository.withdraw(messageId, currentUserId);
+        log.info("[消息撤回] 撤回成功 messageId:{}", messageId);
+        
+        // 6. 发布撤回事件（WebSocket通知对方）
+        try {
+            eventPublisher.publishWithdrawn(currentUserId, message.getReceiverId(), messageId);
+        } catch (Exception e) {
+            log.error("[事件发布] 撤回事件发布失败: {}", e.getMessage());
+        }
+    }
+    
+    /**
+     * 搜索消息
+     */
+    public List<PrivateMessage> searchMessages(Long userId, String keyword, int page, int size) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return List.of();
+        }
+        int offset = Math.max(0, (page - 1) * size);
+        log.info("[消息搜索] user:{} keyword:{} page:{}", userId, keyword, page);
+        return messageRepository.searchMessages(userId, keyword.trim(), offset, size);
+    }
 
     // ==================== 统计 ====================
 
@@ -435,16 +509,8 @@ public class PrivateMessageService {
     }
 
     private ConversationListVO toConversationVO(UserConversation conv) {
-        ConversationListVO vo = new ConversationListVO();
-        vo.setId(conv.getId());
-        vo.setUserId(conv.getOtherUserId());
-        vo.setUserName(conv.getOtherNickname());
-        vo.setUserAvatar(conv.getOtherAvatar());
-        vo.setLastMessage(conv.getLastMessage());
-        vo.setLastMessageTime(conv.getLastMessageTime());
-        vo.setUnreadCount(conv.getUnreadCount() != null ? conv.getUnreadCount() : 0);
-        vo.setRelationType(conv.getRelationType());
-        return vo;
+        // 使用 fromEntity 方法，自动计算 isMessageRequest 等字段
+        return ConversationListVO.fromEntity(conv);
     }
 
     // ==================== 结果类 ====================
@@ -479,5 +545,18 @@ public class PrivateMessageService {
         public boolean isGreeting() { return greeting; }
         public boolean isAllowed() { return allowed; }
         public String getReason() { return reason; }
+    }
+    
+    @Getter
+    @AllArgsConstructor
+    public static class ConversationPageResult {
+        private final List<ConversationListVO> records;
+        private final int total;
+        private final int page;
+        private final int size;
+        
+        public boolean hasMore() {
+            return page * size < total;
+        }
     }
 }

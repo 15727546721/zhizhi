@@ -95,6 +95,11 @@ public class UserConversationRepositoryImpl implements UserConversationRepositor
     }
     
     @Override
+    public int countActiveByOwnerId(Long ownerId) {
+        return mapper.countActiveByOwnerId(ownerId);
+    }
+    
+    @Override
     public int getTotalUnreadCount(Long userId) {
         return mapper.countTotalUnread(userId);
     }

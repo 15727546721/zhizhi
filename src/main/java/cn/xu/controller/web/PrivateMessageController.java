@@ -37,18 +37,26 @@ public class PrivateMessageController {
     @SaCheckLogin
     @Operation(summary = "获取会话列表")
     @ApiOperationLog(description = "获取会话列表")
-    public ResponseEntity<List<ConversationListVO>> getConversations(
+    public ResponseEntity<ConversationPageVO> getConversations(
             @Parameter(description = "页码") @RequestParam(defaultValue = "1") int page,
             @Parameter(description = "每页数量") @RequestParam(defaultValue = "20") int size) {
         Long userId = LoginUserUtil.getLoginUserId();
         log.info("[API] 获取会话列表 userId:{} page:{} size:{}", userId, page, size);
         
-        List<ConversationListVO> list = messageService.getConversationList(userId, page, size);
-        log.info("[API] 返回 {} 条会话", list.size());
+        PrivateMessageService.ConversationPageResult result = messageService.getConversationListWithTotal(userId, page, size);
         
-        return ResponseEntity.<List<ConversationListVO>>builder()
+        ConversationPageVO vo = new ConversationPageVO();
+        vo.setRecords(result.getRecords());
+        vo.setTotal(result.getTotal());
+        vo.setPage(result.getPage());
+        vo.setSize(result.getSize());
+        vo.setHasMore(result.hasMore());
+        
+        log.info("[API] 返回 {} 条会话，总数 {}", result.getRecords().size(), result.getTotal());
+        
+        return ResponseEntity.<ConversationPageVO>builder()
                 .code(ResponseCode.SUCCESS.getCode())
-                .data(list)
+                .data(vo)
                 .build();
     }
 
@@ -185,6 +193,37 @@ public class PrivateMessageController {
                 .info("删除成功")
                 .build();
     }
+    
+    @PostMapping("/{messageId}/withdraw")
+    @SaCheckLogin
+    @Operation(summary = "撤回消息")
+    @ApiOperationLog(description = "撤回消息（2分钟内可撤回）")
+    public ResponseEntity<Void> withdrawMessage(@PathVariable Long messageId) {
+        Long currentUserId = LoginUserUtil.getLoginUserId();
+        log.info("[API] 撤回消息 user:{} messageId:{}", currentUserId, messageId);
+        messageService.withdrawMessage(currentUserId, messageId);
+        return ResponseEntity.<Void>builder()
+                .code(ResponseCode.SUCCESS.getCode())
+                .info("撤回成功")
+                .build();
+    }
+    
+    @GetMapping("/search")
+    @SaCheckLogin
+    @Operation(summary = "搜索消息")
+    @ApiOperationLog(description = "搜索消息内容")
+    public ResponseEntity<List<PrivateMessage>> searchMessages(
+            @Parameter(description = "搜索关键词") @RequestParam String keyword,
+            @Parameter(description = "页码") @RequestParam(defaultValue = "1") int page,
+            @Parameter(description = "每页数量") @RequestParam(defaultValue = "20") int size) {
+        Long currentUserId = LoginUserUtil.getLoginUserId();
+        log.info("[API] 搜索消息 user:{} keyword:{}", currentUserId, keyword);
+        List<PrivateMessage> messages = messageService.searchMessages(currentUserId, keyword, page, size);
+        return ResponseEntity.<List<PrivateMessage>>builder()
+                .code(ResponseCode.SUCCESS.getCode())
+                .data(messages)
+                .build();
+    }
 
     // ==================== 统计相关 ====================
 
@@ -268,5 +307,14 @@ public class PrivateMessageController {
         private Boolean canSend;
         private Boolean isGreeting;
         private String reason;
+    }
+    
+    @Data
+    public static class ConversationPageVO {
+        private List<ConversationListVO> records;
+        private Integer total;
+        private Integer page;
+        private Integer size;
+        private Boolean hasMore;
     }
 }

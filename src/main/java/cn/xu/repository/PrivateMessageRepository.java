@@ -69,4 +69,15 @@ public interface PrivateMessageRepository {
      * 删除消息（根据用户角色自动判断）
      */
     void softDeleteForUser(Long messageId, Long userId);
+    
+    /**
+     * 将打招呼消息状态从 PENDING 更新为 DELIVERED
+     * 当对方回复后调用
+     */
+    void updatePendingToDelivered(Long senderId, Long receiverId);
+    
+    /**
+     * 搜索消息内容
+     */
+    List<PrivateMessage> searchMessages(Long userId, String keyword, int offset, int limit);
 }

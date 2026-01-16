@@ -30,7 +30,9 @@ public class DMEvent extends BaseEvent {
         /** 消息发送 */
         SENT,
         /** 消息已读 */
-        READ
+        READ,
+        /** 消息撤回 */
+        WITHDRAWN
     }
     
     private DMEvent(Long senderId, Long receiverId, Long messageId, 
@@ -67,5 +69,12 @@ public class DMEvent extends BaseEvent {
      */
     public static DMEvent read(Long readerId, Long otherUserId) {
         return new DMEvent(readerId, otherUserId, null, null, false, DMEventType.READ);
+    }
+    
+    /**
+     * 创建消息撤回事件
+     */
+    public static DMEvent withdrawn(Long senderId, Long receiverId, Long messageId) {
+        return new DMEvent(senderId, receiverId, messageId, null, false, DMEventType.WITHDRAWN);
     }
 }
