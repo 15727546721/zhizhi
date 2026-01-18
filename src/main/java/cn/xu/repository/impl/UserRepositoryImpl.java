@@ -84,7 +84,7 @@ public class UserRepositoryImpl implements UserRepository {
                 userMapper.deleteById(id);
                 return null;
             } catch (Exception e) {
-                log.error("删除用户失败，用户ID: " + id, e);
+                log.error("删除用户失败，用户ID: {}", id, e);
                 status.setRollbackOnly();
                 throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "删除用户失败");
             }

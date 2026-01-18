@@ -67,4 +67,39 @@ public interface FavoriteMapper {
      * 统计用户收藏总数
      */
     Long countByUserId(@Param("userId") Long userId);
+    
+    /**
+     * 按收藏夹分页获取收藏的内容ID列表
+     */
+    List<Long> selectFavoritedTargetIdsByFolderWithPage(
+            @Param("userId") Long userId,
+            @Param("targetType") String targetType,
+            @Param("folderId") Long folderId,
+            @Param("offset") int offset,
+            @Param("limit") int limit);
+    
+    /**
+     * 统计收藏夹中的收藏数量
+     */
+    int countFavoritedItemsByFolder(
+            @Param("userId") Long userId,
+            @Param("targetType") String targetType,
+            @Param("folderId") Long folderId);
+    
+    /**
+     * 更新收藏的收藏夹
+     */
+    void updateFolderId(
+            @Param("id") Long id,
+            @Param("userId") Long userId,
+            @Param("newFolderId") Long newFolderId);
+    
+    /**
+     * 批量移动收藏到新收藏夹
+     * @return 受影响的行数
+     */
+    int moveFavoritesToFolder(
+            @Param("userId") Long userId,
+            @Param("oldFolderId") Long oldFolderId,
+            @Param("newFolderId") Long newFolderId);
 }

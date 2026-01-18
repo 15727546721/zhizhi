@@ -53,4 +53,24 @@ public interface FavoriteRepository {
      * 统计用户收藏总数
      */
     long countByUserId(Long userId);
+    
+    /**
+     * 按收藏夹分页获取收藏的内容ID列表
+     */
+    List<Long> findFavoritedTargetIdsByFolderWithPage(Long userId, String targetType, Long folderId, int offset, int limit);
+    
+    /**
+     * 统计收藏夹中的收藏数量
+     */
+    int countFavoritedItemsByFolder(Long userId, String targetType, Long folderId);
+    
+    /**
+     * 更新收藏的收藏夹
+     */
+    void updateFolderId(Long id, Long userId, Long newFolderId);
+    
+    /**
+     * 批量移动收藏到新收藏夹
+     */
+    int moveFavoritesToFolder(Long userId, Long oldFolderId, Long newFolderId);
 }

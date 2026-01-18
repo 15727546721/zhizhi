@@ -46,10 +46,11 @@ public class ZhizhiApplication {
         path = path == null ? "" : path;
         log.info("\n----------------------------------------------------------\n\t" +
                 "知之社区系统已启动! Access URLs:\n\t" +
-                "Local: \t\thttp://localhost:" + port + path + "/\n\t" +
-                "External: \thttp://" + ip + ":" + port + path + "/\n\t" +
-                "Knife4j-ui: \thttp://" + ip + ":" + port + path + "/doc.html\n\t" +
-                "----------------------------------------------------------");
+                "Local: \t\thttp://localhost:{}{}/\n\t" +
+                "External: \thttp://{}:{}{}/\n\t" +
+                "Knife4j-ui: \thttp://{}:{}{}/doc.html\n\t" +
+                "----------------------------------------------------------", 
+                port, path, ip, port, path, ip, port, path);
     }
 
 }

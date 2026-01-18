@@ -187,6 +187,35 @@ public class PostController {
     }
 
     /**
+     * 获取文章所属的专栏列表
+     */
+    @GetMapping("/{id}/columns")
+    @Operation(summary = "获取文章所属的专栏列表")
+    @ApiOperationLog(description = "获取文章所属的专栏列表")
+    public ResponseEntity<List<cn.xu.model.vo.column.ColumnVO>> getPostColumns(
+            @Parameter(description = "帖子ID") @PathVariable("id") Long postId) {
+        try {
+            Long currentUserId = LoginUserUtil.getLoginUserIdOptional().orElse(null);
+            List<cn.xu.model.vo.column.ColumnVO> columns = postApplicationService.getPostColumns(postId, currentUserId);
+            return ResponseEntity.<List<cn.xu.model.vo.column.ColumnVO>>builder()
+                    .code(ResponseCode.SUCCESS.getCode())
+                    .data(columns)
+                    .build();
+        } catch (BusinessException e) {
+            return ResponseEntity.<List<cn.xu.model.vo.column.ColumnVO>>builder()
+                    .code(e.getCode())
+                    .info(e.getMessage())
+                    .build();
+        } catch (Exception e) {
+            log.error("获取文章专栏列表失败: postId={}", postId, e);
+            return ResponseEntity.<List<cn.xu.model.vo.column.ColumnVO>>builder()
+                    .code(ResponseCode.UN_ERROR.getCode())
+                    .info("获取文章专栏列表失败，请稍后重试")
+                    .build();
+        }
+    }
+
+    /**
      * 获取我的帖子列表
      */
     @PostMapping("/my")
@@ -345,7 +374,8 @@ public class PostController {
             Long userId = LoginUserUtil.getLoginUserId();
             Long postId = postApplicationService.publishOrUpdatePost(
                     request.getId(), userId, request.getTitle(), request.getContent(),
-                    request.getDescription(), request.getCoverUrl(), request.getTagIds(), request.getStatus());
+                    request.getDescription(), request.getCoverUrl(), request.getTagIds(), 
+                    request.getStatus(), request.getColumnIds());
             
             String message = "DRAFT".equals(request.getStatus()) ? "草稿保存成功" : "帖子发布成功";
             return ResponseEntity.<Long>builder()

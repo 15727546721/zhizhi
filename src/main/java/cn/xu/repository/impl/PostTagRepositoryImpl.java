@@ -75,6 +75,10 @@ public class PostTagRepositoryImpl implements PostTagRepository {
         }
         // 获取帖子ID列表
         List<Long> postIds = postTagMapper.selectPostIdsByTagId(tagId, offset, limit);
+        // 如果没有关联的帖子，直接返回空列表
+        if (postIds == null || postIds.isEmpty()) {
+            return new LinkedList<>();
+        }
         // 直接使用PostMapper查询帖子信息并返回
         return postMapper.findPostsByIds(postIds);
     }

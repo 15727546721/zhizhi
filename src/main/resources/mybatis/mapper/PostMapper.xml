@@ -603,6 +603,7 @@
     
     <!-- 根据ID列表查询帖子列表 -->
     <select id="findPostsByIds" resultMap="BaseResultMap">
+        <if test="postIds != null and postIds.size() > 0">
         SELECT 
         <include refid="Base_Column_List"/>
         FROM post
@@ -611,6 +612,7 @@
             #{postId}
         </foreach>
         ORDER BY create_time DESC
+        </if>
     </select>
     
     <!-- 统计所有已发布帖子数量 -->

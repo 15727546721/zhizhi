@@ -184,6 +184,13 @@ INSERT INTO `menu` (`id`, `parent_id`, `path`, `component`, `title`, `sort`, `ic
 (243, 24, NULL, NULL, '公告修改', 3, NULL, 'BUTTON', NULL, NULL, 0, 'system:announcement:edit'),
 (244, 24, NULL, NULL, '公告删除', 4, NULL, 'BUTTON', NULL, NULL, 0, 'system:announcement:delete');
 
+--- 专栏管理
+INSERT INTO `menu` (`id`, `parent_id`, `path`, `component`, `title`, `sort`, `icon`, `type`, `redirect`, `name`, `hidden`, `perm`) VALUES
+(25, 2, 'column', '/content/column', '专栏管理', 6, 'el-icon-Collection', 'MENU', NULL, 'Column', 0, NULL),
+(251, 25, NULL, NULL, '专栏列表', 1, NULL, 'BUTTON', NULL, NULL, 0, 'system:column:list'),
+(252, 25, NULL, NULL, '删除专栏', 2, NULL, 'BUTTON', NULL, NULL, 0, 'system:column:delete'),
+(253, 25, NULL, NULL, '更新专栏', 3, NULL, 'BUTTON', NULL, NULL, 0, 'system:column:update');
+
 -- === 消息管理目录 ===
 INSERT INTO `menu` (`id`, `parent_id`, `path`, `component`, `title`, `sort`, `icon`, `type`, `redirect`, `name`, `hidden`, `perm`) VALUES
 (3, 0, '/message', 'Layout', '消息管理', 3, 'el-icon-Message', 'CATALOG', '/message/message', 'Message', 0, NULL);
@@ -237,6 +244,8 @@ INSERT INTO `role_menu` (`role_id`, `menu_id`) VALUES
 (2, 231), (2, 232),
 (2, 24),  -- 公告管理
 (2, 241), (2, 242), (2, 243), (2, 244),
+(2, 25),  -- 专栏管理
+(2, 251), (2, 252), (2, 253),
 (2, 13),  -- 文件管理
 (2, 131), (2, 132),
 (2, 3),   -- 消息管理目录

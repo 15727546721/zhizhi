@@ -1,6 +1,7 @@
 package cn.xu.service.comment;
 
 import cn.xu.cache.service.CacheService;
+import cn.xu.common.constants.CacheConstants;
 import cn.xu.event.events.CommentCreatedInternalEvent;
 import cn.xu.event.publisher.SocialEventPublisher;
 import cn.xu.model.dto.comment.SaveCommentRequest;
@@ -36,8 +37,6 @@ public class CommentCommandService {
     private final UserMapper userMapper;
     private final ApplicationEventPublisher applicationEventPublisher;
     private final CacheService cacheService;
-
-    private static final String COMMENT_HOT_PAGE_KEY_PREFIX = "comment:hot:page:";
 
     // ==================== 创建评论 ====================
 
@@ -180,7 +179,7 @@ public class CommentCommandService {
             return;
         }
         try {
-            String pattern = String.format("%s%d:%d:*", COMMENT_HOT_PAGE_KEY_PREFIX, targetType, targetId);
+            String pattern = String.format("%s%d:%d:*", CacheConstants.COMMENT_HOT_PAGE_KEY_PREFIX, targetType, targetId);
             cacheService.evictByPattern(pattern);
             log.debug("[评论缓存] 清除缓存 - pattern: {}", pattern);
         } catch (Exception e) {

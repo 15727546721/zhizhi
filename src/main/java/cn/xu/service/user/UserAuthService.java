@@ -124,11 +124,11 @@ public class UserAuthService {
             }
 
             // 验证用户
-            User user = userRepository.findByEmailWithPassword(email).orElse(null);
-            if (user == null) {
-                handleLoginFailure(email, clientIp);
-                throw new BusinessException(ResponseCode.USER_NOT_FOUND.getCode(), "邮箱或密码错误");
-            }
+            User user = userRepository.findByEmailWithPassword(email)
+                    .orElseThrow(() -> {
+                        handleLoginFailure(email, clientIp);
+                        return new BusinessException(ResponseCode.USER_NOT_FOUND.getCode(), "邮箱或密码错误");
+                    });
 
             // 验证密码
             if (!user.verifyPassword(request.getPassword())) {
@@ -177,11 +177,12 @@ public class UserAuthService {
             }
 
             // 查找或自动注册用户
-            User user = userRepository.findByEmail(trimmedEmail).orElse(null);
-            if (user == null) {
-                user = autoRegisterUser(trimmedEmail);
-                log.info("新用户自动注册成功, userId: {}", user.getId());
-            }
+            User user = userRepository.findByEmail(trimmedEmail)
+                    .orElseGet(() -> {
+                        User newUser = autoRegisterUser(trimmedEmail);
+                        log.info("新用户自动注册成功, userId: {}", newUser.getId());
+                        return newUser;
+                    });
 
             // 检查用户状态
             if (user.getStatus() != User.STATUS_NORMAL) {

@@ -54,6 +54,7 @@ public class PostApplicationService {
     private final FavoriteService favoriteService;
     private final FollowService followService;
     private final PostSearchService postSearchService;
+    private final cn.xu.service.column.ColumnApplicationService columnApplicationService;
 
     // ==================== 游标分页查询（性能优化） ====================
 
@@ -254,16 +255,24 @@ public class PostApplicationService {
      */
     public Long createPost(Long userId, String title, String content, String description,
                            String coverUrl, List<Long> tagIds, String status) {
+        return createPost(userId, title, content, description, coverUrl, tagIds, status, null);
+    }
+
+    /**
+     * 创建帖子（支持直接发布或保存为草稿，支持专栏选择）
+     */
+    public Long createPost(Long userId, String title, String content, String description,
+                           String coverUrl, List<Long> tagIds, String status, List<Long> columnIds) {
         postValidationService.validatePostPublishParams(title, content);
         postValidationService.validateTagIds(tagIds);
 
         if ("DRAFT".equals(status)) {
-            Long postId = postCommandService.createDraft(userId, title, content, description, coverUrl, tagIds);
+            Long postId = postCommandService.createDraft(userId, title, content, description, coverUrl, tagIds, columnIds);
             log.info("草稿创建成功，ID:{}", postId);
             return postId;
         } else {
-            Long postId = postCommandService.publishPost(null, userId, title, content, description, coverUrl, tagIds);
-            log.info("帖子创建并发布成功，ID:{}", postId);
+            Long postId = postCommandService.publishPost(null, userId, title, content, description, coverUrl, tagIds, columnIds);
+            log.info("帖子创建并发布成功，ID:{}, columnCount: {}", postId, columnIds != null ? columnIds.size() : 0);
             return postId;
         }
     }
@@ -273,6 +282,14 @@ public class PostApplicationService {
      */
     public Long publishOrUpdatePost(Long postId, Long userId, String title, String content,
                                      String description, String coverUrl, List<Long> tagIds, String status) {
+        return publishOrUpdatePost(postId, userId, title, content, description, coverUrl, tagIds, status, null);
+    }
+
+    /**
+     * 发布/更新帖子（支持专栏选择）
+     */
+    public Long publishOrUpdatePost(Long postId, Long userId, String title, String content,
+                                     String description, String coverUrl, List<Long> tagIds, String status, List<Long> columnIds) {
         postValidationService.validatePostPublishParams(title, content);
         postValidationService.validateTagIds(tagIds);
 
@@ -280,12 +297,12 @@ public class PostApplicationService {
             if (postId == null) {
                 throw new BusinessException(ResponseCode.NULL_PARAMETER.getCode(), "帖子ID不能为空");
             }
-            postCommandService.updateDraft(postId, userId, title, content, description, coverUrl, tagIds);
+            postCommandService.updateDraft(postId, userId, title, content, description, coverUrl, tagIds, columnIds);
             log.info("草稿更新成功，ID:{}", postId);
             return postId;
         } else {
-            Long resultId = postCommandService.publishPost(postId, userId, title, content, description, coverUrl, tagIds);
-            log.info("帖子发布成功，ID:{}", resultId);
+            Long resultId = postCommandService.publishPost(postId, userId, title, content, description, coverUrl, tagIds, columnIds);
+            log.info("帖子发布成功，ID:{}, columnCount: {}", resultId, columnIds != null ? columnIds.size() : 0);
             return resultId;
         }
     }
@@ -295,11 +312,19 @@ public class PostApplicationService {
      */
     public Long saveDraft(Long userId, Long postId, String title, String content,
                           String description, String coverUrl, List<Long> tagIds) {
+        return saveDraft(userId, postId, title, content, description, coverUrl, tagIds, null);
+    }
+
+    /**
+     * 保存草稿（支持专栏选择）
+     */
+    public Long saveDraft(Long userId, Long postId, String title, String content,
+                          String description, String coverUrl, List<Long> tagIds, List<Long> columnIds) {
         if (postId != null) {
-            postCommandService.updateDraft(postId, userId, title, content, description, coverUrl, tagIds);
+            postCommandService.updateDraft(postId, userId, title, content, description, coverUrl, tagIds, columnIds);
             return postId;
         } else {
-            return postCommandService.createDraft(userId, title, content, description, coverUrl, tagIds);
+            return postCommandService.createDraft(userId, title, content, description, coverUrl, tagIds, columnIds);
         }
     }
 
@@ -332,6 +357,31 @@ public class PostApplicationService {
         }
         
         postCommandService.deletePost(postId, userId, false);
+    }
+
+    /**
+     * 获取文章所属的专栏列表
+     */
+    public List<cn.xu.model.vo.column.ColumnVO> getPostColumns(Long postId, Long currentUserId) {
+        // 验证帖子是否存在
+        Post post = postQueryService.getById(postId)
+                .orElseThrow(() -> new BusinessException(ResponseCode.UN_ERROR.getCode(), "帖子不存在"));
+        
+        // 权限校验：只有已发布的帖子或自己的草稿才可以查看
+        if (post.getStatus() != Post.STATUS_PUBLISHED) {
+            if (currentUserId == null || !currentUserId.equals(post.getUserId())) {
+                throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "无权限查看该帖子");
+            }
+        }
+        
+        try {
+            // 调用专栏服务获取文章所属的专栏列表
+            return columnApplicationService.getPostColumns(postId, currentUserId);
+        } catch (Exception e) {
+            log.error("获取文章专栏列表失败: postId={}", postId, e);
+            // 降级处理：返回空列表，不影响主要功能
+            return Collections.emptyList();
+        }
     }
 
     // ==================== 私有方法 ====================

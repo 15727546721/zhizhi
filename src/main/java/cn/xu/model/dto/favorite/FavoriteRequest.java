@@ -26,5 +26,10 @@ public class FavoriteRequest {
     @Schema(description = "目标类型，Post-帖子，Comment-评论")
     @NotBlank(message = "目标类型不能为空")
     private String targetType;
+    
+    /** 收藏夹ID（可选，为空则使用默认收藏夹）
+     */
+    @Schema(description = "收藏夹ID，为空则使用默认收藏夹")
+    private Long folderId;
 
 }

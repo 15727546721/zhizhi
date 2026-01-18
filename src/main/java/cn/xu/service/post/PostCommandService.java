@@ -3,6 +3,7 @@ package cn.xu.service.post;
 import cn.xu.cache.core.RedisOperations;
 import cn.xu.common.ResponseCode;
 import cn.xu.common.constants.BooleanConstants;
+import cn.xu.common.constants.CacheConstants;
 import cn.xu.common.constants.FilePathConstants;
 import cn.xu.event.publisher.ContentEventPublisher;
 import cn.xu.integration.file.service.FileStorageService;
@@ -10,6 +11,7 @@ import cn.xu.model.entity.Post;
 import cn.xu.repository.PostRepository;
 import cn.xu.repository.mapper.PostMapper;
 import cn.xu.repository.mapper.UserMapper;
+import cn.xu.service.column.ColumnPostService;
 import cn.xu.support.exception.BusinessException;
 import cn.xu.support.log.BizLogger;
 import cn.xu.support.log.LogConstants;
@@ -38,6 +40,7 @@ public class PostCommandService {
     private final RedisOperations redisOperations;
     private final FileStorageService fileStorageService;
     private final ContentEventPublisher contentEventPublisher;
+    private final ColumnPostService columnPostService;
 
     // ==================== 创建操作 ====================
 
@@ -57,6 +60,17 @@ public class PostCommandService {
                 .userId(userId)
                 .param("postId", postId)
                 .success();
+        return postId;
+    }
+
+    /**
+     * 创建草稿（支持专栏选择）
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public Long createDraft(Long userId, String title, String content, String description,
+                            String coverUrl, List<Long> tagIds, List<Long> columnIds) {
+        Long postId = createDraft(userId, title, content, description, coverUrl, tagIds);
+        // 草稿不添加到专栏，只有发布时才添加
         return postId;
     }
 
@@ -83,11 +97,30 @@ public class PostCommandService {
     }
 
     /**
+     * 更新草稿（支持专栏选择）
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void updateDraft(Long postId, Long userId, String title, String content,
+                            String description, String coverUrl, List<Long> tagIds, List<Long> columnIds) {
+        updateDraft(postId, userId, title, content, description, coverUrl, tagIds);
+        // 草稿不添加到专栏，只有发布时才添加
+    }
+
+    /**
      * 发布帖子
      */
     @Transactional(rollbackFor = Exception.class)
     public Long publishPost(Long postId, Long userId, String title, String content,
                             String description, String coverUrl, List<Long> tagIds) {
+        return publishPost(postId, userId, title, content, description, coverUrl, tagIds, null);
+    }
+
+    /**
+     * 发布帖子（支持专栏选择）
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public Long publishPost(Long postId, Long userId, String title, String content,
+                            String description, String coverUrl, List<Long> tagIds, List<Long> columnIds) {
         Post post;
         boolean isNewPublish = false;
 
@@ -123,8 +156,20 @@ public class PostCommandService {
                     .success();
         }
 
-        // 事务提交后发布事件
+        // 添加到专栏（仅发布时）
         final Long finalPostId = postId;
+        if (columnIds != null && !columnIds.isEmpty()) {
+            for (Long columnId : columnIds) {
+                try {
+                    columnPostService.addPostToColumn(userId, columnId, finalPostId, null);
+                } catch (Exception e) {
+                    log.warn("[专栏] 添加文章到专栏失败 - columnId: {}, postId: {}, error: {}", 
+                            columnId, finalPostId, e.getMessage());
+                }
+            }
+        }
+
+        // 事务提交后发布事件
         final String finalTitle = title;
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
             @Override
@@ -145,10 +190,11 @@ public class PostCommandService {
                 .module(LogConstants.MODULE_POST)
                 .op(LogConstants.OP_PUBLISH)
                 .userId(userId)
-                .param("postId", postId)
+                .param("postId", finalPostId)
                 .param("isNew", isNewPublish)
+                .param("columnCount", columnIds != null ? columnIds.size() : 0)
                 .success();
-        return postId;
+        return finalPostId;
     }
 
     /**
@@ -186,6 +232,13 @@ public class PostCommandService {
 
         boolean wasPublished = Integer.valueOf(Post.STATUS_PUBLISHED).equals(post.getStatus());
         Long authorId = post.getUserId();
+
+        // 删除专栏关联
+        try {
+            columnPostService.removePostFromAllColumns(postId);
+        } catch (Exception e) {
+            log.warn("[专栏] 删除帖子的专栏关联失败 - postId: {}, error: {}", postId, e.getMessage());
+        }
 
         post.delete();
         postRepository.update(post, null);
@@ -316,16 +369,16 @@ public class PostCommandService {
 
         boolean shouldIncrement = false;
         if (userId == null) {
-            String ipKey = "post:view:ip:" + postId + ":" + clientIp;
+            String ipKey = CacheConstants.POST_VIEW_IP_KEY_PREFIX + postId + ":" + clientIp;
             if (!redisOperations.hasKey(ipKey)) {
                 shouldIncrement = true;
-                redisOperations.set(ipKey, "1", 600);
+                redisOperations.set(ipKey, "1", CacheConstants.POST_VIEW_CACHE_SECONDS);
             }
         } else {
-            String userKey = "post:view:user:" + postId + ":" + userId;
+            String userKey = CacheConstants.POST_VIEW_USER_KEY_PREFIX + postId + ":" + userId;
             if (!redisOperations.hasKey(userKey)) {
                 shouldIncrement = true;
-                redisOperations.set(userKey, "1", 600);
+                redisOperations.set(userKey, "1", CacheConstants.POST_VIEW_CACHE_SECONDS);
             }
         }
 

@@ -5,17 +5,19 @@
     <!-- 插入或更新收藏记录 -->
     <insert id="insertOrUpdate" parameterType="cn.xu.model.entity.Favorite">
         INSERT INTO favorite (
-            id, user_id, target_id, target_type, status, create_time, update_time
+            id, user_id, target_id, target_type, folder_id, status, create_time, update_time
         ) VALUES (
             #{id},
             #{userId},
             #{targetId},
             #{targetType},
+            #{folderId},
             #{status},
             #{createTime},
             #{updateTime}
         ) ON DUPLICATE KEY UPDATE
             status = VALUES(status),
+            folder_id = VALUES(folder_id),
             update_time = VALUES(update_time)
     </insert>
 
@@ -26,6 +28,7 @@
             user_id AS userId,
             target_id AS targetId,
             target_type AS targetType,
+            folder_id AS folderId,
             status,
             create_time AS createTime,
             update_time AS updateTime
@@ -100,5 +103,41 @@
     <select id="countByUserId" resultType="java.lang.Long">
         SELECT COUNT(*) FROM favorite WHERE user_id = #{userId} AND status = 1
     </select>
+
+    <!-- 按收藏夹分页获取收藏的内容ID列表 -->
+    <select id="selectFavoritedTargetIdsByFolderWithPage" resultType="java.lang.Long">
+        SELECT target_id
+        FROM favorite
+        WHERE user_id = #{userId}
+        AND target_type = #{targetType}
+        AND folder_id = #{folderId}
+        AND status = 1
+        ORDER BY create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 统计收藏夹中的收藏数量 -->
+    <select id="countFavoritedItemsByFolder" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM favorite
+        WHERE user_id = #{userId}
+        AND target_type = #{targetType}
+        AND folder_id = #{folderId}
+        AND status = 1
+    </select>
+
+    <!-- 更新收藏的收藏夹 -->
+    <update id="updateFolderId">
+        UPDATE favorite
+        SET folder_id = #{newFolderId}, update_time = NOW()
+        WHERE id = #{id} AND user_id = #{userId}
+    </update>
+
+    <!-- 批量移动收藏到新收藏夹 -->
+    <update id="moveFavoritesToFolder">
+        UPDATE favorite
+        SET folder_id = #{newFolderId}, update_time = NOW()
+        WHERE user_id = #{userId} AND folder_id = #{oldFolderId} AND status = 1
+    </update>
 
 </mapper>

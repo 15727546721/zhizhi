@@ -71,4 +71,29 @@ public class FavoriteRepositoryImpl implements FavoriteRepository {
         Long count = favoriteMapper.countByUserId(userId);
         return count != null ? count : 0L;
     }
+    
+    @Override
+    public List<Long> findFavoritedTargetIdsByFolderWithPage(Long userId, String targetType, Long folderId, int offset, int limit) {
+        return favoriteMapper.selectFavoritedTargetIdsByFolderWithPage(userId, targetType, folderId, offset, limit);
+    }
+    
+    @Override
+    public int countFavoritedItemsByFolder(Long userId, String targetType, Long folderId) {
+        return favoriteMapper.countFavoritedItemsByFolder(userId, targetType, folderId);
+    }
+    
+    @Override
+    public void updateFolderId(Long id, Long userId, Long newFolderId) {
+        favoriteMapper.updateFolderId(id, userId, newFolderId);
+    }
+    
+    @Override
+    public int moveFavoritesToFolder(Long userId, Long oldFolderId, Long newFolderId) {
+        // 先查询要迁移的数量
+        int count = favoriteMapper.countFavoritedItemsByFolder(userId, "POST", oldFolderId);
+        // 执行迁移
+        favoriteMapper.moveFavoritesToFolder(userId, oldFolderId, newFolderId);
+        // 返回迁移数量
+        return count;
+    }
 }

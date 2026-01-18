@@ -1,1 +1,80 @@
-package cn.xu.model.dto.post;import com.fasterxml.jackson.annotation.JsonIgnoreProperties;import io.swagger.v3.oas.annotations.media.Schema;import lombok.Data;import jakarta.validation.constraints.NotBlank;import jakarta.validation.constraints.Size;import java.util.List;/** * 发布或草稿帖子请求DTO * 用于表示发布或草稿帖子时传递的请求参数。 */@Data@JsonIgnoreProperties(ignoreUnknown = true)@Schema(description = "发布或草稿帖子请求")public class PublishOrDraftPostRequest {    /**     * 帖子ID     * 当编辑或更新现有帖子时需要提供此字段。     */    @Schema(description = "帖子ID")    private Long id;    /**     * 帖子标题     * 标题不能为空，且字符长度在1到100之间。     */    @NotBlank(message = "帖子标题不能为空")    @Size(min = 1, max = 100, message = "帖子标题长度应在1到100字符之间")    @Schema(description = "帖子标题")    private String title;    /**     * 帖子封面URL     * 可选字段，表示帖子封面图片的URL。     */    @Schema(description = "帖子封面URL")    private String coverUrl;    /**     * 帖子内容     * 帖子内容不能为空，且字符长度在1到10000之间。     */    @NotBlank(message = "帖子内容不能为空")    @Size(min = 1, max = 10000, message = "帖子内容长度应在1到10000字符之间")    @Schema(description = "帖子内容")    private String content;    /**     * 帖子描述     * 可选字段，描述帖子的简短信息，最大长度为500字符。     */    @Size(max = 500, message = "帖子描述长度应在0到500字符之间")    @Schema(description = "帖子描述")    private String description;    /**     * 标签ID列表     * 用于给帖子添加标签，最多可选30个标签。     */    @Schema(description = "标签ID列表，最多支持30个标签")    private List<Long> tagIds;    /**     * 帖子状态     * 可选值：DRAFT（草稿），PUBLISHED（已发布）     */    @Schema(description = "帖子状态，DRAFT表示草稿，PUBLISHED表示已发布")    private String status;}
+package cn.xu.model.dto.post;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Data;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import java.util.List;
+
+/**
+ * 发布或草稿帖子请求DTO
+ * 用于表示发布或草稿帖子时传递的请求参数。
+ */
+@Data
+@JsonIgnoreProperties(ignoreUnknown = true)
+@Schema(description = "发布或草稿帖子请求")
+public class PublishOrDraftPostRequest {
+
+    /**
+     * 帖子ID
+     * 当编辑或更新现有帖子时需要提供此字段。
+     */
+    @Schema(description = "帖子ID")
+    private Long id;
+
+    /**
+     * 帖子标题
+     * 标题不能为空，且字符长度在1到100之间。
+     */
+    @NotBlank(message = "帖子标题不能为空")
+    @Size(min = 1, max = 100, message = "帖子标题长度应在1到100字符之间")
+    @Schema(description = "帖子标题")
+    private String title;
+
+    /**
+     * 帖子封面URL
+     * 可选字段，表示帖子封面图片的URL。
+     */
+    @Schema(description = "帖子封面URL")
+    private String coverUrl;
+
+    /**
+     * 帖子内容
+     * 帖子内容不能为空，且字符长度在1到10000之间。
+     */
+    @NotBlank(message = "帖子内容不能为空")
+    @Size(min = 1, max = 10000, message = "帖子内容长度应在1到10000字符之间")
+    @Schema(description = "帖子内容")
+    private String content;
+
+    /**
+     * 帖子描述
+     * 可选字段，描述帖子的简短信息，最大长度为500字符。
+     */
+    @Size(max = 500, message = "帖子描述长度应在0到500字符之间")
+    @Schema(description = "帖子描述")
+    private String description;
+
+    /**
+     * 标签ID列表
+     * 用于给帖子添加标签，最多可选30个标签。
+     */
+    @Schema(description = "标签ID列表，最多支持30个标签")
+    private List<Long> tagIds;
+
+    /**
+     * 帖子状态
+     * 可选值：DRAFT（草稿），PUBLISHED（已发布）
+     */
+    @Schema(description = "帖子状态，DRAFT表示草稿，PUBLISHED表示已发布")
+    private String status;
+
+    /**
+     * 专栏ID列表
+     * 用于将帖子添加到专栏，最多可选3个专栏
+     */
+    @Schema(description = "专栏ID列表，最多支持3个专栏")
+    private List<Long> columnIds;
+}

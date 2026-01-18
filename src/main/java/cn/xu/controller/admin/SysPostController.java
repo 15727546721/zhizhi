@@ -507,21 +507,9 @@ public class SysPostController {
      * @return 操作结果
      */
     @PostMapping("/top")
-    @Operation(summary = "置顶帖子")
-    @SaCheckLogin
-    @SaCheckPermission("system:post:update")
-    @ApiOperationLog(description = "置顶帖子")
-    public ResponseEntity toggleTop(@RequestBody List<Long> postIds) {
-        if (postIds == null || postIds.isEmpty()) {
-            throw new BusinessException(ResponseCode.NULL_PARAMETER.getCode(), "帖子ID不能为空");
-        }
-        // TODO: 实现置顶逻辑，需要在 PostCommandService 中添加 toggleTop 方法
-        log.info("置顶帖子: {}", postIds);
-        return ResponseEntity.builder()
-                .code(ResponseCode.SUCCESS.getCode())
-                .info("操作成功")
-                .build();
-    }
+    // 置顶功能暂未实现，已移除接口
+    // 如需实现，请在 PostCommandService 中添加 toggleTop 方法
+    // 并在 Post 实体中添加 isTop 字段
 
     /**
      * 获取随机封面图

@@ -63,7 +63,7 @@ public class FavoriteController {
         Long userId = StpUtil.getLoginIdAsLong();
         try {
             TargetType targetType = TargetType.fromCode(request.getTargetType());
-            favoriteService.favorite(userId, request.getTargetId(), targetType.getApiCode());
+            favoriteService.favorite(userId, request.getTargetId(), targetType.getApiCode(), request.getFolderId());
             return ResponseEntity.<Void>builder()
                     .code(ResponseCode.SUCCESS.getCode())
                     .info("收藏成功")

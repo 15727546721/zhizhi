@@ -9,7 +9,7 @@
 -- 
 -- ⚠️ 警告：此脚本会删除并重建所有表，请先备份数据！
 -- 
--- 表结构概览（共24个表）：
+-- 表结构概览（共25个表）：
 -- ┌─────────────────────────────────────────────────────────────┐
 -- │ 用户模块（4个）                                              │
 -- │   user, user_settings, user_interested_tag, user_block     │
@@ -17,8 +17,8 @@
 -- │ 内容模块（4个）                                              │
 -- │   post, tag, post_tag, comment                             │
 -- ├─────────────────────────────────────────────────────────────┤
--- │ 互动模块（4个）                                              │
--- │   `like`, favorite, follow, share                          │
+-- │ 互动模块（5个）                                              │
+-- │   `like`, favorite, favorite_folder, follow, share         │
 -- ├─────────────────────────────────────────────────────────────┤
 -- │ 消息模块（5个）                                              │
 -- │   notification, user_conversation, private_message,        │
@@ -58,6 +58,7 @@ DROP TABLE IF EXISTS `feedback`;
 DROP TABLE IF EXISTS `share`;
 DROP TABLE IF EXISTS `follow`;
 DROP TABLE IF EXISTS `favorite`;
+DROP TABLE IF EXISTS `favorite_folder`;
 DROP TABLE IF EXISTS `like`;
 DROP TABLE IF EXISTS `comment`;
 DROP TABLE IF EXISTS `post_tag`;
@@ -266,7 +267,7 @@ CREATE TABLE `comment` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='评论表';
 
 -- ============================================================================
--- 第三部分：互动模块（4个表）
+-- 第三部分：互动模块（5个表）
 -- ============================================================================
 
 -- 3.1 点赞表
@@ -291,6 +292,7 @@ CREATE TABLE `favorite` (
   `user_id` BIGINT UNSIGNED NOT NULL COMMENT '用户ID',
   `target_id` BIGINT UNSIGNED NOT NULL COMMENT '目标ID',
   `target_type` VARCHAR(20) NOT NULL DEFAULT 'post' COMMENT '目标类型',
+  `folder_id` BIGINT UNSIGNED DEFAULT NULL COMMENT '收藏夹ID',
   `status` TINYINT NOT NULL DEFAULT 1 COMMENT '状态: 0-取消 1-收藏',
   `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -298,8 +300,27 @@ CREATE TABLE `favorite` (
   UNIQUE KEY `uk_user_target` (`user_id`, `target_id`, `target_type`),
   KEY `idx_user_id` (`user_id`),
   KEY `idx_target_id` (`target_id`),
+  KEY `idx_folder_id` (`folder_id`),
   KEY `idx_create_time` (`create_time` DESC)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='收藏表';
+
+-- 3.2.1 收藏夹表
+CREATE TABLE `favorite_folder` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `user_id` BIGINT UNSIGNED NOT NULL COMMENT '用户ID',
+  `name` VARCHAR(50) NOT NULL COMMENT '收藏夹名称',
+  `description` VARCHAR(200) DEFAULT NULL COMMENT '描述',
+  `is_public` TINYINT NOT NULL DEFAULT 0 COMMENT '是否公开: 0-私密 1-公开',
+  `is_default` TINYINT NOT NULL DEFAULT 0 COMMENT '是否默认收藏夹: 0-否 1-是',
+  `item_count` INT NOT NULL DEFAULT 0 COMMENT '收藏数量',
+  `cover_url` VARCHAR(500) DEFAULT NULL COMMENT '封面图URL',
+  `sort` INT NOT NULL DEFAULT 0 COMMENT '排序值，越小越靠前',
+  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_user_default` (`user_id`, `is_default`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='收藏夹表';
 
 -- 3.3 关注表
 CREATE TABLE `follow` (
@@ -600,6 +621,64 @@ CREATE TABLE `announcement` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='公告表';
 
 -- ============================================================================
+-- 第九部分：专栏模块（3个表）
+-- ============================================================================
+
+-- 9.1 专栏表
+DROP TABLE IF EXISTS `column`;
+CREATE TABLE `column` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '专栏ID',
+  `user_id` BIGINT UNSIGNED NOT NULL COMMENT '所有者ID',
+  `name` VARCHAR(50) NOT NULL COMMENT '专栏名称',
+  `description` VARCHAR(200) DEFAULT NULL COMMENT '描述',
+  `cover_url` VARCHAR(500) DEFAULT NULL COMMENT '封面图URL',
+  `status` TINYINT NOT NULL DEFAULT 0 COMMENT '状态: 0-草稿 1-已发布 2-已归档',
+  `post_count` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '文章数',
+  `subscribe_count` INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '订阅数',
+  `is_recommended` TINYINT NOT NULL DEFAULT 0 COMMENT '是否推荐: 0-否 1-是',
+  `sort` INT NOT NULL DEFAULT 0 COMMENT '排序值',
+  `last_post_time` DATETIME DEFAULT NULL COMMENT '最后发文时间',
+  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_status` (`status`),
+  KEY `idx_is_recommended` (`is_recommended`),
+  KEY `idx_subscribe_count` (`subscribe_count` DESC),
+  KEY `idx_last_post_time` (`last_post_time` DESC),
+  KEY `idx_user_status` (`user_id`, `status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='专栏表';
+
+-- 9.2 专栏文章关联表
+DROP TABLE IF EXISTS `column_post`;
+CREATE TABLE `column_post` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `column_id` BIGINT UNSIGNED NOT NULL COMMENT '专栏ID',
+  `post_id` BIGINT UNSIGNED NOT NULL COMMENT '帖子ID',
+  `sort` INT NOT NULL DEFAULT 0 COMMENT '排序值(越小越靠前)',
+  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_column_post` (`column_id`, `post_id`),
+  KEY `idx_column_id` (`column_id`, `sort`),
+  KEY `idx_post_id` (`post_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='专栏文章关联表';
+
+-- 9.3 专栏订阅表
+DROP TABLE IF EXISTS `column_subscription`;
+CREATE TABLE `column_subscription` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `user_id` BIGINT UNSIGNED NOT NULL COMMENT '订阅者ID',
+  `column_id` BIGINT UNSIGNED NOT NULL COMMENT '专栏ID',
+  `status` TINYINT NOT NULL DEFAULT 1 COMMENT '状态: 0-取消 1-订阅',
+  `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_user_column` (`user_id`, `column_id`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_column_id` (`column_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='专栏订阅表';
+
+-- ============================================================================
 -- 完成
 -- ============================================================================
 SELECT '
@@ -607,15 +686,16 @@ SELECT '
 ✅ 表结构创建完成！
 ============================================
 
-📊 表结构统计（共24个表）：
+📊 表结构统计（共28个表）：
    - 用户模块：4个表 (user, user_settings, user_interested_tag, user_block)
    - 内容模块：4个表 (post, tag, post_tag, comment)
-   - 互动模块：4个表 (like, favorite, follow, share)
+   - 互动模块：5个表 (like, favorite, favorite_folder, follow, share)
    - 消息模块：5个表 (notification, user_conversation, private_message, greeting_record, feedback)
    - 权限模块：4个表 (role, menu, user_role, role_menu)
    - 文件模块：1个表 (file_record)
    - 举报模块：1个表 (report)
    - 公告模块：1个表 (announcement)
+   - 专栏模块：3个表 (column, column_post, column_subscription)
 
 注：私信设置已合并到 user_settings 表中
    
