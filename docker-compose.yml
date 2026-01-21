@@ -11,12 +11,13 @@ services:
       - SPRING_PROFILES_ACTIVE=prod
       - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/zhizhi?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
       - SPRING_DATASOURCE_USERNAME=root
-      - SPRING_DATASOURCE_PASSWORD=zhizhi123
+      - SPRING_DATASOURCE_PASSWORD=${MYSQL_ROOT_PASSWORD}
       - SPRING_REDIS_HOST=redis
       - SPRING_ELASTICSEARCH_URIS=elasticsearch:9200  # 使用本地 ES 地址
       - MINIO_URL=http://minio:9000
-      - MINIO_ACCESS_KEY=minioadmin
-      - MINIO_SECRET_KEY=minioadmin
+      - MINIO_ACCESS_KEY=${MINIO_ROOT_USER:-minioadmin}
+      - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
     depends_on:
       - mysql
       - redis
@@ -32,7 +33,7 @@ services:
     ports:
       - "3306:3306"
     environment:
-      - MYSQL_ROOT_PASSWORD=zhizhi123
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
       - MYSQL_DATABASE=zhizhi
     volumes:
       - mysql-data:/var/lib/mysql
@@ -80,8 +81,8 @@ services:
       - "9000:9000"
       - "9001:9001"
     environment:
-      - MINIO_ROOT_USER=minioadmin
-      - MINIO_ROOT_PASSWORD=minioadmin
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER:-minioadmin}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
     command: server /data --console-address ":9001"
     volumes:
       - minio-data:/data

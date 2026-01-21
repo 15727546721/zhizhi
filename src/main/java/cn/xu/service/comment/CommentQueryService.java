@@ -230,9 +230,8 @@ public class CommentQueryService {
     }
 
     /**
-     * 批量加载子评论（修复 N+1 问题）
-     * 原来：每个根评论执行一次查询
-     * 现在：一次批量查询所有子评论
+     * 批量加载子评论（避免 N+1 查询）
+     * 使用批量查询替代逐个查询，提升性能
      */
     private void enrichCommentsWithChildren(List<Comment> rootComments, CommentSortType sortType) {
         if (rootComments == null || rootComments.isEmpty()) {

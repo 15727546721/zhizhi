@@ -2,6 +2,7 @@ package cn.xu.model.entity;
 
 import cn.xu.common.ResponseCode;
 import cn.xu.support.exception.BusinessException;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.*;
 
 import java.io.Serializable;
@@ -17,6 +18,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Post implements Serializable {
 
     private static final long serialVersionUID = 1L;

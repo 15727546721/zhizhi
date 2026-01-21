@@ -16,6 +16,13 @@ import org.springframework.stereotype.Component;
  *     password: ${ADMIN_PASSWORD:ChangeMe123!}
  *     email: admin@example.com
  * </pre>
+ * 
+ * <p>⚠️ 安全提示：</p>
+ * <ul>
+ *   <li>生产环境必须通过环境变量 ADMIN_PASSWORD 设置密码</li>
+ *   <li>如果使用默认密码，系统启动时会自动生成随机密码</li>
+ *   <li>首次登录后请立即修改密码</li>
+ * </ul>
  */
 @Data
 @Component

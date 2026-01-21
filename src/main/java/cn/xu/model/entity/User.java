@@ -2,6 +2,7 @@ package cn.xu.model.entity;
 
 import cn.dev33.satoken.secure.SaSecureUtil;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,6 +19,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class User implements Serializable {
 
     private static final long serialVersionUID = 1L;

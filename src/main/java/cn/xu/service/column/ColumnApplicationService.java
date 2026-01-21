@@ -1,6 +1,7 @@
 package cn.xu.service.column;
 
 import cn.xu.model.entity.Column;
+import cn.xu.model.entity.ColumnPost;
 import cn.xu.model.vo.column.ColumnDetailVO;
 import cn.xu.model.vo.column.ColumnPostVO;
 import cn.xu.model.vo.column.ColumnVO;
@@ -39,6 +40,8 @@ public class ColumnApplicationService {
         if (size == null || size < 1) size = 20;
         int offset = (page - 1) * size;
         
+        log.info("[专栏广场] 查询参数 - sortType: {}, page: {}, size: {}, offset: {}", sortType, page, size, offset);
+        
         List<Column> columns;
         if ("subscribe".equals(sortType)) {
             // 按订阅数排序
@@ -48,9 +51,13 @@ public class ColumnApplicationService {
             columns = columnRepository.findPublishedByLastPostTime(offset, size);
         }
         
+        log.info("[专栏广场] 查询结果 - 返回专栏数: {}", columns != null ? columns.size() : 0);
+        
         int total = columnRepository.countPublished();
+        log.info("[专栏广场] 总数统计 - total: {}", total);
         
         List<ColumnVO> voList = convertToVOList(columns, null);
+        log.info("[专栏广场] VO转换完成 - voList size: {}", voList != null ? voList.size() : 0);
         
         return PageResponse.ofList(page, size, (long) total, voList);
     }
@@ -273,31 +280,40 @@ public class ColumnApplicationService {
     // ==================== 私有辅助方法 ====================
 
     /**
-     * 转换为VO列表
+     * 转换为VO列表（优化：批量查询用户信息，避免N+1问题）
      */
     private List<ColumnVO> convertToVOList(List<Column> columns, Long currentUserId) {
         if (columns == null || columns.isEmpty()) {
             return new ArrayList<>();
         }
         
-        // 批量查询订阅状态
+        // 1. 批量查询订阅状态
         List<Long> subscribedIds = new ArrayList<>();
         if (currentUserId != null) {
             List<Long> columnIds = columns.stream().map(Column::getId).collect(Collectors.toList());
             subscribedIds = subscriptionService.batchCheckSubscribed(currentUserId, columnIds);
         }
-        
         final List<Long> finalSubscribedIds = subscribedIds;
         
+        // 2. 批量查询用户信息（优化：避免N+1查询）
+        List<Long> userIds = columns.stream()
+                .map(Column::getUserId)
+                .distinct()
+                .collect(Collectors.toList());
+        
+        Map<Long, cn.xu.model.entity.User> userMap = userRepository.findByIds(userIds).stream()
+                .collect(Collectors.toMap(cn.xu.model.entity.User::getId, user -> user));
+        
+        // 3. 转换为VO
         return columns.stream()
-                .map(column -> convertToVO(column, currentUserId, finalSubscribedIds.contains(column.getId())))
+                .map(column -> convertToVO(column, currentUserId, finalSubscribedIds.contains(column.getId()), userMap))
                 .collect(Collectors.toList());
     }
 
     /**
-     * 转换为VO
+     * 转换为VO（优化：使用预加载的用户信息）
      */
-    private ColumnVO convertToVO(Column column, Long currentUserId, boolean isSubscribed) {
+    private ColumnVO convertToVO(Column column, Long currentUserId, boolean isSubscribed, Map<Long, cn.xu.model.entity.User> userMap) {
         ColumnVO vo = new ColumnVO();
         vo.setId(column.getId());
         vo.setUserId(column.getUserId());
@@ -316,17 +332,18 @@ public class ColumnApplicationService {
             vo.setIsSubscribed(isSubscribed);
         }
         
-        // 查询用户信息
-        userRepository.findById(column.getUserId()).ifPresent(user -> {
+        // 从预加载的用户Map中获取用户信息（避免N+1查询）
+        cn.xu.model.entity.User user = userMap.get(column.getUserId());
+        if (user != null) {
             vo.setUserName(user.getUsername());
             vo.setUserAvatar(user.getAvatar());
-        });
+        }
         
         return vo;
     }
 
     /**
-     * 转换为详情VO
+     * 转换为详情VO（优化：批量查询文章信息）
      */
     private ColumnDetailVO convertToDetailVO(Column column, Long currentUserId) {
         ColumnDetailVO vo = new ColumnDetailVO();
@@ -353,8 +370,40 @@ public class ColumnApplicationService {
             vo.setUserAvatar(user.getAvatar());
         });
         
-        // TODO: 查询最近文章(前5篇) - 需要在后续实现
-        vo.setRecentPosts(new ArrayList<>());
+        // 查询最近文章(前5篇) - 优化：批量查询
+        List<ColumnPost> recentColumnPosts = columnPostService.getRecentPosts(column.getId(), 5);
+        if (!recentColumnPosts.isEmpty()) {
+            // 批量查询文章信息
+            List<Long> postIds = recentColumnPosts.stream()
+                    .map(ColumnPost::getPostId)
+                    .collect(Collectors.toList());
+            
+            Map<Long, cn.xu.model.entity.Post> postMap = new java.util.HashMap<>();
+            for (Long postId : postIds) {
+                postRepository.findById(postId).ifPresent(post -> postMap.put(postId, post));
+            }
+            
+            // 转换为VO
+            List<ColumnPostVO> recentPosts = recentColumnPosts.stream()
+                    .map(columnPost -> {
+                        cn.xu.model.entity.Post post = postMap.get(columnPost.getPostId());
+                        if (post == null) {
+                            return null;
+                        }
+                        ColumnPostVO postVO = new ColumnPostVO();
+                        postVO.setPostId(post.getId());
+                        postVO.setTitle(post.getTitle());
+                        postVO.setCreateTime(post.getCreateTime());
+                        postVO.setSort(columnPost.getSort());
+                        return postVO;
+                    })
+                    .filter(postVO -> postVO != null)
+                    .collect(Collectors.toList());
+            
+            vo.setRecentPosts(recentPosts);
+        } else {
+            vo.setRecentPosts(new ArrayList<>());
+        }
         
         return vo;
     }

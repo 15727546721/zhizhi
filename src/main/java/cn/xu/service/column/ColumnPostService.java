@@ -168,6 +168,13 @@ public class ColumnPostService {
     }
 
     /**
+     * 获取专栏最近的文章（用于专栏详情页展示）
+     */
+    public List<ColumnPost> getRecentPosts(Long columnId, int limit) {
+        return columnPostRepository.findByColumnIdWithPage(columnId, 0, limit);
+    }
+
+    /**
      * 获取文章所属的专栏列表
      */
     public List<Column> getPostColumns(Long postId) {

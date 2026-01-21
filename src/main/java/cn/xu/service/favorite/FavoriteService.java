@@ -198,7 +198,7 @@ public class FavoriteService {
                         // 删除收藏计数缓存
                         favoriteCacheRepository.deleteFavoriteCount(targetId, finalTargetType);
 
-                        // 移除用户收藏关系缓存（修复：之前缺失这一步）
+                        // 移除用户收藏关系缓存
                         favoriteCacheRepository.removeUserFavoriteRelation(userId, targetId, finalTargetType);
 
                         // 减少用户收藏计数缓存
