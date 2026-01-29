@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
@@ -17,7 +18,9 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Favorite {
+public class Favorite implements Serializable {
+    
+    private static final long serialVersionUID = 1L;
     
     // ==================== 状态常量 ====================
     
@@ -38,11 +41,11 @@ public class Favorite {
     /** 被收藏内容ID */
     private Long targetId;
     
-    /** 所属收藏夹ID，如果为空，表示是普通收藏 */
-    private Long folderId;
-    
     /** 收藏内容类型：post-帖子 */
     private String targetType;
+    
+    /** 收藏夹ID */
+    private Long folderId;
     
     /** 收藏状态：1-收藏 0-未收藏 */
     private Integer status;
@@ -91,6 +94,13 @@ public class Favorite {
     
     /**
      * 创建新收藏
+     */
+    public static Favorite createFavorite(Long userId, Long targetId, String targetType) {
+        return createFavorite(userId, targetId, targetType, null);
+    }
+    
+    /**
+     * 创建新收藏（指定收藏夹）
      */
     public static Favorite createFavorite(Long userId, Long targetId, String targetType, Long folderId) {
         return Favorite.builder()

@@ -9,12 +9,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 系统配置管理控制器
@@ -28,9 +28,9 @@ import java.util.Map;
 @Tag(name = "系统配置管理", description = "系统配置管理相关接口")
 public class SysConfigController {
 
-    // 模拟系统配置数据（后续可接入数据库）
-    private static Map<String, Object> systemConfig = new HashMap<>();
-    private static Map<String, Object> webConfig = new HashMap<>();
+    // 使用 ConcurrentHashMap 保证线程安全
+    private static final Map<String, Object> systemConfig = new ConcurrentHashMap<>();
+    private static final Map<String, Object> webConfig = new ConcurrentHashMap<>();
 
     static {
         // 初始化系统配置
@@ -82,7 +82,7 @@ public class SysConfigController {
      * @param config 配置集合
      * @return 更新结果
      */
-    @PutMapping("/api/system/config/update")
+    @PostMapping("/api/system/config/update")
     @Operation(summary = "更新系统配置")
     @SaCheckLogin
     @SaCheckPermission("system:config:update")
@@ -128,7 +128,7 @@ public class SysConfigController {
      * @param config 配置集合
      * @return 更新结果
      */
-    @PutMapping("/api/system/webConfig/update")
+    @PostMapping("/api/system/webConfig/update")
     @Operation(summary = "更新网站配置")
     @SaCheckLogin
     @SaCheckPermission("system:config:update")

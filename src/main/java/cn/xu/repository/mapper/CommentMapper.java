@@ -1,6 +1,7 @@
 package cn.xu.repository.mapper;
 
-import cn.xu.common.constant.CommentSortType;
+import cn.xu.model.enums.CommentSortType;
+import cn.xu.model.dto.comment.CommentCountResult;
 import cn.xu.model.entity.Comment;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -9,8 +10,6 @@ import java.util.List;
 
 /**
  * 评论Mapper接口
- * <p>处理评论相关的数据库操作</p>
- 
  */
 @Mapper
 public interface CommentMapper {
@@ -36,8 +35,11 @@ public interface CommentMapper {
 
     /**
      * 根据ID查询评论
+     *
+     * @param id 评论ID
+     * @return 评论实体
      */
-    Comment findById(@Param("id") Long id);
+    Comment selectById(@Param("id") Long id);
 
     // 按热度查询一级评论（带图片）
     List<Comment> findRootCommentsByHot(
@@ -93,13 +95,13 @@ public interface CommentMapper {
     List<Comment> findByParentIds(@Param("parentIds") List<Long> parentIds);
 
     /**
-     * 查询一级评论列表
+     * 根据父评论ID和用户ID查询评论（用于对话链查询）
      *
-     * @param targetId 目标ID
-     * @param type     评论类型（可选）
-     * @return 一级评论列表
+     * @param parentId 父评论ID
+     * @param userId 用户ID
+     * @return 评论
      */
-    List<Comment> findRootComments(@Param("targetId") Long targetId, @Param("type") Integer type);
+    Comment findByParentIdAndUserId(@Param("parentId") Long parentId, @Param("userId") Long userId);
 
     /**
      * 分页查询二级评论列表
@@ -112,7 +114,7 @@ public interface CommentMapper {
     List<Comment> findRepliesByPage(@Param("parentId") Long parentId, @Param("offset") int offset, @Param("limit") int limit);
 
     /**
-     * 分页查询一级评论列表
+     * 分页查询一级评论列表（前台用，支持多条件过滤）
      */
     List<Comment> findRootCommentsByPage(@Param("targetType") Integer targetType,
                                          @Param("targetId") Long targetId,
@@ -121,19 +123,11 @@ public interface CommentMapper {
                                          @Param("limit") int limit);
     
     /**
-     * 统计一级评论数（支持多条件过滤）
+     * 统计一级评论数（前台用，支持多条件过滤）
      */
     Long countRootComments(@Param("targetType") Integer targetType,
                            @Param("targetId") Long targetId,
                            @Param("userId") Long userId);
-
-    /**
-     * 根据ID查询评论
-     *
-     * @param id 评论ID
-     * @return 评论实体
-     */
-    Comment selectById(@Param("id") Long id);
 
     /**
      * 根据父评论ID删除所有子评论
@@ -251,26 +245,17 @@ public interface CommentMapper {
      * @return 作者ID
      */
     Long getAuthorId(@Param("commentId") Long commentId);
+
+    // ==================== 统计相关方法 ====================
     
-    class CommentCountResult {
-        private Long targetId;
-        private Long count;
-        
-        // Getters and Setters
-        public Long getTargetId() {
-            return targetId;
-        }
-        
-        public void setTargetId(Long targetId) {
-            this.targetId = targetId;
-        }
-        
-        public Long getCount() {
-            return count;
-        }
-        
-        public void setCount(Long count) {
-            this.count = count;
-        }
-    }
+    /**
+     * 统计指定时间之后创建的评论数
+     */
+    Long countByCreateTimeAfter(@Param("createTime") java.time.LocalDateTime createTime);
+    
+    /**
+     * 统计指定时间范围内创建的评论数
+     */
+    Long countByCreateTimeBetween(@Param("startTime") java.time.LocalDateTime startTime, 
+                                   @Param("endTime") java.time.LocalDateTime endTime);
 }

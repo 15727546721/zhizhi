@@ -396,4 +396,63 @@ public interface PostMapper {
             @Param("status") Integer status,
             @Param("keyword") String keyword
     );
+
+    // ==================== 统计相关方法 ====================
+    
+    /**
+     * 统计指定时间之后创建的帖子数
+     */
+    Long countByCreateTimeAfter(@Param("createTime") java.time.LocalDateTime createTime);
+    
+    /**
+     * 统计指定时间范围内创建的帖子数
+     */
+    Long countByCreateTimeBetween(@Param("startTime") java.time.LocalDateTime startTime, 
+                                   @Param("endTime") java.time.LocalDateTime endTime);
+    
+    /**
+     * 获取热门帖子排行（用于仪表盘）
+     */
+    List<java.util.Map<String, Object>> selectHotPosts(@Param("limit") int limit);
+    
+    // ==================== 游标分页方法（性能优化） ====================
+    
+    /**
+     * 游标分页：按时间倒序（最新）
+     *
+     * @param cursorId 游标ID（上一页最后一条记录的ID）
+     * @param tagId 标签ID（可选）
+     * @param limit 每页数量
+     * @return 帖子列表
+     */
+    List<Post> findByCursorLatest(
+            @Param("cursorId") Long cursorId,
+            @Param("tagId") Long tagId,
+            @Param("limit") int limit
+    );
+    
+    /**
+     * 游标分页：按热度倒序（热门）
+     *
+     * @param cursorScore 游标分数（上一页最后一条记录的热度分数）
+     * @param cursorId 游标ID（用于分数相同时的排序）
+     * @param tagId 标签ID（可选）
+     * @param limit 每页数量
+     * @return 帖子列表
+     */
+    List<Post> findByCursorHot(
+            @Param("cursorScore") Double cursorScore,
+            @Param("cursorId") Long cursorId,
+            @Param("tagId") Long tagId,
+            @Param("limit") int limit
+    );
+    
+    /**
+     * 游标分页：按标签筛选（最新）
+     */
+    List<Post> findByTagCursorLatest(
+            @Param("tagId") Long tagId,
+            @Param("cursorId") Long cursorId,
+            @Param("limit") int limit
+    );
 }

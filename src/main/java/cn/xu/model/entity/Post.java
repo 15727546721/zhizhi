@@ -2,6 +2,7 @@ package cn.xu.model.entity;
 
 import cn.xu.common.ResponseCode;
 import cn.xu.support.exception.BusinessException;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.*;
 
 import java.io.Serializable;
@@ -17,6 +18,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Post implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -240,11 +242,11 @@ public class Post implements Serializable {
     // ==================== 置顶操作 ====================
 
     public boolean isFeaturedPost() {
-        return this.isFeatured != null && this.isFeatured == 1;
+        return cn.xu.common.constants.BooleanConstants.isTrue(this.isFeatured);
     }
 
     public void setFeaturedPost(boolean featured) {
-        this.isFeatured = featured ? 1 : 0;
+        this.isFeatured = cn.xu.common.constants.BooleanConstants.toInteger(featured);
         this.updateTime = LocalDateTime.now();
     }
 

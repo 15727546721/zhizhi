@@ -1,29 +1,29 @@
 server:
-  port: 8091
+  port: ${SERVER_PORT:8091}
 
 # 数据库配置
 spring:
-  # 邮件服务配置
+  # 邮件服务配置（163邮箱，生产环境必须配置环境变量）
   mail:
-    host: smtp.qq.com                          # SMTP服务器地址
-    port: 587                                   # SMTP端口（587-TLS, 465-SSL）
-    username: your_email@qq.com                 # 发件人邮箱（请替换）
-    password: your_authorization_code           # 邮箱授权码（请替换，不是密码）
+    host: smtp.163.com
+    port: 465
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
     default-encoding: UTF-8
     properties:
       mail:
         smtp:
           auth: true
-          starttls:
+          ssl:
             enable: true
-            required: true
+            trust: smtp.163.com
           connectiontimeout: 5000
           timeout: 5000
           writetimeout: 5000
   datasource:
-    username: root
-    password: zhizhi123
-    url: jdbc:mysql://zhizhi-mysql:3306/zhizhi?useUnicode=true&characterEncoding=utf8&autoReconnect=true&zeroDateTimeBehavior=convertToNull&serverTimezone=UTC&useSSL=true
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:zhizhi123}
+    url: jdbc:mysql://${DB_HOST:zhizhi-mysql}:${DB_PORT:3306}/${DB_NAME:zhizhi}?useUnicode=true&characterEncoding=utf8&autoReconnect=true&zeroDateTimeBehavior=convertToNull&serverTimezone=UTC&useSSL=true
     driver-class-name: com.mysql.cj.jdbc.Driver
     type: com.zaxxer.hikari.HikariDataSource
     hikari:
@@ -35,11 +35,11 @@ spring:
       max-lifetime: 1800000 #此属性控制池中连接的最长生命周期，值0表示无限生命周期，默认1800000即30分钟
       connection-timeout: 30000 #数据库连接超时时间,默认30秒，即30000
       connection-test-query: SELECT 1
-#  elasticsearch:
-#    enabled: true  # 本地开发默认禁用Elasticsearch，避免无可用ES导致启动失败
-#    uris: elasticsearch:9200  # 使用本地ES容器
-#    connection-timeout: 5s
-#    read-timeout: 30s
+  elasticsearch:
+    enabled: ${ES_ENABLED:true}
+    uris: ${ES_URIS:elasticsearch:9200}
+    connection-timeout: 5s
+    read-timeout: 30s
 #  data:
 #    elasticsearch:
 #      enabled: true  # 本地开发默认禁用Elasticsearch，避免无可用ES导致启动失败
@@ -102,19 +102,19 @@ sa-token:
   # 配置 Sa-Token 单独使用的 Redis 连接
   alone-redis:
     # Redis数据库索引（默认为0）
-    database: 0
+    database: ${REDIS_DATABASE:0}
     # Redis服务器地址
-    host: redis
+    host: ${REDIS_HOST:redis}
     # Redis服务器连接端口
-    port: 6379
+    port: ${REDIS_PORT:6379}
     # Redis服务器连接密码（默认为空）
-    password:
+    password: ${REDIS_PASSWORD:}
     # 连接超时时间
     timeout: 6s
 
 minio:
-  url: http://minio:9000
-  accessKey: minioadmin
-  secretKey: minioadmin
-  bucketName: zhizhi
-  enabled: true  # 在开发环境中启用MinIO
+  url: ${MINIO_URL:http://minio:9000}
+  accessKey: ${MINIO_ACCESS_KEY:minioadmin}
+  secretKey: ${MINIO_SECRET_KEY:minioadmin}
+  bucketName: ${MINIO_BUCKET:zhizhi}
+  enabled: ${MINIO_ENABLED:true}

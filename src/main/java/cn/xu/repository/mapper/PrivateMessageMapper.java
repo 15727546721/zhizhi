@@ -54,4 +54,19 @@ public interface PrivateMessageMapper {
      * 物理删除某会话的所有消息
      */
     int deleteMessagesByConversation(@Param("userId1") Long userId1, @Param("userId2") Long userId2);
+    
+    /**
+     * 将打招呼消息状态从 PENDING 更新为 DELIVERED
+     * @param senderId 原发送者ID
+     * @param receiverId 原接收者ID（现在回复的人）
+     */
+    int updatePendingToDelivered(@Param("senderId") Long senderId, @Param("receiverId") Long receiverId);
+    
+    /**
+     * 搜索消息内容
+     */
+    List<PrivateMessage> searchMessages(@Param("userId") Long userId, 
+                                        @Param("keyword") String keyword,
+                                        @Param("offset") int offset, 
+                                        @Param("limit") int limit);
 }

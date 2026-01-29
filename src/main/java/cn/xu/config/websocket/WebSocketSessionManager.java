@@ -32,36 +32,44 @@ public class WebSocketSessionManager {
 
     /**
      * 添加用户会话
+     * 已优化：使用 synchronized 保证 userSessions 和 sessionUsers 的原子性操作
      */
     public void addSession(Long userId, String sessionId) {
         if (userId == null || sessionId == null) {
             return;
         }
         
-        userSessions.computeIfAbsent(userId, k -> ConcurrentHashMap.newKeySet())
-                    .add(sessionId);
-        sessionUsers.put(sessionId, userId);
+        // 使用 synchronized 保证两个 Map 操作的原子性
+        synchronized (this) {
+            userSessions.computeIfAbsent(userId, k -> ConcurrentHashMap.newKeySet())
+                        .add(sessionId);
+            sessionUsers.put(sessionId, userId);
+        }
         
         log.debug("[WebSocket] 添加会话: userId={}, sessionId={}, 当前会话数={}", 
-                  userId, sessionId, userSessions.get(userId).size());
+                  userId, sessionId, getSessions(userId).size());
     }
 
     /**
      * 移除用户会话
+     * 已优化：使用 synchronized 保证 userSessions 和 sessionUsers 的原子性操作
      */
     public void removeSession(Long userId, String sessionId) {
         if (userId == null || sessionId == null) {
             return;
         }
         
-        Set<String> sessions = userSessions.get(userId);
-        if (sessions != null) {
-            sessions.remove(sessionId);
-            if (sessions.isEmpty()) {
-                userSessions.remove(userId);
+        // 使用 synchronized 保证两个 Map 操作的原子性
+        synchronized (this) {
+            Set<String> sessions = userSessions.get(userId);
+            if (sessions != null) {
+                sessions.remove(sessionId);
+                if (sessions.isEmpty()) {
+                    userSessions.remove(userId);
+                }
             }
+            sessionUsers.remove(sessionId);
         }
-        sessionUsers.remove(sessionId);
         
         log.debug("[WebSocket] 移除会话: userId={}, sessionId={}", userId, sessionId);
     }

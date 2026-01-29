@@ -18,6 +18,8 @@ import java.time.LocalDateTime;
 @Data
 public class Tag implements Serializable {
     
+    private static final long serialVersionUID = 1L;
+    
     /**
      * 标签ID
      */

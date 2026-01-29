@@ -9,14 +9,16 @@ import cn.xu.model.vo.search.AggregateSearchVO.PostSearchItem;
 import cn.xu.model.vo.search.AggregateSearchVO.SearchResultGroup;
 import cn.xu.model.vo.search.AggregateSearchVO.TagSearchItem;
 import cn.xu.model.vo.search.AggregateSearchVO.UserSearchItem;
-import cn.xu.service.post.PostService;
+import cn.xu.service.post.PostQueryService;
+import cn.xu.service.post.PostStatisticsService;
 import cn.xu.service.post.TagService;
-import cn.xu.service.user.IUserService;
+import cn.xu.service.user.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
+import jakarta.annotation.PreDestroy;
+import jakarta.annotation.Resource;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -35,14 +37,17 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AggregateSearchService {
     
-    @Resource(name = "postService")
-    private PostService postService;
+    @Resource
+    private PostQueryService postQueryService;
+    
+    @Resource
+    private PostStatisticsService postStatisticsService;
     
     @Resource(name = "tagService")
     private TagService tagService;
     
     @Resource(name = "userService")
-    private IUserService userService;
+    private UserService userService;
     
     /**
      * 自定义线程池，用于异步搜索
@@ -52,7 +57,7 @@ public class AggregateSearchService {
     /**
      * 日期格式化器
      */
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final DateTimeFormatter DATE_FORMATTER = cn.xu.common.constants.TimeConstants.DATETIME_FORMATTER;
 
     /**
      * 默认搜索数量限制
@@ -63,6 +68,28 @@ public class AggregateSearchService {
      * 搜索超时时间
      */
     private static final int SEARCH_TIMEOUT_SECONDS = 5;
+
+    /**
+     * 关闭线程池（应用关闭时调用）
+     */
+    @PreDestroy
+    public void shutdown() {
+        log.info("正在关闭聚合搜索线程池...");
+        if (searchExecutor != null && !searchExecutor.isShutdown()) {
+            searchExecutor.shutdown();
+            try {
+                if (!searchExecutor.awaitTermination(10, TimeUnit.SECONDS)) {
+                    log.warn("线程池未能在10秒内正常关闭，强制关闭");
+                    searchExecutor.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                log.warn("等待线程池关闭时被中断，强制关闭");
+                searchExecutor.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
+        }
+        log.info("聚合搜索线程池已关闭");
+    }
 
     /**
      * 聚合搜索
@@ -139,9 +166,9 @@ public class AggregateSearchService {
      */
     private SearchResultGroup<PostSearchItem> searchPosts(String keyword, int limit) {
         try {
-            // 使用PostService搜索帖子
-            List<Post> posts = postService.searchPosts(keyword, 0, limit);
-            long total = postService.countSearchPosts(keyword);
+            // 使用PostQueryService搜索帖子
+            List<Post> posts = postQueryService.search(keyword, 0, limit);
+            long total = postStatisticsService.countSearch(keyword);
 
             if (posts == null || posts.isEmpty()) {
                 return buildEmptyPostResult();
@@ -303,7 +330,7 @@ public class AggregateSearchService {
                 .name(tag.getName())
                 .description(tag.getDescription())
                 .usageCount(tag.getUsageCount() != null ? tag.getUsageCount() : 0)
-                .isRecommended(tag.getIsRecommended() != null && tag.getIsRecommended() == 1)
+                .isRecommended(cn.xu.common.constants.BooleanConstants.isTrue(tag.getIsRecommended()))
                 .build();
     }
     

@@ -1,11 +1,13 @@
 package cn.xu.controller.web;
 
+import cn.xu.cache.core.RedisOperations;
 import cn.xu.common.ResponseCode;
 import cn.xu.common.response.ResponseEntity;
 import cn.xu.model.entity.Post;
-import cn.xu.service.post.PostService;
-import cn.xu.service.search.IElasticsearchIndexManager;
-import cn.xu.service.search.ISearchStrategy;
+import cn.xu.service.post.PostQueryService;
+import cn.xu.service.post.PostStatisticsService;
+import cn.xu.service.search.ElasticsearchIndexManager;
+import cn.xu.service.search.SearchStrategy;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -13,7 +15,6 @@ import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -33,24 +34,27 @@ import java.util.Set;
 public class ElasticsearchIndexController {
 
     // 依赖接口而非具体实现，符合依赖倒置原则（DIP）
-    private final IElasticsearchIndexManager indexManager;
-    private final ISearchStrategy searchStrategy;
-    private final PostService postService;
+    private final ElasticsearchIndexManager indexManager;
+    private final SearchStrategy searchStrategy;
+    private final PostQueryService postQueryService;
+    private final PostStatisticsService postStatisticsService;
     
     @org.springframework.beans.factory.annotation.Autowired(required = false)
-    private RedisTemplate<String, Object> redisTemplate;
+    private RedisOperations redisOps;
     
     /**
      * 构造器注入
      * 使用@Qualifier指定注入elasticsearchSearchStrategy而非mysqlSearchStrategy
      */
     public ElasticsearchIndexController(
-            IElasticsearchIndexManager indexManager,
-            @Qualifier("elasticsearchSearchStrategy") ISearchStrategy searchStrategy,
-            PostService postService) {
+            ElasticsearchIndexManager indexManager,
+            @Qualifier("elasticsearchSearchStrategy") SearchStrategy searchStrategy,
+            PostQueryService postQueryService,
+            PostStatisticsService postStatisticsService) {
         this.indexManager = indexManager;
         this.searchStrategy = searchStrategy;
-        this.postService = postService;
+        this.postQueryService = postQueryService;
+        this.postStatisticsService = postStatisticsService;
     }
 
     /**
@@ -78,7 +82,7 @@ public class ElasticsearchIndexController {
             
             while (true) {
                 // 分批获取已发布的帖子
-                List<Post> posts = postService.getAllPosts(currentOffset, batchSize);
+                List<Post> posts = postQueryService.getAll(currentOffset / batchSize + 1, batchSize);
                 
                 if (posts == null || posts.isEmpty()) {
                     break;
@@ -148,7 +152,7 @@ public class ElasticsearchIndexController {
     public ResponseEntity<ReindexResponse> reindexPost(
             @Parameter(description = "帖子ID") @PathVariable Long postId) {
         try {
-            java.util.Optional<Post> postOpt = postService.getPostById(postId);
+            java.util.Optional<Post> postOpt = postQueryService.getById(postId);
             if (!postOpt.isPresent()) {
                 ReindexResponse response = new ReindexResponse();
                 response.setMessage("帖子不存在: postId=" + postId);
@@ -200,7 +204,7 @@ public class ElasticsearchIndexController {
             // 获取MySQL中已发布的帖子数量
             long mysqlCount = 0;
             try {
-                mysqlCount = postService.countAllPosts();
+                mysqlCount = postStatisticsService.countAll();
             } catch (Exception e) {
                 log.warn("获取MySQL帖子数量失败", e);
             }
@@ -251,9 +255,9 @@ public class ElasticsearchIndexController {
             
             // 从Redis获取失败的索引任务
             String failedTasksKey = "es:index:failed:tasks";
-            Set<Object> failedPostIds = redisTemplate.opsForSet().members(failedTasksKey);
+            Set<Object> failedPostIds = redisOps.sMembers(failedTasksKey);
             
-            if (failedPostIds == null || failedPostIds.isEmpty()) {
+            if (failedPostIds.isEmpty()) {
                 ReindexResponse response = new ReindexResponse();
                 response.setMessage("没有失败的索引任务");
                 return ResponseEntity.<ReindexResponse>builder()
@@ -269,7 +273,7 @@ public class ElasticsearchIndexController {
             for (Object postIdObj : failedPostIds) {
                 try {
                     Long postId = Long.parseLong(postIdObj.toString());
-                    java.util.Optional<Post> postOpt = postService.getPostById(postId);
+                    java.util.Optional<Post> postOpt = postQueryService.getById(postId);
                     if (postOpt.isPresent()) {
                         Post post = postOpt.get();
                         if (post != null && "PUBLISHED".equals(post.getStatus())) {
@@ -277,18 +281,18 @@ public class ElasticsearchIndexController {
                             if (success) {
                                 totalIndexed++;
                                 // 从失败列表中移除
-                                redisTemplate.opsForSet().remove(failedTasksKey, postIdObj);
+                                redisOps.sRemove(failedTasksKey, postIdObj);
                             } else {
                                 log.warn("重试索引帖子失败: postId={}", postId);
                                 totalFailed++;
                             }
                         } else {
                             // 帖子未发布，从失败列表中移除
-                            redisTemplate.opsForSet().remove(failedTasksKey, postIdObj);
+                            redisOps.sRemove(failedTasksKey, postIdObj);
                         }
                     } else {
                         // 帖子不存在，从失败列表中移除
-                        redisTemplate.opsForSet().remove(failedTasksKey, postIdObj);
+                        redisOps.sRemove(failedTasksKey, postIdObj);
                     }
                 } catch (Exception e) {
                     log.warn("处理失败的索引任务失败: postId={}", postIdObj, e);

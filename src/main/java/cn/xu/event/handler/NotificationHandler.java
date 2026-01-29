@@ -7,9 +7,9 @@ import cn.xu.event.events.LikeEvent;
 import cn.xu.model.entity.Comment;
 import cn.xu.model.entity.Notification;
 import cn.xu.model.entity.Post;
-import cn.xu.repository.ICommentRepository;
+import cn.xu.repository.CommentRepository;
 import cn.xu.service.notification.NotificationService;
-import cn.xu.service.post.PostService;
+import cn.xu.service.post.PostQueryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
@@ -39,8 +39,8 @@ import java.util.Optional;
 public class NotificationHandler {
 
     private final NotificationService notificationService;
-    private final PostService postService;
-    private final ICommentRepository commentRepository;
+    private final PostQueryService postQueryService;
+    private final CommentRepository commentRepository;
 
     // ==================== 评论通知 ====================
 
@@ -58,7 +58,7 @@ public class NotificationHandler {
 
             if (event.isRootComment()) {
                 // 一级评论时通知帖子作者
-                Optional<Post> postOpt = postService.getPostById(event.getPostId());
+                Optional<Post> postOpt = postQueryService.getById(event.getPostId());
                 if (!postOpt.isPresent()) return;
                 receiverId = postOpt.get().getUserId();
                 notificationType = Notification.TYPE_COMMENT;
@@ -106,7 +106,7 @@ public class NotificationHandler {
             int businessType;
 
             if (event.getType() == LikeEvent.LikeType.POST) {
-                Optional<Post> postOpt = postService.getPostById(event.getTargetId());
+                Optional<Post> postOpt = postQueryService.getById(event.getTargetId());
                 if (!postOpt.isPresent()) return;
                 receiverId = postOpt.get().getUserId();
                 businessType = Notification.BUSINESS_POST;
@@ -155,7 +155,7 @@ public class NotificationHandler {
         if (!event.isFavorited()) return; // 只处理收藏
 
         try {
-            Optional<Post> postOpt = postService.getPostById(event.getPostId());
+            Optional<Post> postOpt = postQueryService.getById(event.getPostId());
             if (!postOpt.isPresent()) return;
 
             Long senderId = event.getOperatorId();

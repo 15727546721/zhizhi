@@ -3,7 +3,7 @@ package cn.xu.service.file;
 import cn.xu.integration.file.service.FileStorageService;
 import cn.xu.integration.file.service.FileUrlService;
 import cn.xu.model.entity.FileRecord;
-import cn.xu.repository.impl.FileRecordRepository;
+import cn.xu.repository.FileRecordRepository;
 import cn.xu.support.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -76,7 +76,7 @@ public class FileManagementService {
 
         } catch (Exception e) {
             log.error("文件上传失败 - 用户ID: {}", userId, e);
-            throw new BusinessException("文件上传失败: " + e.getMessage());
+            throw new BusinessException("文件上传失败，请稍后重试");
         }
     }
 
@@ -129,7 +129,7 @@ public class FileManagementService {
             }
         } catch (Exception e) {
             log.error("标记文件为永久保存失败: {}", urlOrPath, e);
-            throw new BusinessException("标记文件为永久保存失败: " + e.getMessage());
+            throw new BusinessException("标记文件为永久保存失败，请稍后重试");
         }
     }
 
@@ -228,7 +228,7 @@ public class FileManagementService {
 
         } catch (Exception e) {
             log.error("删除文件失败: {}", urlOrPath, e);
-            throw new BusinessException("删除文件失败: " + e.getMessage());
+            throw new BusinessException("删除文件失败，请稍后重试");
         }
     }
 

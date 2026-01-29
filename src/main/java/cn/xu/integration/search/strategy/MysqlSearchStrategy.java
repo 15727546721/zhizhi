@@ -4,7 +4,7 @@ import cn.xu.common.ResponseCode;
 import cn.xu.model.dto.search.SearchFilter;
 import cn.xu.model.entity.Post;
 import cn.xu.repository.mapper.PostMapper;
-import cn.xu.service.search.ISearchStrategy;
+import cn.xu.service.search.SearchStrategy;
 import cn.xu.support.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,7 +28,7 @@ import java.util.List;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class MysqlSearchStrategy implements ISearchStrategy {
+public class MysqlSearchStrategy implements SearchStrategy {
 
     private final PostMapper postMapper;
 
@@ -81,7 +81,7 @@ public class MysqlSearchStrategy implements ISearchStrategy {
             
         } catch (Exception e) {
             log.error("[搜索] MySQL搜索失败 - keyword: {}", keyword, e);
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "MySQL搜索失败: " + e.getMessage());
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "搜索失败，请稍后重试");
         }
     }
 

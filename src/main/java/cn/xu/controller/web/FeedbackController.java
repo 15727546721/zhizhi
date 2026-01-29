@@ -96,19 +96,19 @@ public class FeedbackController {
     @Operation(summary = "我的反馈列表")
     @ApiOperationLog(description = "获取我的反馈列表")
     public ResponseEntity<PageResponse<List<FeedbackVO>>> getMyFeedbackList(
-            @RequestParam(defaultValue = "1") Integer pageNo,
-            @RequestParam(defaultValue = "10") Integer pageSize) {
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "10") Integer size) {
         Long userId = LoginUserUtil.getLoginUserId();
-        int offset = (pageNo - 1) * pageSize;
+        int offset = (page - 1) * size;
 
-        List<Feedback> feedbacks = feedbackMapper.selectByUserId(userId, offset, pageSize);
+        List<Feedback> feedbacks = feedbackMapper.selectByUserId(userId, offset, size);
         long total = feedbackMapper.countByUserId(userId);
 
         List<FeedbackVO> voList = feedbacks.stream()
                 .map(FeedbackVO::fromFeedback)
                 .collect(Collectors.toList());
 
-        PageResponse<List<FeedbackVO>> pageResponse = PageResponse.ofList(pageNo, pageSize, total, voList);
+        PageResponse<List<FeedbackVO>> pageResponse = PageResponse.ofList(page, size, total, voList);
 
         return ResponseEntity.<PageResponse<List<FeedbackVO>>>builder()
                 .code(ResponseCode.SUCCESS.getCode())

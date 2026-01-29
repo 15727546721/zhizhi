@@ -224,7 +224,7 @@ public class AggregateSearchController {
      * @param keyword 要删除的关键词
      * @return 操作结果
      */
-    @DeleteMapping("/history")
+    @PostMapping("/history/delete")
     @Operation(summary = "删除搜索历史", description = "删除指定的搜索历史")
     public ResponseEntity<Void> deleteSearchHistory(@RequestParam String keyword) {
         Long userId = StpUtil.isLogin() ? StpUtil.getLoginIdAsLong() : null;
@@ -240,7 +240,7 @@ public class AggregateSearchController {
      * 
      * @return 操作结果
      */
-    @DeleteMapping("/history/clear")
+    @PostMapping("/history/clear")
     @Operation(summary = "清空搜索历史", description = "清空当前用户的所有搜索历史")
     public ResponseEntity<Void> clearSearchHistory() {
         Long userId = StpUtil.isLogin() ? StpUtil.getLoginIdAsLong() : null;

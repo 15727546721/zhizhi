@@ -65,7 +65,7 @@ public class FileStorageController {
             return ResponseEntity.success(fileUrls);
         } catch (Exception e) {
             log.error("文件上传失败", e);
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "文件上传失败: " + e.getMessage());
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "文件上传失败，请稍后重试");
         }
     }
 
@@ -96,7 +96,7 @@ public class FileStorageController {
             return ResponseEntity.success();
         } catch (Exception e) {
             log.error("批量删除文件失败", e);
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "批量删除文件失败: " + e.getMessage());
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "批量删除文件失败，请稍后重试");
         }
     }
 }

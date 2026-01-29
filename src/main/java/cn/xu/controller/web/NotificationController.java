@@ -105,7 +105,7 @@ public class NotificationController {
     /**
      * 标记单个通知为已读
      */
-    @PutMapping("/{id}/read")
+    @PostMapping("/{id}/read")
     @SaCheckLogin
     @Operation(summary = "标记通知为已读")
     @ApiOperationLog(description = "标记通知为已读")
@@ -120,7 +120,7 @@ public class NotificationController {
      * 
      * @param type 通知类型（可选，不传则标记全部）
      */
-    @PutMapping("/read-all")
+    @PostMapping("/read-all")
     @SaCheckLogin
     @Operation(summary = "标记全部通知为已读")
     @ApiOperationLog(description = "标记全部通知为已读")
@@ -135,7 +135,7 @@ public class NotificationController {
     /**
      * 删除单个通知
      */
-    @DeleteMapping("/{id}")
+    @PostMapping("/{id}/delete")
     @SaCheckLogin
     @Operation(summary = "删除通知")
     @ApiOperationLog(description = "删除通知")
@@ -148,7 +148,7 @@ public class NotificationController {
     /**
      * 批量删除通知
      */
-    @DeleteMapping("/batch")
+    @PostMapping("/batch/delete")
     @SaCheckLogin
     @Operation(summary = "批量删除通知")
     @ApiOperationLog(description = "批量删除通知")

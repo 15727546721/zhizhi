@@ -55,4 +55,9 @@ public interface UserConversationMapper {
     int updateRelationType(@Param("ownerId") Long ownerId,
                            @Param("otherUserId") Long otherUserId,
                            @Param("relationType") int relationType);
+    
+    /**
+     * 统计用户的活跃会话数量
+     */
+    int countActiveByOwnerId(Long ownerId);
 }

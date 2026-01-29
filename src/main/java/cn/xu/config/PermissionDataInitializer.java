@@ -1,10 +1,11 @@
 package cn.xu.config;
 
+import cn.xu.common.constants.RoleConstants;
 import cn.xu.model.entity.Menu;
 import cn.xu.model.entity.Role;
 import cn.xu.model.entity.User;
-import cn.xu.repository.IRoleRepository;
-import cn.xu.repository.IUserRepository;
+import cn.xu.repository.RoleRepository;
+import cn.xu.repository.UserRepository;
 import cn.xu.service.permission.PermissionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,7 +14,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.util.List;
 
 /**
@@ -44,10 +45,12 @@ public class PermissionDataInitializer implements CommandLineRunner {
     private PermissionService permissionService;
 
     @Resource
-    private IUserRepository userRepository;
+    private UserRepository userRepository;
 
     @Resource
-    private IRoleRepository roleRepository;
+    private RoleRepository roleRepository;
+    
+    private final AdminConfig adminConfig;
 
     /**
      * 是否启用数据完整性检查
@@ -65,11 +68,8 @@ public class PermissionDataInitializer implements CommandLineRunner {
 
     /** 预期的角色编码列表*/
     private static final String[] EXPECTED_ROLES = {
-            "super_admin", "content_admin", "user_admin", "viewer"
+            RoleConstants.CODE_SUPER_ADMIN, "content_admin", "user_admin", "viewer"
     };
-
-    /** 预期的管理员用户名*/
-    private static final String ADMIN_USERNAME = "admin";
 
     /** 预期的最少菜单数 */
     private static final int MIN_MENU_COUNT = 20;
@@ -184,7 +184,8 @@ public class PermissionDataInitializer implements CommandLineRunner {
      */
     private boolean checkAdminUser() {
         try {
-            User admin = userRepository.findByUsername(ADMIN_USERNAME).orElse(null);
+            String adminUsername = adminConfig.getUsername();
+            User admin = userRepository.findByUsername(adminUsername).orElse(null);
             return admin != null;
         } catch (Exception e) {
             log.warn("检查管理员用户失败", e);
@@ -197,7 +198,8 @@ public class PermissionDataInitializer implements CommandLineRunner {
      */
     private boolean checkAdminHasRole() {
         try {
-            User admin = userRepository.findByUsername(ADMIN_USERNAME).orElse(null);
+            String adminUsername = adminConfig.getUsername();
+            User admin = userRepository.findByUsername(adminUsername).orElse(null);
             if (admin == null) {
                 return false;
             }

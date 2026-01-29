@@ -18,8 +18,8 @@ import java.util.List;
  * <ul>
  *   <li>每天凌晨3点校验用户统计字段</li>
  *   <li>对比数据库实际统计和user表中的冗余字段</li>
- *   <li>发现不一致时自动修复</li>
- *   <li>记录修复日志供排查</li>
+ *   <li>发现不一致时自动同步</li>
+ *   <li>记录同步日志供排查</li>
  * </ul>
  */
 @Slf4j
@@ -61,7 +61,7 @@ public class UserCountVerifyTask {
 
                 totalCount += users.size();
 
-                // 2. 逐个校验并修复
+                // 2. 逐个校验并同步
                 for (User user : users) {
                     boolean fixed = verifyAndFixSingleUser(user);
                     if (fixed) {
@@ -78,7 +78,7 @@ public class UserCountVerifyTask {
             }
 
             long costTime = System.currentTimeMillis() - startTime;
-            log.info("[定时任务] 校验完成！总数={}, 修复数={}, 耗时={}ms",
+            log.info("[定时任务] 校验完成！总数={}, 同步数={}, 耗时={}ms",
                     totalCount, fixedCount, costTime);
 
         } catch (Exception e) {
@@ -87,12 +87,12 @@ public class UserCountVerifyTask {
     }
 
     /**
-     * 校验并修复单个用户的统计信息
+     * 校验并同步单个用户的统计信息
      *
-     * <p>比较数据库冗余字段与实际统计值，发现不一致时自动修复
+     * <p>比较数据库冗余字段与实际统计值，发现不一致时自动同步
      *
      * @param user 用户对象
-     * @return true表示进行了修复，false表示数据一致无需修复
+     * @return true表示进行了同步，false表示数据一致无需同步
      */
     private boolean verifyAndFixSingleUser(User user) {
         try {
@@ -126,7 +126,7 @@ public class UserCountVerifyTask {
             Long dbPostCount = user.getPostCount() != null ? user.getPostCount() : 0L;
             Long dbCommentCount = user.getCommentCount() != null ? user.getCommentCount() : 0L;
 
-            // 7. 对比并判断是否需要修复
+            // 7. 对比并判断是否需要同步
             boolean needFix = !dbFollowCount.equals(actualFollowCount)
                     || !dbFansCount.equals(actualFansCount)
                     || !dbLikeCount.equals(actualLikeCount)
@@ -144,7 +144,7 @@ public class UserCountVerifyTask {
                         dbCommentCount, actualCommentCount
                 );
 
-                // 8. 修复数据
+                // 8. 同步数据
                 userMapper.updateUserCounts(
                         userId,
                         actualFollowCount,
@@ -154,7 +154,7 @@ public class UserCountVerifyTask {
                         actualCommentCount
                 );
 
-                log.info("[修复成功] userId={}, username={}", userId, user.getUsername());
+                log.info("[同步成功] userId={}, username={}", userId, user.getUsername());
                 return true;
             }
 
@@ -199,7 +199,7 @@ public class UserCountVerifyTask {
     }
 
     /**
-     * 手动触发校验（可在Controller中调用，用于紧急修复）
+     * 手动触发校验（可在Controller中调用，用于紧急同步）
      *
      * <p>示例：当发现计数不准时，可以通过API手动触发重新校验
      */

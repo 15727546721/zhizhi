@@ -5,7 +5,7 @@ import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.common.ResponseCode;
 import cn.xu.common.annotation.ApiOperationLog;
 import cn.xu.common.response.ResponseEntity;
-import cn.xu.model.vo.FollowUserVO;
+import cn.xu.model.vo.follow.FollowUserVO;
 import cn.xu.service.follow.FollowService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -14,7 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.util.List;
 
 /**
@@ -120,12 +120,12 @@ public class FollowController {
     @ApiOperationLog(description = "获取我的关注列表")
     public ResponseEntity<List<FollowUserVO>> getFollowingList(
             @Parameter(description = "页码")
-            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(defaultValue = "1") Integer page,
             @Parameter(description = "每页数量")
-            @RequestParam(defaultValue = "10") Integer pageSize) {
-        log.info("获取关注列表，页码：{}，每页数量：{}", pageNum, pageSize);
+            @RequestParam(defaultValue = "10") Integer size) {
+        log.info("获取关注列表，页码：{}，每页数量：{}", page, size);
         Long currentUserId = StpUtil.getLoginIdAsLong();
-        List<FollowUserVO> followingList = followService.getFollowingListWithUserInfo(currentUserId, pageNum, pageSize);
+        List<FollowUserVO> followingList = followService.getFollowingListWithUserInfo(currentUserId, page, size);
         return ResponseEntity.<List<FollowUserVO>>builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .data(followingList)
@@ -139,17 +139,17 @@ public class FollowController {
             @Parameter(description = "用户ID", required = true)
             @PathVariable Long userId,
             @Parameter(description = "页码")
-            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(defaultValue = "1") Integer page,
             @Parameter(description = "每页数量")
-            @RequestParam(defaultValue = "10") Integer pageSize) {
-        log.info("获取指定用户的关注列表，用户ID：{}，页码：{}，每页数量：{}", userId, pageNum, pageSize);
+            @RequestParam(defaultValue = "10") Integer size) {
+        log.info("获取指定用户的关注列表，用户ID：{}，页码：{}，每页数量：{}", userId, page, size);
         if (userId == null || userId <= 0) {
             return ResponseEntity.<List<FollowUserVO>>builder()
                     .code(ResponseCode.ILLEGAL_PARAMETER.getCode())
                     .info("用户ID不能为空")
                     .build();
         }
-        List<FollowUserVO> followingList = followService.getFollowingListWithUserInfo(userId, pageNum, pageSize);
+        List<FollowUserVO> followingList = followService.getFollowingListWithUserInfo(userId, page, size);
         return ResponseEntity.<List<FollowUserVO>>builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .data(followingList)
@@ -170,12 +170,12 @@ public class FollowController {
     @ApiOperationLog(description = "获取我的粉丝列表")
     public ResponseEntity<List<FollowUserVO>> getFollowersList(
             @Parameter(description = "页码")
-            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(defaultValue = "1") Integer page,
             @Parameter(description = "每页数量")
-            @RequestParam(defaultValue = "10") Integer pageSize) {
-        log.info("获取粉丝列表，页码：{}，每页数量：{}", pageNum, pageSize);
+            @RequestParam(defaultValue = "10") Integer size) {
+        log.info("获取粉丝列表，页码：{}，每页数量：{}", page, size);
         Long currentUserId = StpUtil.getLoginIdAsLong();
-        List<FollowUserVO> followersList = followService.getFollowersListWithUserInfo(currentUserId, pageNum, pageSize);
+        List<FollowUserVO> followersList = followService.getFollowersListWithUserInfo(currentUserId, page, size);
         return ResponseEntity.<List<FollowUserVO>>builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .data(followersList)
@@ -189,17 +189,17 @@ public class FollowController {
             @Parameter(description = "用户ID", required = true)
             @PathVariable Long userId,
             @Parameter(description = "页码")
-            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(defaultValue = "1") Integer page,
             @Parameter(description = "每页数量")
-            @RequestParam(defaultValue = "10") Integer pageSize) {
-        log.info("获取指定用户的粉丝列表，用户ID：{}，页码：{}，每页数量：{}", userId, pageNum, pageSize);
+            @RequestParam(defaultValue = "10") Integer size) {
+        log.info("获取指定用户的粉丝列表，用户ID：{}，页码：{}，每页数量：{}", userId, page, size);
         if (userId == null || userId <= 0) {
             return ResponseEntity.<List<FollowUserVO>>builder()
                     .code(ResponseCode.ILLEGAL_PARAMETER.getCode())
                     .info("用户ID不能为空")
                     .build();
         }
-        List<FollowUserVO> followersList = followService.getFollowersListWithUserInfo(userId, pageNum, pageSize);
+        List<FollowUserVO> followersList = followService.getFollowersListWithUserInfo(userId, page, size);
         return ResponseEntity.<List<FollowUserVO>>builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .data(followersList)

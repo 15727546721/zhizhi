@@ -5,8 +5,8 @@ import cn.xu.common.ResponseCode;
 import cn.xu.common.annotation.ApiOperationLog;
 import cn.xu.common.response.PageResponse;
 import cn.xu.common.response.ResponseEntity;
-import cn.xu.model.dto.favorite.FavoriteCountResponse;
 import cn.xu.model.dto.favorite.FavoriteRequest;
+import cn.xu.model.vo.favorite.FavoriteCountVO;
 import cn.xu.model.dto.favorite.GetMyFavoritesRequest;
 import cn.xu.model.entity.Post;
 import cn.xu.model.entity.User;
@@ -14,8 +14,8 @@ import cn.xu.model.enums.favorite.TargetType;
 import cn.xu.model.vo.post.PostItemVO;
 import cn.xu.model.vo.post.PostListVO;
 import cn.xu.service.favorite.FavoriteService;
-import cn.xu.service.post.PostService;
-import cn.xu.service.user.IUserService;
+import cn.xu.service.post.PostQueryService;
+import cn.xu.service.user.UserService;
 import cn.xu.support.exception.BusinessException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -24,7 +24,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -43,8 +43,8 @@ import java.util.stream.Collectors;
 public class FavoriteController {
 
     private final FavoriteService favoriteService;
-    private final PostService postService;
-    private final IUserService userService;
+    private final PostQueryService postQueryService;
+    private final UserService userService;
 
     /**
      * 添加收藏
@@ -63,7 +63,7 @@ public class FavoriteController {
         Long userId = StpUtil.getLoginIdAsLong();
         try {
             TargetType targetType = TargetType.fromCode(request.getTargetType());
-            favoriteService.favorite(userId, request.getTargetId(), targetType.getApiCode());
+            favoriteService.favorite(userId, request.getTargetId(), targetType.getApiCode(), request.getFolderId());
             return ResponseEntity.<Void>builder()
                     .code(ResponseCode.SUCCESS.getCode())
                     .info("收藏成功")
@@ -164,27 +164,27 @@ public class FavoriteController {
      */
     @Operation(summary = "批量检查收藏状态")
     @PostMapping("/check/batch")
-    public ResponseEntity<List<FavoriteCountResponse>> batchCheckStatus(@RequestBody List<FavoriteRequest> requests) {
+    public ResponseEntity<List<FavoriteCountVO>> batchCheckStatus(@RequestBody List<FavoriteRequest> requests) {
         Long userId = StpUtil.getLoginIdAsLong();
         try {
-            List<FavoriteCountResponse> responses = requests.stream()
+            List<FavoriteCountVO> responses = requests.stream()
                     .map(request -> {
                         TargetType targetTypeEnum = TargetType.fromCode(request.getTargetType());
                         boolean favorited = favoriteService.isFavorited(userId, request.getTargetId(), targetTypeEnum.getApiCode());
-                        return FavoriteCountResponse.builder()
+                        return FavoriteCountVO.builder()
                                 .targetId(request.getTargetId())
                                 .targetType(targetTypeEnum.getApiCode())
                                 .isFavorited(favorited)
                                 .build();
                     })
                     .collect(Collectors.toList());
-            return ResponseEntity.<List<FavoriteCountResponse>>builder()
+            return ResponseEntity.<List<FavoriteCountVO>>builder()
                     .code(ResponseCode.SUCCESS.getCode())
                     .data(responses)
                     .build();
         } catch (Exception e) {
             log.error("批量检查收藏状态异常", e);
-            return ResponseEntity.<List<FavoriteCountResponse>>builder()
+            return ResponseEntity.<List<FavoriteCountVO>>builder()
                     .code(ResponseCode.UN_ERROR.getCode())
                     .info("查询失败")
                     .build();
@@ -243,7 +243,7 @@ public class FavoriteController {
     // ==================== 私有辅助方法 ====================
     
     private List<PostListVO> buildPostListVOs(List<Long> postIds) {
-        List<Post> posts = postService.getPostsByIds(postIds);
+        List<Post> posts = postQueryService.getByIds(postIds);
         Map<Long, Post> postMap = posts.stream()
                 .collect(Collectors.toMap(Post::getId, p -> p, (a, b) -> a));
         Map<Long, User> userMap = getUserMap(posts);

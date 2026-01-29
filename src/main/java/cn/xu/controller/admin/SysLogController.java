@@ -77,7 +77,7 @@ public class SysLogController {
      * @param ids 日志ID列表
      * @return 删除结果
      */
-    @DeleteMapping("/api/system/adminLog/delete")
+    @PostMapping("/api/system/adminLog/delete")
     @Operation(summary = "删除操作日志")
     @SaCheckLogin
     @SaCheckPermission("system:log:delete")
@@ -132,7 +132,7 @@ public class SysLogController {
      * @param ids 日志ID列表
      * @return 删除结果
      */
-    @DeleteMapping("/api/system/exceptionLog/delete")
+    @PostMapping("/api/system/exceptionLog/delete")
     @Operation(summary = "删除异常日志")
     @SaCheckLogin
     @SaCheckPermission("system:log:delete")
@@ -188,7 +188,7 @@ public class SysLogController {
      * @param ids 日志ID列表
      * @return 删除结果
      */
-    @DeleteMapping("/api/system/userLog/delete")
+    @PostMapping("/api/system/userLog/delete")
     @Operation(summary = "删除用户日志")
     @SaCheckLogin
     @SaCheckPermission("system:log:delete")

@@ -111,6 +111,14 @@ public interface LikeMapper {
     long countByUserId(@Param("userId") Long userId);
     
     /**
+     * 统计用户对指定类型的点赞数
+     * @param userId 用户ID
+     * @param type 点赞类型
+     * @return 点赞数
+     */
+    long countByUserIdAndType(@Param("userId") Long userId, @Param("type") Integer type);
+    
+    /**
      * 批量查询用户对多个目标的点赞记录
      * @param userId 用户ID
      * @param type 点赞类型

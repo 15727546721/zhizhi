@@ -5,24 +5,7 @@ spring:
     allow-bean-definition-overriding: true
   # 激活开发环境配置
   profiles:
-    active: prod
-  # 邮件服务配置（请替换为您的真实配置）
-  mail:
-    host: ${MAIL_HOST:smtp.qq.com}                    # SMTP服务器地址
-    port: ${MAIL_PORT:587}                            # SMTP端口（587-TLS, 465-SSL）
-    username: ${MAIL_USERNAME:your_email@qq.com}      # 发件人邮箱
-    password: ${MAIL_PASSWORD:your_authorization_code} # 邮箱授权码（从环境变量读取）
-    default-encoding: UTF-8
-    properties:
-      mail:
-        smtp:
-          auth: true                            # 启用SMTP认证
-          starttls:
-            enable: true                        # 启用TLS
-            required: true
-          connectiontimeout: 5000               # 连接超时（毫秒）
-          timeout: 5000                         # 读取超时
-          writetimeout: 5000                    # 写入超时
+    active: dev
   # 文件上传配置
   servlet:
     multipart:
@@ -94,6 +77,12 @@ sa-token:
 
 # 可选：配置索引名称
 app:
+  # 管理员账号配置（建议通过环境变量设置密码）
+  admin:
+    username: ${ADMIN_USERNAME:admin}
+    password: ${ADMIN_PASSWORD:ChangeMe123!}
+    email: ${ADMIN_EMAIL:admin@example.com}
+    nickname: 系统管理员
   elasticsearch:
     index:
       comments: comments

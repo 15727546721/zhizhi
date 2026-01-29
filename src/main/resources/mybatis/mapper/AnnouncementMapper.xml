@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.xu.repository.mapper.AnnouncementMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="cn.xu.model.entity.Announcement">
+        <id column="id" property="id"/>
+        <result column="title" property="title"/>
+        <result column="content" property="content"/>
+        <result column="type" property="type"/>
+        <result column="status" property="status"/>
+        <result column="is_top" property="isTop"/>
+        <result column="publisher_id" property="publisherId"/>
+        <result column="publish_time" property="publishTime"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <!-- 基础列 -->
+    <sql id="Base_Column_List">
+        id, title, content, type, status, is_top, publisher_id, publish_time, create_time, update_time
+    </sql>
+
+    <!-- 插入公告 -->
+    <insert id="insert" parameterType="cn.xu.model.entity.Announcement" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO announcement (title, content, type, status, is_top, publisher_id, publish_time, create_time, update_time)
+        VALUES (#{title}, #{content}, #{type}, #{status}, #{isTop}, #{publisherId}, #{publishTime}, 
+                COALESCE(#{createTime}, NOW()), COALESCE(#{updateTime}, NOW()))
+    </insert>
+
+    <!-- 根据ID查询 -->
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM announcement
+        WHERE id = #{id}
+    </select>
+
+    <!-- 更新公告 -->
+    <update id="updateById" parameterType="cn.xu.model.entity.Announcement">
+        UPDATE announcement
+        <set>
+            <if test="title != null">title = #{title},</if>
+            <if test="content != null">content = #{content},</if>
+            <if test="type != null">type = #{type},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="isTop != null">is_top = #{isTop},</if>
+            <if test="publisherId != null">publisher_id = #{publisherId},</if>
+            <if test="publishTime != null">publish_time = #{publishTime},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 删除公告 -->
+    <delete id="deleteById">
+        DELETE FROM announcement WHERE id = #{id}
+    </delete>
+
+    <!-- 批量删除公告 -->
+    <delete id="deleteBatchIds">
+        DELETE FROM announcement
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <!-- 获取已发布的公告列表（用户端） -->
+    <select id="selectPublishedList" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM announcement
+        WHERE status = 1
+        ORDER BY is_top DESC, publish_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 统计已发布的公告数量 -->
+    <select id="countPublished" resultType="long">
+        SELECT COUNT(*) FROM announcement WHERE status = 1
+    </select>
+
+    <!-- 获取公告列表（管理端，支持筛选） -->
+    <select id="selectListWithFilters" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM announcement
+        <where>
+            <if test="type != null">
+                AND type = #{type}
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND title LIKE CONCAT('%', #{keyword}, '%')
+            </if>
+        </where>
+        ORDER BY is_top DESC, create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 统计公告数量（管理端） -->
+    <select id="countWithFilters" resultType="long">
+        SELECT COUNT(*)
+        FROM announcement
+        <where>
+            <if test="type != null">
+                AND type = #{type}
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND title LIKE CONCAT('%', #{keyword}, '%')
+            </if>
+        </where>
+    </select>
+
+</mapper>

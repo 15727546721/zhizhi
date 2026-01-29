@@ -16,6 +16,8 @@ import java.io.Serializable;
 @AllArgsConstructor
 public class UserRole implements Serializable {
     
+    private static final long serialVersionUID = 1L;
+    
     /**
      * 主键ID
      */

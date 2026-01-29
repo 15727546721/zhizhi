@@ -1,9 +1,9 @@
 package cn.xu.task;
 
-import cn.xu.cache.UserRankingCacheRepository;
+import cn.xu.cache.repository.UserRankingCacheRepository;
 import cn.xu.model.entity.User;
-import cn.xu.repository.IUserRepository;
-import cn.xu.repository.impl.PostRepository;
+import cn.xu.repository.UserRepository;
+import cn.xu.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -22,7 +22,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class UserRankingCacheUpdateTask {
 
-    private final IUserRepository userRepository;
+    private final UserRepository userRepository;
     private final PostRepository postRepository;
     private final UserRankingCacheRepository userRankingCacheRepository;
 

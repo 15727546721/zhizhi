@@ -2,6 +2,7 @@ package cn.xu.service.permission;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.common.ResponseCode;
+import cn.xu.common.constants.RoleConstants;
 import cn.xu.common.response.PageResponse;
 import cn.xu.config.satoken.UserPermission;
 import cn.xu.model.dto.permission.RoleAddOrUpdateRequest;
@@ -12,14 +13,14 @@ import cn.xu.model.vo.permission.MenuComponentVO;
 import cn.xu.model.vo.permission.MenuOptionsVO;
 import cn.xu.model.vo.permission.MenuTypeVO;
 import cn.xu.model.vo.permission.RouterVO;
-import cn.xu.repository.IPermissionRepository;
+import cn.xu.repository.PermissionRepository;
 import cn.xu.support.exception.BusinessException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -33,7 +34,7 @@ import java.util.stream.Collectors;
 public class PermissionServiceImpl implements PermissionService {
 
     @Resource
-    private IPermissionRepository permissionRepository;
+    private PermissionRepository permissionRepository;
     @Resource
     private TransactionTemplate transactionTemplate;
     @Resource
@@ -82,13 +83,10 @@ public class PermissionServiceImpl implements PermissionService {
 
     @Override
     public List<Long> findRoleMenuIdsById(Long roleId) {
-        Optional<Role> roleEntityOptional = permissionRepository.findRoleById(roleId);
-        if (!roleEntityOptional.isPresent()) {
-            throw new BusinessException(ResponseCode.NULL_RESPONSE.getCode(), "角色不存在");
-        }
+        Role roleEntity = permissionRepository.findRoleById(roleId)
+                .orElseThrow(() -> new BusinessException(ResponseCode.NULL_RESPONSE.getCode(), "角色不存在"));
 
-        Role roleEntity = roleEntityOptional.get();
-        if ("admin".equals(roleEntity.getCode())) {
+        if (RoleConstants.CODE_ADMIN.equals(roleEntity.getCode())) {
             return permissionRepository.findAllMenuIds();
         }
 
@@ -112,7 +110,7 @@ public class PermissionServiceImpl implements PermissionService {
         }
 
         Optional<Role> roleEntityOptional = permissionRepository.findRoleById(roleId);
-        if (roleEntityOptional.isPresent() && "admin".equals(roleEntityOptional.get().getCode())) {
+        if (roleEntityOptional.isPresent() && RoleConstants.CODE_ADMIN.equals(roleEntityOptional.get().getCode())) {
             return;
         }
 
@@ -149,12 +147,9 @@ public class PermissionServiceImpl implements PermissionService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void updateRole(RoleAddOrUpdateRequest role) {
-        Optional<Role> existingRoleOptional = permissionRepository.findRoleById(role.getId());
-        if (!existingRoleOptional.isPresent()) {
-            throw new BusinessException(ResponseCode.NULL_RESPONSE.getCode(), "角色不存在");
-        }
+        Role existingRole = permissionRepository.findRoleById(role.getId())
+                .orElseThrow(() -> new BusinessException(ResponseCode.NULL_RESPONSE.getCode(), "角色不存在"));
 
-        Role existingRole = existingRoleOptional.get();
         if (!existingRole.getCode().equals(role.getCode()) &&
                 permissionRepository.existsByCode(role.getCode())) {
             throw new BusinessException(ResponseCode.DUPLICATE_KEY.getCode(), "角色编码已存在");
@@ -201,7 +196,7 @@ public class PermissionServiceImpl implements PermissionService {
     public List<RouterVO> getCurrentUserMenu() {
         List<Menu> menus;
         try {
-            if (StpUtil.hasRole("super_admin")) {
+            if (StpUtil.hasRole(RoleConstants.CODE_SUPER_ADMIN)) {
                 menus = permissionRepository.findAllMenus();
             } else {
                 List<Long> menuIds = permissionRepository.findMenuIdsByUserId(StpUtil.getLoginIdAsLong());

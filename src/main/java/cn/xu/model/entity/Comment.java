@@ -2,6 +2,7 @@ package cn.xu.model.entity;
 
 import cn.xu.common.ResponseCode;
 import cn.xu.support.exception.BusinessException;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -25,7 +26,10 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Comment implements Serializable {
+    
+    private static final long serialVersionUID = 1L;
     
     // ========== 数据库字段 ==========
     

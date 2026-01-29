@@ -27,7 +27,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
@@ -152,7 +152,7 @@ public class FileController {
      * @param fileUrls 文件URL列表
      * @return 删除结果
      */
-    @DeleteMapping("/batchDelete")
+    @PostMapping("/batchDelete")
     @Operation(summary = "批量删除文件", description = "批量删除文件存储系统中的文件")
     @SaCheckLogin
     @SaCheckPermission("system:file:delete")

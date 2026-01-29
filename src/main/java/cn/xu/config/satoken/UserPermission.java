@@ -3,7 +3,7 @@ package cn.xu.config.satoken;
 import cn.dev33.satoken.session.SaSession;
 import cn.dev33.satoken.stp.StpInterface;
 import cn.dev33.satoken.stp.StpUtil;
-import cn.xu.repository.impl.PermissionRepository;
+import cn.xu.repository.PermissionRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -6,11 +6,12 @@ import cn.xu.model.dto.report.ReportRequest;
 import cn.xu.model.entity.*;
 import cn.xu.model.vo.report.ReportDetailVO;
 import cn.xu.model.vo.report.ReportVO;
-import cn.xu.repository.ICommentRepository;
+import cn.xu.repository.CommentRepository;
 import cn.xu.repository.mapper.ReportMapper;
 import cn.xu.service.notification.NotificationService;
-import cn.xu.service.post.PostService;
-import cn.xu.service.user.IUserService;
+import cn.xu.service.post.PostQueryService;
+import cn.xu.service.post.PostCommandService;
+import cn.xu.service.user.UserService;
 import cn.xu.support.exception.BusinessException;
 import com.alibaba.fastjson2.JSON;
 import lombok.RequiredArgsConstructor;
@@ -34,9 +35,10 @@ import java.util.stream.Collectors;
 public class ReportService {
 
     private final ReportMapper reportMapper;
-    private final IUserService userService;
-    private final PostService postService;
-    private final ICommentRepository commentRepository;
+    private final UserService userService;
+    private final PostQueryService postQueryService;
+    private final PostCommandService postCommandService;
+    private final CommentRepository commentRepository;
     private final NotificationService notificationService;
 
     // ==================== 用户端接口 ====================
@@ -287,7 +289,7 @@ public class ReportService {
     private Long getTargetUserId(Integer targetType, Long targetId) {
         switch (targetType) {
             case Report.TARGET_TYPE_POST:
-                return postService.getPostById(targetId)
+                return postQueryService.getById(targetId)
                         .map(Post::getUserId)
                         .orElse(null);
             case Report.TARGET_TYPE_COMMENT:
@@ -308,7 +310,7 @@ public class ReportService {
         try {
             switch (targetType) {
                 case Report.TARGET_TYPE_POST:
-                    return postService.getPostById(targetId)
+                    return postQueryService.getById(targetId)
                             .map(Post::getTitle)
                             .orElse("[帖子已删除]");
                 case Report.TARGET_TYPE_COMMENT:
@@ -392,7 +394,7 @@ public class ReportService {
                     // 删除内容
                     if (report.getTargetType() == Report.TARGET_TYPE_POST) {
                         // 管理员删除，isAdmin=true
-                        postService.deletePost(report.getTargetId(), null, true);
+                        postCommandService.deletePost(report.getTargetId(), null, true);
                         log.info("[举报] 删除帖子: {}", report.getTargetId());
                     } else if (report.getTargetType() == Report.TARGET_TYPE_COMMENT) {
                         commentRepository.deleteById(report.getTargetId());

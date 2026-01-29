@@ -1,6 +1,6 @@
 package cn.xu.support.util;
 
-import cn.xu.cache.RedisService;
+import cn.xu.cache.core.RedisOperations;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicLong;
 @Slf4j
 public class SecureRateLimitService {
 
-    private final RedisService redisService;
+    private final RedisOperations redisOperations;
     
     // 内存降级频控（Redis不可用时使用）
     private final ConcurrentHashMap<String, AtomicLong> memoryCounters = new ConcurrentHashMap<>();
@@ -35,10 +35,10 @@ public class SecureRateLimitService {
     public RateLimitResult checkFixedWindow(String key, int limit, int windowSeconds) {
         try {
             // 使用Redis INCR进行原子递增
-            long newCount = redisService.incr(key, 1L);
+            long newCount = redisOperations.increment(key, 1L);
             if (newCount == 1) {
                 // 第一次设置过期时间
-                redisService.expire(key, windowSeconds);
+                redisOperations.expire(key, windowSeconds);
             }
             
             boolean allowed = newCount <= limit;
@@ -77,10 +77,10 @@ public class SecureRateLimitService {
 
     /**
      * 内存降级频控（Redis不可用时使用）
+     * 已优化：使用 synchronized 保证计数器操作的原子性，避免竞态条件
      */
-    private RateLimitResult checkMemoryFallback(String key, int limit, int windowSeconds) {
+    private synchronized RateLimitResult checkMemoryFallback(String key, int limit, int windowSeconds) {
         long currentTime = System.currentTimeMillis();
-        long windowStartTime = currentTime - windowSeconds * 1000L;
         
         // 清理过期的计数器
         cleanupExpiredCounters(currentTime);

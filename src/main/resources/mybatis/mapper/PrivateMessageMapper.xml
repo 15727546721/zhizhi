@@ -61,6 +61,7 @@
     </select>
     
     <!-- 查询两个用户之间的消息，根据查看者过滤已删除的消息，包含用户头像和昵称 -->
+    <!-- 微博模式：PENDING(2)状态消息双方都可见，只过滤BLOCKED(3)状态（被屏蔽的消息接收方不可见） -->
     <!-- 分页逻辑：先按时间倒序取最新N条，再按时间升序返回（UI从上到下时间递增） -->
     <select id="selectMessagesBetweenUsers" resultMap="MessageWithUserResultMap">
         SELECT * FROM (
@@ -85,7 +86,9 @@
                 OR
                 (pm.receiver_id = #{viewerId} AND pm.receiver_deleted = 0)
             )
-            AND (pm.status = 1 OR pm.sender_id = #{viewerId})
+            <!-- 状态过滤：BLOCKED(3)消息只有发送方能看到，其他状态双方都能看到 -->
+            AND (pm.status != 3 OR pm.sender_id = #{viewerId})
+            <!-- 撤回消息(4)双方都能看到"已撤回"提示 -->
             ORDER BY pm.create_time DESC
             LIMIT #{limit} OFFSET #{offset}
         ) AS t
@@ -98,7 +101,7 @@
         WHERE receiver_id = #{receiverId}
           AND sender_id = #{senderId}
           AND is_read = 0
-          AND status = 1
+          AND status IN (1, 2)  <!-- DELIVERED 和 PENDING 都计入未读 -->
           AND receiver_deleted = 0
     </select>
     
@@ -152,5 +155,39 @@
         WHERE (sender_id = #{userId1} AND receiver_id = #{userId2})
            OR (sender_id = #{userId2} AND receiver_id = #{userId1})
     </delete>
+    
+    <!-- 将打招呼消息状态从 PENDING(2) 更新为 DELIVERED(1) -->
+    <update id="updatePendingToDelivered">
+        UPDATE private_message
+        SET status = 1, update_time = NOW()
+        WHERE sender_id = #{senderId}
+          AND receiver_id = #{receiverId}
+          AND status = 2
+    </update>
+    
+    <!-- 搜索消息内容 -->
+    <select id="searchMessages" resultMap="MessageWithUserResultMap">
+        SELECT 
+            pm.id, pm.sender_id, pm.receiver_id, pm.content, pm.message_type, pm.media_url,
+            pm.status, pm.is_read, pm.read_time, pm.sender_deleted, pm.receiver_deleted,
+            pm.create_time, pm.update_time,
+            sender.avatar AS sender_avatar,
+            sender.nickname AS sender_nickname,
+            receiver.avatar AS receiver_avatar,
+            receiver.nickname AS receiver_nickname
+        FROM private_message pm
+        LEFT JOIN user sender ON pm.sender_id = sender.id
+        LEFT JOIN user receiver ON pm.receiver_id = receiver.id
+        WHERE (pm.sender_id = #{userId} OR pm.receiver_id = #{userId})
+          AND pm.content LIKE CONCAT('%', #{keyword}, '%')
+          AND pm.status != 4  <!-- 排除已撤回消息 -->
+          AND (
+              (pm.sender_id = #{userId} AND pm.sender_deleted = 0)
+              OR
+              (pm.receiver_id = #{userId} AND pm.receiver_deleted = 0)
+          )
+        ORDER BY pm.create_time DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
     
 </mapper>

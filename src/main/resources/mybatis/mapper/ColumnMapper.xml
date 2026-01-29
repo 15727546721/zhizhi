@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.xu.repository.mapper.ColumnMapper">
+
+    <resultMap id="BaseResultMap" type="cn.xu.model.entity.Column">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="name" property="name"/>
+        <result column="description" property="description"/>
+        <result column="cover_url" property="coverUrl"/>
+        <result column="status" property="status"/>
+        <result column="post_count" property="postCount"/>
+        <result column="subscribe_count" property="subscribeCount"/>
+        <result column="is_recommended" property="isRecommended"/>
+        <result column="sort" property="sort"/>
+        <result column="last_post_time" property="lastPostTime"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, user_id, name, description, cover_url, status, post_count, subscribe_count, 
+        is_recommended, sort, last_post_time, create_time, update_time
+    </sql>
+
+    <insert id="insert" parameterType="cn.xu.model.entity.Column" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO `column` (user_id, name, description, cover_url, status, post_count, subscribe_count, 
+                             is_recommended, sort, last_post_time, create_time, update_time)
+        VALUES (#{userId}, #{name}, #{description}, #{coverUrl}, #{status}, #{postCount}, #{subscribeCount}, 
+                #{isRecommended}, #{sort}, #{lastPostTime}, #{createTime}, #{updateTime})
+    </insert>
+
+    <update id="update" parameterType="cn.xu.model.entity.Column">
+        UPDATE `column`
+        <set>
+            <if test="name != null">name = #{name},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="coverUrl != null">cover_url = #{coverUrl},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="sort != null">sort = #{sort},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM `column`
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectByUserId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM `column`
+        WHERE user_id = #{userId}
+        ORDER BY sort ASC, create_time DESC
+    </select>
+
+    <select id="selectByUserIdAndStatus" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM `column`
+        WHERE user_id = #{userId} AND status = #{status}
+        ORDER BY sort ASC, create_time DESC
+    </select>
+
+    <delete id="deleteById">
+        DELETE FROM `column` WHERE id = #{id}
+    </delete>
+
+    <update id="incrementPostCount">
+        UPDATE `column` SET post_count = post_count + 1, update_time = NOW() WHERE id = #{id}
+    </update>
+
+    <update id="decrementPostCount">
+        UPDATE `column` SET post_count = GREATEST(0, post_count - 1), update_time = NOW() WHERE id = #{id}
+    </update>
+
+    <update id="incrementSubscribeCount">
+        UPDATE `column` SET subscribe_count = subscribe_count + 1, update_time = NOW() WHERE id = #{id}
+    </update>
+
+    <update id="decrementSubscribeCount">
+        UPDATE `column` SET subscribe_count = GREATEST(0, subscribe_count - 1), update_time = NOW() WHERE id = #{id}
+    </update>
+
+    <update id="updateLastPostTime">
+        UPDATE `column` SET last_post_time = #{time}, update_time = NOW() WHERE id = #{id}
+    </update>
+
+    <select id="countByUserId" resultType="int">
+        SELECT COUNT(*) FROM `column` WHERE user_id = #{userId}
+    </select>
+
+    <select id="selectPublishedByLastPostTime" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM `column`
+        WHERE status = 1
+        ORDER BY last_post_time DESC, create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="selectPublishedBySubscribeCount" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM `column`
+        WHERE status = 1
+        ORDER BY subscribe_count DESC, create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="countPublished" resultType="int">
+        SELECT COUNT(*) FROM `column` WHERE status = 1
+    </select>
+
+    <select id="searchByKeyword" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM `column`
+        WHERE status = 1 AND (name LIKE CONCAT('%', #{keyword}, '%') OR description LIKE CONCAT('%', #{keyword}, '%'))
+        ORDER BY subscribe_count DESC, create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="countSearchByKeyword" resultType="int">
+        SELECT COUNT(*) 
+        FROM `column` 
+        WHERE status = 1 AND (name LIKE CONCAT('%', #{keyword}, '%') OR description LIKE CONCAT('%', #{keyword}, '%'))
+    </select>
+
+    <select id="selectRecommended" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM `column`
+        WHERE status = 1 AND is_recommended = 1
+        ORDER BY subscribe_count DESC, create_time DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="selectByPostId" resultMap="BaseResultMap">
+        SELECT c.<include refid="Base_Column_List"/>
+        FROM `column` c
+        INNER JOIN column_post cp ON c.id = cp.column_id
+        WHERE cp.post_id = #{postId}
+        ORDER BY cp.sort ASC, cp.create_time ASC
+    </select>
+
+    <select id="selectByIds" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM `column`
+        <where>
+            <if test="ids != null and ids.size() > 0">
+                id IN
+                <foreach collection="ids" item="id" open="(" separator="," close=")">
+                    #{id}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <!-- 根据条件查询专栏列表（管理端） -->
+    <select id="findByConditions" resultMap="BaseResultMap">
+        SELECT
+            <include refid="Base_Column_List"/>
+        FROM `column`
+        <where>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+            <if test="isRecommended != null">
+                AND is_recommended = #{isRecommended}
+            </if>
+            <if test="userId != null">
+                AND user_id = #{userId}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 根据条件统计专栏数量（管理端） -->
+    <select id="countByConditions" resultType="int">
+        SELECT COUNT(*)
+        FROM `column`
+        <where>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+            <if test="isRecommended != null">
+                AND is_recommended = #{isRecommended}
+            </if>
+            <if test="userId != null">
+                AND user_id = #{userId}
+            </if>
+        </where>
+    </select>
+
+    <!-- 统计所有专栏数量 -->
+    <select id="countAll" resultType="int">
+        SELECT COUNT(*) FROM `column`
+    </select>
+
+    <!-- 根据状态统计专栏数量 -->
+    <select id="countByStatus" resultType="int">
+        SELECT COUNT(*) FROM `column` WHERE status = #{status}
+    </select>
+
+    <!-- 统计推荐专栏数量 -->
+    <select id="countRecommended" resultType="int">
+        SELECT COUNT(*) FROM `column` WHERE is_recommended = 1
+    </select>
+
+    <!-- 统计总订阅数 -->
+    <select id="sumSubscribeCount" resultType="long">
+        SELECT COALESCE(SUM(subscribe_count), 0) FROM `column`
+    </select>
+
+    <!-- 更新专栏状态 -->
+    <update id="updateStatus">
+        UPDATE `column`
+        SET status = #{status}, update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 更新推荐状态 -->
+    <update id="updateRecommended">
+        UPDATE `column`
+        SET is_recommended = #{isRecommended}, update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+</mapper>

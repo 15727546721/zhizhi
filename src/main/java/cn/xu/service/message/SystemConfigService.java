@@ -1,7 +1,7 @@
 package cn.xu.service.message;
 
 import cn.xu.model.entity.SystemConfig;
-import cn.xu.repository.ISystemConfigRepository;
+import cn.xu.repository.SystemConfigRepository;
 import cn.xu.support.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +19,7 @@ import java.util.*;
 @Slf4j
 public class SystemConfigService {
 
-    private final ISystemConfigRepository configRepository;
+    private final SystemConfigRepository configRepository;
 
     /**
      * 允许通过API修改的配置键白名单
@@ -35,48 +35,48 @@ public class SystemConfigService {
      * 获取配置值（字符串）
      */
     public String getConfigValue(String configKey) {
-        Optional<SystemConfig> configOpt = configRepository.findByKey(configKey);
-        if (configOpt.isPresent()) {
-            return configOpt.get().getConfigValue();
-        }
-        log.warn("配置不存在 - 配置键: {}", configKey);
-        return null;
+        return configRepository.findByKey(configKey)
+                .map(SystemConfig::getConfigValue)
+                .orElseGet(() -> {
+                    log.warn("配置不存在 - 配置键: {}", configKey);
+                    return null;
+                });
     }
 
     /**
      * 获取配置值（整数）
      */
     public Integer getConfigIntValue(String configKey) {
-        Optional<SystemConfig> configOpt = configRepository.findByKey(configKey);
-        if (configOpt.isPresent()) {
-            return configOpt.get().getIntValue();
-        }
-        log.warn("配置不存在 - 配置键: {}", configKey);
-        return null;
+        return configRepository.findByKey(configKey)
+                .map(SystemConfig::getIntValue)
+                .orElseGet(() -> {
+                    log.warn("配置不存在 - 配置键: {}", configKey);
+                    return null;
+                });
     }
 
     /**
      * 获取配置值（布尔值）
      */
     public Boolean getConfigBooleanValue(String configKey) {
-        Optional<SystemConfig> configOpt = configRepository.findByKey(configKey);
-        if (configOpt.isPresent()) {
-            return configOpt.get().getBooleanValue();
-        }
-        log.warn("配置不存在 - 配置键: {}", configKey);
-        return null;
+        return configRepository.findByKey(configKey)
+                .map(SystemConfig::getBooleanValue)
+                .orElseGet(() -> {
+                    log.warn("配置不存在 - 配置键: {}", configKey);
+                    return null;
+                });
     }
 
     /**
      * 获取配置值（长整数）
      */
     public Long getConfigLongValue(String configKey) {
-        Optional<SystemConfig> configOpt = configRepository.findByKey(configKey);
-        if (configOpt.isPresent()) {
-            return configOpt.get().getLongValue();
-        }
-        log.warn("配置不存在 - 配置键: {}", configKey);
-        return null;
+        return configRepository.findByKey(configKey)
+                .map(SystemConfig::getLongValue)
+                .orElseGet(() -> {
+                    log.warn("配置不存在 - 配置键: {}", configKey);
+                    return null;
+                });
     }
 
     /**

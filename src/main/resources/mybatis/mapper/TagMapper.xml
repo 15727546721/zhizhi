@@ -216,4 +216,18 @@
             #{id}
         </foreach>
     </select>
+    
+    <!-- ==================== 统计相关SQL ==================== -->
+    
+    <!-- 获取热门标签排行（用于仪表盘） -->
+    <select id="selectHotTags" resultType="java.util.Map">
+        SELECT 
+            id,
+            name,
+            usage_count AS usageCount,
+            is_recommended AS isRecommended
+        FROM tag
+        ORDER BY usage_count DESC
+        LIMIT #{limit}
+    </select>
 </mapper>

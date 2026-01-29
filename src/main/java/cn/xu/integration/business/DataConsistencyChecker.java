@@ -1,6 +1,6 @@
 package cn.xu.integration.business;
 
-import cn.xu.cache.RedisService;
+import cn.xu.cache.core.RedisOperations;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 
 /**
  * 数据一致性检查服务
- * <p>定期检查和修复数据一致性问题</p>
+ * <p>定期检查和同步数据一致性</p>
 
  */
 @Slf4j
@@ -16,7 +16,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class DataConsistencyChecker {
 
-    private final RedisService redisService;
+    private final RedisOperations redisOperations;
 
     /**
      * 定时检查数据一致性（每小时执行一次）
@@ -81,7 +81,7 @@ public class DataConsistencyChecker {
     }
 
     /**
-     * 修复数据一致性问题
+     * 同步数据一致性
      * 
      * @param key           数据键
      * @param expectedValue 期望值
@@ -89,11 +89,11 @@ public class DataConsistencyChecker {
      */
     public void repairDataConsistency(String key, Object expectedValue, Object actualValue) {
         try {
-            log.info("[数据一致性] 修复数据一致性问题 - key: {}, expected: {}, actual: {}", key, expectedValue, actualValue);
-            // 实现具体的修复逻辑
+            log.info("[数据一致性] 同步数据 - key: {}, expected: {}, actual: {}", key, expectedValue, actualValue);
+            // 实现具体的同步逻辑
             // 例如：更新缓存中的值为数据库中的值
         } catch (Exception e) {
-            log.error("[数据一致性] 修复数据一致性问题失败 - key: {}", key, e);
+            log.error("[数据一致性] 同步数据失败 - key: {}", key, e);
         }
     }
 }

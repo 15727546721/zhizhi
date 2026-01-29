@@ -603,6 +603,7 @@
     
     <!-- 根据ID列表查询帖子列表 -->
     <select id="findPostsByIds" resultMap="BaseResultMap">
+        <if test="postIds != null and postIds.size() > 0">
         SELECT 
         <include refid="Base_Column_List"/>
         FROM post
@@ -611,6 +612,7 @@
             #{postId}
         </foreach>
         ORDER BY create_time DESC
+        </if>
     </select>
     
     <!-- 统计所有已发布帖子数量 -->
@@ -781,6 +783,87 @@
         <if test="keyword != null and keyword != ''">
             AND title LIKE CONCAT('%', #{keyword}, '%')
         </if>
+    </select>
+
+    <!-- ==================== 统计相关SQL ==================== -->
+    
+    <!-- 统计指定时间之后创建的帖子数 -->
+    <select id="countByCreateTimeAfter" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM post WHERE status = 1 AND create_time >= #{createTime}
+    </select>
+    
+    <!-- 统计指定时间范围内创建的帖子数 -->
+    <select id="countByCreateTimeBetween" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM post WHERE status = 1 AND create_time >= #{startTime} AND create_time &lt; #{endTime}
+    </select>
+    
+    <!-- 获取热门帖子排行（用于仪表盘） -->
+    <select id="selectHotPosts" resultType="java.util.Map">
+        SELECT 
+            p.id,
+            p.title,
+            p.view_count AS viewCount,
+            p.like_count AS likeCount,
+            p.comment_count AS commentCount,
+            u.nickname AS authorName
+        FROM post p
+        LEFT JOIN `user` u ON p.user_id = u.id
+        WHERE p.status = 1
+        ORDER BY (p.like_count * 3 + p.comment_count * 5 + p.view_count * 0.5) DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- ==================== 游标分页SQL（性能优化） ==================== -->
+    
+    <!-- 游标分页：按时间倒序（最新） -->
+    <select id="findByCursorLatest" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM post
+        WHERE status = 1
+        <if test="cursorId != null">
+            AND id &lt; #{cursorId}
+        </if>
+        <if test="tagId != null">
+            AND id IN (SELECT post_id FROM post_tag WHERE tag_id = #{tagId})
+        </if>
+        ORDER BY id DESC
+        LIMIT #{limit}
+    </select>
+    
+    <!-- 游标分页：按热度倒序（热门） -->
+    <select id="findByCursorHot" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>,
+               (like_count * 3 + comment_count * 5 + view_count * 0.5 + favorite_count * 4) AS hot_score
+        FROM post
+        WHERE status = 1
+        <if test="cursorScore != null and cursorId != null">
+            AND (
+                (like_count * 3 + comment_count * 5 + view_count * 0.5 + favorite_count * 4) &lt; #{cursorScore}
+                OR (
+                    (like_count * 3 + comment_count * 5 + view_count * 0.5 + favorite_count * 4) = #{cursorScore}
+                    AND id &lt; #{cursorId}
+                )
+            )
+        </if>
+        <if test="tagId != null">
+            AND id IN (SELECT post_id FROM post_tag WHERE tag_id = #{tagId})
+        </if>
+        ORDER BY hot_score DESC, id DESC
+        LIMIT #{limit}
+    </select>
+    
+    <!-- 游标分页：按标签筛选（最新） -->
+    <select id="findByTagCursorLatest" resultMap="BaseResultMap">
+        SELECT <include refid="Post_Column_List"/>
+        FROM post p
+        INNER JOIN post_tag pt ON p.id = pt.post_id
+        WHERE p.status = 1
+          AND pt.tag_id = #{tagId}
+        <if test="cursorId != null">
+            AND p.id &lt; #{cursorId}
+        </if>
+        ORDER BY p.id DESC
+        LIMIT #{limit}
     </select>
 
 </mapper>
