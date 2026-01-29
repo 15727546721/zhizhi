@@ -1,13 +1,15 @@
 package cn.xu.service.search;
 
+import cn.xu.cache.core.RedisOperations;
 import cn.xu.common.ResponseCode;
 import cn.xu.integration.search.strategy.ElasticsearchSearchStrategy;
 import cn.xu.integration.search.strategy.MysqlSearchStrategy;
 import cn.xu.model.dto.search.SearchFilter;
 import cn.xu.model.entity.Post;
 import cn.xu.model.entity.User;
+import cn.xu.model.enums.SearchStrategyType;
 import cn.xu.model.vo.post.PostSearchResponseVO;
-import cn.xu.service.user.IUserService;
+import cn.xu.service.user.UserService;
 import cn.xu.support.exception.BusinessException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,13 +17,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /**
  * 帖子搜索服务（支持ES/MySQL自动降级）
@@ -34,12 +34,12 @@ public class PostSearchService {
 
     // 必需依赖 - 构造器注入
     private final MysqlSearchStrategy mysqlStrategy;
-    private final IUserService userService;
+    private final UserService userService;
 
     // 可选依赖 - setter 注入
     private ElasticsearchSearchStrategy esStrategy;
     private SearchStatisticsService statisticsService;
-    private RedisTemplate<String, Object> redisTemplate;
+    private RedisOperations redisOps;
 
     @Value("${app.post.query.strategy:auto}")
     private String preferredStrategy; // auto/elasticsearch/mysql
@@ -50,14 +50,14 @@ public class PostSearchService {
     @Value("${app.post.query.cache.ttl:300}")
     private int cacheTtlSeconds; // 缓存失效时间，单位秒
 
-    private ISearchStrategy currentStrategy;
+    private SearchStrategy currentStrategy;
     private boolean esAvailable = false;
 
     // ==================== 构造方法 ====================
 
     public PostSearchService(
             MysqlSearchStrategy mysqlStrategy,
-            IUserService userService
+            UserService userService
     ) {
         this.mysqlStrategy = mysqlStrategy;
         this.userService = userService;
@@ -76,8 +76,8 @@ public class PostSearchService {
     }
 
     @Autowired(required = false)
-    public void setRedisTemplate(RedisTemplate<String, Object> redisTemplate) {
-        this.redisTemplate = redisTemplate;
+    public void setRedisOps(RedisOperations redisOps) {
+        this.redisOps = redisOps;
     }
 
     // ==================== 初始化方法 ====================
@@ -95,13 +95,15 @@ public class PostSearchService {
     }
 
     private void selectStrategy() {
-        if ("mysql".equals(preferredStrategy)) {
+        SearchStrategyType strategyType = SearchStrategyType.fromCode(preferredStrategy);
+        
+        if (strategyType == SearchStrategyType.MYSQL) {
             currentStrategy = mysqlStrategy;
             log.info("使用MySQL搜索策略");
             return;
         }
 
-        if ("elasticsearch".equals(preferredStrategy) && esAvailable) {
+        if (strategyType == SearchStrategyType.ELASTICSEARCH && esAvailable) {
             currentStrategy = esStrategy;
             log.info("使用Elasticsearch搜索策略");
             return;
@@ -136,7 +138,7 @@ public class PostSearchService {
         String normalizedKeyword = normalizeKeyword(keyword);
 
         // 1. 检查缓存
-        if (cacheEnabled && redisTemplate != null) {
+        if (cacheEnabled && redisOps != null) {
             Page<Post> cached = getFromCache(normalizedKeyword, filter, pageable);
             if (cached != null) {
                 log.debug("使用缓存查询: keyword={}", normalizedKeyword);
@@ -148,7 +150,7 @@ public class PostSearchService {
         Page<Post> result = searchWithFallback(normalizedKeyword, filter, pageable);
 
         // 3. 保存缓存
-        if (cacheEnabled && redisTemplate != null && result != null) {
+        if (cacheEnabled && redisOps != null && result != null) {
             saveToCache(normalizedKeyword, filter, pageable, result);
         }
 
@@ -190,7 +192,7 @@ public class PostSearchService {
                 }
             }
 
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "搜索失败: " + e.getMessage());
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "搜索失败，请稍后重试");
         }
     }
 
@@ -199,7 +201,22 @@ public class PostSearchService {
     private Page<Post> getFromCache(String keyword, SearchFilter filter, Pageable pageable) {
         try {
             String cacheKey = buildCacheKey(keyword, filter, pageable);
-            return (Page<Post>) redisTemplate.opsForValue().get(cacheKey);
+            Object cached = redisOps.get(cacheKey);
+            if (cached != null) {
+                // 处理 LinkedHashMap 反序列化问题
+                if (cached instanceof org.springframework.data.domain.Page) {
+                    @SuppressWarnings("unchecked")
+                    Page<Post> page = (Page<Post>) cached;
+                    // 检查内容是否为 LinkedHashMap
+                    if (!page.isEmpty() && page.getContent().get(0) instanceof java.util.Map) {
+                        log.warn("检测到缓存反序列化为 LinkedHashMap，清除缓存: keyword={}", keyword);
+                        redisOps.delete(cacheKey);
+                        return null;
+                    }
+                    return page;
+                }
+            }
+            return null;
         } catch (Exception e) {
             log.warn("获取缓存失败: keyword={}", keyword, e);
             return null;
@@ -209,7 +226,7 @@ public class PostSearchService {
     private void saveToCache(String keyword, SearchFilter filter, Pageable pageable, Page<Post> result) {
         try {
             String cacheKey = buildCacheKey(keyword, filter, pageable);
-            redisTemplate.opsForValue().set(cacheKey, result, cacheTtlSeconds, TimeUnit.SECONDS);
+            redisOps.set(cacheKey, result, cacheTtlSeconds);
         } catch (Exception e) {
             log.warn("保存缓存失败: keyword={}", keyword, e);
         }
@@ -271,10 +288,12 @@ public class PostSearchService {
     }
 
     public void switchStrategy(String strategyName) {
-        if ("elasticsearch".equals(strategyName) && esAvailable) {
+        SearchStrategyType strategyType = SearchStrategyType.fromCode(strategyName);
+        
+        if (strategyType == SearchStrategyType.ELASTICSEARCH && esAvailable) {
             currentStrategy = esStrategy;
             log.info("切换到Elasticsearch策略");
-        } else if ("mysql".equals(strategyName)) {
+        } else if (strategyType == SearchStrategyType.MYSQL) {
             currentStrategy = mysqlStrategy;
             log.info("切换到MySQL策略");
         } else {

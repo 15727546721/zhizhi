@@ -71,7 +71,7 @@ public class SysReportController {
     /**
      * 处理举报
      */
-    @PutMapping("/{id}/handle")
+    @PostMapping("/{id}/handle")
     @SaCheckLogin
     @Operation(summary = "处理举报")
     @ApiOperationLog(description = "处理举报")
@@ -89,7 +89,7 @@ public class SysReportController {
     /**
      * 批量忽略举报
      */
-    @PutMapping("/batch-ignore")
+    @PostMapping("/batch-ignore")
     @SaCheckLogin
     @Operation(summary = "批量忽略")
     @ApiOperationLog(description = "批量忽略举报")

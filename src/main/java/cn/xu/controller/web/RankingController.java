@@ -1,6 +1,6 @@
 package cn.xu.controller.web;
 
-import cn.xu.cache.UserRankingCacheRepository;
+import cn.xu.cache.repository.UserRankingCacheRepository;
 import cn.xu.common.ResponseCode;
 import cn.xu.common.annotation.ApiOperationLog;
 import cn.xu.common.response.ResponseEntity;
@@ -9,7 +9,7 @@ import cn.xu.model.entity.User;
 import cn.xu.repository.mapper.PostMapper;
 import cn.xu.repository.mapper.TagMapper;
 import cn.xu.repository.mapper.UserMapper;
-import cn.xu.service.user.IUserService;
+import cn.xu.service.user.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
 public class RankingController {
 
     private final UserRankingCacheRepository userRankingCacheRepository;
-    private final IUserService userService;
+    private final UserService userService;
     private final PostMapper postMapper;
     private final TagMapper tagMapper;
     private final UserMapper userMapper;

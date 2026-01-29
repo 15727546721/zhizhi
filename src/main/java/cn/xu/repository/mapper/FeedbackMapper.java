@@ -66,4 +66,9 @@ public interface FeedbackMapper {
      * 统计用户的反馈数量
      */
     long countByUserId(@Param("userId") Long userId);
+
+    /**
+     * 按状态统计反馈数量
+     */
+    Long countByStatus(@Param("status") Integer status);
 }

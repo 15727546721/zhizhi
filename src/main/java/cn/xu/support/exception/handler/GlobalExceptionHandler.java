@@ -4,6 +4,8 @@ import cn.dev33.satoken.exception.NotLoginException;
 import cn.xu.common.ResponseCode;
 import cn.xu.common.response.ResponseEntity;
 import cn.xu.support.exception.BusinessException;
+import cn.xu.support.log.BizLogger;
+import cn.xu.support.log.LogConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindException;
@@ -15,7 +17,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -32,8 +34,15 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<Void> handleBusinessException(BusinessException ex, HttpServletRequest request) {
-        log.error("业务异常: {} - 请求路径: {} - 请求方法: {}", 
-                ex.getMessage(), request.getRequestURI(), request.getMethod(), ex);
+        // 业务异常使用 WARN 级别
+        BizLogger.of(log)
+                .module(LogConstants.MODULE_SYSTEM)
+                .op("业务异常")
+                .param("path", request.getRequestURI())
+                .param("method", request.getMethod())
+                .param("code", ex.getCode())
+                .warn(ex.getMessage());
+        
         return ResponseEntity.<Void>builder()
                 .code(ex.getCode())
                 .info(ex.getMessage())
@@ -43,8 +52,12 @@ public class GlobalExceptionHandler {
     // 全局异常拦截（拦截项目中的NotLoginException异常）
     @ExceptionHandler(NotLoginException.class)
     public ResponseEntity<String> handlerNotLoginException(NotLoginException nle, HttpServletRequest request) {
-        log.error("未登录异常: {} - 请求路径: {} - 请求方法: {} - 异常类型: {}", 
-                nle.getMessage(), request.getRequestURI(), request.getMethod(), nle.getType());
+        BizLogger.of(log)
+                .module(LogConstants.MODULE_AUTH)
+                .op("未登录")
+                .param("path", request.getRequestURI())
+                .param("type", nle.getType())
+                .warn(nle.getMessage());
 
         // 判断场景值，定制化异常信息
         String message = "";
@@ -70,25 +83,20 @@ public class GlobalExceptionHandler {
     }
     /**
      * 处理请求参数缺失异常
-     *
-     * @param ex 参数缺失异常
-     * @return 统一响应对象
      */
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public ResponseEntity<String> handleMissingServletRequestParameter(MissingServletRequestParameterException ex, HttpServletRequest request) {
-        // 获取错误信息
         String parameterName = ex.getParameterName();
         String parameterType = ex.getParameterType();
-        StackTraceElement[] stackTrace = ex.getStackTrace();
-        String methodName = stackTrace[0].getMethodName();
-        String className = stackTrace[0].getClassName();
-
-        // 构建错误消息
         String errorMessage = String.format("缺少必要的请求参数 [%s]，参数类型 [%s]", parameterName, parameterType);
 
-        // 记录详细日志
-        log.error("缺少请求参数异常: {} - 请求路径: {} - 请求方法: {} - 异常位置: {}.{} - 参数信息: 名称 = {}, 类型 = {}", 
-                ex.getMessage(), request.getRequestURI(), request.getMethod(), className, methodName, parameterName, parameterType);
+        BizLogger.of(log)
+                .module(LogConstants.MODULE_SYSTEM)
+                .op("参数缺失")
+                .param("path", request.getRequestURI())
+                .param("param", parameterName)
+                .param("type", parameterType)
+                .warn(errorMessage);
 
         return ResponseEntity.<String>builder()
                 .code(ResponseCode.ILLEGAL_PARAMETER.getCode())
@@ -98,13 +106,9 @@ public class GlobalExceptionHandler {
 
     /**
      * 处理参数校验失败异常
-     *
-     * @param ex 参数校验异常
-     * @return 统一响应对象
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, String>> handleValidationExceptions(MethodArgumentNotValidException ex, HttpServletRequest request) {
-        // 获取所有字段错误
         Map<String, String> errors = new HashMap<>();
         ex.getBindingResult().getAllErrors().forEach(error -> {
             String fieldName = ((FieldError) error).getField();
@@ -112,13 +116,12 @@ public class GlobalExceptionHandler {
             errors.put(fieldName, errorMessage);
         });
 
-        // 获取方法信息
-        String methodName = ex.getParameter().getMethod().getName();
-        String className = ex.getParameter().getDeclaringClass().getName();
-
-        // 记录详细日志
-        log.error("参数校验失败异常: {} - 请求路径: {} - 请求方法: {} - 异常位置: {}.{} - 校验错误详情: {}", 
-                ex.getMessage(), request.getRequestURI(), request.getMethod(), className, methodName, errors);
+        BizLogger.of(log)
+                .module(LogConstants.MODULE_SYSTEM)
+                .op("参数校验失败")
+                .param("path", request.getRequestURI())
+                .param("errors", errors)
+                .warn("请求参数校验失败");
 
         return ResponseEntity.<Map<String, String>>builder()
                 .code(ResponseCode.ILLEGAL_PARAMETER.getCode())
@@ -129,26 +132,23 @@ public class GlobalExceptionHandler {
 
     /**
      * 处理参数类型不匹配异常
-     *
-     * @param ex 参数类型不匹配异常
-     * @return 统一响应对象
      */
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<String> handleMethodArgumentTypeMismatch(MethodArgumentTypeMismatchException ex, HttpServletRequest request) {
-        // 获取错误信息
         String paramName = ex.getName();
         String expectedType = ex.getRequiredType() != null ? ex.getRequiredType().getSimpleName() : "未知";
         String actualValue = String.valueOf(ex.getValue());
-        String methodName = ex.getParameter().getMethod().getName();
-        String className = ex.getParameter().getDeclaringClass().getName();
-
-        // 构建错误消息
         String errorMessage = String.format("参数类型转换失败: 参数 [%s] 应为 [%s] 类型，实际值为 [%s]",
                 paramName, expectedType, actualValue);
 
-        // 记录详细日志
-        log.error("参数类型不匹配异常: {} - 请求路径: {} - 请求方法: {} - 异常位置: {}.{} - 参数信息: 名称 = {}, 期望类型 = {}, 实际值 = {}",
-                ex.getMessage(), request.getRequestURI(), request.getMethod(), className, methodName, paramName, expectedType, actualValue, ex);
+        BizLogger.of(log)
+                .module(LogConstants.MODULE_SYSTEM)
+                .op("类型不匹配")
+                .param("path", request.getRequestURI())
+                .param("param", paramName)
+                .param("expected", expectedType)
+                .param("actual", actualValue)
+                .warn(errorMessage);
         
         return ResponseEntity.<String>builder()
                 .code(ResponseCode.ILLEGAL_PARAMETER.getCode())
@@ -158,10 +158,15 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<String> handleHttpMessageNotReadableException(HttpMessageNotReadableException ex, HttpServletRequest request) {
-        log.error("参数解析异常: {} - 请求路径: {} - 请求方法: {}", ex.getMessage(), request.getRequestURI(), request.getMethod(), ex);
+        BizLogger.of(log)
+                .module(LogConstants.MODULE_SYSTEM)
+                .op("参数解析失败")
+                .param("path", request.getRequestURI())
+                .warn(ex.getMessage());
+        
         return ResponseEntity.<String>builder()
                 .code(ResponseCode.ILLEGAL_PARAMETER.getCode())
-                .info("请求参数解析失败: " + ex.getMessage())
+                .info("请求参数解析失败")
                 .build();
     }
 
@@ -173,8 +178,13 @@ public class GlobalExceptionHandler {
         String supportedMethods = String.join(", ", ex.getSupportedMethods());
         String errorMessage = String.format("请求方法 '%s' 不支持，支持的方法: %s", ex.getMethod(), supportedMethods);
         
-        log.error("请求方法不支持异常: {} - 请求路径: {} - 支持的方法: {}", 
-                ex.getMessage(), request.getRequestURI(), supportedMethods);
+        BizLogger.of(log)
+                .module(LogConstants.MODULE_SYSTEM)
+                .op("方法不支持")
+                .param("path", request.getRequestURI())
+                .param("method", ex.getMethod())
+                .param("supported", supportedMethods)
+                .warn(errorMessage);
         
         return ResponseEntity.<String>builder()
                 .code(ResponseCode.ILLEGAL_PARAMETER.getCode())
@@ -194,8 +204,12 @@ public class GlobalExceptionHandler {
             errors.put(fieldName, errorMessage);
         });
 
-        log.error("参数绑定异常: {} - 请求路径: {} - 绑定错误: {}", 
-                ex.getMessage(), request.getRequestURI(), errors);
+        BizLogger.of(log)
+                .module(LogConstants.MODULE_SYSTEM)
+                .op("参数绑定失败")
+                .param("path", request.getRequestURI())
+                .param("errors", errors)
+                .warn("参数绑定失败");
 
         return ResponseEntity.<Map<String, String>>builder()
                 .code(ResponseCode.ILLEGAL_PARAMETER.getCode())
@@ -205,23 +219,30 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 处理CORS相关异常
+     * 处理非法参数异常
      */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<String> handleIllegalArgumentException(IllegalArgumentException ex, HttpServletRequest request) {
         String errorMessage = ex.getMessage();
         
-        // 检查是否是CORS相关错误
         if (errorMessage.contains("allowCredentials") && errorMessage.contains("allowedOrigins")) {
-            log.error("CORS配置错误: {} - 请求路径: {} - 建议使用allowedOriginPatterns替换allowedOrigins", 
-                    errorMessage, request.getRequestURI());
+            BizLogger.of(log)
+                    .module(LogConstants.MODULE_SYSTEM)
+                    .op("CORS配置错误")
+                    .param("path", request.getRequestURI())
+                    .error(errorMessage);
             return ResponseEntity.<String>builder()
                     .code(ResponseCode.SYSTEM_ERROR.getCode())
                     .info("跨域配置错误，请联系管理员")
                     .build();
         }
         
-        log.error("参数异常: {} - 请求路径: {}", errorMessage, request.getRequestURI());
+        BizLogger.of(log)
+                .module(LogConstants.MODULE_SYSTEM)
+                .op("参数异常")
+                .param("path", request.getRequestURI())
+                .warn(errorMessage);
+        
         return ResponseEntity.<String>builder()
                 .code(ResponseCode.ILLEGAL_PARAMETER.getCode())
                 .info("参数错误: " + errorMessage)
@@ -233,8 +254,13 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<String> handleExceptions(Exception ex, HttpServletRequest request) {
-        log.error("系统异常: {} - 请求路径: {} - 请求方法: {} - 异常类型: {}", 
-                ex.getMessage(), request.getRequestURI(), request.getMethod(), ex.getClass().getSimpleName(), ex);
+        BizLogger.of(log)
+                .module(LogConstants.MODULE_SYSTEM)
+                .op("系统异常")
+                .param("path", request.getRequestURI())
+                .param("method", request.getMethod())
+                .param("type", ex.getClass().getSimpleName())
+                .error(ex.getMessage(), ex);
         
         return ResponseEntity.<String>builder()
                 .code(ResponseCode.UN_ERROR.getCode())

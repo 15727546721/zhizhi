@@ -5,11 +5,14 @@ import cn.dev33.satoken.annotation.SaCheckPermission;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.xu.common.ResponseCode;
 import cn.xu.common.annotation.ApiOperationLog;
+import cn.xu.common.constants.PermissionConstants;
+import cn.xu.common.constants.RoleConstants;
 import cn.xu.common.response.PageResponse;
 import cn.xu.common.response.ResponseEntity;
 import cn.xu.model.dto.user.SysUserRequest;
 import cn.xu.model.entity.User;
-import cn.xu.service.user.IUserService;
+import cn.xu.model.enums.UserType;
+import cn.xu.service.user.UserService;
 import cn.xu.support.exception.BusinessException;
 import cn.xu.support.util.LoginUserUtil;
 import io.swagger.v3.oas.annotations.Operation;
@@ -18,8 +21,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
-import javax.annotation.Resource;
-import javax.validation.Valid;
+import jakarta.annotation.Resource;
+import jakarta.validation.Valid;
 import java.util.List;
 
 /**
@@ -34,7 +37,7 @@ import java.util.List;
 public class SysUserController {
 
     @Resource
-    private IUserService userService;
+    private UserService userService;
 
     /**
      * 获取用户列表
@@ -129,7 +132,7 @@ public class SysUserController {
         }
     }
 
-    @PutMapping("/{userId}")
+    @PostMapping("/{userId}/update")
     @SaCheckLogin
     @SaCheckPermission("system:user:edit")
     @Operation(summary = "修改用户")
@@ -152,7 +155,7 @@ public class SysUserController {
         }
     }
 
-    @DeleteMapping("/{userId}")
+    @PostMapping("/{userId}/delete")
     @SaCheckLogin
     @SaCheckPermission("system:user:delete")
     @Operation(summary = "删除用户")
@@ -178,7 +181,7 @@ public class SysUserController {
         }
     }
 
-    @DeleteMapping("/batch")
+    @PostMapping("/batch/delete")
     @SaCheckLogin
     @SaCheckPermission("system:user:delete")
     @Operation(summary = "批量删除用户")
@@ -208,7 +211,7 @@ public class SysUserController {
         }
     }
 
-    @PutMapping("/{userId}/status")
+    @PostMapping("/{userId}/status")
     @SaCheckLogin
     @SaCheckPermission("system:user:edit")
     @Operation(summary = "修改用户状态")
@@ -283,24 +286,20 @@ public class SysUserController {
             java.util.List<String> roles = new java.util.ArrayList<>();
             java.util.List<String> perms = new java.util.ArrayList<>();
             
-            if (user.getUserType() != null) {
-                if (user.getUserType() >= 3) {
-                    // 超级管理员 - ROOT 角色拥有所有权限
-                    roles.add("ROOT");
-                    perms.add("*:*:*");
-                } else if (user.getUserType() >= 2) {
-                    // 官方账号 - ADMIN 角色
-                    roles.add("ADMIN");
-                    perms.add("system:post:*");
-                    perms.add("system:comment:*");
-                    perms.add("system:tag:*");
-                    perms.add("system:user:query");
-                    perms.add("system:statistics:view");
-                } else {
-                    roles.add("USER");
-                }
+            if (UserType.isSuperAdmin(user.getUserType())) {
+                // 超级管理员 - ROOT 角色拥有所有权限
+                roles.add(RoleConstants.NAME_ROOT);
+                perms.add(PermissionConstants.ALL);
+            } else if (UserType.hasAdminAccess(user.getUserType())) {
+                // 官方账号 - ADMIN 角色
+                roles.add(RoleConstants.NAME_ADMIN);
+                perms.add(PermissionConstants.POST_ALL);
+                perms.add(PermissionConstants.COMMENT_ALL);
+                perms.add(PermissionConstants.TAG_ALL);
+                perms.add(PermissionConstants.USER_QUERY);
+                perms.add(PermissionConstants.STATISTICS_VIEW);
             } else {
-                roles.add("USER");
+                roles.add(RoleConstants.NAME_USER);
             }
             
             userInfo.put("roles", roles);
@@ -330,8 +329,9 @@ public class SysUserController {
         try {
             // 获取所有在线会话
             java.util.List<String> sessionIds = StpUtil.searchSessionId("", 0, -1, false);
-            java.util.List<OnlineUserVO> onlineUsers = new java.util.ArrayList<>();
             
+            // 先收集所有有效的 userId
+            java.util.Map<Long, String> userTokenMap = new java.util.LinkedHashMap<>();
             for (String sessionId : sessionIds) {
                 try {
                     cn.dev33.satoken.session.SaSession session = StpUtil.getSessionBySessionId(sessionId);
@@ -339,28 +339,49 @@ public class SysUserController {
                         Object loginId = session.getLoginId();
                         if (loginId != null) {
                             Long userId = Long.parseLong(loginId.toString());
-                            User user = userService.getUserInfo(userId);
-                            if (user != null) {
-                                // 如果指定了用户名过滤条件
-                                if (username != null && !username.isEmpty() 
-                                        && !user.getUsername().contains(username)) {
-                                    continue;
-                                }
-                                
-                                OnlineUserVO onlineUser = OnlineUserVO.builder()
-                                        .userId(userId)
-                                        .username(user.getUsername())
-                                        .nickname(user.getNickname())
-                                        .avatar(user.getAvatar())
-                                        .tokenValue(session.getToken())
-                                        .loginTime(java.time.LocalDateTime.now()) // Sa-Token不直接提供登录时间
-                                        .build();
-                                onlineUsers.add(onlineUser);
-                            }
+                            userTokenMap.put(userId, session.getToken());
                         }
                     }
                 } catch (Exception e) {
                     log.warn("获取会话信息失败: sessionId={}", sessionId);
+                }
+            }
+            
+            if (userTokenMap.isEmpty()) {
+                PageResponse<List<OnlineUserVO>> pageResponse = PageResponse.ofList(pageNo, pageSize, 0L, new java.util.ArrayList<>());
+                return ResponseEntity.<PageResponse<List<OnlineUserVO>>>builder()
+                        .code(ResponseCode.SUCCESS.getCode())
+                        .data(pageResponse)
+                        .build();
+            }
+            
+            // 批量查询用户信息
+            java.util.Set<Long> userIdSet = new java.util.LinkedHashSet<>(userTokenMap.keySet());
+            java.util.List<User> users = userService.batchGetUsersByIds(userIdSet);
+            java.util.Map<Long, User> userMap = users.stream()
+                    .collect(java.util.stream.Collectors.toMap(User::getId, u -> u, (a, b) -> a));
+            
+            // 构建在线用户列表
+            java.util.List<OnlineUserVO> onlineUsers = new java.util.ArrayList<>();
+            for (java.util.Map.Entry<Long, String> entry : userTokenMap.entrySet()) {
+                Long userId = entry.getKey();
+                User user = userMap.get(userId);
+                if (user != null) {
+                    // 如果指定了用户名过滤条件
+                    if (username != null && !username.isEmpty() 
+                            && !user.getUsername().contains(username)) {
+                        continue;
+                    }
+                    
+                    OnlineUserVO onlineUser = OnlineUserVO.builder()
+                            .userId(userId)
+                            .username(user.getUsername())
+                            .nickname(user.getNickname())
+                            .avatar(user.getAvatar())
+                            .tokenValue(entry.getValue())
+                            .loginTime(java.time.LocalDateTime.now())
+                            .build();
+                    onlineUsers.add(onlineUser);
                 }
             }
             
@@ -380,7 +401,7 @@ public class SysUserController {
                     .data(pageResponse)
                     .build();
         } catch (Exception e) {
-            log.error("获取在线用户列表失败", e);
+            log.warn("获取在线用户列表失败: {}", e.getMessage());
             throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "获取在线用户列表失败");
         }
     }

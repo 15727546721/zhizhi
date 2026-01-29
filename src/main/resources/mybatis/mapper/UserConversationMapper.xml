@@ -146,4 +146,12 @@
         WHERE owner_id = #{ownerId} AND other_user_id = #{otherUserId}
     </update>
     
+    <!-- 统计用户的活跃会话数量 -->
+    <select id="countActiveByOwnerId" resultType="int">
+        SELECT COUNT(*)
+        FROM user_conversation
+        WHERE owner_id = #{ownerId} AND is_deleted = 0
+          AND owner_id != other_user_id
+    </select>
+    
 </mapper>

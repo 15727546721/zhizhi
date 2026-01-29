@@ -127,6 +127,11 @@
         SELECT status, COUNT(*) as count FROM report GROUP BY status
     </select>
 
+    <!-- 按单个状态统计举报数量 -->
+    <select id="countByStatusValue" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM report WHERE status = #{status}
+    </select>
+
     <!-- 批量更新状态为忽略 -->
     <update id="batchIgnore">
         UPDATE report

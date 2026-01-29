@@ -11,6 +11,7 @@
         <result column="email_notification" property="emailNotification" />
         <result column="browser_notification" property="browserNotification" />
         <result column="sound_notification" property="soundNotification" />
+        <result column="allow_stranger_message" property="allowStrangerMessage" />
         <result column="email_verified" property="emailVerified" />
         <result column="email_verify_token" property="emailVerifyToken" />
         <result column="email_verify_expire_time" property="emailVerifyExpireTime" />
@@ -19,33 +20,24 @@
         <result column="create_time" property="createTime" />
         <result column="update_time" property="updateTime" />
     </resultMap>
+    
+    <sql id="Base_Column_List">
+        id, user_id, profile_visibility, show_online_status, email_notification,
+        browser_notification, sound_notification, allow_stranger_message, email_verified,
+        email_verify_token, email_verify_expire_time, password_reset_token, 
+        password_reset_expire_time, create_time, update_time
+    </sql>
 
     <!-- 插入 -->
     <insert id="insert" parameterType="cn.xu.model.entity.UserSettings" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO user_settings (
-            user_id,
-            profile_visibility,
-            show_online_status,
-            email_notification,
-            browser_notification,
-            sound_notification,
-            email_verified,
-            email_verify_token,
-            email_verify_expire_time,
-            create_time,
-            update_time
+            user_id, profile_visibility, show_online_status, email_notification,
+            browser_notification, sound_notification, allow_stranger_message, email_verified,
+            email_verify_token, email_verify_expire_time, create_time, update_time
         ) VALUES (
-            #{userId},
-            #{profileVisibility},
-            #{showOnlineStatus},
-            #{emailNotification},
-            #{browserNotification},
-            #{soundNotification},
-            #{emailVerified},
-            #{emailVerifyToken},
-            #{emailVerifyExpireTime},
-            #{createTime},
-            #{updateTime}
+            #{userId}, #{profileVisibility}, #{showOnlineStatus}, #{emailNotification},
+            #{browserNotification}, #{soundNotification}, #{allowStrangerMessage}, #{emailVerified},
+            #{emailVerifyToken}, #{emailVerifyExpireTime}, #{createTime}, #{updateTime}
         )
     </insert>
 
@@ -58,6 +50,7 @@
             <if test="emailNotification != null">email_notification = #{emailNotification},</if>
             <if test="browserNotification != null">browser_notification = #{browserNotification},</if>
             <if test="soundNotification != null">sound_notification = #{soundNotification},</if>
+            <if test="allowStrangerMessage != null">allow_stranger_message = #{allowStrangerMessage},</if>
             <if test="emailVerified != null">email_verified = #{emailVerified},</if>
             update_time = NOW()
         </set>
@@ -69,7 +62,7 @@
         UPDATE user_settings
         SET email_verify_token = NULL,
             email_verify_expire_time = NULL,
-            email_verified = TRUE,
+            email_verified = 1,
             update_time = NOW()
         WHERE user_id = #{userId}
     </update>
@@ -94,11 +87,7 @@
     
     <!-- 根据密码重置令牌查询 -->
     <select id="selectByPasswordResetToken" resultMap="BaseResultMap">
-        SELECT id, user_id, theme, language, notification_enabled, 
-               email_notification, push_notification, privacy_level,
-               password_reset_token, password_reset_token_expire_time,
-               email_verify_token, email_verify_token_expire_time,
-               create_time, update_time
+        SELECT <include refid="Base_Column_List"/>
         FROM user_settings
         WHERE password_reset_token = #{token}
     </select>
@@ -114,27 +103,19 @@
 
     <!-- 根据用户ID查询 -->
     <select id="selectByUserId" resultMap="BaseResultMap">
-        SELECT id, user_id, theme, language, notification_enabled, 
-               email_notification, push_notification, privacy_level,
-               password_reset_token, password_reset_token_expire_time,
-               email_verify_token, email_verify_token_expire_time,
-               create_time, update_time
+        SELECT <include refid="Base_Column_List"/>
         FROM user_settings
         WHERE user_id = #{userId}
     </select>
 
     <!-- 根据邮箱验证令牌查询 -->
     <select id="selectByEmailVerifyToken" resultMap="BaseResultMap">
-        SELECT id, user_id, theme, language, notification_enabled, 
-               email_notification, push_notification, privacy_level,
-               password_reset_token, password_reset_token_expire_time,
-               email_verify_token, email_verify_token_expire_time,
-               create_time, update_time
+        SELECT <include refid="Base_Column_List"/>
         FROM user_settings
         WHERE email_verify_token = #{token}
     </select>
 
-    <!-- 删除（实际不使用，保留接口） -->
+    <!-- 删除 -->
     <delete id="deleteByUserId">
         DELETE FROM user_settings
         WHERE user_id = #{userId}

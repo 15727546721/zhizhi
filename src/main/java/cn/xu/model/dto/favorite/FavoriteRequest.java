@@ -1,1 +1,35 @@
-package cn.xu.model.dto.favorite;import io.swagger.v3.oas.annotations.media.Schema;import lombok.Data;import javax.validation.constraints.NotBlank;import javax.validation.constraints.NotNull;/** * 收藏请求DTO * 用于表示用户收藏操作的请求数据。 */@Data@Schema(description = "收藏请求DTO")public class FavoriteRequest {    /** 目标ID     * - 表示被收藏的目标对象ID     */    @Schema(description = "目标ID")    @NotNull(message = "目标ID不能为空")    private Long targetId;    /** 目标类型     */    @Schema(description = "目标类型，Post-帖子，Comment-评论")    @NotBlank(message = "目标类型不能为空")    private String targetType;    /** 文件夹ID     * - 用于将收藏项分组到某个文件夹，用户可选择文件夹进行分类管理     */    @Schema(description = "文件夹ID，用户选择的收藏文件夹ID，可为空")    private Long folderId;}
+package cn.xu.model.dto.favorite;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Data;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+
+/**
+ * 收藏请求DTO
+ * 用于表示用户收藏操作的请求数据。
+ */
+@Data
+@Schema(description = "收藏请求DTO")
+public class FavoriteRequest {
+
+    /** 目标ID
+     * - 表示被收藏的目标对象ID
+     */
+    @Schema(description = "目标ID")
+    @NotNull(message = "目标ID不能为空")
+    private Long targetId;
+
+    /** 目标类型
+     */
+    @Schema(description = "目标类型，Post-帖子，Comment-评论")
+    @NotBlank(message = "目标类型不能为空")
+    private String targetType;
+    
+    /** 收藏夹ID（可选，为空则使用默认收藏夹）
+     */
+    @Schema(description = "收藏夹ID，为空则使用默认收藏夹")
+    private Long folderId;
+
+}

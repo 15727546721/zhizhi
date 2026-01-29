@@ -74,12 +74,6 @@
     from comment
     where id = #{id}
   </delete>
-  <select id="findById" resultMap="BaseResultMap">
-    select
-    <include refid="Base_Column_List"/>
-    from comment
-    where id = #{id}
-  </select>
   <!-- 按热度查询一级评论 -->
   <select id="findRootCommentsByHot" resultMap="BaseResultMap">
     SELECT c.*
@@ -147,18 +141,6 @@
     WHERE target_type = #{targetType}
       AND target_id = #{targetId}
   </delete>
-  <!-- 查询一级评论列表 -->
-  <select id="findRootComments" resultMap="BaseResultMap">
-    SELECT
-    <include refid="Base_Column_List"/>
-    FROM comment
-    WHERE target_id = #{targetId}
-    AND parent_id IS NULL
-    <if test="target_type != null">
-        AND target_type = #{targetType}
-    </if>
-    ORDER BY create_time DESC
-  </select>
   <!-- 分页查询二级评论列表 -->
   <select id="findRepliesByPage" resultMap="BaseResultMap">
     SELECT
@@ -241,7 +223,7 @@
   <!-- 按热度查询每个parent的前N条回复（使用窗口函数） -->
   <select id="findRepliesByParentIdsByHot" resultMap="BaseResultMap">
     SELECT id, target_type, target_id, parent_id, user_id, reply_user_id, 
-           content, like_count, reply_count, hot_score, create_time, update_time
+           content, image_url, like_count, reply_count, hot_score, create_time, update_time
     FROM (
       SELECT c.*, ROW_NUMBER() OVER (PARTITION BY c.parent_id ORDER BY c.hot_score DESC, c.create_time DESC) AS rn
       FROM comment c
@@ -255,7 +237,7 @@
   <!-- 按时间查询每个parent的前N条回复（使用窗口函数） -->
   <select id="findRepliesByParentIdsByTime" resultMap="BaseResultMap">
     SELECT id, target_type, target_id, parent_id, user_id, reply_user_id,
-           content, like_count, reply_count, hot_score, create_time, update_time
+           content, image_url, like_count, reply_count, hot_score, create_time, update_time
     FROM (
       SELECT c.*, ROW_NUMBER() OVER (PARTITION BY c.parent_id ORDER BY c.create_time DESC) AS rn
       FROM comment c
@@ -345,7 +327,7 @@
   </select>
   
   <!-- 批量统计目标的评论数 -->
-  <select id="batchCountByTargetIds" resultType="cn.xu.repository.mapper.CommentMapper$CommentCountResult">
+  <select id="batchCountByTargetIds" resultType="cn.xu.model.dto.comment.CommentCountResult">
     SELECT target_id as targetId, COUNT(*) as count
     FROM comment
     WHERE target_type = #{targetType} AND target_id IN
@@ -362,6 +344,16 @@
     FROM comment
     WHERE parent_id = #{parentId}
     ORDER BY create_time ASC
+  </select>
+  
+  <!-- 根据父评论ID和用户ID查询评论（用于对话链查询） -->
+  <select id="findByParentIdAndUserId" resultMap="BaseResultMap">
+    SELECT
+    <include refid="Base_Column_List"/>
+    FROM comment
+    WHERE parent_id = #{parentId} AND user_id = #{userId}
+    ORDER BY create_time DESC
+    LIMIT 1
   </select>
   
   <!-- 批量查询评论（用于缓存预热） -->
@@ -448,5 +440,17 @@
     <if test="targetId != null">
         AND target_id = #{targetId}
     </if>
+  </select>
+  
+  <!-- ==================== 统计相关SQL ==================== -->
+  
+  <!-- 统计指定时间之后创建的评论数 -->
+  <select id="countByCreateTimeAfter" resultType="java.lang.Long">
+    SELECT COUNT(*) FROM comment WHERE create_time >= #{createTime}
+  </select>
+  
+  <!-- 统计指定时间范围内创建的评论数 -->
+  <select id="countByCreateTimeBetween" resultType="java.lang.Long">
+    SELECT COUNT(*) FROM comment WHERE create_time >= #{startTime} AND create_time &lt; #{endTime}
   </select>
 </mapper>

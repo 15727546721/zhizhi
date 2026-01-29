@@ -2,10 +2,10 @@ package cn.xu.service.user;
 
 import cn.xu.common.ResponseCode;
 import cn.xu.model.entity.User;
-import cn.xu.repository.ICommentRepository;
+import cn.xu.repository.CommentRepository;
 import cn.xu.service.favorite.FavoriteService;
 import cn.xu.service.follow.FollowService;
-import cn.xu.service.post.PostService;
+import cn.xu.service.post.PostStatisticsService;
 import cn.xu.support.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,11 +19,11 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class UserProfileService {
 
-    private final IUserService userService;
-    private final PostService postService;
+    private final UserService userService;
+    private final PostStatisticsService postStatisticsService;
     private final FollowService followService;
     private final FavoriteService favoriteService;
-    private final ICommentRepository commentRepository;
+    private final CommentRepository commentRepository;
 
     /**
      * 获取用户个人资料
@@ -82,7 +82,7 @@ public class UserProfileService {
             throw e;
         } catch (Exception e) {
             log.error("[用户个人资料服务] 获取用户个人资料失败 - userId: {}", userId, e);
-            throw new BusinessException(ResponseCode.SYSTEM_ERROR.getCode(), "获取用户个人资料失败: " + e.getMessage());
+            throw new BusinessException(ResponseCode.SYSTEM_ERROR.getCode(), "获取用户个人资料失败，请稍后重试");
         }
     }
 
@@ -90,7 +90,7 @@ public class UserProfileService {
      * 获取用户统计数据
      */
     private UserProfileStats getUserProfileStats(Long userId, User user) {
-        long postCount = postService.countPublishedByUserId(userId);
+        long postCount = postStatisticsService.countPublishedByUserId(userId);
         long followCount = user.getFollowCount() != null ? user.getFollowCount() : 0;
         long fansCount = user.getFansCount() != null ? user.getFansCount() : 0;
         long likeCount = user.getLikeCount() != null ? user.getLikeCount() : 0;

@@ -1,12 +1,11 @@
 package cn.xu.service.search;
 
+import cn.xu.cache.core.RedisOperations;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 /**
  * 搜索历史服务
@@ -20,7 +19,7 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 public class SearchHistoryService {
 
-    private final StringRedisTemplate redisTemplate;
+    private final RedisOperations redisOps;
 
     /** 用户搜索历史前缀 */
     private static final String HISTORY_KEY_PREFIX = "search:history:";
@@ -71,16 +70,16 @@ public class SearchHistoryService {
         String key = HISTORY_KEY_PREFIX + userId;
         
         // 先移除已存在的相同关键词（去重）
-        redisTemplate.opsForList().remove(key, 0, keyword);
+        redisOps.lRemove(key, 0, keyword);
         
         // 添加到列表头部
-        redisTemplate.opsForList().leftPush(key, keyword);
+        redisOps.lPush(key, keyword);
         
         // 保留最近N条
-        redisTemplate.opsForList().trim(key, 0, MAX_HISTORY_SIZE - 1);
+        redisOps.lTrim(key, 0, MAX_HISTORY_SIZE - 1);
         
-        // 设置过期时间
-        redisTemplate.expire(key, HISTORY_EXPIRE_DAYS, TimeUnit.DAYS);
+        // 设置过期时间（转换为秒）
+        redisOps.expire(key, HISTORY_EXPIRE_DAYS * 86400);
     }
 
     /**
@@ -88,11 +87,11 @@ public class SearchHistoryService {
      */
     private void updateHotWord(String keyword) {
         // 总热词计数
-        redisTemplate.opsForZSet().incrementScore(HOT_KEY, keyword, 1);
+        redisOps.zIncrementScore(HOT_KEY, keyword, 1);
         
         // 每日热词计数
-        redisTemplate.opsForZSet().incrementScore(HOT_DAILY_KEY, keyword, 1);
-        redisTemplate.expire(HOT_DAILY_KEY, DAILY_HOT_EXPIRE_DAYS, TimeUnit.DAYS);
+        redisOps.zIncrementScore(HOT_DAILY_KEY, keyword, 1);
+        redisOps.expire(HOT_DAILY_KEY, DAILY_HOT_EXPIRE_DAYS * 86400);
     }
 
     /**
@@ -108,8 +107,10 @@ public class SearchHistoryService {
         
         try {
             String key = HISTORY_KEY_PREFIX + userId;
-            List<String> history = redisTemplate.opsForList().range(key, 0, MAX_HISTORY_SIZE - 1);
-            return history != null ? history : Collections.emptyList();
+            List<Object> history = redisOps.lRange(key, 0, MAX_HISTORY_SIZE - 1);
+            return history.stream()
+                    .map(Object::toString)
+                    .toList();
         } catch (Exception e) {
             log.error("获取搜索历史失败: userId={}", userId, e);
             return Collections.emptyList();
@@ -129,7 +130,7 @@ public class SearchHistoryService {
         
         try {
             String key = HISTORY_KEY_PREFIX + userId;
-            redisTemplate.opsForList().remove(key, 0, keyword);
+            redisOps.lRemove(key, 0, keyword);
         } catch (Exception e) {
             log.error("删除搜索历史失败: userId={}, keyword={}", userId, keyword, e);
         }
@@ -147,7 +148,7 @@ public class SearchHistoryService {
         
         try {
             String key = HISTORY_KEY_PREFIX + userId;
-            redisTemplate.delete(key);
+            redisOps.delete(key);
         } catch (Exception e) {
             log.error("清空搜索历史失败: userId={}", userId, e);
         }
@@ -161,17 +162,19 @@ public class SearchHistoryService {
     public List<String> getHotWords() {
         try {
             // 优先使用每日热词，没有则使用总热词
-            Set<String> dailyHot = redisTemplate.opsForZSet()
-                    .reverseRange(HOT_DAILY_KEY, 0, HOT_WORD_LIMIT - 1);
+            Set<Object> dailyHot = redisOps.zReverseRange(HOT_DAILY_KEY, 0, HOT_WORD_LIMIT - 1);
             
-            if (dailyHot != null && !dailyHot.isEmpty()) {
-                return new ArrayList<>(dailyHot);
+            if (!dailyHot.isEmpty()) {
+                return dailyHot.stream()
+                        .map(Object::toString)
+                        .toList();
             }
             
-            Set<String> hot = redisTemplate.opsForZSet()
-                    .reverseRange(HOT_KEY, 0, HOT_WORD_LIMIT - 1);
+            Set<Object> hot = redisOps.zReverseRange(HOT_KEY, 0, HOT_WORD_LIMIT - 1);
             
-            return hot != null ? new ArrayList<>(hot) : Collections.emptyList();
+            return hot.stream()
+                    .map(Object::toString)
+                    .toList();
         } catch (Exception e) {
             log.error("获取热门搜索词失败", e);
             return Collections.emptyList();

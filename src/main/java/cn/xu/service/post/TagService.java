@@ -1,9 +1,10 @@
 package cn.xu.service.post;
 
+import cn.xu.common.constants.BooleanConstants;
 import cn.xu.model.dto.post.PostTagRelation;
 import cn.xu.model.entity.Tag;
-import cn.xu.repository.IPostTagRepository;
-import cn.xu.repository.ITagRepository;
+import cn.xu.repository.PostTagRepository;
+import cn.xu.repository.TagRepository;
 import cn.xu.support.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,8 +24,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class TagService {
 
-    private final ITagRepository tagRepository;
-    private final IPostTagRepository postTagRepository;
+    private final TagRepository tagRepository;
+    private final PostTagRepository postTagRepository;
 
     // ==================== 标签CRUD ====================
 
@@ -58,7 +59,7 @@ public class TagService {
             throw e;
         } catch (Exception e) {
             log.error("根据ID获取标签出错, id: {}", id, e);
-            throw new BusinessException("获取标签出错: " + e.getMessage());
+            throw new BusinessException("获取标签失败，请稍后重试");
         }
     }
 
@@ -98,7 +99,7 @@ public class TagService {
             throw e;
         } catch (Exception e) {
             log.error("创建标签出错, name: {}", name, e);
-            throw new BusinessException("创建标签出错: " + e.getMessage());
+            throw new BusinessException("创建标签失败，请稍后重试");
         }
     }
 
@@ -145,7 +146,7 @@ public class TagService {
             throw e;
         } catch (Exception e) {
             log.error("更新标签出错, id: {}, name: {}", id, name, e);
-            throw new BusinessException("更新标签出错: " + e.getMessage());
+            throw new BusinessException("更新标签失败，请稍后重试");
         }
     }
 
@@ -191,7 +192,7 @@ public class TagService {
             throw e;
         } catch (Exception e) {
             log.error("更新标签出错, id: {}", tag.getId(), e);
-            throw new BusinessException("更新标签出错: " + e.getMessage());
+            throw new BusinessException("更新标签失败，请稍后重试");
         }
     }
 
@@ -219,7 +220,7 @@ public class TagService {
             throw e;
         } catch (Exception e) {
             log.error("删除标签出错, id: {}", id, e);
-            throw new BusinessException("删除标签出错: " + e.getMessage());
+            throw new BusinessException("删除标签失败，请稍后重试");
         }
     }
 
@@ -239,7 +240,7 @@ public class TagService {
             }
 
             // 切换推荐状态
-            int newStatus = (tag.getIsRecommended() == null || tag.getIsRecommended() == 0) ? 1 : 0;
+            int newStatus = BooleanConstants.toggle(tag.getIsRecommended());
             tag.setIsRecommended(newStatus);
             tag.setUpdateTime(java.time.LocalDateTime.now());
             tagRepository.updateTag(tag);
@@ -249,7 +250,7 @@ public class TagService {
             throw e;
         } catch (Exception e) {
             log.error("切换标签推荐状态出错, id: {}", id, e);
-            throw new BusinessException("操作出错: " + e.getMessage());
+            throw new BusinessException("操作失败，请稍后重试");
         }
     }
 
@@ -314,7 +315,7 @@ public class TagService {
             throw e;
         } catch (Exception e) {
             log.error("保存帖子标签关系出错, postId: {}, tagIds: {}", postId, tagIds, e);
-            throw new BusinessException("保存帖子标签关系出错: " + e.getMessage());
+            throw new BusinessException("保存帖子标签关系失败，请稍后重试");
         }
     }
 
@@ -348,7 +349,7 @@ public class TagService {
             log.info("删除帖子标签关系成功, postId: {}", postId);
         } catch (Exception e) {
             log.error("删除帖子标签关系出错, postId: {}", postId, e);
-            throw new BusinessException("删除帖子标签关系出错: " + e.getMessage());
+            throw new BusinessException("删除帖子标签关系失败，请稍后重试");
         }
     }
 
@@ -423,6 +424,66 @@ public class TagService {
         } catch (Exception e) {
             log.error("批量获取标签出错, tagIds: {}", tagIds, e);
             return new java.util.HashMap<>();
+        }
+    }
+
+    /**
+     * 批量获取帖子的标签名称数组（优化版）
+     * 直接返回 Map<postId, String[]>，减少中间转换
+     * 
+     * @param postIds 帖子ID列表
+     * @return Map<帖子ID, 标签名称数组>
+     */
+    public java.util.Map<Long, String[]> batchGetPostTagNames(List<Long> postIds) {
+        if (postIds == null || postIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        try {
+            // 1. 批量获取帖子标签关系
+            List<PostTagRelation> tagRelations = postTagRepository.batchGetTagIdsByPostIds(postIds);
+            if (tagRelations == null || tagRelations.isEmpty()) {
+                return Collections.emptyMap();
+            }
+
+            // 2. 收集所有标签ID
+            java.util.Set<Long> allTagIds = tagRelations.stream()
+                    .filter(r -> r.getTagIds() != null)
+                    .flatMap(r -> r.getTagIds().stream())
+                    .collect(Collectors.toSet());
+
+            if (allTagIds.isEmpty()) {
+                return Collections.emptyMap();
+            }
+
+            // 3. 批量获取标签信息（一次查询）
+            java.util.Map<Long, String> tagIdToNameMap = new java.util.HashMap<>();
+            List<Tag> tags = tagRepository.findByIds(new ArrayList<>(allTagIds));
+            if (tags != null) {
+                tags.forEach(tag -> tagIdToNameMap.put(tag.getId(), tag.getName()));
+            }
+
+            // 4. 构建最终结果 Map<postId, String[]>
+            java.util.Map<Long, String[]> result = new java.util.HashMap<>();
+            for (PostTagRelation relation : tagRelations) {
+                if (relation.getTagIds() != null && !relation.getTagIds().isEmpty()) {
+                    String[] tagNames = relation.getTagIds().stream()
+                            .map(tagIdToNameMap::get)
+                            .filter(name -> name != null && !name.isEmpty())
+                            .toArray(String[]::new);
+                    
+                    if (tagNames.length > 0) {
+                        result.put(relation.getPostId(), tagNames);
+                    }
+                }
+            }
+
+            log.debug("批量获取帖子标签名称成功, postCount: {}, tagCount: {}", postIds.size(), allTagIds.size());
+            return result;
+
+        } catch (Exception e) {
+            log.error("批量获取帖子标签名称失败, postIds: {}", postIds, e);
+            return Collections.emptyMap();
         }
     }
 }

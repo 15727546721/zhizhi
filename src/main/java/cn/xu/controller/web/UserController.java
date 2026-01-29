@@ -13,9 +13,8 @@ import cn.xu.model.entity.UserSettings;
 import cn.xu.model.vo.user.*;
 import cn.xu.service.security.PasswordResetService;
 import cn.xu.service.security.VerificationCodeService;
-import cn.xu.service.user.IUserService;
+import cn.xu.service.user.UserService;
 import cn.xu.service.user.UserProfileService;
-import cn.xu.service.user.UserServiceImpl;
 import cn.xu.service.user.UserSettingsService;
 import cn.xu.support.exception.BusinessException;
 import cn.xu.support.util.IpUtils;
@@ -27,9 +26,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
-import javax.annotation.Resource;
-import javax.servlet.http.HttpServletRequest;
-import javax.validation.Valid;
+import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import java.util.Collections;
 import java.util.List;
 
@@ -46,13 +45,13 @@ import java.util.List;
  *
  */
 @Slf4j
-@RequestMapping("api/user")
+@RequestMapping("/api/user")
 @RestController
 @Tag(name = "用户接口", description = "用户认证、资料管理、账户安全")
 public class UserController {
 
     @Resource(name = "userService")
-    private IUserService userService;
+    private UserService userService;
 
     @Resource
     private UserSettingsService userSettingsService;
@@ -101,7 +100,7 @@ public class UserController {
             throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "密码不能为空");
         }
         String clientIp = IpUtils.getClientIp(request);
-        User user = ((UserServiceImpl) userService).loginWithIp(loginRequest, clientIp);
+        User user = userService.loginWithIp(loginRequest, clientIp);
         if (user == null) {
             throw new BusinessException("登录失败");
         }
@@ -127,7 +126,7 @@ public class UserController {
             throw new BusinessException(ResponseCode.ILLEGAL_PARAMETER.getCode(), "验证码不能为空");
         }
         String clientIp = IpUtils.getClientIp(request);
-        User user = ((UserServiceImpl) userService).loginWithCode(loginRequest.getEmail(), loginRequest.getVerifyCode(), clientIp);
+        User user = userService.loginWithCode(loginRequest.getEmail(), loginRequest.getVerifyCode(), clientIp);
         if (user == null) {
             throw new BusinessException("登录失败");
         }
@@ -289,7 +288,7 @@ public class UserController {
     // ==================== 用户设置相关接口 ====================
 
     /**
-     * 获取用户设置（隐私、通知、邮箱验证状态）
+     * 获取用户设置（隐私、通知、私信、邮箱验证状态）
      */
     @GetMapping("/settings")
     @Operation(summary = "获取用户设置")
@@ -311,6 +310,9 @@ public class UserController {
                             .browserNotification(settings.getBrowserNotificationBool())
                             .soundNotification(settings.getSoundNotificationBool())
                             .build())
+                    .messageSettings(UserSettingsVO.MessageSettingsVO.builder()
+                            .allowStrangerMessage(settings.getAllowStrangerMessageBool())
+                            .build())
                     .emailVerified(settings.getEmailVerifiedBool())
                     .build();
 
@@ -331,7 +333,7 @@ public class UserController {
     /**
      * 更新隐私设置
      */
-    @PutMapping("/settings/privacy")
+    @PostMapping("/settings/privacy")
     @Operation(summary = "更新隐私设置")
     @ApiOperationLog(description = "更新隐私设置")
     @SaCheckLogin
@@ -361,7 +363,7 @@ public class UserController {
     /**
      * 更新通知设置
      */
-    @PutMapping("/settings/notification")
+    @PostMapping("/settings/notification")
     @Operation(summary = "更新通知设置")
     @ApiOperationLog(description = "更新通知设置")
     @SaCheckLogin

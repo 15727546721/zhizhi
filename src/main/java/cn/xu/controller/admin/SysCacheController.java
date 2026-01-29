@@ -2,6 +2,7 @@ package cn.xu.controller.admin;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.annotation.SaCheckPermission;
+import cn.xu.cache.core.RedisOperations;
 import cn.xu.common.ResponseCode;
 import cn.xu.common.annotation.ApiOperationLog;
 import cn.xu.common.response.PageResponse;
@@ -14,7 +15,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
 public class SysCacheController {
 
     @Autowired(required = false)
-    private RedisTemplate<String, Object> redisTemplate;
+    private RedisOperations redisOps;
 
     /**
      * 获取缓存信息
@@ -58,9 +58,9 @@ public class SysCacheController {
         info.put("uptimeInDays", 0);
         info.put("dbSize", 0);
 
-        if (redisTemplate != null) {
+        if (redisOps != null) {
             try {
-                Properties redisInfo = redisTemplate.getRequiredConnectionFactory()
+                Properties redisInfo = redisOps.getRedisTemplate().getRequiredConnectionFactory()
                         .getConnection().info();
                 if (redisInfo != null) {
                     info.put("redisVersion", redisInfo.getProperty("redis_version", "N/A"));
@@ -69,7 +69,7 @@ public class SysCacheController {
                     info.put("uptimeInDays", redisInfo.getProperty("uptime_in_days", "0"));
                 }
 
-                Long dbSize = redisTemplate.getRequiredConnectionFactory()
+                Long dbSize = redisOps.getRedisTemplate().getRequiredConnectionFactory()
                         .getConnection().dbSize();
                 info.put("dbSize", dbSize != null ? dbSize : 0);
             } catch (Exception e) {
@@ -89,6 +89,7 @@ public class SysCacheController {
      *
      * <p>分页查询缓存Key，支持模糊匹配
      * <p>需要system:cache:list权限
+     * <p>使用SCAN命令替代KEYS，避免阻塞Redis
      *
      * @param pageNo 页码
      * @param pageSize 每页数量
@@ -109,22 +110,22 @@ public class SysCacheController {
         List<CacheKeyVO> keys = new ArrayList<>();
         long total = 0;
 
-        if (redisTemplate != null) {
+        if (redisOps != null) {
             try {
                 String searchPattern = (pattern != null && !pattern.isEmpty()) ? "*" + pattern + "*" : "*";
-                Set<String> redisKeys = redisTemplate.keys(searchPattern);
+                
+                // 使用 SCAN 命令替代 KEYS，避免阻塞 Redis
+                Set<String> redisKeys = redisOps.scan(searchPattern, 1000);
 
-                if (redisKeys != null) {
-                    total = redisKeys.size();
-                    keys = redisKeys.stream()
-                            .skip((long) (pageNo - 1) * pageSize)
-                            .limit(pageSize)
-                            .map(key -> CacheKeyVO.builder()
-                                    .key(key)
-                                    .type(getKeyType(key))
-                                    .build())
-                            .collect(Collectors.toList());
-                }
+                total = redisKeys.size();
+                keys = redisKeys.stream()
+                        .skip((long) (pageNo - 1) * pageSize)
+                        .limit(pageSize)
+                        .map(key -> CacheKeyVO.builder()
+                                .key(key)
+                                .type(getKeyType(key))
+                                .build())
+                        .collect(Collectors.toList());
             } catch (Exception e) {
                 log.warn("获取缓存Key列表失败: {}", e.getMessage());
             }
@@ -157,9 +158,9 @@ public class SysCacheController {
         log.info("获取缓存值: key={}", key);
 
         Object value = null;
-        if (redisTemplate != null) {
+        if (redisOps != null) {
             try {
-                value = redisTemplate.opsForValue().get(key);
+                value = redisOps.get(key);
             } catch (Exception e) {
                 log.warn("获取缓存值失败: {}", e.getMessage());
             }
@@ -181,7 +182,7 @@ public class SysCacheController {
      * @param key 缓存Key
      * @return 删除结果
      */
-    @DeleteMapping("/delete/{key}")
+    @PostMapping("/delete/{key}")
     @Operation(summary = "删除缓存")
     @SaCheckLogin
     @SaCheckPermission("system:cache:delete")
@@ -189,9 +190,9 @@ public class SysCacheController {
     public ResponseEntity<Void> deleteCache(@PathVariable String key) {
         log.info("删除缓存: key={}", key);
 
-        if (redisTemplate != null) {
+        if (redisOps != null) {
             try {
-                redisTemplate.delete(key);
+                redisOps.delete(key);
             } catch (Exception e) {
                 log.warn("删除缓存失败: {}", e.getMessage());
             }

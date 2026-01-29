@@ -3,8 +3,8 @@ package cn.xu.service.post;
 import cn.xu.common.ResponseCode;
 import cn.xu.model.dto.post.PostTagRelation;
 import cn.xu.model.entity.Tag;
-import cn.xu.repository.IPostTagRepository;
-import cn.xu.repository.ITagRepository;
+import cn.xu.repository.PostTagRepository;
+import cn.xu.repository.TagRepository;
 import cn.xu.support.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,8 +24,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PostTagService {
 
-    private final IPostTagRepository postTagRepository;
-    private final ITagRepository tagRepository;
+    private final PostTagRepository postTagRepository;
+    private final TagRepository tagRepository;
 
     public List<PostTagRelation> batchGetTagIdsByPostIds(List<Long> postIds) {
         try {
@@ -102,7 +102,7 @@ public class PostTagService {
             throw e;
         } catch (Exception e) {
             log.error("更新标签时发生错误, id: {}, name: {}", id, name, e);
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "更新标签时发生错误: " + e.getMessage());
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "更新标签失败，请稍后重试");
         }
     }
 
@@ -119,7 +119,7 @@ public class PostTagService {
             throw e;
         } catch (Exception e) {
             log.error("删除标签时发生错误, id: {}", id, e);
-            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "删除标签时发生错误: " + e.getMessage());
+            throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "删除标签失败，请稍后重试");
         }
     }
 

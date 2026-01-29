@@ -1,12 +1,12 @@
 package cn.xu.task;
 
-import cn.xu.cache.RedisKeyManager;
+import cn.xu.cache.core.RedisKeyManager;
+import cn.xu.cache.core.RedisOperations;
 import cn.xu.model.entity.Post;
 import cn.xu.repository.mapper.PostMapper;
 import cn.xu.service.post.PostHotScorePolicy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class PostHotnessTask {
 
-    private final RedisTemplate<String, Object> redisTemplate;
+    private final RedisOperations redisOps;
     private final PostMapper postMapper;
 
     /**
@@ -38,8 +38,8 @@ public class PostHotnessTask {
     public void updatePostHotScores() {
         try {
             // 获取 Redis 中所有帖子的热度数据
-            Set<ZSetOperations.TypedTuple<Object>> allPosts = redisTemplate.opsForZSet()
-                    .rangeWithScores(RedisKeyManager.postHotRankKey(), 0, -1);
+            Set<ZSetOperations.TypedTuple<Object>> allPosts = redisOps.zRangeWithScores(
+                    RedisKeyManager.postHotRankKey(), 0, -1);
 
             if (allPosts == null || allPosts.isEmpty()) {
                 log.debug("Redis 中没有帖子热度数据，跳过更新");
@@ -89,13 +89,13 @@ public class PostHotnessTask {
                     );
 
                     // 更新 Redis 中该帖子的热度分数
-                    redisTemplate.opsForZSet().add(RedisKeyManager.postHotRankKey(), postId.toString(), hotScore);
+                    redisOps.zAdd(RedisKeyManager.postHotRankKey(), postId.toString(), hotScore);
                     updateCount++;
                 }
             }
 
             // 5. 保证 Redis 中只保存前1000名帖子的热度数据
-            redisTemplate.opsForZSet().removeRange(RedisKeyManager.postHotRankKey(), 1000, -1);
+            redisOps.zRemoveRange(RedisKeyManager.postHotRankKey(), 1000, -1);
 
             log.info("帖子热度更新成功，更新数量 {}/{}，保留前1000篇帖子热度", updateCount, postIds.size());
         } catch (Exception e) {

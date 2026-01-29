@@ -1,6 +1,7 @@
 package cn.xu.controller.admin;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
+import cn.xu.cache.core.RedisOperations;
 import cn.xu.common.ResponseCode;
 import cn.xu.common.annotation.ApiOperationLog;
 import cn.xu.common.response.ResponseEntity;
@@ -16,12 +17,11 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.RuntimeMXBean;
@@ -51,7 +51,7 @@ public class SysDashboardController {
     @Resource
     private TagMapper tagMapper;
     @Autowired(required = false)
-    private RedisTemplate<String, Object> redisTemplate;
+    private RedisOperations redisOps;
 
     /**
      * 获取首页顶部统计数据
@@ -124,7 +124,7 @@ public class SysDashboardController {
     @Operation(summary = "获取系统信息")
     @SaCheckLogin
     @ApiOperationLog(description = "获取系统信息")
-    public ResponseEntity<SystemInfoVO> getSystemInfo() {
+    public ResponseEntity<ServerInfoVO> getSystemInfo() {
         log.info("获取系统信息");
 
         RuntimeMXBean runtimeMXBean = ManagementFactory.getRuntimeMXBean();
@@ -132,26 +132,111 @@ public class SysDashboardController {
         Properties props = System.getProperties();
         Runtime runtime = Runtime.getRuntime();
 
-        SystemInfoVO systemInfo = SystemInfoVO.builder()
-                .osName(props.getProperty("os.name"))
-                .osArch(props.getProperty("os.arch"))
-                .osVersion(props.getProperty("os.version"))
-                .javaVersion(props.getProperty("java.version"))
-                .javaVendor(props.getProperty("java.vendor"))
-                .jvmName(runtimeMXBean.getVmName())
-                .jvmVersion(runtimeMXBean.getVmVersion())
-                .availableProcessors(osMXBean.getAvailableProcessors())
-                .totalMemory(runtime.totalMemory() / 1024 / 1024 + " MB")
-                .freeMemory(runtime.freeMemory() / 1024 / 1024 + " MB")
-                .maxMemory(runtime.maxMemory() / 1024 / 1024 + " MB")
-                .userDir(props.getProperty("user.dir"))
+        // CPU信息
+        CpuInfo cpu = new CpuInfo();
+        cpu.setCpuNum(osMXBean.getAvailableProcessors());
+        cpu.setUsed(0.0); // 需要额外计算
+        cpu.setSys(0.0);
+        cpu.setFree(100.0);
+
+        // 内存信息
+        MemInfo mem = new MemInfo();
+        long totalMem = 0;
+        long freeMem = 0;
+        try {
+            if (osMXBean instanceof com.sun.management.OperatingSystemMXBean) {
+                com.sun.management.OperatingSystemMXBean sunOsMXBean = (com.sun.management.OperatingSystemMXBean) osMXBean;
+                totalMem = sunOsMXBean.getTotalPhysicalMemorySize();
+                freeMem = sunOsMXBean.getFreePhysicalMemorySize();
+            }
+        } catch (Exception e) {
+            log.warn("获取系统内存信息失败");
+        }
+        mem.setTotal(String.format("%.2f", totalMem / 1024.0 / 1024.0 / 1024.0));
+        mem.setUsed(String.format("%.2f", (totalMem - freeMem) / 1024.0 / 1024.0 / 1024.0));
+        mem.setFree(String.format("%.2f", freeMem / 1024.0 / 1024.0 / 1024.0));
+        mem.setUsage(totalMem > 0 ? (double) (totalMem - freeMem) * 100 / totalMem : 0);
+
+        // JVM信息
+        JvmInfo jvm = new JvmInfo();
+        jvm.setTotal(String.valueOf(runtime.totalMemory() / 1024 / 1024));
+        jvm.setUsed(String.valueOf((runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024));
+        jvm.setFree(String.valueOf(runtime.freeMemory() / 1024 / 1024));
+        jvm.setUsage(runtime.totalMemory() > 0 ? (double) (runtime.totalMemory() - runtime.freeMemory()) * 100 / runtime.totalMemory() : 0);
+        jvm.setName(runtimeMXBean.getVmName());
+        jvm.setVersion(props.getProperty("java.version"));
+        jvm.setHome(props.getProperty("java.home"));
+        
+        // 计算运行时长
+        long uptime = runtimeMXBean.getUptime();
+        long days = uptime / (1000 * 60 * 60 * 24);
+        long hours = (uptime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60);
+        long minutes = (uptime % (1000 * 60 * 60)) / (1000 * 60);
+        jvm.setRunTime(days + "天" + hours + "小时" + minutes + "分钟");
+        jvm.setStartTime(java.time.LocalDateTime.ofInstant(
+                java.time.Instant.ofEpochMilli(runtimeMXBean.getStartTime()),
+                java.time.ZoneId.systemDefault()).toString().replace("T", " "));
+
+        // 系统信息
+        SysInfo sys = new SysInfo();
+        sys.setComputerName(getHostName());
+        sys.setComputerIp(getHostIp());
+        sys.setOsName(props.getProperty("os.name"));
+        sys.setOsArch(props.getProperty("os.arch"));
+        sys.setUserDir(props.getProperty("user.dir"));
+
+        // 磁盘信息
+        java.util.List<SysFileInfo> sysFiles = new java.util.ArrayList<>();
+        java.io.File[] roots = java.io.File.listRoots();
+        for (java.io.File root : roots) {
+            SysFileInfo sysFile = new SysFileInfo();
+            sysFile.setDirName(root.getPath());
+            sysFile.setSysTypeName(System.getProperty("os.name"));
+            sysFile.setTypeName("本地磁盘");
+            sysFile.setTotal(formatBytes(root.getTotalSpace()));
+            sysFile.setFree(formatBytes(root.getFreeSpace()));
+            sysFile.setUsed(formatBytes(root.getTotalSpace() - root.getFreeSpace()));
+            sysFile.setUsage(root.getTotalSpace() > 0 ? 
+                    (double) (root.getTotalSpace() - root.getFreeSpace()) * 100 / root.getTotalSpace() : 0);
+            sysFiles.add(sysFile);
+        }
+
+        ServerInfoVO serverInfo = ServerInfoVO.builder()
+                .cpu(cpu)
+                .mem(mem)
+                .jvm(jvm)
+                .sys(sys)
+                .sysFiles(sysFiles)
                 .build();
 
-        return ResponseEntity.<SystemInfoVO>builder()
+        return ResponseEntity.<ServerInfoVO>builder()
                 .code(ResponseCode.SUCCESS.getCode())
                 .info("获取成功")
-                .data(systemInfo)
+                .data(serverInfo)
                 .build();
+    }
+
+    private String getHostName() {
+        try {
+            return java.net.InetAddress.getLocalHost().getHostName();
+        } catch (Exception e) {
+            return "未知";
+        }
+    }
+
+    private String getHostIp() {
+        try {
+            return java.net.InetAddress.getLocalHost().getHostAddress();
+        } catch (Exception e) {
+            return "127.0.0.1";
+        }
+    }
+
+    private String formatBytes(long bytes) {
+        if (bytes < 1024) return bytes + " B";
+        if (bytes < 1024 * 1024) return String.format("%.2f KB", bytes / 1024.0);
+        if (bytes < 1024 * 1024 * 1024) return String.format("%.2f MB", bytes / 1024.0 / 1024.0);
+        return String.format("%.2f GB", bytes / 1024.0 / 1024.0 / 1024.0);
     }
 
     /**
@@ -176,9 +261,9 @@ public class SysDashboardController {
                 .uptimeInDays(0)
                 .build();
 
-        if (redisTemplate != null) {
+        if (redisOps != null) {
             try {
-                Properties info = redisTemplate.getRequiredConnectionFactory()
+                Properties info = redisOps.getRedisTemplate().getRequiredConnectionFactory()
                         .getConnection().info();
                 if (info != null) {
                     cacheInfo.setRedisVersion(info.getProperty("redis_version", "N/A"));
@@ -230,6 +315,67 @@ public class SysDashboardController {
         private String freeMemory;
         private String maxMemory;
         private String userDir;
+    }
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ServerInfoVO {
+        private CpuInfo cpu;
+        private MemInfo mem;
+        private JvmInfo jvm;
+        private SysInfo sys;
+        private java.util.List<SysFileInfo> sysFiles;
+    }
+
+    @Data
+    public static class CpuInfo {
+        private int cpuNum;
+        private double used;
+        private double sys;
+        private double free;
+    }
+
+    @Data
+    public static class MemInfo {
+        private String total;
+        private String used;
+        private String free;
+        private double usage;
+    }
+
+    @Data
+    public static class JvmInfo {
+        private String total;
+        private String used;
+        private String free;
+        private double usage;
+        private String name;
+        private String version;
+        private String home;
+        private String startTime;
+        private String runTime;
+    }
+
+    @Data
+    public static class SysInfo {
+        private String computerName;
+        private String computerIp;
+        private String osName;
+        private String osArch;
+        private String userDir;
+    }
+
+    @Data
+    public static class SysFileInfo {
+        private String dirName;
+        private String sysTypeName;
+        private String typeName;
+        private String total;
+        private String free;
+        private String used;
+        private double usage;
     }
 
     @Data

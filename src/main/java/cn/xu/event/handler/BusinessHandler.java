@@ -2,8 +2,8 @@ package cn.xu.event.handler;
 
 import cn.xu.event.events.FollowEvent;
 import cn.xu.event.events.UserEvent;
-import cn.xu.repository.IGreetingRecordRepository;
-import cn.xu.repository.IUserConversationRepository;
+import cn.xu.repository.GreetingRecordRepository;
+import cn.xu.repository.UserConversationRepository;
 import cn.xu.service.follow.FollowService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,8 +28,8 @@ import org.springframework.stereotype.Component;
 public class BusinessHandler {
     
     private final FollowService followService;
-    private final IGreetingRecordRepository greetingRecordRepository;
-    private final IUserConversationRepository conversationRepository;
+    private final GreetingRecordRepository greetingRecordRepository;
+    private final UserConversationRepository conversationRepository;
     
     // ==================== 关注副作用 ====================
     

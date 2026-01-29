@@ -1,6 +1,6 @@
 package cn.xu.service.favorite;
 
-import cn.xu.cache.FavoriteCacheRepository;
+import cn.xu.cache.repository.FavoriteCacheRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -10,7 +10,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * 收藏数据一致性服务
- * <p>定时检查并修复收藏数据的一致性</p>
+ * <p>定时检查并同步收藏数据的一致性</p>
  */
 @Slf4j
 @Service
@@ -21,7 +21,7 @@ public class FavoriteDataConsistencyService {
     private final FavoriteCacheRepository favoriteCacheRepository;
 
     /**
-     * 定时任务：每30分钟执行一次，检查并修复收藏数据的一致性
+     * 定时任务：每30分钟执行一次，检查并同步收藏数据的一致性
      */
     @Scheduled(fixedRate = 30, timeUnit = TimeUnit.MINUTES)
     public void checkAndFixConsistency() {
@@ -55,7 +55,7 @@ public class FavoriteDataConsistencyService {
     }
 
     /**
-     * 检查并修复目标项的收藏数量一致性
+     * 检查并同步目标项的收藏数量一致性
      */
     public void checkAndFixTargetConsistency(Long targetId, String targetType) {
         try {
@@ -67,9 +67,9 @@ public class FavoriteDataConsistencyService {
             // 获取缓存中该目标项的收藏数量
             Long cacheCount = favoriteCacheRepository.getFavoriteCount(targetId, targetType);
 
-            // 如果缓存和数据库中的收藏数量不一致，修复缓存
+            // 如果缓存和数据库中的收藏数量不一致，同步缓存
             if (cacheCount != null && cacheCount.intValue() != dbCount) {
-                log.warn("[收藏数据一致性检查] 缓存和数据库中的收藏数量不一致，修复缓存, targetId={}, targetType={}, dbCount={}, cacheCount={}",
+                log.warn("[收藏数据一致性检查] 缓存和数据库中的收藏数量不一致，同步缓存, targetId={}, targetType={}, dbCount={}, cacheCount={}",
                         targetId, targetType, dbCount, cacheCount);
                 favoriteCacheRepository.setFavoriteCount(targetId, targetType, (long) dbCount);
             } else if (cacheCount == null && dbCount > 0) {
@@ -86,7 +86,7 @@ public class FavoriteDataConsistencyService {
     }
 
     /**
-     * 检查并修复用户对目标项的收藏关系一致性
+     * 检查并同步用户对目标项的收藏关系一致性
      */
     public void checkAndFixUserFavoriteConsistency(Long userId, Long targetId, String targetType) {
         try {
@@ -105,9 +105,9 @@ public class FavoriteDataConsistencyService {
                         userId, targetId, targetType, dbFavorited);
                 favoriteCacheRepository.updateUserFavoriteRelation(userId, targetId, targetType, dbFavorited);
             }
-            // 如果缓存和数据库中的值不一致，则修复缓存
+            // 如果缓存和数据库中的值不一致，则同步缓存
             else if (dbFavorited != cacheFavorited) {
-                log.warn("[收藏数据一致性检查] 用户收藏关系不一致，修复缓存, userId={}, targetId={}, targetType={}, dbStatus={}, cacheStatus={}",
+                log.warn("[收藏数据一致性检查] 用户收藏关系不一致，同步缓存, userId={}, targetId={}, targetType={}, dbStatus={}, cacheStatus={}",
                         userId, targetId, targetType, dbFavorited, cacheFavorited);
                 favoriteCacheRepository.updateUserFavoriteRelation(userId, targetId, targetType, dbFavorited);
             }

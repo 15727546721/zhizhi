@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.xu.repository.mapper.ColumnPostMapper">
+
+    <resultMap id="BaseResultMap" type="cn.xu.model.entity.ColumnPost">
+        <id column="id" property="id"/>
+        <result column="column_id" property="columnId"/>
+        <result column="post_id" property="postId"/>
+        <result column="sort" property="sort"/>
+        <result column="create_time" property="createTime"/>
+    </resultMap>
+
+    <resultMap id="ColumnResultMap" type="cn.xu.model.entity.Column">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="name" property="name"/>
+        <result column="description" property="description"/>
+        <result column="cover_url" property="coverUrl"/>
+        <result column="status" property="status"/>
+        <result column="post_count" property="postCount"/>
+        <result column="subscribe_count" property="subscribeCount"/>
+        <result column="is_recommended" property="isRecommended"/>
+        <result column="sort" property="sort"/>
+        <result column="last_post_time" property="lastPostTime"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, column_id, post_id, sort, create_time
+    </sql>
+
+    <insert id="insert" parameterType="cn.xu.model.entity.ColumnPost" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO column_post (column_id, post_id, sort, create_time)
+        VALUES (#{columnId}, #{postId}, #{sort}, #{createTime})
+    </insert>
+
+    <delete id="delete">
+        DELETE FROM column_post WHERE column_id = #{columnId} AND post_id = #{postId}
+    </delete>
+
+    <update id="updateSort">
+        UPDATE column_post SET sort = #{sort} WHERE column_id = #{columnId} AND post_id = #{postId}
+    </update>
+
+    <update id="batchUpdateSort">
+        <foreach collection="list" item="item" separator=";">
+            UPDATE column_post SET sort = #{item.sort} 
+            WHERE column_id = #{columnId} AND post_id = #{item.postId}
+        </foreach>
+    </update>
+
+    <select id="selectByColumnAndPost" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM column_post
+        WHERE column_id = #{columnId} AND post_id = #{postId}
+    </select>
+
+    <select id="selectByColumnId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM column_post
+        WHERE column_id = #{columnId}
+        ORDER BY sort ASC, create_time ASC
+    </select>
+
+    <select id="selectByColumnIdWithPage" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM column_post
+        WHERE column_id = #{columnId}
+        ORDER BY sort ASC, create_time ASC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="selectColumnsByPostId" resultMap="ColumnResultMap">
+        SELECT c.id, c.user_id, c.name, c.description, c.cover_url, c.status, c.post_count, 
+               c.subscribe_count, c.is_recommended, c.sort, c.last_post_time, c.create_time, c.update_time
+        FROM `column` c
+        INNER JOIN column_post cp ON c.id = cp.column_id
+        WHERE cp.post_id = #{postId} AND c.status = 1
+        ORDER BY cp.create_time DESC
+    </select>
+
+    <select id="countByColumnId" resultType="int">
+        SELECT COUNT(*) FROM column_post WHERE column_id = #{columnId}
+    </select>
+
+    <select id="countByPostId" resultType="int">
+        SELECT COUNT(*) FROM column_post WHERE post_id = #{postId}
+    </select>
+
+    <select id="exists" resultType="int">
+        SELECT COUNT(*) FROM column_post WHERE column_id = #{columnId} AND post_id = #{postId}
+    </select>
+
+    <select id="selectPreviousBySort" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM column_post
+        WHERE column_id = #{columnId} AND sort &lt; #{currentSort}
+        ORDER BY sort DESC
+        LIMIT 1
+    </select>
+
+    <select id="selectNextBySort" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM column_post
+        WHERE column_id = #{columnId} AND sort &gt; #{currentSort}
+        ORDER BY sort ASC
+        LIMIT 1
+    </select>
+
+    <delete id="deleteByColumnId">
+        DELETE FROM column_post WHERE column_id = #{columnId}
+    </delete>
+
+    <delete id="deleteByPostId">
+        DELETE FROM column_post WHERE post_id = #{postId}
+    </delete>
+
+</mapper>

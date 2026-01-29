@@ -18,8 +18,8 @@ import java.util.List;
  * 功能：
  * 1. 每天凌晨4点校验帖子统计字段
  * 2. 对比数据库实际统计和post表中的冗余字段
- * 3. 发现不一致时自动修复
- * 4. 记录修复日志供排查
+ * 3. 发现不一致时自动同步
+ * 4. 记录同步日志供排查
  * 
  * 
  */
@@ -61,7 +61,7 @@ public class PostCountVerifyTask {
                 
                 totalCount += posts.size();
                 
-                // 2. 逐个校验并修复
+                // 2. 逐个校验并同步
                 for (Post post : posts) {
                     boolean fixed = verifyAndFixSinglePost(post);
                     if (fixed) {
@@ -78,7 +78,7 @@ public class PostCountVerifyTask {
             }
             
             long costTime = System.currentTimeMillis() - startTime;
-            log.info("[定时任务] 帖子校验完成！总数={}, 修复数={}, 耗时={}ms", 
+            log.info("[定时任务] 帖子校验完成！总数={}, 同步数={}, 耗时={}ms", 
                 totalCount, fixedCount, costTime);
             
         } catch (Exception e) {
@@ -87,10 +87,10 @@ public class PostCountVerifyTask {
     }
     
     /**
-     * 校验并修复单个帖子的统计字段
+     * 校验并同步单个帖子的统计字段
      * 
      * @param post 帖子对象
-     * @return true-需要修复 false-数据一致
+     * @return true-需要同步 false-数据一致
      */
     private boolean verifyAndFixSinglePost(Post post) {
         try {
@@ -112,7 +112,7 @@ public class PostCountVerifyTask {
             Long dbCommentCount = post.getCommentCount() != null ? post.getCommentCount() : 0L;
             Long dbFavoriteCount = post.getFavoriteCount() != null ? post.getFavoriteCount() : 0L;
             
-            // 5. 对比并判断是否需要修复（浏览量不校验，因为可能有缓存延迟）
+            // 5. 对比并判断是否需要同步（浏览量不校验，因为可能有缓存延迟）
             boolean needFix = !dbLikeCount.equals(actualLikeCount)
                 || !dbCommentCount.equals(actualCommentCount)
                 || !dbFavoriteCount.equals(actualFavoriteCount);
@@ -126,7 +126,7 @@ public class PostCountVerifyTask {
                     dbFavoriteCount, actualFavoriteCount
                 );
                 
-                // 6. 修复数据（不修改viewCount，保持原值）
+                // 6. 同步数据（不修改viewCount，保持原值）
                 Long viewCount = post.getViewCount() != null ? post.getViewCount() : 0L;
                 postMapper.updateCounts(
                     postId,
@@ -136,7 +136,7 @@ public class PostCountVerifyTask {
                     actualFavoriteCount
                 );
                 
-                log.info("[修复成功] postId={}", postId);
+                log.info("[同步成功] postId={}", postId);
                 return true;
             }
             

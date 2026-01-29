@@ -48,7 +48,7 @@ public class SysJobController {
                     .id(2L)
                     .jobName("Redis数据同步")
                     .jobGroup("CACHE")
-                    .invokeTarget("redisSyncService.syncAll()")
+                    .invokeTarget("redisSyncTask.syncAll()")
                     .cronExpression("0 */30 * * * ?")
                     .status(1)
                     .remark("每30分钟同步Redis缓存")
@@ -160,7 +160,7 @@ public class SysJobController {
      * @param job 任务信息
      * @return 更新结果
      */
-    @PutMapping("/update")
+    @PostMapping("/update")
     @Operation(summary = "修改定时任务")
     @SaCheckLogin
     @SaCheckPermission("system:job:update")
@@ -182,7 +182,7 @@ public class SysJobController {
      * @param ids 任务ID列表
      * @return 删除结果
      */
-    @DeleteMapping("/delete")
+    @PostMapping("/delete")
     @Operation(summary = "删除定时任务")
     @SaCheckLogin
     @SaCheckPermission("system:job:delete")

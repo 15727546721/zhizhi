@@ -21,7 +21,7 @@ public final class FilePathConstants {
     private FilePathConstants() {
     }
     
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMM");
+    private static final DateTimeFormatter DATE_FORMATTER = TimeConstants.YEAR_MONTH_FORMATTER;
     
     /**
      * 生成安全的文件路径

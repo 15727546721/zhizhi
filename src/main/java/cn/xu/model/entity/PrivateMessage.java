@@ -206,7 +206,7 @@ public class PrivateMessage implements Serializable {
      * 是否未读
      */
     public boolean isUnread() {
-        return isRead == null || isRead == 0;
+        return cn.xu.common.constants.BooleanConstants.isFalse(isRead);
     }
     
     /** 

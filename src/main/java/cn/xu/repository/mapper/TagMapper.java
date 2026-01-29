@@ -111,4 +111,11 @@ public interface TagMapper {
      * @return 标签列表
      */
     List<Tag> findByIds(@Param("tagIds") List<Long> tagIds);
+
+    // ==================== 统计相关方法 ====================
+    
+    /**
+     * 获取热门标签排行（用于仪表盘）
+     */
+    List<java.util.Map<String, Object>> selectHotTags(@Param("limit") int limit);
 }

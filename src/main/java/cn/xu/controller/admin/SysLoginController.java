@@ -6,7 +6,8 @@ import cn.xu.common.annotation.ApiOperationLog;
 import cn.xu.common.response.ResponseEntity;
 import cn.xu.model.dto.user.LoginFormRequest;
 import cn.xu.model.entity.User;
-import cn.xu.service.user.IUserService;
+import cn.xu.model.enums.UserType;
+import cn.xu.service.user.UserService;
 import cn.xu.support.exception.BusinessException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -14,7 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 
 /**
  * 后台管理系统登录控制器
@@ -30,7 +31,7 @@ import javax.annotation.Resource;
 public class SysLoginController {
 
     @Resource(name = "userService")
-    private IUserService userService;
+    private UserService userService;
 
     /**
      * 后台管理登录
@@ -64,13 +65,13 @@ public class SysLoginController {
                 throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "用户名或密码错误");
             }
 
-            // 检查用户是否有管理员权限（userType >= 2 表示管理员或官方账号）
-            if (user.getUserType() == null || user.getUserType() < 2) {
+            // 检查用户是否有后台管理权限（官方账号及以上）
+            if (!UserType.hasAdminAccess(user.getUserType())) {
                 throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "您没有后台管理权限");
             }
 
             // 检查用户状态
-            if (user.getStatus() != null && user.getStatus() == 0) {
+            if (user.getStatus() != null && user.getStatus() == User.STATUS_DISABLED) {
                 throw new BusinessException(ResponseCode.UN_ERROR.getCode(), "账户已被禁用");
             }
 

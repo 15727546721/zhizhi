@@ -1,5 +1,6 @@
 package cn.xu.repository.mapper;
 
+import cn.xu.model.dto.post.TagStatistics;
 import cn.xu.model.entity.PostTag;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -43,35 +44,4 @@ public interface PostTagMapper {
     
     // 获取热门标签统计
     List<TagStatistics> selectHotTags(@Param("limit") int limit);
-    
-    class TagStatistics {
-        private Long tagId;
-        private String tagName;
-        private Integer usageCount;
-        
-        // Getters and Setters
-        public Long getTagId() {
-            return tagId;
-        }
-        
-        public void setTagId(Long tagId) {
-            this.tagId = tagId;
-        }
-        
-        public String getTagName() {
-            return tagName;
-        }
-        
-        public void setTagName(String tagName) {
-            this.tagName = tagName;
-        }
-        
-        public Integer getUsageCount() {
-            return usageCount;
-        }
-        
-        public void setUsageCount(Integer usageCount) {
-            this.usageCount = usageCount;
-        }
-    }
 }

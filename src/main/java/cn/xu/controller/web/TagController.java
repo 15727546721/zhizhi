@@ -6,14 +6,14 @@ import cn.xu.common.response.PageResponse;
 import cn.xu.common.response.ResponseEntity;
 import cn.xu.model.entity.Post;
 import cn.xu.model.entity.Tag;
-import cn.xu.repository.IPostTagRepository;
+import cn.xu.repository.PostTagRepository;
 import cn.xu.service.post.TagService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
-import javax.annotation.Resource;
+import jakarta.annotation.Resource;
 import java.util.List;
 
 /**
@@ -33,7 +33,7 @@ public class TagController {
     private TagService tagService;
 
     @Resource
-    private IPostTagRepository postTagRepository;
+    private PostTagRepository postTagRepository;
 
     /**
      * 获取标签列表
@@ -149,8 +149,8 @@ public class TagController {
     @ApiOperationLog(description = "获取标签相关帖子")
     public ResponseEntity<PageResponse<List<Post>>> getTagPosts(
             @Parameter(description = "标签ID") @PathVariable Long tagId,
-            @Parameter(description = "页码") @RequestParam(defaultValue = "1") Integer pageNo,
-            @Parameter(description = "每页数量") @RequestParam(defaultValue = "20") Integer pageSize) {
+            @Parameter(description = "页码") @RequestParam(defaultValue = "1") Integer page,
+            @Parameter(description = "每页数量") @RequestParam(defaultValue = "20") Integer size) {
         try {
             if (tagId == null) {
                 return ResponseEntity.<PageResponse<List<Post>>>builder()
@@ -160,17 +160,17 @@ public class TagController {
             }
             
             // 计算offset
-            int offset = Math.max(0, (pageNo - 1) * pageSize);
+            int offset = Math.max(0, (page - 1) * size);
             
             // 获取标签相关的帖子列表
-            List<Post> posts = postTagRepository.getPostsByTagId(tagId, offset, pageSize);
+            List<Post> posts = postTagRepository.getPostsByTagId(tagId, offset, size);
             
             // 统计总数（简化处理，实际应该单独查询）
             long total = posts.size();
             
             // 构建分页响应
             PageResponse<List<Post>> pageResponse = 
-                PageResponse.ofList(pageNo, pageSize, total, posts);
+                PageResponse.ofList(page, size, total, posts);
             
             return ResponseEntity.<PageResponse<List<Post>>>builder()
                     .code(ResponseCode.SUCCESS.getCode())

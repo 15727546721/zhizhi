@@ -98,7 +98,7 @@ public class MinioService implements FileStorageService {
 
         } catch (Exception e) {
             log.error("[文件] 文件上传失败 - 文件名: {}", fileName, e);
-            throw new BusinessException("文件上传失败: " + e.getMessage());
+            throw new BusinessException("文件上传失败，请稍后重试");
         }
     }
 
@@ -146,7 +146,7 @@ public class MinioService implements FileStorageService {
 
         } catch (Exception e) {
             log.error("[文件] 文件下载失败 - 文件名: {}", fileName, e);
-            throw new BusinessException("文件下载失败: " + e.getMessage());
+            throw new BusinessException("文件下载失败，请稍后重试");
         }
     }
 
@@ -163,7 +163,7 @@ public class MinioService implements FileStorageService {
             );
         } catch (Exception e) {
             log.error("[文件] 获取文件流失败 - 文件名: {}", fileName, e);
-            throw new BusinessException("获取文件流失败: " + e.getMessage());
+            throw new BusinessException("获取文件流失败，请稍后重试");
         }
     }
 
@@ -186,7 +186,7 @@ public class MinioService implements FileStorageService {
 
         } catch (Exception e) {
             log.error("[文件] 文件删除失败 - 文件名: {}", fileName, e);
-            throw new BusinessException("文件删除失败: " + e.getMessage());
+            throw new BusinessException("文件删除失败，请稍后重试");
         }
     }
 
@@ -276,7 +276,7 @@ public class MinioService implements FileStorageService {
             );
         } catch (Exception e) {
             log.error("[文件] 生成预签名URL失败 - 文件名: {}", fileName, e);
-            throw new BusinessException("生成预签名URL失败: " + e.getMessage());
+            throw new BusinessException("生成预签名URL失败，请稍后重试");
         }
     }
 

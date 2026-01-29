@@ -1,6 +1,6 @@
 package cn.xu.service.security;
 
-import cn.xu.cache.RedisService;
+import cn.xu.cache.core.RedisOperations;
 import cn.xu.support.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +19,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class LoginSecurityService {
 
-    private final RedisService redisService;
+    private final RedisOperations redisOperations;
     private final IpBlockService ipBlockService;
 
     /** Redis Key前缀 */
@@ -56,8 +56,8 @@ public class LoginSecurityService {
 
         // 2. 检查账户是否被锁定
         String lockKey = KEY_PREFIX_LOCK + identifier.toLowerCase();
-        if (redisService.hasKey(lockKey)) {
-            long ttl = redisService.getExpire(lockKey);
+        if (redisOperations.hasKey(lockKey)) {
+            long ttl = redisOperations.getExpire(lockKey);
             int minutes = (int) Math.ceil(ttl / 60.0);
             log.warn("[登录安全] 账户已被锁定 - identifier: {}, remainingMinutes: {}", maskIdentifier(identifier), minutes);
             throw new BusinessException(40302, "账户已被锁定，请" + minutes + "分钟后重试");
@@ -79,13 +79,13 @@ public class LoginSecurityService {
 
         // 增加失败次数
         long currentCount;
-        Object countObj = redisService.get(failCountKey);
+        Object countObj = redisOperations.get(failCountKey);
         if (countObj == null) {
             // 第一次失败
-            redisService.set(failCountKey, "1", failCountExpireSeconds);
+            redisOperations.set(failCountKey, "1", failCountExpireSeconds);
             currentCount = 1;
         } else {
-            currentCount = redisService.incr(failCountKey, 1);
+            currentCount = redisOperations.increment(failCountKey, 1);
         }
 
         log.warn("[登录安全] 登录失败 - identifier: {}, ip: {}, failCount: {}/{}",
@@ -95,10 +95,10 @@ public class LoginSecurityService {
         if (currentCount >= maxFailCount) {
             // 锁定账户
             String lockKey = KEY_PREFIX_LOCK + lowerIdentifier;
-            redisService.set(lockKey, "1", lockDurationSeconds);
+            redisOperations.set(lockKey, "1", lockDurationSeconds);
 
             // 清除失败计数
-            redisService.del(failCountKey);
+            redisOperations.delete(failCountKey);
 
             // 记录IP异常行为
             ipBlockService.recordSuspiciousActivity(clientIp, "login_brute_force");
@@ -121,7 +121,7 @@ public class LoginSecurityService {
      */
     public void clearLoginFailure(String identifier) {
         String failCountKey = KEY_PREFIX_FAIL_COUNT + identifier.toLowerCase();
-        redisService.del(failCountKey);
+        redisOperations.delete(failCountKey);
         log.debug("[登录安全] 清除登录失败记录 - identifier: {}", maskIdentifier(identifier));
     }
 
@@ -133,7 +133,7 @@ public class LoginSecurityService {
      */
     public int getRemainingAttempts(String identifier) {
         String failCountKey = KEY_PREFIX_FAIL_COUNT + identifier.toLowerCase();
-        Object countObj = redisService.get(failCountKey);
+        Object countObj = redisOperations.get(failCountKey);
         if (countObj == null) {
             return maxFailCount;
         }
@@ -149,7 +149,7 @@ public class LoginSecurityService {
      */
     public boolean isAccountLocked(String identifier) {
         String lockKey = KEY_PREFIX_LOCK + identifier.toLowerCase();
-        return redisService.hasKey(lockKey);
+        return redisOperations.hasKey(lockKey);
     }
 
     /**
@@ -160,7 +160,8 @@ public class LoginSecurityService {
     public void unlockAccount(String identifier) {
         String lockKey = KEY_PREFIX_LOCK + identifier.toLowerCase();
         String failCountKey = KEY_PREFIX_FAIL_COUNT + identifier.toLowerCase();
-        redisService.del(lockKey, failCountKey);
+        redisOperations.delete(lockKey);
+        redisOperations.delete(failCountKey);
         log.info("[登录安全] 管理员解锁账户 - identifier: {}", maskIdentifier(identifier));
     }
 

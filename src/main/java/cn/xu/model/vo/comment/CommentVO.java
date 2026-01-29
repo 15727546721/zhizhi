@@ -1,5 +1,6 @@
 package cn.xu.model.vo.comment;
 
+import cn.xu.model.enums.UserType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -82,6 +83,9 @@ public class CommentVO {
     @Schema(description = "当前用户是否点赞", example = "false")
     private Boolean isLiked;
 
+    @Schema(description = "作者是否点赞", example = "false")
+    private Boolean isAuthorLiked;
+
     // ========== 评论状态 ==========
 
     @Schema(description = "是否置顶", example = "false")
@@ -125,13 +129,13 @@ public class CommentVO {
      * 判断是否是官方账号评论
      */
     public boolean isOfficialAccount() {
-        return userType != null && userType == 2;
+        return UserType.isOfficial(userType);
     }
 
     /**
      * 判断是否是管理员评论
      */
     public boolean isAdmin() {
-        return userType != null && userType == 3;
+        return UserType.isSuperAdmin(userType);
     }
 }

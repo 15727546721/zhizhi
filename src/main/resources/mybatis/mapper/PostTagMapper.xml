@@ -100,7 +100,7 @@
         WHERE tag_id = #{tagId}
     </select>
 
-    <select id="selectHotTags" resultType="cn.xu.repository.mapper.PostTagMapper$TagStatistics">
+    <select id="selectHotTags" resultType="cn.xu.model.dto.post.TagStatistics">
         SELECT 
             t.id as tagId,
             t.name as tagName,

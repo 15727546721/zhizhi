@@ -5,16 +5,16 @@ import cn.xu.common.ResponseCode;
 import cn.xu.common.annotation.ApiOperationLog;
 import cn.xu.common.response.PageResponse;
 import cn.xu.common.response.ResponseEntity;
-import cn.xu.model.dto.like.LikeCountResponse;
 import cn.xu.model.dto.like.LikeRequest;
+import cn.xu.model.vo.like.LikeStatusVO;
 import cn.xu.model.entity.Comment;
 import cn.xu.model.entity.Like;
 import cn.xu.model.entity.Post;
 import cn.xu.model.vo.user.UserLikeItemVO;
-import cn.xu.service.comment.CommentService;
+import cn.xu.service.comment.CommentApplicationService;
 import cn.xu.service.like.LikeService;
 import cn.xu.service.like.LikeStatisticsService;
-import cn.xu.service.post.PostService;
+import cn.xu.service.post.PostQueryService;
 import cn.xu.support.exception.BusinessException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -23,7 +23,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
-import javax.validation.Valid;
+import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -44,8 +44,8 @@ public class LikeController {
 
     private final LikeService likeService;
     private final LikeStatisticsService likeStatisticsService;
-    private final PostService postService;
-    private final CommentService commentService;
+    private final PostQueryService postQueryService;
+    private final CommentApplicationService commentService;
 
     /**
      * 点赞
@@ -183,7 +183,7 @@ public class LikeController {
     @Operation(summary = "获取点赞数")
     @GetMapping("/count")
     @ApiOperationLog(description = "获取点赞数")
-    public ResponseEntity<LikeCountResponse> getLikeCount(
+    public ResponseEntity<LikeStatusVO> getLikeCount(
             @Parameter(description = "目标ID") @RequestParam Long targetId,
             @Parameter(description = "点赞类型") @RequestParam String type) {
         try {
@@ -200,15 +200,15 @@ public class LikeController {
                 log.debug("用户未登录，不返回点赞状态");
             }
             
-            LikeCountResponse response = new LikeCountResponse(targetId, type, count, liked);
-            return ResponseEntity.<LikeCountResponse>builder()
+            LikeStatusVO response = new LikeStatusVO(targetId, type, count, liked);
+            return ResponseEntity.<LikeStatusVO>builder()
                     .code(ResponseCode.SUCCESS.getCode())
                     .info(ResponseCode.SUCCESS.getMessage())
                     .data(response)
                     .build();
         } catch (Exception e) {
             log.error("获取点赞数异常", e);
-            return ResponseEntity.<LikeCountResponse>builder()
+            return ResponseEntity.<LikeStatusVO>builder()
                     .code(ResponseCode.UN_ERROR.getCode())
                     .info("查询失败，请稍后重试")
                     .build();
@@ -227,7 +227,7 @@ public class LikeController {
     @Operation(summary = "批量获取点赞数")
     @PostMapping("/counts")
     @ApiOperationLog(description = "批量获取点赞数")
-    public ResponseEntity<List<LikeCountResponse>> getLikeCounts(
+    public ResponseEntity<List<LikeStatusVO>> getLikeCounts(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "点赞请求列表") @RequestBody List<LikeRequest> requests) {
         try {
             // 从登录上下文获取用户ID，确保安全性
@@ -239,7 +239,7 @@ public class LikeController {
             }
             
             final Long finalUserId = userId; // 用于lambda表达式
-            List<LikeCountResponse> responses = requests.stream()
+            List<LikeStatusVO> responses = requests.stream()
                     .map(request -> {
                         Like.LikeType likeType = parseLikeType(request.getType());
                         Long count = likeService.getLikeCount(
@@ -256,7 +256,7 @@ public class LikeController {
                             );
                         }
                         
-                        return new LikeCountResponse(
+                        return new LikeStatusVO(
                                 request.getTargetId(), 
                                 request.getType(), 
                                 count, 
@@ -265,14 +265,14 @@ public class LikeController {
                     })
                     .collect(Collectors.toList());
                     
-            return ResponseEntity.<List<LikeCountResponse>>builder()
+            return ResponseEntity.<List<LikeStatusVO>>builder()
                     .code(ResponseCode.SUCCESS.getCode())
                     .info(ResponseCode.SUCCESS.getMessage())
                     .data(responses)
                     .build();
         } catch (Exception e) {
             log.error("批量获取点赞数异常", e);
-            return ResponseEntity.<List<LikeCountResponse>>builder()
+            return ResponseEntity.<List<LikeStatusVO>>builder()
                     .code(ResponseCode.UN_ERROR.getCode())
                     .info("查询失败，请稍后重试")
                     .build();
@@ -339,11 +339,11 @@ public class LikeController {
     @ApiOperationLog(description = "获取用户点赞列表")
     public ResponseEntity<PageResponse<List<UserLikeItemVO>>> getUserLikes(
             @PathVariable("userId") Long userId,
-            @RequestParam(value = "pageNo", defaultValue = "1") Integer pageNo,
-            @RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize) {
+            @RequestParam(value = "page", defaultValue = "1") Integer page,
+            @RequestParam(value = "size", defaultValue = "10") Integer size) {
         try {
             // 获取用户点赞列表
-            List<Like> likes = likeService.getUserLikes(userId, pageNo, pageSize);
+            List<Like> likes = likeService.getUserLikes(userId, page, size);
             
             // 获取总数
             long total = likeService.countUserLikes(userId);
@@ -354,7 +354,7 @@ public class LikeController {
                     .collect(Collectors.toList());
             
             PageResponse<List<UserLikeItemVO>> pageResponse = 
-                    PageResponse.ofList(pageNo, pageSize, total, voList);
+                    PageResponse.ofList(page, size, total, voList);
             
             return ResponseEntity.<PageResponse<List<UserLikeItemVO>>>builder()
                     .code(ResponseCode.SUCCESS.getCode())
@@ -389,7 +389,7 @@ public class LikeController {
             switch (likeType) {
                 case POST:
                     // 获取帖子信息
-                    Optional<Post> postOpt = postService.getPostById(like.getTargetId());
+                    Optional<Post> postOpt = postQueryService.getById(like.getTargetId());
                     if (postOpt.isPresent()) {
                         Post post = postOpt.get();
                         vo.setTargetTitle(post.getTitle());
@@ -398,7 +398,7 @@ public class LikeController {
                     break;
                 case COMMENT:
                     // 获取评论信息
-                    Comment comment = commentService.getCommentById(like.getTargetId());
+                    Comment comment = commentService.findById(like.getTargetId());
                     if (comment != null) {
                         String contentValue = comment.getContent();
                         vo.setTargetTitle(contentValue != null && contentValue.length() > 50 
