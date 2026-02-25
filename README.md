@@ -1,38 +1,49 @@
-# 知之社区后端服务
+# 知之社区（后端 + 前台 + 管理后台）
 
-基于 Spring Boot + Java17的后端服务，提供 RESTful API 接口。
+基于 Spring Boot + Java17 的后端服务，配套 Vue3 前台与管理后台，提供完整的社区功能与 RESTful API 接口。
 
 ## 项目结构
 
 ```
-zhizhi-backend/
-├── src/                    # 源代码目录
-├── docs/                   # 文档目录
-├── mounted/                # 配置文件目录（MySQL、Redis、Nginx等）
-├── target/                 # 构建输出目录
-├── Dockerfile              # Docker 构建文件
-├── docker-compose.yml      # 开发环境 Docker 编排文件
-├── docker-compose.prod.yml # 生产环境 Docker 编排文件
-└── pom.xml                 # Maven 项目配置文件
+zhizhi/
+├── src/                         # 后端源代码目录
+├── docs/                        # 项目文档（架构、功能设计、部署说明等）
+├── mounted/                     # 中间件配置（MySQL、Redis、Nginx、Elasticsearch、MinIO 等）
+├── zhizhi-front-vue3-master/    # 前台站点（Vue3 + Vite）
+├── zhizhi-admin-vue-master/     # 管理后台（Vue3 + Vite）
+├── Dockerfile                   # 后端 Docker 构建文件
+├── docker-compose.yml           # 一键启动（后端 + 前台 + 管理后台 + 中间件）
+├── docker-compose.middleware.yml# 仅中间件（本地开发用）
+├── docker-compose.prod.yml      # 生产环境 Docker 编排文件
+├── PRODUCTION_DEPLOY.md         # 生产部署说明
+├── deploy.sh                    # 启动脚本（可选）
+└── pom.xml                      # Maven 项目配置文件
 ```
-## 前端项目地址
-### 前台
-https://gitee.com/xu-wq/zhizhi-front-vue3
-### 后台
-https://gitee.com/xu-wq/zhizhi-admin-vue
+
+## 一键启动（推荐方式）
+
+在 `zhizhi` 目录下执行：
+
+```bash
+docker-compose up -d
+```
+
+会自动启动：
+
+- 后端服务：`http://localhost:8091`
+- 前台站点：`http://localhost:8080`
+- 管理后台：`http://localhost:8081`
+- MySQL / Redis / Elasticsearch / MinIO 等中间件
 
 ## 快速开始
 
-### 开发环境启动
+### 仅启动中间件（后端在 IDE 中运行）
 
 ```bash
-# 启动所有服务（MySQL、Redis、MinIO、后端服务）
-docker-compose up -d
-或者直接使用脚本deploy.sh启动项目
-
-# 查看日志
-docker logs -f zhizhi-backend
+docker-compose -f docker-compose.middleware.yml up -d
 ```
+
+然后在本机通过 IDE 运行 Spring Boot 项目即可。
 
 ### 生产环境部署
 

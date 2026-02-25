@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="知之社区管理后台 - 内容管理、用户管理、系统配置"
+    />
+    <meta
+      name="keywords"
+      content="知之社区,管理后台,内容管理,用户管理"
+    />
+    <title>%VITE_APP_TITLE%</title>
+  </head>
+
+  <body>
+    <div id="app">
+      <div class="loader"></div>
+    </div>
+  </body>
+  <script type="module" src="/src/main.ts"></script>
+  <style>
+    html,
+    body,
+    #app {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+    }
+
+    .loader {
+      position: relative;
+      width: 40px;
+      aspect-ratio: 0.577;
+      overflow: hidden;
+      clip-path: polygon(0 0, 100% 100%, 0 100%, 100% 0);
+      animation: l19 2s infinite linear;
+    }
+
+    .loader::before {
+      position: absolute;
+      inset: -150%;
+      content: "";
+      background: repeating-conic-gradient(
+        from 30deg,
+        #ffabab 0 60deg,
+        #abe4ff 0 120deg,
+        #ff7373 0 180deg
+      );
+      animation: inherit;
+      animation-direction: reverse;
+    }
+
+    @keyframes l19 {
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+  </style>
+</html>

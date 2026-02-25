@@ -1,0 +1,25 @@
+/* md-editor-v3 全局样式覆盖 */
+.md-editor {
+    --md-toolbar-height: 44px;
+}
+
+.md-editor .md-editor-toolbar {
+    height: var(--md-toolbar-height) !important;
+}
+
+.md-editor .md-editor-toolbar .md-editor-toolbar-item {
+    height: var(--md-toolbar-height) !important;
+    line-height: var(--md-toolbar-height) !important;
+}
+
+.md-editor .md-editor-toolbar .md-editor-toolbar-item button {
+    height: 32px !important;
+    padding: 6px 10px !important;
+}
+
+.md-editor .md-editor-toolbar .md-editor-toolbar-item .md-icon,
+.md-editor .md-editor-toolbar .md-editor-toolbar-item button svg {
+    width: 20px !important;
+    height: 20px !important;
+    font-size: 20px !important;
+}

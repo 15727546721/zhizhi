@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  front:
+    build: .
+    container_name: zhizhi-front
+    restart: always
+    ports:
+      - "8080:80"  # 本地访问 http://localhost:8080
+    volumes:
+      # 使用 docker 目录中的 Nginx 配置文件
+      - ./docker/nginx.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - zhizhi-net
+
+networks:
+  zhizhi-net:
+    external: true  # 使用外部网络
+    name: zhizhi-backend_zhizhi-net  # 连接到后端使用的网络

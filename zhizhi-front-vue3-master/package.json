@@ -1,0 +1,51 @@
+{
+  "name": "zhizhi-front-vue3",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "preinstall": "node -e \"if(process.env.npm_config_user_agent.indexOf('pnpm') === -1) console.log('\\n⚠️  推荐使用 pnpm 安装依赖以获得更好的性能\\n💡 安装: npm install -g pnpm\\n💡 使用: pnpm install\\n')\"",
+    "dev": "vite",
+    "build": "vue-tsc && vite build",
+    "preview": "vite preview",
+    "type-check": "vue-tsc --noEmit",
+    "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx --fix --ignore-path .gitignore",
+    "format": "prettier --write src/"
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.3.1",
+    "@stomp/stompjs": "^7.2.1",
+    "axios": "^1.7.9",
+    "cropperjs": "^1.6.2",
+    "element-plus": "^2.9.0",
+    "marked": "^16.3.0",
+    "md-editor-v3": "^5.1.1",
+    "pinia": "^2.3.0",
+    "pinia-plugin-persist": "^1.0.0",
+    "pinia-plugin-persistedstate": "^3.2.0",
+    "qrcode": "^1.5.4",
+    "sockjs-client": "^1.6.1",
+    "vite-plugin-svg-icons": "^2.0.1",
+    "vue": "^3.5.13",
+    "vue-cropperjs": "^5.0.0",
+    "vue-router": "^4.4.3",
+    "vue3-emoji-picker": "^1.1.8",
+    "vuedraggable": "^4.1.0"
+  },
+  "devDependencies": {
+    "@rushstack/eslint-patch": "^1.8.0",
+    "@types/node": "^25.0.9",
+    "@typescript-eslint/eslint-plugin": "^8.53.0",
+    "@typescript-eslint/parser": "^8.53.0",
+    "@vitejs/plugin-vue": "^5.0.5",
+    "@vitejs/plugin-vue-jsx": "^4.0.1",
+    "@vue/eslint-config-prettier": "^9.0.0",
+    "eslint": "^8.57.0",
+    "eslint-plugin-vue": "^9.23.0",
+    "prettier": "^3.2.5",
+    "sass-embedded": "^1.82.0",
+    "typescript": "^5.9.3",
+    "vite": "^5.3.1",
+    "vue-tsc": "^3.2.2"
+  }
+}

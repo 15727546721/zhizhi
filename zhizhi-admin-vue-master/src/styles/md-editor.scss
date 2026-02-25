@@ -1,0 +1,178 @@
+/* ==================== md-editor-v3 全局样式覆盖（与front-vue3一致） ==================== */
+
+/* 编辑器基础样式 */
+.md-editor {
+  --md-toolbar-height: 44px;
+  border: none !important;
+}
+
+/* 工具栏样式 */
+.md-editor .md-editor-toolbar {
+  height: var(--md-toolbar-height) !important;
+  border-bottom: 1px solid #e4e7ed !important;
+  flex-shrink: 0 !important;
+}
+
+.md-editor .md-editor-toolbar .md-editor-toolbar-item {
+  height: var(--md-toolbar-height) !important;
+  line-height: var(--md-toolbar-height) !important;
+}
+
+.md-editor .md-editor-toolbar .md-editor-toolbar-item button {
+  height: 32px !important;
+  padding: 6px 10px !important;
+}
+
+.md-editor .md-editor-toolbar .md-editor-toolbar-item .md-icon,
+.md-editor .md-editor-toolbar .md-editor-toolbar-item button svg {
+  width: 20px !important;
+  height: 20px !important;
+  font-size: 20px !important;
+}
+
+/* 编辑器内容区 */
+.md-editor-content {
+  height: auto !important;
+  flex: 1 !important;
+  overflow: hidden !important;
+}
+
+/* 预览区基础样式 */
+.md-editor-preview {
+  height: 100% !important;
+  overflow-y: auto !important;
+}
+
+.md-editor-input {
+  height: 100% !important;
+  overflow-y: auto !important;
+}
+
+/* ==================== Markdown 渲染样式 ==================== */
+
+/* 标题样式 */
+.md-editor-preview h1,
+.md-editor-preview h2,
+.md-editor-preview h3,
+.md-editor-preview h4,
+.md-editor-preview h5,
+.md-editor-preview h6 {
+  margin-top: 24px;
+  margin-bottom: 16px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.md-editor-preview h1 {
+  font-size: 2em;
+  border-bottom: 1px solid #eaecef;
+  padding-bottom: 0.3em;
+}
+
+.md-editor-preview h2 {
+  font-size: 1.5em;
+  border-bottom: 1px solid #eaecef;
+  padding-bottom: 0.3em;
+}
+
+.md-editor-preview h3 {
+  font-size: 1.25em;
+}
+
+/* 段落样式 */
+.md-editor-preview p {
+  margin-top: 0;
+  margin-bottom: 16px;
+  line-height: 1.8;
+}
+
+/* 代码块样式 */
+.md-editor-preview pre {
+  padding: 16px;
+  overflow: auto;
+  font-size: 85%;
+  line-height: 1.45;
+  background-color: #f6f8fa;
+  border-radius: 6px;
+}
+
+.md-editor-preview code {
+  padding: 0.2em 0.4em;
+  margin: 0;
+  font-size: 85%;
+  background-color: rgba(175, 184, 193, 0.2);
+  border-radius: 6px;
+}
+
+.md-editor-preview pre code {
+  padding: 0;
+  background-color: transparent;
+}
+
+/* 引用块样式 */
+.md-editor-preview blockquote {
+  padding: 0 1em;
+  color: #6a737d;
+  border-left: 0.25em solid #dfe2e5;
+  margin: 0 0 16px 0;
+}
+
+/* 列表样式 */
+.md-editor-preview ul,
+.md-editor-preview ol {
+  padding-left: 2em;
+  margin-bottom: 16px;
+}
+
+.md-editor-preview li {
+  line-height: 1.8;
+}
+
+/* 图片样式 */
+.md-editor-preview img {
+  max-width: 100%;
+  box-sizing: content-box;
+  border-radius: 4px;
+}
+
+/* 表格样式 */
+.md-editor-preview table {
+  display: block;
+  width: 100%;
+  overflow: auto;
+  border-collapse: collapse;
+  margin-bottom: 16px;
+}
+
+.md-editor-preview table th,
+.md-editor-preview table td {
+  padding: 6px 13px;
+  border: 1px solid #dfe2e5;
+}
+
+.md-editor-preview table tr {
+  background-color: #fff;
+  border-top: 1px solid #c6cbd1;
+}
+
+.md-editor-preview table tr:nth-child(2n) {
+  background-color: #f6f8fa;
+}
+
+/* 滚动条样式 */
+.md-editor-preview::-webkit-scrollbar,
+.md-editor-input::-webkit-scrollbar {
+  width: 6px;
+}
+
+.md-editor-preview::-webkit-scrollbar-thumb,
+.md-editor-input::-webkit-scrollbar-thumb {
+  border-radius: 3px;
+  background: #ddd;
+}
+
+.md-editor-preview::-webkit-scrollbar-track,
+.md-editor-input::-webkit-scrollbar-track {
+  border-radius: 3px;
+  background: #f5f7fa;
+}
